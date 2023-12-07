@@ -10,6 +10,9 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx src"
   },
+  "config": {
+    "forge": "src/desktop/forge.config.js"
+  },
   "author": "Philippe Shampanier",
   "license": "MIT",
   "devDependencies": {
