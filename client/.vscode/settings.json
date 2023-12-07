@@ -1,0 +1,10 @@
+{
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "prettier.printWidth": 120,
+    "editor.rulers": [120],
+    "editor.tabSize": 2,
+    "testing.automaticallyOpenPeekView": "never",
+    "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"]
+  }
