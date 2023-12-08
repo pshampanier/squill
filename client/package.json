@@ -4,10 +4,12 @@
   "description": "SQL Workspace",
   "main": ".vite/build/main.js",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make && mkdir -p ./build && mv -f out ./build/desktop",
-    "publish": "electron-forge publish",
+    "webapp:dev": "vite",
+    "webapp:build": "vite build",
+    "desktop:start": "electron-forge start",
+    "desktop:package": "electron-forge package",
+    "desktop:make": "electron-forge make && mkdir -p ./build && mv -f out ./build/desktop",
+    "desktop:publish": "electron-forge publish",
     "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0",
     "clean": "rm -rf build/"
   },
@@ -33,7 +35,9 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
-    "typescript": "^5.1.6"
+    "typescript": "^5.1.6",
+    "vite-plugin-svgr": "^4.2.0",
+    "vite-tsconfig-paths": "^4.2.2"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0",

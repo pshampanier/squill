@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "es2015",
     // <= "module": "commonjs",
-    "module": "ESNext",
+    "module": "ES2015",
 
     "allowJs": true,
     "skipLibCheck": true,
