@@ -11,7 +11,8 @@
     "desktop:make": "electron-forge make && mkdir -p ./build && mv -f out ./build/desktop",
     "desktop:publish": "electron-forge publish",
     "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0",
-    "clean": "rm -rf build/"
+    "clean": "rm -rf build/",
+    "test": "vitest"
   },
   "config": {
     "forge": "src/desktop/forge.config.js"
@@ -37,11 +38,13 @@
     "eslint-plugin-react-refresh": "^0.4.5",
     "typescript": "^5.1.6",
     "vite-plugin-svgr": "^4.2.0",
-    "vite-tsconfig-paths": "^4.2.2"
+    "vite-tsconfig-paths": "^4.2.2",
+    "vitest": "^1.0.2"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "reflect-metadata": "^0.1.14"
   }
 }

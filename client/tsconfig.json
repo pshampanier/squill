@@ -18,6 +18,10 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
+    /* decorators */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
 
     /* Paths */

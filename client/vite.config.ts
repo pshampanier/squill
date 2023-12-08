@@ -8,7 +8,14 @@ export default defineConfig({
   build: { outDir: "build/webapp" },
   plugins: [
     tsconfigPaths(),
-    react(),
+    react({
+      /** needed to support typescript decorations */
+      babel: {
+        parserOpts: {
+          plugins: ["decorators-legacy", "classProperties"],
+        },
+      },
+    }),
     svgr({
       svgrOptions: {
         icon: true,
