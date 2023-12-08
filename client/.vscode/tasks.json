@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "npm",
+      "script": "desktop:start",
+      "problemMatcher": [],
+      "label": "npm: desktop:start",
+      "detail": "electron-forge start"
+    },
+    {
+      "type": "npm",
+      "script": "webapp:dev",
+      "problemMatcher": [],
+      "label": "npm: webapp:dev",
+      "detail": "vite"
+    }
+  ]
+}
