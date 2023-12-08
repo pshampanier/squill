@@ -29,10 +29,10 @@
     "paths": {
       "@/api/*": ["common/api/*"],
       "@/components/*": ["common/components/*"],
-      "@/assets/*": ["common/assets/*"],
       "@/resources/*": ["common/resources/*"],
       "@/stores/*": ["common/stores/*"],
       "@/utils/*": ["common/utils/*"],
+      "@/assets/*": ["assets/*"],
       "@/icons/*": ["assets/icons/*"]
     }
   },

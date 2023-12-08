@@ -12,8 +12,11 @@
       "type": "npm",
       "script": "webapp:dev",
       "problemMatcher": [],
-      "label": "npm: webapp:dev",
-      "detail": "vite"
+      "label": "vite",
+      "detail": "vite",
+      "runOptions": {
+        "instanceLimit": 1
+      }
     }
   ]
 }
