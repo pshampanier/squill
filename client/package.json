@@ -6,9 +6,10 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
-    "make": "electron-forge make",
+    "make": "electron-forge make && mkdir -p ./build && mv -f out ./build/desktop",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0",
+    "clean": "rm -rf build/"
   },
   "config": {
     "forge": "src/desktop/forge.config.js"

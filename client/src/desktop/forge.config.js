@@ -9,7 +9,7 @@ module.exports = {
     asar: false,
     executableName: "ElectroVite",
     appCopyright: "Copyright (C) 2023 Guasam, ElectroVite",
-    icon: path.resolve("assets/favicon.ico"),
+    // icon: path.resolve("assets/favicon.ico"),
   },
   rebuildConfig: {},
   makers: [
