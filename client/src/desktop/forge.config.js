@@ -1,5 +1,5 @@
-import path from "path";
-
+// eslint-disable-next-line
+const path = require("path");
 // eslint-disable-next-line no-undef
 const rootDir = process.cwd();
 
