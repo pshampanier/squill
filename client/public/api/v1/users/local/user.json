@@ -1,0 +1,15 @@
+{
+  "username": "local",
+  "settings": {
+    "telemetry": true,
+    "showRecentlyOpened": true,
+    "showFavorites": true
+  },
+  "collections": [
+    { "name": "Monitoring", "type": "workspace" },
+    { "name": "Sales Reports", "type": "workspace" },
+    { "name": "Sandbox", "type": "workspace" },
+    { "name": "Archives", "type": "folder" }
+  ],
+  "favorites": ["Monitoring"]
+}

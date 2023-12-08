@@ -1,0 +1,34 @@
+{
+  "name": "Sandbox",
+  "activeEnvironment": "Production",
+  "globals": [
+    {
+      "name": "USERNAME",
+      "type": "text",
+      "value": "marty"
+    }
+  ],
+  "environments": [
+    {
+      "name": "Production",
+      "connections": [
+        {
+          "name": "default",
+          "system": "postgresql"
+        }
+      ],
+      "variables": [
+        {
+          "name": "DEFAULT_COUNTRY",
+          "type": "text",
+          "value": "USA"
+        }
+      ]
+    }
+  ],
+  "collections": [
+    { "name": "Models", "type": "folder" },
+    { "name": "README.md", "type": "file" },
+    { "name": "script.sql", "type": "file" }
+  ]
+}

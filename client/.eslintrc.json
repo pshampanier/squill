@@ -15,13 +15,17 @@
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": ["@typescript-eslint", "react", "react-refresh"],
+  "plugins": ["@typescript-eslint", "react", "react-refresh", "import"],
   "rules": {
     "react-refresh/only-export-components": ["warn", { "allowConstantExport": true }],
     "react/react-in-jsx-scope": "off",
-    "react/jsx-uses-react": "off"
+    "react/jsx-uses-react": "off",
+    "import/no-unresolved": "error"
   },
   "settings": {
+    "import/resolver": {
+      "typescript": {} // this loads <rootdir>/tsconfig.json to eslint
+    },
     "react": {
       "version": "detect"
     }

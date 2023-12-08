@@ -6,14 +6,14 @@
       "script": "desktop:start",
       "problemMatcher": [],
       "label": "npm: desktop:start",
-      "detail": "electron-forge start"
+      "detail": "Build & start the desktop app"
     },
     {
       "type": "npm",
       "script": "webapp:dev",
       "problemMatcher": [],
-      "label": "vite",
-      "detail": "vite",
+      "label": "vite dev",
+      "detail": "Running vite dev for the webapp",
       "runOptions": {
         "instanceLimit": 1
       }
