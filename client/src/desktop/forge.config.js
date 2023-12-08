@@ -1,7 +1,9 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
-const path = require("path");
+import path from "path";
+
+// eslint-disable-next-line no-undef
 const rootDir = process.cwd();
 
+// eslint-disable-next-line no-undef
 module.exports = {
   packagerConfig: {
     asar: false,
