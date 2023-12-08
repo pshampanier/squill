@@ -1,3 +1,10 @@
+import FolderIcon from "@/icons/folder.svg?react";
+
 export function App() {
-  return <div>Hello World</div>;
+  return (
+    <div>
+      <FolderIcon />
+      <p>Hello World</p>
+    </div>
+  );
 }

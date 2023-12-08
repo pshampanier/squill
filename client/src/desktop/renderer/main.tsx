@@ -1,5 +1,5 @@
 import ReactDOM from "react-dom/client";
-import { App } from "../../common/components/App";
+import { App } from "@/components/App";
 
 console.log("Hello from renderer");
 
