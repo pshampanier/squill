@@ -26,9 +26,9 @@ export function App() {
   }, [agentUrl, reset]);
 
   return (
-    <div className="flex h-screen">
+    <>
       {activeSpace === "user" && <UserSpace />}
       {activeSpace === "workspace" && <WorkspaceSpace />}
-    </div>
+    </>
   );
 }

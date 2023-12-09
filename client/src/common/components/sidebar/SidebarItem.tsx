@@ -7,7 +7,7 @@ import LockClosedIcon from "@/icons/lock-closed.svg?react";
 import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
 import { Spinner } from "../core/Spinner";
 
-type Props = {
+type SidebarItemProps = {
   label: string;
   icon: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
   collapsible?: boolean;
@@ -17,7 +17,7 @@ type Props = {
   children?: ReactNode;
 };
 
-export default function SidebarItem({ children, label, collapsible, icon, locked, loaderfn }: Props) {
+export default function SidebarItem({ children, label, collapsible, icon, locked, loaderfn }: SidebarItemProps) {
   const Icon = icon;
   const [collapsed, setCollapsed] = useState(true);
   const [loadingState, setLoadingState] = useState<"pending" | "loading" | "success" | "error">("pending");

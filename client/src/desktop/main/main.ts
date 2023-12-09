@@ -11,9 +11,12 @@ const createWindow = () => {
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
     },
+    titleBarStyle: "hidden",
+    trafficLightPosition: { x: 10, y: 16 },
   });
 
   // and load the index.html of the app.
@@ -25,7 +28,11 @@ const createWindow = () => {
 
   // Open the DevTools on F12
   globalShortcut.register("F12", () => {
-    mainWindow.webContents.openDevTools();
+    if (mainWindow.webContents.isDevToolsOpened()) {
+      mainWindow.webContents.closeDevTools();
+    } else {
+      mainWindow.webContents.openDevTools();
+    }
   });
 };
 

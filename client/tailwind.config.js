@@ -4,5 +4,17 @@ export default {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    function ({ addUtilities }) {
+      const newUtilities = {
+        ".draggable": {
+          "-webkit-app-region": "drag",
+        },
+        ".non-draggable": {
+          "-webkit-app-region": "no-drag",
+        },
+      };
+      addUtilities(newUtilities);
+    },
+  ],
 };
