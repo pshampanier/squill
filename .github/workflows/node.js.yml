@@ -25,4 +25,16 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
-    - run: npm test
+        cache-dependency-path: ./client/package-lock.json
+    - name: Install node modules
+      run: |
+        npm install
+      working-directory: ./client
+    - name: ESLint
+      run: |
+        npm run lint
+      working-directory: ./client        
+    - name: Run tests
+      run: |
+        npm test
+      working-directory: ./client
