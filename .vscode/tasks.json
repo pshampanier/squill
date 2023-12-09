@@ -6,7 +6,10 @@
       "script": "desktop:start",
       "problemMatcher": [],
       "label": "npm: desktop:start",
-      "detail": "Build & start the desktop app"
+      "detail": "Build & start the desktop app",
+      "options": {
+        "cwd": "${workspaceFolder}/client"
+      }
     },
     {
       "type": "npm",
@@ -16,6 +19,9 @@
       "detail": "Running vite dev for the webapp",
       "runOptions": {
         "instanceLimit": 1
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/client"
       }
     }
   ]
