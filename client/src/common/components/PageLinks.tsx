@@ -16,7 +16,7 @@ type LinkProps = {
 
 const Link = ({ children, shortcuts }: LinkProps) => {
   return (
-    <dl className="flex text-sm table-row h-6">
+    <dl className="text-sm table-row h-6">
       <dt className="table-cell text-right pr-1">
         <a href="#">{children}</a>
       </dt>

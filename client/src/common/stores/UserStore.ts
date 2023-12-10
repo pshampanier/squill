@@ -7,6 +7,7 @@ type UserStoreApplicationSpace = "connection" | "logon" | UserApplicationSpace;
 export type UserStoreCollectionLink = UserCollectionLink;
 
 type State = {
+  sidebarSize: number;
   activeSpace: UserStoreApplicationSpace;
   userCollections: Readonly<UserCollectionItem>[];
   recentlyOpened: UserStoreCollectionLink[];
@@ -16,12 +17,14 @@ type Actions = {
   reset: () => void;
   setActiveSpace: (activeSpace: UserStoreApplicationSpace) => void;
   setUserCollectionItems: (userCollections: UserCollectionItem[]) => void;
+  resizeSidebar: (width: number) => void;
 };
 
 export const useUserStore = create<State & Actions>((set) => {
   // User is a mutable object so we are keeping it out of the store.
 
   return {
+    sidebarSize: 256,
     activeSpace: "connection",
     userCollections: [],
     recentlyOpened: [],
@@ -41,6 +44,10 @@ export const useUserStore = create<State & Actions>((set) => {
 
     setUserCollectionItems(userCollections: UserCollectionItem[]) {
       set((state) => ({ ...state, userCollections: userCollections.map((c) => c.clone()) }));
+    },
+
+    resizeSidebar(width: number) {
+      set((state) => ({ ...state, sidebarSize: width }));
     },
   };
 });

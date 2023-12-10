@@ -2,7 +2,7 @@ import { editor as monacoEditor } from "monaco-editor";
 import React, { useEffect, useRef, useState } from "react";
 import { editors } from "@/resources/editors";
 
-import { WorkspacePage } from "@/stores/WorkspaceStore";
+import { WorkspacePage, useWorkspaceStore } from "@/stores/WorkspaceStore";
 
 import SqlIdon from "@/icons/sql-file.svg?react";
 import MonacoEditor from "react-monaco-editor";
@@ -16,8 +16,10 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
   const [pageState, setPageState] = useState<"loading" | "ready">("loading");
   const [content, setContent] = useState<string>("");
 
-  const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
+  const initialContent = useRef<string>();
   const currentUser = User.current;
+
+  const setModified = useWorkspaceStore((state) => state.setModified);
 
   // Options for the Monaco editor
   const options = {
@@ -29,7 +31,8 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
     if (pageState === "loading") {
       console.log("MarkdownEditor SQL: useEffect");
       Workspace.current.loadCollectionItem(page.itemId).then(([resource]) => {
-        setContent(resource.asText());
+        initialContent.current = resource.asText();
+        setContent(initialContent.current);
         setPageState("ready");
       });
     }
@@ -46,9 +49,12 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
           theme={"vs-" + currentUser.settings.theme}
           value={content}
           options={options}
-          editorDidMount={(editor) => {
-            editorRef.current = editor;
-            editor.focus();
+          onChange={(value) => {
+            if (value !== initialContent.current) {
+              setModified(page.id, true);
+            } else {
+              setModified(page.id, false);
+            }
           }}
         />
       </div>

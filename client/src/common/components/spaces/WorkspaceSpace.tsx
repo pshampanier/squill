@@ -7,24 +7,21 @@ import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarEnvironmentItem from "@/components/sidebar/workspace/SidebarEnvironmentItem";
 import SidebarWorkspaceCollectionItem from "@/components/sidebar/workspace/SidebarWorkspaceCollectionItem";
-import ResizePanel from "@/components/core/ResizePanel";
 import Editor from "@/components/Editor";
 import Titlebar from "@/components/titlebar/Titlebar";
 import Space from "@/components/spaces/Space";
 import PagesTabs from "@/components/titlebar/PagesTabs";
 
-import WorkspaceIcon from "@/icons/workspace.svg?react";
+import Page from "@/components/Page";
+import PageLinks from "@/components/PageLinks";
 
 export default function WorkspaceSpace() {
   console.debug("Rendering WorkspaceSpace");
-  const { environments, collections } = useWorkspaceStore();
+  const { environments, collections, activePageId } = useWorkspaceStore();
   return (
     <>
       <Titlebar>
-        <PagesTabs>
-          <PagesTabs.Tab icon={WorkspaceIcon} label="Collections" selected />
-          <PagesTabs.Tab icon={WorkspaceIcon} label="Environments" modified />
-        </PagesTabs>
+        <PagesTabs />
       </Titlebar>
       <Space>
         <Sidebar>
@@ -39,8 +36,22 @@ export default function WorkspaceSpace() {
             })}
           </SidebarSection>
         </Sidebar>
-        <ResizePanel />
-        <Editor />
+        {activePageId ? (
+          <Editor />
+        ) : (
+          <Page>
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-gray-500 dark:text-gray-400">
+                <h1 className="text-xl font-bold">No selection</h1>
+                <PageLinks>
+                  <PageLinks.Link shortcuts={["Meta+Q", "Ctrl+Q"]}>Create a new query</PageLinks.Link>
+                  <PageLinks.Link shortcuts={["Meta+D", "Ctrl+D"]}>Create a new dashboard</PageLinks.Link>
+                  <PageLinks.Link shortcuts={["Meta+Shift+N", "Ctrl+Shift+N"]}>Create a new folder</PageLinks.Link>
+                </PageLinks>
+              </div>
+            </div>
+          </Page>
+        )}
       </Space>
     </>
   );

@@ -5,7 +5,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  build: { outDir: "build/webapp" },
+  /** need to set the base, otherwise the breakpoint would not bind in vscode */
+  base: "/client/",
+  build: { outDir: "build/webapp", sourcemap: true },
   plugins: [
     tsconfigPaths(),
     react({

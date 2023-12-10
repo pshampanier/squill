@@ -1,4 +1,5 @@
 import { WorkspacePage } from "@/stores/WorkspaceStore";
+import { SVGIcon } from "@/utils/types";
 
 export type Editor = {
   /**
@@ -14,7 +15,7 @@ export type Editor = {
   /**
    * The icon to be used for files associated with this editor.
    */
-  readonly icon: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  readonly icon: SVGIcon;
 
   /**
    * The Readt component to be used for the editor.

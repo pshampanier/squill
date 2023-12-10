@@ -24,6 +24,7 @@ type Actions = {
   setCollections: (collections: WorkspaceCollectionItem[]) => void;
   setActivePage: (pageId: string) => void;
   addPage: (itemId: string, title: string, editor: Editor) => string;
+  closePage: (pageId: string) => void;
   setModified: (pageId: string, modified: boolean) => void;
   replaceActivePage: (itemId: string, title: string, editor: Editor) => void;
 };
@@ -77,6 +78,22 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
         activeItemId: page.itemId,
       }));
       return page.id;
+    },
+
+    closePage(pageId: string) {
+      // TODO: should prompt for save
+      // TODO: sould select the previous page
+      set((state) => {
+        const pages = state.pages.filter((page) => page.id !== pageId);
+        const activePageId = pages.length > 0 ? pages[0].id : undefined;
+        const activeItemId = pages.length > 0 ? pages[0].itemId : undefined;
+        return {
+          ...state,
+          pages,
+          activePageId,
+          activeItemId,
+        };
+      });
     },
 
     setActivePage(pageId: string) {
