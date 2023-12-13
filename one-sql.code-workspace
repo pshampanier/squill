@@ -1,0 +1,22 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "client"
+    },
+    {
+      "path": "agent"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "client": true,
+			"agent": true
+		},
+    },
+    "testing.automaticallyOpenPeekView": "never"
+  }
+}
