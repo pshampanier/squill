@@ -10,9 +10,11 @@
     "desktop:package": "electron-forge package",
     "desktop:make": "electron-forge make && mkdir -p ./build && mv -f out ./build/desktop",
     "desktop:publish": "electron-forge publish",
+    "coverage": "vitest run --coverage",
     "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0",
     "clean": "rm -rf build/",
-    "test": "vitest"
+    "test": "vitest",
+    "test-ui": "vitest --ui"
   },
   "config": {
     "forge": "src/desktop/forge.config.js"
@@ -31,6 +33,8 @@
     "@typescript-eslint/eslint-plugin": "^6.13.2",
     "@typescript-eslint/parser": "^6.13.2",
     "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/coverage-v8": "^1.0.4",
+    "@vitest/ui": "^1.0.4",
     "autoprefixer": "^10.4.16",
     "electron": "^28.0.0",
     "eslint": "^8.55.0",

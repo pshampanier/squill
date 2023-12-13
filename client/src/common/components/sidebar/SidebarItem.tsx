@@ -6,6 +6,7 @@ import ChevronIcon from "@/icons/chevron-right.svg?react";
 import LockClosedIcon from "@/icons/lock-closed.svg?react";
 import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
 import { Spinner } from "../core/Spinner";
+import { useClasses } from "@/utils/classes";
 
 /**
  * @property label - the text to display for the item.
@@ -65,15 +66,24 @@ export default function SidebarItem({
       });
   };
 
-  const textColor = locked ? "text-gray-400" : "text-gray-600";
-  const backgroundColor = selected ? "bg-blue-100 dark:bg-gray-800" : "hover:bg-gray-200 dark:hover:bg-gray-800";
+  const classes = useClasses([
+    // color transition on selected or hover
+    "transition-colors duration-300 transform",
+    {
+      // text color
+      light: locked ? "text-gray-400 hover:text-gray-700" : "text-gray-600",
+      dark: locked ? "text-gray-200 hover:text-gray-200" : "text-gray-600",
+    },
+    {
+      // background color
+      light: selected ? "bg-gray-200" : "hover:bg-gray-200",
+      dark: selected ? "bg-gray-100" : "hover:bg-gray-800",
+    },
+  ]);
 
   return (
     <div>
-      <button
-        className={`flex items-center px-3 py-1 w-full ${textColor} ${backgroundColor} transition-colors duration-300 transform rounded-lg dark:text-gray-200  dark:hover:text-gray-200 hover:text-gray-700`}
-        onClick={handleClick}
-      >
+      <button className={`flex items-center px-3 py-1 w-full rounded-lg ${classes}`} onClick={handleClick}>
         <Icon className="w-5 h-5" />
         <span className="mx-2 text-xs font-medium">{label}</span>
         <span className="flex ml-auto">

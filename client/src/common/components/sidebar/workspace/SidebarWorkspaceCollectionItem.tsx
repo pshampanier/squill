@@ -10,8 +10,6 @@ type SidebarWorkspaceCollectionItem = {
 };
 
 export default function SidebarWorkspaceCollectionItem({ item }: SidebarWorkspaceCollectionItem) {
-  // FIXME: do not use pages but add a method to the workspace to get the pageId for a given itemId.
-  // FIXME: move the logic of modified to the store.
   const setCollections = useWorkspaceStore((state) => state.setCollections);
   const setActivePage = useWorkspaceStore((state) => state.setActivePage);
   const setActiveId = useWorkspaceStore((state) => state.setActiveId);
@@ -19,8 +17,6 @@ export default function SidebarWorkspaceCollectionItem({ item }: SidebarWorkspac
   const activeId = useWorkspaceStore((state) => state.activeId);
   const activePageId = useWorkspaceStore((state) => state.activePageId);
   const replaceActivePage = useWorkspaceStore((state) => state.replaceActivePage);
-
-  //
   const page = useWorkspaceStore((state) => state.pages.find((page) => page.itemId === item.id));
   const activePage = useWorkspaceStore((state) => state.pages.find((page) => page.id === activePageId));
 
@@ -28,6 +24,7 @@ export default function SidebarWorkspaceCollectionItem({ item }: SidebarWorkspac
     const workspace = Workspace.current;
     await workspace.loadFolder(item.id);
     setCollections(workspace.collections);
+    setActiveId(item.id);
   };
 
   const openFile = async (): Promise<void> => {
