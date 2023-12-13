@@ -17,7 +17,9 @@ import PageLinks from "@/components/PageLinks";
 
 export default function WorkspaceSpace() {
   console.debug("Rendering WorkspaceSpace");
-  const { environments, collections, activePageId } = useWorkspaceStore();
+  const environments = useWorkspaceStore((state) => state.environments);
+  const collections = useWorkspaceStore((state) => state.collections);
+  const activePageId = useWorkspaceStore((state) => state.activePageId);
   return (
     <>
       <Titlebar>

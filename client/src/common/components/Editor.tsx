@@ -3,8 +3,8 @@ import Page from "./Page";
 
 export default function Editor() {
   console.debug("Rendering Editor");
-  const { pages, activePageId } = useWorkspaceStore();
-
+  const pages = useWorkspaceStore((state) => state.pages);
+  const activePageId = useWorkspaceStore((state) => state.activePageId);
   return (
     <Page>
       {pages.map((page) => {

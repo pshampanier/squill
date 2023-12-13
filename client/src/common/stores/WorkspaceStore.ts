@@ -12,8 +12,18 @@ export type WorkspacePage = {
 };
 
 type State = {
+  /** The id of the active page */
   activePageId?: string;
-  activeItemId?: string;
+
+  /**
+   * The id of the active item.
+   *
+   * - This is the item that is currently selected in the tree, multiple pages can be open for the same item so it's
+   *   important to track the active item separately from the active page.
+   * - This id does not necessarily correspond to the id of the active page, for example if a folder or an environment
+   *   is selected in the sidebar, the active id will be id of the folder or the environment.
+   */
+  activeId?: string;
   environments: Readonly<Environment>[];
   collections: Readonly<WorkspaceCollectionItem>[];
   pages: Readonly<WorkspacePage>[];
@@ -23,21 +33,23 @@ type Actions = {
   reset: () => void;
   setCollections: (collections: WorkspaceCollectionItem[]) => void;
   setActivePage: (pageId: string) => void;
+  setActiveId: (id: string) => void;
   addPage: (itemId: string, title: string, editor: Editor) => string;
   closePage: (pageId: string) => void;
   setModified: (pageId: string, modified: boolean) => void;
   replaceActivePage: (itemId: string, title: string, editor: Editor) => void;
+  findPage(callbackFn: (page: WorkspacePage) => boolean): WorkspacePage | undefined;
 };
 
 const initialState: State = {
-  activeItemId: undefined,
+  activeId: undefined,
   activePageId: undefined,
   pages: [],
   environments: [],
   collections: [],
 };
 
-export const useWorkspaceStore = create<State & Actions>((set) => {
+export const useWorkspaceStore = create<State & Actions>((set, get) => {
   return {
     ...initialState,
     reset() {
@@ -48,7 +60,7 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
         }));
       } else {
         set(() => ({
-          activeItemId: undefined,
+          activeId: undefined,
           activePageId: undefined,
           pages: [],
           environments: workspace.environments.map((e) => e.clone()),
@@ -75,7 +87,7 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
         ...state,
         pages: [...state.pages, page],
         activePageId: page.id,
-        activeItemId: page.itemId,
+        activeId: page.itemId,
       }));
       return page.id;
     },
@@ -86,12 +98,30 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
       set((state) => {
         const pages = state.pages.filter((page) => page.id !== pageId);
         const activePageId = pages.length > 0 ? pages[0].id : undefined;
-        const activeItemId = pages.length > 0 ? pages[0].itemId : undefined;
+        const activeId = pages.length > 0 ? pages[0].itemId : undefined;
         return {
           ...state,
           pages,
           activePageId,
-          activeItemId,
+          activeId,
+        };
+      });
+    },
+
+    setActiveId(id: string) {
+      const activeId = get().activeId;
+      if (id === activeId) {
+        // the id is already active, do nothing
+        return;
+      }
+      // checking if there is already a page open for this id, if so we just need to activate it, otherwise we need to
+      // only change the active id.
+      set((state) => {
+        const page = state.pages.find((p) => p.itemId === id);
+        return {
+          ...state,
+          activeId: id,
+          activePageId: page?.id ?? state.activePageId,
         };
       });
     },
@@ -100,6 +130,7 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
       set((state) => ({
         ...state,
         activePageId: pageId,
+        activeId: state.pages.find((p) => p.id === pageId)?.itemId,
       }));
     },
 
@@ -121,7 +152,7 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
     replaceActivePage(itemId: string, title: string, editor: Editor) {
       set((state) => ({
         ...state,
-        activeItemId: itemId,
+        activeId: itemId,
         pages: state.pages.map((page) => {
           if (page.id === state.activePageId) {
             return {
@@ -135,6 +166,10 @@ export const useWorkspaceStore = create<State & Actions>((set) => {
           return page;
         }),
       }));
+    },
+
+    findPage(predicate: (page: WorkspacePage) => boolean): WorkspacePage | undefined {
+      return get().pages.find(predicate);
     },
   };
 });

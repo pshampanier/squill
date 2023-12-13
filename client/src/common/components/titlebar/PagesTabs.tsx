@@ -6,18 +6,20 @@ import CloseCircleIcon from "@/icons/close-circle.svg?react";
 import { useUserStore } from "@/stores/UserStore";
 
 function PagesTabs() {
-  const { pages, activePageId, setActivePage } = useWorkspaceStore();
+  const pages = useWorkspaceStore((state) => state.pages);
+  const activePageId = useWorkspaceStore((state) => state.activePageId);
+  const setActivePage = useWorkspaceStore((state) => state.setActivePage);
   const closePage = useWorkspaceStore((state) => state.closePage);
   const sidebarSize = useUserStore((state) => state.sidebarSize);
   const plusButtonColor = "hover:bg-blue-600 focus:bg-blue-700";
 
-  function handleClosePage(pageId: string) {
+  const handleClosePage = (pageId: string) => {
     closePage(pageId);
-  }
+  };
 
-  function handleSelectPage(pageId: string) {
+  const handleSelectPage = (pageId: string) => {
     setActivePage(pageId);
-  }
+  };
 
   return (
     <div className="flex flex-row space-x-1 non-draggable" style={{ marginLeft: sidebarSize }}>

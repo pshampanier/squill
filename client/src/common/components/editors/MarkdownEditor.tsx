@@ -6,7 +6,7 @@ import { Workspace } from "@/resources/workspace/workspace";
 import { editors } from "@/resources/editors";
 
 import React, { useEffect, useState, useRef } from "react";
-import { WorkspacePage } from "@/stores/WorkspaceStore";
+import { useWorkspaceStore, WorkspacePage } from "@/stores/WorkspaceStore";
 
 import MonacoEditor from "react-monaco-editor";
 import Markdown from "react-markdown";
@@ -20,14 +20,14 @@ import EditCommandIcon from "@/icons/edit-command.svg?react";
 import PreviewCommandIcon from "@/icons/preview-command.svg?react";
 
 const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
-  console.log("Rendering MarkdownEditor");
-
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");
   const [content, setContent] = useState<string>("");
+  const setModified = useWorkspaceStore((state) => state.setModified);
+  const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
+  const initialContent = useRef<string>();
+  const modified = useRef<boolean>(false);
 
   const workspace = Workspace.current;
-
-  const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
 
   // Options for the Monaco editor
   const options = {
@@ -35,23 +35,36 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
     automaticLayout: true,
   };
 
-  function handleShowPreview() {
+  const handleShowPreview = () => {
     setMode("preview");
     const value = editorRef.current?.getValue();
     setContent(value || "");
-  }
+  };
 
-  function handleShowEditor() {
+  const handleShowEditor = () => {
     setMode("editor");
     editorRef.current && editorRef.current.focus();
-  }
+  };
+
+  // Handle changes to the editor content
+  // In order to limit re-renders, we only update the modified state when the modified state changes
+  const handleOnChange = (value: string) => {
+    if (value !== initialContent.current && !modified.current) {
+      setModified(page.id, true);
+      modified.current = true;
+    } else if (value === initialContent.current && modified.current) {
+      setModified(page.id, false);
+      modified.current = false;
+    }
+  };
 
   useEffect(() => {
     if (mode === "loading") {
       console.log("MarkdownEditor: useEffect");
       setMode("loading");
       workspace.loadCollectionItem(page.itemId).then(([resource]) => {
-        setContent(resource.asText());
+        initialContent.current = resource.asText();
+        setContent(initialContent.current);
         setMode("preview");
       });
     }
@@ -83,6 +96,7 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
               editorRef.current = editor;
               mode === "editor" && editor.focus();
             }}
+            onChange={handleOnChange}
           />
         </div>
       </>

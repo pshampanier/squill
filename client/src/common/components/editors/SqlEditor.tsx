@@ -1,4 +1,3 @@
-import { editor as monacoEditor } from "monaco-editor";
 import React, { useEffect, useRef, useState } from "react";
 import { editors } from "@/resources/editors";
 
@@ -11,15 +10,13 @@ import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 
 const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
-  console.log("Rendering SqlEditor");
-
+  const setModified = useWorkspaceStore((state) => state.setModified);
   const [pageState, setPageState] = useState<"loading" | "ready">("loading");
   const [content, setContent] = useState<string>("");
-
   const initialContent = useRef<string>();
-  const currentUser = User.current;
+  const modified = useRef<boolean>(false);
 
-  const setModified = useWorkspaceStore((state) => state.setModified);
+  const currentUser = User.current;
 
   // Options for the Monaco editor
   const options = {
@@ -27,9 +24,20 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
     automaticLayout: true,
   };
 
+  // Handle changes to the editor content
+  // In order to limit re-renders, we only update the modified state when the modified state changes
+  const handleOnChange = (value: string) => {
+    if (value !== initialContent.current && !modified.current) {
+      setModified(page.id, true);
+      modified.current = true;
+    } else if (value === initialContent.current && modified.current) {
+      setModified(page.id, false);
+      modified.current = false;
+    }
+  };
+
   useEffect(() => {
     if (pageState === "loading") {
-      console.log("MarkdownEditor SQL: useEffect");
       Workspace.current.loadCollectionItem(page.itemId).then(([resource]) => {
         initialContent.current = resource.asText();
         setContent(initialContent.current);
@@ -49,13 +57,7 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
           theme={"vs-" + currentUser.settings.theme}
           value={content}
           options={options}
-          onChange={(value) => {
-            if (value !== initialContent.current) {
-              setModified(page.id, true);
-            } else {
-              setModified(page.id, false);
-            }
-          }}
+          onChange={handleOnChange}
         />
       </div>
     );

@@ -18,10 +18,11 @@ export default function SidebarUserCollectionItem({ item }: SidebarUserFolderPro
     label: item.name,
   };
 
-  const { setUserCollectionItems, setActiveSpace } = useUserStore();
-  const reset = useWorkspaceStore().reset;
+  const setUserCollectionItems = useUserStore((state) => state.setUserCollectionItems);
+  const setActiveSpace = useUserStore((state) => state.setActiveSpace);
+  const reset = useWorkspaceStore((state) => state.reset);
 
-  function loadCollectionItem(): Promise<void> {
+  const loadCollectionItem = async (): Promise<void> => {
     const user = User.current;
     switch (item.type) {
       case "workspace": {
@@ -37,7 +38,7 @@ export default function SidebarUserCollectionItem({ item }: SidebarUserFolderPro
         });
       }
     }
-  }
+  };
 
   switch (item.type) {
     case "workspace":

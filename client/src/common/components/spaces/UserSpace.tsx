@@ -4,7 +4,6 @@ import { UserCollectionItem } from "@/resources/user/user";
 import Sidebar from "../sidebar/Sidebar";
 import SidebarSection from "../sidebar/SidebarSection";
 import SidebarUserCollectionItem from "../sidebar/user/SidebarUserCollectionItem";
-import ResizePanel from "../core/ResizePanel";
 import Page from "../Page";
 import PageLinks from "../PageLinks";
 import Titlebar from "@/components/titlebar/Titlebar";
@@ -12,7 +11,7 @@ import Space from "@/components/spaces/Space";
 
 export default function UserSpace() {
   console.debug("Rendering UserSpace");
-  const { userCollections } = useUserStore();
+  const userCollections = useUserStore((state) => state.userCollections);
   return (
     <>
       <Titlebar />

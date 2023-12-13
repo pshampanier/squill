@@ -15,13 +15,13 @@ export default function ResizePanel({ width, minWidth, maxWidth, onResize }: Res
   const [dragging, setDragging] = useState(false);
   const [dragStartAt, setDragStartAt] = useState(0);
 
-  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     setDragging(true);
     setDragStartAt(event.clientX);
     event.currentTarget.setPointerCapture(event.pointerId);
-  }
+  };
 
-  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!dragging) return;
     const dragAmount = event.clientX - dragStartAt;
     if (minWidth && width + dragAmount < minWidth) {
@@ -33,12 +33,12 @@ export default function ResizePanel({ width, minWidth, maxWidth, onResize }: Res
       onResize(width + dragAmount);
       setDragStartAt(event.clientX); // reset drag start for the next move
     }
-  }
+  };
 
-  function handlePointerUp(event: React.PointerEvent<HTMLDivElement>) {
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     setDragging(false);
     event.currentTarget.releasePointerCapture(event.pointerId);
-  }
+  };
 
   return (
     <div
