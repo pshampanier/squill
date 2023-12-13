@@ -32,7 +32,7 @@ Prefer union types to enums.
 
 If you need to access the list of possible values, start by creating an array of the possible values as a constant and create the union type from it.
 
-> [!TIP] Good
+> [!TIP]
 >
 > ```ts
 > export const AUTHENTICATION_METHODS = ["user_password", "key", "token"] as const;
@@ -43,7 +43,7 @@ If you need to access the list of possible values, start by creating an array of
 
 Inside React components, use arrow functions because arrow functions can capture the surrounding context, which is often necessary when working with React's state and props.
 
-> [!TIP] Good
+> [!TIP]
 >
 > ```ts
 >   default export MyComponent() {
@@ -55,7 +55,7 @@ Inside React components, use arrow functions because arrow functions can capture
 >   }
 > ```
 
-> [!CAUTION] Bad
+> [!CAUTION]
 >
 > ```ts
 >   default export MyComponent() {
