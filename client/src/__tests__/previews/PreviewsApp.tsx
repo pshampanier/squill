@@ -1,7 +1,6 @@
 import Page from "@/components/Page";
 import Sidebar from "@/components/sidebar/Sidebar";
 import PreviewSidebarItem from "./PreviewSidebarItem";
-import { useContext, useState } from "react";
 import KeyboardShortcutPreview from "./core/KeyboardShortcut.preview";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SpacePreview from "./layouts/Space.preview";

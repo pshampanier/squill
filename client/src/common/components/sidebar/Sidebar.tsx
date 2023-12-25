@@ -1,4 +1,3 @@
-import { useUserStore } from "@/stores/UserStore";
 import { ReactNode, useRef, useState } from "react";
 import ResizePanel from "@/components/core/ResizePanel";
 import { useClasses } from "@/utils/classes";
@@ -10,16 +9,11 @@ type SidebarProps = {
 };
 
 export default function Sidebar({ size, className, children }: SidebarProps) {
-  // const sidebarSize = useUserStore((state) => state.sidebarSize);
-  const resizeSidebar = useUserStore((state) => state.resizeSidebar);
-
   const [sidebarSize, setSidebarSize] = useState(size ?? 256);
   const asideElement = useRef(null);
 
   function handleResize(width: number) {
-    // asideElement.current.style.width = `${width}px`;
     setSidebarSize(width);
-    // resizeSidebar(width);
   }
 
   const classes = useClasses([
