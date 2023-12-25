@@ -9,12 +9,12 @@ import UserSpace from "@/components/spaces/UserSpace";
 import WorkspaceSpace from "@/components/spaces/WorkspaceSpace";
 
 export function App() {
-  const agentUrl = useState(window.location.href.split("#" /* remove everything after # */)[0])[0];
+  const agentUrl = useState(window.location.href.split("/").slice(0, -1).join("/"))[0];
   const activeSpace = useUserStore((state) => state.activeSpace);
   const reset = useUserStore((state) => state.reset);
 
   useEffect(() => {
-    console.log("App useEffect");
+    console.log(`Connection agent: ${agentUrl}`);
     Agent.connect(agentUrl)
       .then(() => {
         return User.logon({ method: "user_password", credentials: { username: "local", password: "" } });

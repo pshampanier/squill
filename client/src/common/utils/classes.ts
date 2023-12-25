@@ -25,7 +25,7 @@ export function useClasses(classes: Classes[]): string {
     .map((c) => {
       if (typeof c === "string") {
         return applyTheme("light", c);
-      } else {
+      } else if ( c !== undefined) {
         return applyTheme("light", c.light) + " " + applyTheme("dark", c.dark);
       }
     })

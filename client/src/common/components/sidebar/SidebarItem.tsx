@@ -16,7 +16,7 @@ import { useClasses } from "@/utils/classes";
  */
 type SidebarItemProps = {
   label: string;
-  icon: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  icon?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
   collapsible?: boolean;
   selected?: boolean;
   locked?: boolean;
@@ -69,6 +69,8 @@ export default function SidebarItem({
   const classes = useClasses([
     // color transition on selected or hover
     "transition-colors duration-300 transform",
+    "flex items-center gap-x-2 py-2 px-2 w-full rounded-lg",
+    "text-sm font-medium items-center",
     {
       // text color
       light: locked ? "text-gray-400 hover:text-gray-700" : "text-gray-600",
@@ -83,21 +85,21 @@ export default function SidebarItem({
 
   return (
     <div>
-      <button className={`flex items-center px-3 py-1 w-full rounded-lg ${classes}`} onClick={handleClick}>
-        <Icon className="w-5 h-5" />
-        <span className="mx-2 text-xs font-medium">{label}</span>
-        <span className="flex ml-auto">
+      <button className={classes} onClick={handleClick}>
+        {Icon && <Icon className="w-5 h-5" />}
+        <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
+        <span className="flex ml-auto gap-x-1 items-center">
           {loadingState === "loading" && <Spinner />}
           {loadingState === "error" && (
-            <Tooltip position="bottom" align="end" theme="error" text={loadingError?.message}>
-              <ErrorIcon className="w-3 h-3 mr-1 text-red-400" />
+            <Tooltip position="right" align="end" theme="error" text={loadingError?.message}>
+              <ErrorIcon className="text-red-400 w-4 h-4" />
             </Tooltip>
           )}
-          {locked && <LockClosedIcon className="w-3 h-3 mr-1" />}
-          {collapsible && <ChevronIcon className={`w-3 h-3 transition-all ${!collapsed && "rotate-90"}`} />}
+          {locked && <LockClosedIcon className="w-4 h-4" />}
+          {collapsible && <ChevronIcon className={`w-4 h-4 transition-all ${!collapsed && "rotate-90"}`} />}
         </span>
       </button>
-      {!collapsed && <div className="ml-6">{children}</div>}
+      {!collapsed && <div className="ml-3">{children}</div>}
     </div>
   );
 }

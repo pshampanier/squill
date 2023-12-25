@@ -8,7 +8,6 @@
   "editor.quickSuggestions": {
     "strings": true
   },
-  "testing.automaticallyOpenPeekView": "never",
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "eslint.options": {
     "root_folder": "./client"

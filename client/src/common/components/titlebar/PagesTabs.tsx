@@ -69,7 +69,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
     >
       <Icon className="w-5 h-5 stroke-white fill-transparent" />
       <span className="mx-2 text-xs font-medium">{page.title}</span>
-      <button className="flex ml-auto min-w-fit">
+      <a href="#" className="flex ml-auto min-w-fit">
         <CloseButtonIcon
           className={`w-5 h-5 px-1 rounded-sm ${iconBackgroundColor}`}
           onClick={(event) => {
@@ -77,7 +77,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
             onClose(page.id);
           }}
         />
-      </button>
+      </a>
     </button>
   );
 }

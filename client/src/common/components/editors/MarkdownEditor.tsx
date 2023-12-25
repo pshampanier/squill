@@ -18,6 +18,7 @@ import { PageLoader } from "../PageLoader";
 import MarkdownIcon from "@/icons/markdown-file.svg?react";
 import EditCommandIcon from "@/icons/edit-command.svg?react";
 import PreviewCommandIcon from "@/icons/preview-command.svg?react";
+import { useClasses } from "@/utils/classes";
 
 const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");
@@ -76,9 +77,11 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
     return (
       <>
         <div
-          className={
-            "markdown-body w-full h-full overflow-y-scroll relative " + (mode === "preview" ? "block" : "hidden")
-          }
+          className={useClasses([
+            "w-full h-full relative",
+            "overflow-y-scroll markdown-body",
+            mode === "preview" ? "block" : "hidden",
+          ])}
         >
           <IconButton className="absolute top-1 right-5 z-50" icon={EditCommandIcon} onClick={handleShowEditor} />
           <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
@@ -87,7 +90,7 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
         <div className={"relative w-full h-full " + (mode === "editor" ? "block" : "hidden")}>
           <IconButton className="absolute top-1 right-5 z-50" icon={PreviewCommandIcon} onClick={handleShowPreview} />
           <MonacoEditor
-            className="relative w-full h-full"
+            className="w-full h-full"
             language="markdown"
             theme={"vs-" + User.current.settings.theme}
             value={content}

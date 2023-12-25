@@ -50,16 +50,14 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
     return <PageLoader />;
   } else {
     return (
-      <div className="relative w-full h-full ">
-        <MonacoEditor
-          className="relative w-full h-full"
-          language="sql"
-          theme={"vs-" + currentUser.settings.theme}
-          value={content}
-          options={options}
-          onChange={handleOnChange}
-        />
-      </div>
+      <MonacoEditor
+        className="w-full h-full"
+        language="sql"
+        theme={"vs-" + currentUser.settings.theme}
+        value={content}
+        options={options}
+        onChange={handleOnChange}
+      />
     );
   }
 };

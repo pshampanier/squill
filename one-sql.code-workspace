@@ -13,10 +13,21 @@
   "settings": {
     "files.exclude": {
       "**/.git": true,
-      "client": true,
-			"agent": true
-		},
+      "agent": true
     },
-    "testing.automaticallyOpenPeekView": "never"
+    "testing.automaticallyOpenPeekView": "never",
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "prettier.printWidth": 120,
+    "editor.rulers": [120],
+    "editor.tabSize": 2,
+    "editor.quickSuggestions": {
+      "strings": true
+    },
+    "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+    "eslint.options": {
+      "root_folder": "./client"
+    }
   }
 }

@@ -3,5 +3,5 @@ type SpaceProps = {
 };
 
 export default function Space({ children }: SpaceProps) {
-  return <div className="flex h-screen">{children}</div>;
+  return <div className="flex flex-col h-full w-full">{children}</div>;
 }

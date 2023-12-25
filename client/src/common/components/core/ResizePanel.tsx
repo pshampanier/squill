@@ -1,8 +1,5 @@
+import { useClasses } from "@/utils/classes";
 import { useState } from "react";
-
-const baseClasses = "flex flex-col w-1 border-l border-gray-200 bg-white";
-const hoverClasses =
-  "hover:bg-blue-500 hover:border-blue-500 hover:cursor-col-resize  hover:transition-colors hover:delay-100";
 
 type ResizePanelProps = {
   width: number;
@@ -40,9 +37,14 @@ export default function ResizePanel({ width, minWidth, maxWidth, onResize }: Res
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
+  const classes = useClasses([
+    "flex flex-none w-1 border-l border-gray-200 bg-white",
+    "hover:bg-blue-500 hover:border-blue-500 hover:cursor-col-resize  hover:transition-colors hover:delay-100 transition-all",
+  ]);
+
   return (
     <div
-      className={`${baseClasses} ${hoverClasses} transition-all`}
+      className={classes}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

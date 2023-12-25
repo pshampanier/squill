@@ -1,1 +1,1 @@
-console.log("preload executed");
+console.log(`${new Date().toISOString()}: preload executed`);

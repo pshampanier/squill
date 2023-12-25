@@ -1,3 +1,4 @@
+import { useClasses } from "@/utils/classes";
 import { isMacOS } from "@/utils/plateform";
 
 type Props = {
@@ -36,21 +37,29 @@ export default function KeyboardShortcut({ shortcuts }: Props) {
         return [key, false];
     }
   });
+
+  // FIXME: dark mode
+  const classes = useClasses([
+    "flex text-s text-center rounded space-x-1 p-1 border", {
+    light: "text-gray-600 bg-gray-100",
+    dark: "text-gray-400 bg-gray-800",
+  }]);
+
   return (
-    <>
+    <span className={classes}>
       {trustedKeys.map((key, index) => {
         if (key[1] /** trusted key */) {
-          return <kbd key={index} className="mr-0.5" dangerouslySetInnerHTML={{ __html: key[0] }}></kbd>;
+          return <kbd key={index} dangerouslySetInnerHTML={{ __html: key[0] }}></kbd>;
         } else {
           return (
             !key[1] && (
-              <kbd key={index} className="mr-1">
+              <kbd key={index} className="">
                 {key[0]}
               </kbd>
             )
           );
         }
       })}
-    </>
+    </span>
   );
 }
