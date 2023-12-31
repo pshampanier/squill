@@ -38,11 +38,16 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   // width (before the translation) otherwise some children element such as the monaco editor will not be resized
   // properly when the sidebar is comming back.
   if (sidebarRef && sidebarRef.current) {
-    const main = sidebarRef.current.nextSibling.nextSibling;
-    if (!visible) {
-      main.style.width = `${main.offsetWidth}px`;
+    let nextSibling = sidebarRef.current.nextSibling;
+    while (nextSibling) {
+      if (nextSibling.nodeType === Node.ELEMENT_NODE) {
+        if (!visible) {
+          nextSibling.style.width = `${nextSibling.offsetWidth}px`;
+        }
+        nextSibling.style.marginLeft = visible ? 0 : `-${sidebarSize}px`;
+      }
+      nextSibling = nextSibling.nextSibling;
     }
-    main.style.marginLeft = visible ? 0 : `-${sidebarSize}px`;
   }
 
   useEffect(() => {
@@ -53,7 +58,7 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   }, [visible]);
 
   const asideClasses = useClasses([
-    "flex flex-col flex-none px-5 overflow-y-visible overflow-x-scroll bg-gray-100",
+    "flex flex-row flex-none overflow-x-scroll bg-gray-100",
     "transition-transform duration-500",
     visible ? "translate-x-0" : "-translate-x-full",
     className,
@@ -63,15 +68,15 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   return (
     <>
       <aside ref={sidebarRef} className={asideClasses} style={{ width: `${sidebarSize}px` }}>
-        <nav className="flex flex-col w-full justify-between space-y-1.5 mt-4 mb-4">{children}</nav>
+        <nav className="flex flex-col w-full space-y-1.5 mt-4 mb-4 px-5">{children}</nav>
+        <ResizePanel
+          className={resizePanelClasses}
+          width={sidebarSize}
+          minWidth={200}
+          maxWidth={400}
+          onResize={handleResize}
+        />
       </aside>
-      <ResizePanel
-        className={resizePanelClasses}
-        width={sidebarSize}
-        minWidth={200}
-        maxWidth={400}
-        onResize={handleResize}
-      />
     </>
   );
 }
