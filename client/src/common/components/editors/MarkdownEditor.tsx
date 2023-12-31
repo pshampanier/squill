@@ -83,7 +83,11 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
             mode === "preview" ? "block" : "hidden",
           ])}
         >
-          <IconButton className="absolute top-1 right-5 z-50" icon={EditCommandIcon} onClick={handleShowEditor} />
+          <IconButton
+            className="absolute top-1 right-5 z-50 text-blue-200"
+            icon={EditCommandIcon}
+            onClick={handleShowEditor}
+          />
           <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
         </div>
 

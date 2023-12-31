@@ -1,6 +1,6 @@
 import { ObjectFactory } from "@/utils/types";
 import { deserialize } from "@/utils/serializable";
-import { ResourceRef } from "./resource-ref";
+import { ResourceRef } from "@/resources/resource-ref";
 
 export class Resource<T extends object> {
   private readonly contentType: string;

@@ -5,10 +5,11 @@ type ResizePanelProps = {
   width: number;
   minWidth?: number;
   maxWidth?: number;
+  className?: string;
   onResize: (width: number) => void;
 };
 
-export default function ResizePanel({ width, minWidth, maxWidth, onResize }: ResizePanelProps) {
+export default function ResizePanel({ width, minWidth, maxWidth, className, onResize }: ResizePanelProps) {
   const [dragging, setDragging] = useState(false);
   const [dragStartAt, setDragStartAt] = useState(0);
 
@@ -40,6 +41,7 @@ export default function ResizePanel({ width, minWidth, maxWidth, onResize }: Res
   const classes = useClasses([
     "flex flex-none w-1 border-l border-gray-200 bg-white",
     "hover:bg-blue-500 hover:border-blue-500 hover:cursor-col-resize  hover:transition-colors hover:delay-100 transition-all",
+    className,
   ]);
 
   return (

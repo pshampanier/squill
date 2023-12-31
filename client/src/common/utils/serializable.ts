@@ -1,6 +1,6 @@
 import "reflect-metadata";
 
-import { ObjectFactory, ObjectFactoryConstructor, ObjectFactoryFunction } from "./types";
+import { ObjectFactory, ObjectFactoryConstructor, ObjectFactoryFunction } from "@/utils/types";
 import {
   deserializeArray,
   deserializeBoolean,
@@ -10,8 +10,8 @@ import {
   DeserializeStringFormatOption,
   safeDeserialization,
   SerialisationError,
-} from "./serializers";
-import { raise } from "./telemetry";
+} from "@/utils/serializers";
+import { raise } from "@/utils/telemetry";
 
 const METADATA_SERIALISER = Symbol("serializer");
 const METADATA_DESERIALIZER = Symbol("deserializer");

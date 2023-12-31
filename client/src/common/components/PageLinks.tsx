@@ -1,5 +1,5 @@
 import React from "react";
-import KeyboardShortcut from "./core/KeyboardShortcut";
+import KeyboardShortcut from "@/components/core/KeyboardShortcut";
 
 type CommandLinksProps = {
   children: React.ReactNode;

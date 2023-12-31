@@ -1,5 +1,5 @@
-import Page from "./Page";
-import Loader from "./core/Loader";
+import Page from "@/components/Page";
+import Loader from "@/components/core/Loader";
 
 export function PageLoader() {
   return (

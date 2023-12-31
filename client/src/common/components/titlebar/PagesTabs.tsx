@@ -3,14 +3,12 @@ import { WorkspacePage, useWorkspaceStore } from "@/stores/WorkspaceStore";
 import PlusIcon from "@/icons/plus.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
 import CloseCircleIcon from "@/icons/close-circle.svg?react";
-import { useUserStore } from "@/stores/UserStore";
 
 function PagesTabs() {
   const pages = useWorkspaceStore((state) => state.pages);
   const activePageId = useWorkspaceStore((state) => state.activePageId);
   const setActivePage = useWorkspaceStore((state) => state.setActivePage);
   const closePage = useWorkspaceStore((state) => state.closePage);
-  const sidebarSize = useUserStore((state) => state.sidebarSize);
   const plusButtonColor = "hover:bg-blue-600 focus:bg-blue-700";
 
   const handleClosePage = (pageId: string) => {
@@ -22,7 +20,7 @@ function PagesTabs() {
   };
 
   return (
-    <div className="flex flex-row space-x-1 non-draggable" style={{ marginLeft: sidebarSize }}>
+    <div className="flex flex-row space-x-1 non-draggable">
       {pages.map((page) => {
         return (
           <Tab
@@ -55,7 +53,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
   const Icon = page.editor.icon;
   const CloseButtonIcon = page.modified ? CloseCircleIcon : CloseIcon;
   const backgroundColor = selected
-    ? "bg-blue-400 dark:bg-gray-800 shadow-md shadow-blue-700"
+    ? "bg-blue-400 dark:bg-gray-800 shadow-sm shadow-blue-700"
     : "hover:bg-blue-600 focus:bg-blue-700";
   const iconBackgroundColor = selected ? "hover:bg-blue-500" : "hover:bg-blue-700";
   const text = "text-xs text-left whitespace-nowrap overflow-hidden overflow-ellipsis";
@@ -67,7 +65,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
         onSelect(page.id);
       }}
     >
-      <Icon className="w-5 h-5 stroke-white fill-transparent" />
+      <Icon className="w-5 h-5" />
       <span className="mx-2 text-xs font-medium">{page.title}</span>
       <a href="#" className="flex ml-auto min-w-fit">
         <CloseButtonIcon

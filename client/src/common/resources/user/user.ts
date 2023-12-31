@@ -1,9 +1,9 @@
 import { listCollectionFolder, getWorkspace } from "@/api/v1/user";
 import { serializable } from "@/utils/serializable";
-import { CollectionItem, CollectionItemLink } from "../collection-item";
-import { ResourceRef } from "../resource-ref";
-import { UserSettings } from "./user-settings";
-import { agent } from "../agent";
+import { CollectionItem, CollectionItemLink } from "@/resources/collection-item";
+import { ResourceRef } from "@/resources/resource-ref";
+import { UserSettings } from "@/resources/user/user-settings";
+import { agent } from "@/resources/agent";
 import { AuthRequest } from "@/utils/auth";
 
 export type UserApplicationSpace = "user" | "workspace";

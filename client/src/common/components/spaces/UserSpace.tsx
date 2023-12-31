@@ -8,6 +8,8 @@ import PageLinks from "../PageLinks";
 import Titlebar from "@/components/titlebar/Titlebar";
 import Space from "@/components/spaces/Space";
 import Main from "@/components/Main";
+import Toolbar from "@/components/core/Toolbar";
+import ToolbarCommandButton from "@/components/core/ToolbarCommandButton";
 
 export default function UserSpace() {
   console.debug("Rendering UserSpace");
@@ -15,7 +17,11 @@ export default function UserSpace() {
   return (
     <>
       <Space>
-        <Titlebar />
+        <Titlebar>
+          <Toolbar>
+            <ToolbarCommandButton command="sidebar.toggle" />
+          </Toolbar>
+        </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
           <Sidebar>
             <SidebarSection label="Collections">

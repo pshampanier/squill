@@ -1,5 +1,5 @@
-import { Resource } from "./resource";
-import { User } from "./user/user";
+import { Resource } from "@/resources/resource";
+import { User } from "@/resources/user/user";
 import { serializable } from "@/utils/serializable";
 import { AuthenticationMethods, AUTHENTICATION_METHODS, AuthRequest, AuthUserPassword } from "@/utils/auth";
 

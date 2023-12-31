@@ -10,7 +10,7 @@ export default mergeConfig(
         enabled: true,
         reporter: ["html"],
         reportsDirectory: "../build/coverage",
-        exclude: ["**/*.config.js", "**/*.d.ts"],
+        exclude: ["**/*.config.js", "**/*.d.ts", "**/__tests__/previews/*"],
       },
     },
   })

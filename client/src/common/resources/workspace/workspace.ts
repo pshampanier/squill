@@ -1,10 +1,10 @@
-import { Variable } from "./variable";
-import { Environment } from "./environment";
-import { CollectionItem } from "../collection-item";
+import { Variable } from "@/resources/workspace/variable";
+import { Environment } from "@/resources/workspace/environment";
+import { CollectionItem } from "@/resources/collection-item";
 import { serializable } from "@/utils/serializable";
 import { loadCollectionItem } from "@/api/v1/workspace";
-import { ResourceRef } from "../resource-ref";
-import { Resource } from "../resource";
+import { ResourceRef } from "@/resources/resource-ref";
+import { Resource } from "@/resources/resource";
 
 export type WorkspaceCollectionItemType = "folder" | "file";
 export type WorkspaceCollectionItem = CollectionItem<WorkspaceCollectionItemType>;

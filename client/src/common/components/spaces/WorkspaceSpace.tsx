@@ -12,6 +12,8 @@ import Space from "@/components/spaces/Space";
 import PagesTabs from "@/components/titlebar/PagesTabs";
 import PageLinks from "@/components/PageLinks";
 import Main from "@/components/Main";
+import Toolbar from "@/components/core/Toolbar";
+import ToolbarCommandButton from "@/components/core/ToolbarCommandButton";
 
 export default function WorkspaceSpace() {
   console.debug("Rendering WorkspaceSpace");
@@ -22,6 +24,9 @@ export default function WorkspaceSpace() {
     <>
       <Space>
         <Titlebar>
+          <Toolbar>
+            <ToolbarCommandButton command="sidebar.toggle" />
+          </Toolbar>
           <PagesTabs />
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
