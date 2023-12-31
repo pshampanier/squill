@@ -14,7 +14,7 @@ export function IconButton({ icon, onClick, className }: Props) {
 
   return (
     <button onClick={onClick} className={classes}>
-      <Icon className="w-7 h-7" />
+      <Icon className="w-8 h-8" />
     </button>
   );
 }

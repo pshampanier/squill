@@ -5,6 +5,6 @@ type ToolbarCommandButtonProps = {
 };
 
 export default function ToolbarCommandButton({ command }: ToolbarCommandButtonProps) {
-  const classes = "h-9 p-2 rounded-sm hover:bg-blue-600 text-white";
+  const classes = "w-8 h-8 p-1 rounded hover:bg-blue-600 text-white";
   return CommandButton({ command, className: classes });
 }

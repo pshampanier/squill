@@ -33,8 +33,8 @@ function PagesTabs() {
         );
       })}
       {pages.length > 0 && (
-        <button className={`w-9 h-9 p-1 items-center align-middle rounded-sm ${plusButtonColor}`}>
-          <PlusIcon className={`w-8 h-8 px-1 rounded-sm`} />
+        <button className={`flex w-9 h-9 p-1 items-center align-middle rounded ${plusButtonColor}`}>
+          <PlusIcon className={`w-8 h-8 px-1 rounded`} />
         </button>
       )}
       <div className="flex-grow draggable" />
@@ -60,7 +60,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
 
   return (
     <button
-      className={`flex items-center h-9 px-4 rounded-sm w-48 ${text} ${backgroundColor}`}
+      className={`flex items-center h-9 px-4 rounded w-48 ${text} ${backgroundColor}`}
       onClick={() => {
         onSelect(page.id);
       }}
@@ -69,7 +69,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
       <span className="mx-2 text-xs font-medium">{page.title}</span>
       <a href="#" className="flex ml-auto min-w-fit">
         <CloseButtonIcon
-          className={`w-5 h-5 px-1 rounded-sm ${iconBackgroundColor}`}
+          className={`w-5 h-5 px-1 rounded ${iconBackgroundColor}`}
           onClick={(event) => {
             event.stopPropagation();
             onClose(page.id);
