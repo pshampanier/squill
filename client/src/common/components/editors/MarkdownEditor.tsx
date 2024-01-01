@@ -4,21 +4,21 @@ import { editor as monacoEditor } from "monaco-editor";
 import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 import { editors } from "@/resources/editors";
+import { useClasses } from "@/utils/classes";
+import { useWorkspaceStore, WorkspacePage } from "@/stores/WorkspaceStore";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useWorkspaceStore, WorkspacePage } from "@/stores/WorkspaceStore";
 
 import MonacoEditor from "react-monaco-editor";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { IconButton } from "../core/IconButton";
-import { PageLoader } from "../PageLoader";
+import IconButton from "@/components/core/IconButton";
+import PageLoader from "@/components/PageLoader";
 
 import MarkdownIcon from "@/icons/markdown-file.svg?react";
-import EditCommandIcon from "@/icons/edit-command.svg?react";
-import PreviewCommandIcon from "@/icons/preview-command.svg?react";
-import { useClasses } from "@/utils/classes";
+import EditCommandIcon from "@/icons/edit.svg?react";
+import PreviewCommandIcon from "@/icons/preview.svg?react";
 
 const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");

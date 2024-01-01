@@ -1,5 +1,6 @@
 import React from "react";
-import KeyboardShortcut from "@/components/core/KeyboardShortcut";
+import KBD from "@/components/core/KBD";
+import { KeyboardShortcut } from "@/utils/types";
 
 type CommandLinksProps = {
   children: React.ReactNode;
@@ -11,17 +12,17 @@ const PageLinks = ({ children }: CommandLinksProps) => {
 
 type LinkProps = {
   children: React.ReactNode;
-  shortcuts: [string, string];
+  shortcut: KeyboardShortcut;
 };
 
-const Link = ({ children, shortcuts }: LinkProps) => {
+const Link = ({ children, shortcut }: LinkProps) => {
   return (
     <dl className="text-sm table-row h-6">
-      <dt className="table-cell text-right pr-1">
+      <dt className="table-cell text-right pr-1 align-middle">
         <a href="#">{children}</a>
       </dt>
       <dd className="table-cell text-left">
-        <KeyboardShortcut shortcuts={shortcuts} />
+        <KBD shortcut={shortcut} />
       </dd>
     </dl>
   );

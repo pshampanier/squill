@@ -6,7 +6,7 @@ import { UserSettings } from "@/resources/user/user-settings";
 import { agent } from "@/resources/agent";
 import { AuthRequest } from "@/utils/auth";
 
-export type UserApplicationSpace = "user" | "workspace";
+export type UserApplicationSpace = "user" | "settings" | "workspace";
 
 export type UserCollectionItemType = "folder" | "workspace";
 export type UserCollectionItem = CollectionItem<UserCollectionItemType>;

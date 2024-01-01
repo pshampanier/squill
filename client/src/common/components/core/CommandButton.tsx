@@ -1,5 +1,5 @@
 import { executeCommand, getCommand } from "@/utils/commands";
-import { IconButton } from "@/components/core/IconButton";
+import IconButton from "@/components/core/IconButton";
 
 type CommandButtonProps = {
   command: string;

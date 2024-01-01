@@ -13,7 +13,6 @@ import PagesTabs from "@/components/titlebar/PagesTabs";
 import PageLinks from "@/components/PageLinks";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
-import ToolbarCommandButton from "@/components/core/ToolbarCommandButton";
 
 export default function WorkspaceSpace() {
   console.debug("Rendering WorkspaceSpace");
@@ -25,9 +24,12 @@ export default function WorkspaceSpace() {
       <Space>
         <Titlebar>
           <Toolbar>
-            <ToolbarCommandButton command="sidebar.toggle" />
+            <Toolbar.CommandButton command="sidebar.toggle" />
           </Toolbar>
           <PagesTabs />
+          <Toolbar>
+            <Toolbar.CommandButton command="settings" />
+          </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
           <Sidebar>
@@ -50,9 +52,9 @@ export default function WorkspaceSpace() {
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <h1 className="text-xl font-bold">No selection</h1>
                   <PageLinks>
-                    <PageLinks.Link shortcuts={["Meta+Q", "Ctrl+Q"]}>Create a new query</PageLinks.Link>
-                    <PageLinks.Link shortcuts={["Meta+D", "Ctrl+D"]}>Create a new dashboard</PageLinks.Link>
-                    <PageLinks.Link shortcuts={["Meta+Shift+N", "Ctrl+Shift+N"]}>Create a new folder</PageLinks.Link>
+                    <PageLinks.Link shortcut={["Meta+Q", "Ctrl+Q"]}>Create a new query</PageLinks.Link>
+                    <PageLinks.Link shortcut={["Meta+D", "Ctrl+D"]}>Create a new dashboard</PageLinks.Link>
+                    <PageLinks.Link shortcut={["Meta+Shift+N", "Ctrl+Shift+N"]}>Create a new folder</PageLinks.Link>
                   </PageLinks>
                 </div>
               </div>

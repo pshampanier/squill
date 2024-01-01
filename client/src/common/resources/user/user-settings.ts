@@ -1,6 +1,6 @@
 import { formatRegExp, serializable } from "@/utils/serializable";
 
-const THEME = ["light", "dark"] as const;
+const THEME = ["light", "dark", "auto"] as const;
 const MINIMAP = ["show", "hide", "auto"] as const;
 const RENDER_WHITESPACE = ["all", "none", "boundary", "selection", "trailing"] as const;
 
@@ -37,6 +37,9 @@ export class UserSettings {
 
   @serializable("boolean")
   showFavorites: boolean = true;
+
+  @serializable("boolean")
+  showFileExtensions: boolean = false;
 
   @serializable("object", { factory: EditorSettings })
   editor: EditorSettings = new EditorSettings();

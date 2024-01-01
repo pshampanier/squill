@@ -1,4 +1,5 @@
 import { KeyboardShortcut, SVGIcon } from "@/utils/types";
+import SettingsIcon from "@/icons/settings.svg?react";
 
 type CommandAction = () => void;
 
@@ -84,5 +85,5 @@ registerCommand(
   { name: "clipboard.copy", description: "Copy selected text", shortcut: ["Meta+C", "Ctrl+C"] },
   { name: "clipboard.paste", description: "Paste text", shortcut: ["Meta+V", "Ctrl+V"] },
   { name: "clipboard.cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
-  { name: "settings", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"] }
+  { name: "settings", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon }
 );

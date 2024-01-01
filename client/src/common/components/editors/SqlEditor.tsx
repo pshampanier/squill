@@ -3,9 +3,10 @@ import { editors } from "@/resources/editors";
 
 import { WorkspacePage, useWorkspaceStore } from "@/stores/WorkspaceStore";
 
-import SqlIdon from "@/icons/sql-file.svg?react";
+import SqlIcon from "@/icons/sql-file.svg?react";
 import MonacoEditor from "react-monaco-editor";
-import { PageLoader } from "../PageLoader";
+import PageLoader from "@/components/PageLoader";
+
 import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 
@@ -65,7 +66,7 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
 editors.register({
   name: "SQL",
   selector: /\.sql$/,
-  icon: SqlIdon,
+  icon: SqlIcon,
   component: SqlEditor,
 });
 

@@ -1,8 +1,8 @@
 import Page from "@/components/Page";
 import Sidebar from "@/components/sidebar/Sidebar";
-import PreviewSidebarItem from "./PreviewSidebarItem";
-import KeyboardShortcutPreview from "./core/KeyboardShortcut.preview";
 import SidebarSection from "@/components/sidebar/SidebarSection";
+import PreviewSidebarItem from "./PreviewSidebarItem";
+import KBDPreview from "./core/KBD.preview";
 import SpacePreview from "./layouts/Space.preview";
 import SidebarPreview from "./sidebar/Sidebar.preview";
 import TooltipPreview from "./core/Tooltip.preview";
@@ -16,7 +16,7 @@ export function PreviewsApp() {
       <Sidebar>
         <SidebarSection label="components">
           <PreviewSidebarItem view="Tooltip" />
-          <PreviewSidebarItem view="KeyboardShortcut" />
+          <PreviewSidebarItem view="KBD" />
           <PreviewSidebarItem view="Sidebar" />
         </SidebarSection>
         <SidebarSection label="layouts">
@@ -24,7 +24,7 @@ export function PreviewsApp() {
         </SidebarSection>
       </Sidebar>
       <Page className="items-center">
-        {view === "KeyboardShortcut" && <KeyboardShortcutPreview />}
+        {view === "KBD" && <KBDPreview />}
         {view === "Space" && <SpacePreview />}
         {view === "Sidebar" && <SidebarPreview />}
         {view === "Tooltip" && <TooltipPreview />}

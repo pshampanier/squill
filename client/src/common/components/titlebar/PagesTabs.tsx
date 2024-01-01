@@ -20,7 +20,7 @@ function PagesTabs() {
   };
 
   return (
-    <div className="flex flex-row space-x-1 non-draggable">
+    <div className="flex flex-row w-full space-x-1 non-draggable">
       {pages.map((page) => {
         return (
           <Tab
