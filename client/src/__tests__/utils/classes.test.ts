@@ -9,6 +9,6 @@ test("useClasses", () => {
     /'dark:' should not be included/
   );
   expect(() => useClasses([{ light: "dark:bar ok", dark: "baz zag" }])).toThrow(
-    /Theme is 'light' but some classes contain 'dark:'/
+    /Modifier is 'light:' but some classes contain 'dark:'/
   );
 });

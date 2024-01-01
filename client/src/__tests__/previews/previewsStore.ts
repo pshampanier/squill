@@ -10,7 +10,7 @@ type Actions = {
 
 export const usePreviewsStore = create<State & Actions>((set) => {
   return {
-    view: "Tooltip",
+    view: "Switch",
 
     setView(view: string) {
       set((state) => ({ ...state, view: view }));

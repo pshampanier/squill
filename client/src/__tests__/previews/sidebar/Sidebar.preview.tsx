@@ -24,7 +24,7 @@ export default function SidebarPreview() {
   };
 
   return (
-    <PreviewBox title="Sidebar" className="">
+    <PreviewBox title="Sidebar" className="h-[460px]">
       <Sidebar>
         <SidebarSection label="Characters">
           <SidebarItem icon={FolderIcon} label="McFly" loaderfn={loaderfn} collapsible>

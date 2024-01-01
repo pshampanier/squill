@@ -6,7 +6,7 @@ import Main from "@/components/Main";
 
 export default function SpacePreview() {
   return (
-    <PreviewBox title="Space" className="">
+    <PreviewBox title="Space" className="h-[460px]">
       <div className="w-full min-h-full border border-dashed">
         <Space>
           <Titlebar>titlebar</Titlebar>

@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+[type="checkbox"]:checked,
+[type="radio"]:checked {
+  border-color: transparent;
+  background-color: currentColor;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  appearance: none;
+  display: inline-block;
+  vertical-align: middle;
+  user-select: none;
+}

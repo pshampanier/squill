@@ -1,17 +1,18 @@
-type Classes = string | { light: string; dark: string };
+type Modifier = "light" | "dark";
 
-function applyTheme(theme: "light" | "dark", classes: string) {
-  if (theme === "light" && classes.includes("dark:")) {
-    throw new Error("Theme is 'light' but some classes contain 'dark:'");
-  } else if (theme === "dark") {
+type Classes = string | { [key in Modifier]?: string };
+
+function applyModifier(classes: string, modifier?: Modifier) {
+  if (modifier && classes.includes(modifier + ":")) {
+    throw new Error(`Modifier '${modifier}:' should not be included: '${classes}`);
+  } else if (modifier === "light" && classes.includes("dark:")) {
+    throw new Error(`Modifier is '${modifier}:' but some classes contain 'dark:'`);
+  } else {
     classes = classes
       .split(" ")
       .map((c) => {
-        c = c.trim();
-        if (c.startsWith("dark:")) {
-          throw new Error("'dark:' should not be included: " + classes);
-        } else if (c.length > 0) {
-          return "dark:" + c;
+        if (c.length > 0) {
+          return modifier && modifier !== "light" ? modifier + ":" + c : c;
         }
       })
       .filter((v) => v != undefined)
@@ -24,9 +25,13 @@ export function useClasses(classes: Classes[]): string {
   return classes
     .map((c) => {
       if (typeof c === "string") {
-        return applyTheme("light", c);
-      } else if ( c !== undefined) {
-        return applyTheme("light", c.light) + " " + applyTheme("dark", c.dark);
+        return applyModifier(c);
+      } else if (typeof c === "object" && c !== null && !Array.isArray(c)) {
+        return Object.entries(c)
+          .map(([modifier, classes]) => {
+            return applyModifier(classes, modifier as Modifier);
+          })
+          .join(" ");
       }
     })
     .join(" ");
