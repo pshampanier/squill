@@ -1,7 +1,8 @@
-import { ReactNode, useEffect, useRef, useState } from "react";
-import ResizePanel from "@/components/core/ResizePanel";
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 import { registerAction, registerCommand, unregisterAction } from "@/utils/commands";
+import { ReactNode, useEffect, useRef, useState } from "react";
+
+import ResizePanel from "@/components/core/ResizePanel";
 import SidebarIcon from "@/icons/sidebar.svg?react";
 
 registerCommand({
@@ -57,13 +58,13 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
     };
   }, [visible]);
 
-  const asideClasses = useClasses([
+  const asideClasses = cx(
     "flex flex-row flex-none overflow-x-auto bg-gray-100",
     "transition-transform duration-500",
     visible ? "translate-x-0" : "-translate-x-full",
-    className,
-  ]);
-  const resizePanelClasses = useClasses([visible ? "block" : "hidden"]);
+    className
+  );
+  const resizePanelClasses = cx(visible ? "block" : "hidden");
 
   return (
     <>

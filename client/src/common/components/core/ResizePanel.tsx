@@ -1,4 +1,4 @@
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 import { useState } from "react";
 
 type ResizePanelProps = {
@@ -38,11 +38,11 @@ export default function ResizePanel({ width, minWidth, maxWidth, className, onRe
     event.currentTarget.releasePointerCapture(event.pointerId);
   };
 
-  const classes = useClasses([
+  const classes = cx(
     "flex flex-none w-1 border-l border-gray-200 bg-white",
     "hover:bg-blue-500 hover:border-blue-500 hover:cursor-col-resize  hover:transition-colors hover:delay-100 transition-all",
-    className,
-  ]);
+    className
+  );
 
   return (
     <div

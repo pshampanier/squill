@@ -1,4 +1,4 @@
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 import { ReactNode } from "react";
 
 type MainProps = {
@@ -7,11 +7,11 @@ type MainProps = {
 };
 
 export default function Main({ className, children }: MainProps) {
-  const classes = useClasses([
+  const classes = cx(
     "flex flex-auto",
     "min-w-0" /* workaround for the Monaco editor inside a flexbox (https://bit.ly/48ET02p) */,
     "transition-all duration-500" /* used by the sidebar when showing or hidding */,
-    className,
-  ]);
+    className
+  );
   return <main className={classes}>{children}</main>;
 }

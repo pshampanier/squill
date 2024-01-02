@@ -1,12 +1,12 @@
+import { cx } from "classix";
 import { ReactNode, useState } from "react";
 
-import Tooltip from "../core/Tooltip";
+import { Spinner } from "@/components/core/Spinner";
+import Tooltip from "@/components/core/Tooltip";
 
 import ChevronIcon from "@/icons/chevron-right.svg?react";
 import LockClosedIcon from "@/icons/lock-closed.svg?react";
 import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
-import { Spinner } from "../core/Spinner";
-import { useClasses } from "@/utils/classes";
 
 /**
  * @property label - the text to display for the item.
@@ -66,22 +66,18 @@ export default function SidebarItem({
       });
   };
 
-  const classes = useClasses([
-    // color transition on selected or hover
-    "transition-colors duration-300 transform",
+  const classes = cx(
     "flex items-center gap-x-2 py-2 px-2 w-full rounded-lg",
     "text-sm font-medium items-center",
-    {
-      // text color
-      light: locked ? "text-gray-400 hover:text-gray-700" : "text-gray-600",
-      dark: locked ? "text-gray-200 hover:text-gray-200" : "text-gray-600",
-    },
-    {
-      // background color
-      light: selected ? "bg-gray-200" : "hover:bg-gray-200",
-      dark: selected ? "bg-gray-100" : "hover:bg-gray-800",
-    },
-  ]);
+    // color transition on selected or hover
+    "transition-colors duration-300 transform",
+    // text color
+    locked ? "text-gray-400 hover:text-gray-700" : "text-gray-600",
+    locked ? "dark:text-gray-200 dark:hover:text-gray-200" : "dark:text-gray-600",
+    // background color
+    selected ? "bg-gray-200" : "hover:bg-gray-200",
+    selected ? "dark:bg-gray-100" : "dark:hover:bg-gray-800"
+  );
 
   return (
     <div>

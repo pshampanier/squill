@@ -1,4 +1,4 @@
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 import { ReactNode } from "react";
 
 type PageProps = {
@@ -7,6 +7,6 @@ type PageProps = {
 };
 
 export default function Page({ className, children }: PageProps) {
-  const classes = useClasses(["flex flex-col flex-grow flex-1 overflow-hidden h-full p-3", className]);
+  const classes = cx("flex flex-col flex-grow flex-1 overflow-hidden h-full p-3", className);
   return <div className={classes}>{children}</div>;
 }

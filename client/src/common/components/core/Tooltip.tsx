@@ -1,4 +1,4 @@
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 import { ReactNode } from "react";
 
 type Props = {
@@ -17,7 +17,7 @@ const defaultProps: Props = {
 };
 
 export default function Tooltip({ text, position, align, theme, children }: Props) {
-  const classes = useClasses([
+  const classes = cx(
     "absolute pointer-events-none shadow z-50",
     "w-max rounded px-2 py-1 text-sm font-medium text-gray-50",
     "opacity-0 group-hover:opacity-100 transition-opacity",
@@ -30,8 +30,8 @@ export default function Tooltip({ text, position, align, theme, children }: Prop
     }[position],
     position === "top" || position === "bottom"
       ? { start: "left-0", center: "left-1/2 transform -translate-x-1/2", end: "right-0" }[align]
-      : undefined,
-  ]);
+      : undefined
+  );
   return (
     <div className="group relative w-max">
       {children}

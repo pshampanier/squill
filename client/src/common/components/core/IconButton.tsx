@@ -1,4 +1,4 @@
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 
 type Props = {
   className?: string;
@@ -10,7 +10,7 @@ type Props = {
 export default function IconButton({ icon, onClick, className }: Props) {
   const Icon = icon;
 
-  const classes = useClasses(["flex items-center justify-center", className]);
+  const classes = cx("flex items-center justify-center", className);
 
   return (
     <button onClick={onClick} className={classes}>

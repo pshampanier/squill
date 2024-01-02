@@ -1,10 +1,10 @@
 import "github-markdown-css/github-markdown.css";
 import { editor as monacoEditor } from "monaco-editor";
+import { cx } from "classix";
 
 import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 import { editors } from "@/resources/editors";
-import { useClasses } from "@/utils/classes";
 import { useWorkspaceStore, WorkspacePage } from "@/stores/WorkspaceStore";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -77,11 +77,11 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
     return (
       <>
         <div
-          className={useClasses([
+          className={cx(
             "w-full h-full relative",
             "overflow-y-scroll markdown-body",
-            mode === "preview" ? "block" : "hidden",
-          ])}
+            mode === "preview" ? "block" : "hidden"
+          )}
         >
           <IconButton
             className="absolute top-1 right-5 z-50 text-blue-200"

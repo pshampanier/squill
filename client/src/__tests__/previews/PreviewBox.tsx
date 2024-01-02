@@ -1,4 +1,4 @@
-import { useClasses } from "@/utils/classes";
+import { cx } from "classix";
 
 type PreviewBoxProps = {
   className?: string;
@@ -6,7 +6,7 @@ type PreviewBoxProps = {
 };
 
 export default function PreviewBox({ className, children }: PreviewBoxProps) {
-  const classes = useClasses(["border border-gray-200 rounded w-full mt-2", className]);
+  const classes = cx("border border-gray-200 rounded w-full mt-2", className);
 
   return (
     <div className={classes}>
