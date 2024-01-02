@@ -58,7 +58,7 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   }, [visible]);
 
   const asideClasses = useClasses([
-    "flex flex-row flex-none overflow-x-scroll bg-gray-100",
+    "flex flex-row flex-none overflow-x-auto bg-gray-100",
     "transition-transform duration-500",
     visible ? "translate-x-0" : "-translate-x-full",
     className,
@@ -68,7 +68,7 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   return (
     <>
       <aside ref={sidebarRef} className={asideClasses} style={{ width: `${sidebarSize}px` }}>
-        <nav className="flex flex-col w-full space-y-1.5 mt-4 mb-4 px-5">{children}</nav>
+        <nav className="flex flex-col flex-grow space-y-1.5 mt-4 mb-4 px-5">{children}</nav>
         <ResizePanel
           className={resizePanelClasses}
           width={sidebarSize}
