@@ -3,7 +3,7 @@ import KBD from "@/components/core/KBD";
 
 export default function KBDPreview() {
   return (
-    <PreviewBox title="KeyboardShortcut">
+    <PreviewBox>
       <ul className="flex flex-col">
         <li className="flex flex-col">
           <KBD shortcut={"Meta+Alt+Shift+Ctrl"} />

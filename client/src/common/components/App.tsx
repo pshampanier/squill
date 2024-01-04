@@ -8,7 +8,7 @@ import { registerAction, unregisterAction } from "@/utils/commands";
 
 import UserSpace from "@/components/spaces/UserSpace";
 import WorkspaceSpace from "@/components/spaces/WorkspaceSpace";
-import SettingsSpace from "@/components/spaces/SettingsSpace";
+import SettingsSpace from "@/components/spaces/settings/SettingsSpace";
 
 export function App() {
   const agentUrl = useState(window.location.href.split("/").slice(0, -1).join("/"))[0];

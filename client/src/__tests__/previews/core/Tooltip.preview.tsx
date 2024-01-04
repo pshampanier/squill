@@ -3,7 +3,7 @@ import PreviewBox from "../PreviewBox";
 
 export default function TooltipPreview() {
   return (
-    <PreviewBox className="items-center" title="Tooltip">
+    <PreviewBox className="items-center">
       <div className="grid grid-cols-3 w-full">
         <div className="col-span-3 flex justify-center items-end">
           <Tooltip

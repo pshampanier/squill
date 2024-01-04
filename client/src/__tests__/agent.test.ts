@@ -1,31 +1,56 @@
 import { Agent } from "@/resources/agent";
-import { describe, test, expect, vi } from "vitest";
+import { test, expect, vi, afterEach } from "vitest";
 
-describe("logon", () => {
-  test.skip("valid login", async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      headers: {
-        get: () => {
-          return "application/json";
-        },
-      },
-      text: () => {
-        return Promise.resolve("{}");
-      },
-    });
-    await Agent.connect("http://localhost/" /* trailling '/' */).then((agent: Agent) => {
-      agent.logon();
-    });
-    expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/logon/default", {
-      method: "GET",
-    });
+afterEach(() => {
+  vi.fn().mockRestore();
+});
 
-    await Agent.connect("http://localhost" /* no trailling '/' */).then((agent: Agent) => {
-      agent.logon();
-    });
-    expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/logon/default", {
-      method: "GET",
-    });
+test("connect", async () => {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: {
+      get: () => {
+        return "application/json";
+      },
+    },
+    text: () => {
+      return Promise.resolve("{}");
+    },
   });
+
+  // with a trailling '/' at the end of the host
+  await Agent.connect("http://localhost/" /* trailling '/' */);
+  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent.json", {
+    method: "GET",
+  });
+
+  vi.fn().mockClear();
+
+  // without a trailling '/' at the end of the host
+  await Agent.connect("http://localhost" /* no trailling '/' */);
+  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent.json", {
+    method: "GET",
+  });
+});
+
+test("logon", async () => {
+  const agent = await Agent.connect("http://localhost");
+
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: {
+      get: () => {
+        return "application/json";
+      },
+    },
+    text: () => {
+      return Promise.resolve(JSON.stringify({ username: "local" }));
+    },
+  });
+
+  const user = await agent.logon({ method: "user_password", credentials: { username: "local", password: "" } });
+  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/users/local/user.json", {
+    method: "GET",
+  });
+  expect(user.username).toBe("local");
 });
