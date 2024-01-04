@@ -8,6 +8,7 @@ import SidebarPreview from "./sidebar/Sidebar.preview";
 import TooltipPreview from "./core/Tooltip.preview";
 import { usePreviewsStore } from "./previewsStore";
 import SwitchPreview from "./core/Switch.preview";
+import ButtonGroupPreview from "./core/ButtonGroup.preview";
 
 export function PreviewsApp() {
   const view = usePreviewsStore((state) => state.view);
@@ -16,6 +17,7 @@ export function PreviewsApp() {
     <>
       <Sidebar>
         <SidebarSection label="components">
+          <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="KBD" />
           <PreviewSidebarItem view="Sidebar" />
@@ -26,6 +28,7 @@ export function PreviewsApp() {
         </SidebarSection>
       </Sidebar>
       <Page className="flex flex-col items-center">
+        {view === "ButtonGroup" && <ButtonGroupPreview />}
         {view === "KBD" && <KBDPreview />}
         {view === "Sidebar" && <SidebarPreview />}
         {view === "Space" && <SpacePreview />}
