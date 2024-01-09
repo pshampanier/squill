@@ -46,7 +46,7 @@ export default function SettingsSpace() {
             <CommandButton command="sidebar.toggle" />
           </Toolbar>
           <Toolbar>
-            <Button icon={CloseIcon} onClick={handleClose} />
+            <Button icon={CloseIcon} onClick={handleClose} tooltip="Close the settings" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
