@@ -11,6 +11,8 @@ import SettingsIcon from "@/icons/settings.svg?react";
 import EditIcon from "@/icons/edit.svg?react";
 import { useState } from "react";
 import { SVGIcon } from "@/utils/types";
+import Button from "@/components/core/Button";
+import CommandButton from "@/components/core/CommandButton";
 
 type SettingsPageName = "general" | "text-editor";
 
@@ -41,10 +43,10 @@ export default function SettingsSpace() {
       <Space>
         <Titlebar>
           <Toolbar>
-            <Toolbar.CommandButton command="sidebar.toggle" />
+            <CommandButton command="sidebar.toggle" />
           </Toolbar>
           <Toolbar>
-            <Toolbar.IconButton icon={CloseIcon} onClick={handleClose} />
+            <Button icon={CloseIcon} onClick={handleClose} />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">

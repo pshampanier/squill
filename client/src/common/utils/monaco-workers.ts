@@ -1,4 +1,5 @@
 import * as monaco from "monaco-editor";
+import { PRIMARY_COLORS, rgbColor } from "./colors";
 
 self.MonacoEnvironment = {
   getWorker: function (_, label) {
@@ -25,3 +26,25 @@ self.MonacoEnvironment = {
 };
 
 monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
+
+/**
+ * Define custom themes for Monaco editor that match the primary colors of the application.
+ */
+
+monaco.editor.defineTheme("app-light-theme", {
+  base: "vs",
+  inherit: true,
+  rules: [],
+  colors: {
+    "editor.background": rgbColor(PRIMARY_COLORS, "background", "light"),
+  },
+});
+
+monaco.editor.defineTheme("app-dark-theme", {
+  base: "vs-dark",
+  inherit: true,
+  rules: [],
+  colors: {
+    "editor.background": rgbColor(PRIMARY_COLORS, "background", "dark"),
+  },
+});

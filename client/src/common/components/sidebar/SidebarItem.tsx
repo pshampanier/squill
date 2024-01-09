@@ -7,6 +7,7 @@ import Tooltip from "@/components/core/Tooltip";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
 import LockClosedIcon from "@/icons/lock-closed.svg?react";
 import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
+import { secondary as colors } from "@/utils/colors";
 
 /**
  * @property label - the text to display for the item.
@@ -68,15 +69,11 @@ export default function SidebarItem({
 
   const classes = cx(
     "flex items-center gap-x-2 py-2 px-2 w-full rounded-lg",
-    "text-sm font-medium items-center",
-    // color transition on selected or hover
+    "font-medium items-center",
     "transition-colors duration-300 transform",
-    // text color
-    locked ? "text-gray-400 hover:text-gray-700" : "text-gray-600",
-    locked ? "dark:text-gray-200 dark:hover:text-gray-200" : "dark:text-gray-600",
-    // background color
-    selected ? "bg-gray-200" : "hover:bg-gray-200",
-    selected ? "dark:bg-gray-100" : "dark:hover:bg-gray-800"
+    colors("hover:ghost-background", "hover:ghost-text"),
+    locked && "opacity-50",
+    selected && colors("selected:ghost-background")
   );
 
   return (

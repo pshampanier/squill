@@ -9,8 +9,10 @@ import PageLoader from "@/components/PageLoader";
 
 import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
+import { useUserStore } from "@/stores/UserStore";
 
 const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
+  const colorScheme = useUserStore((state) => state.colorScheme);
   const setModified = useWorkspaceStore((state) => state.setModified);
   const [pageState, setPageState] = useState<"loading" | "ready">("loading");
   const [content, setContent] = useState<string>("");
@@ -54,7 +56,7 @@ const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) =
       <MonacoEditor
         className="w-full h-full"
         language="sql"
-        theme={"vs-" + currentUser.settings.theme}
+        theme={`app-${colorScheme}-theme`}
         value={content}
         options={options}
         onChange={handleOnChange}

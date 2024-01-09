@@ -1,4 +1,5 @@
 import { User, UserApplicationSpace, UserCollectionItem, UserCollectionLink } from "@/resources/user/user";
+import { UserSettings } from "@/resources/user/user-settings";
 import { create } from "zustand";
 
 type UserStoreApplicationSpace = "connection" | "logon" | UserApplicationSpace;
@@ -7,34 +8,45 @@ type UserStoreApplicationSpace = "connection" | "logon" | UserApplicationSpace;
 export type UserStoreCollectionLink = UserCollectionLink;
 
 type State = {
-  sidebarSize: number;
+  /**
+   * The current color scheme of the application.
+   * This value is calculated based on the user settings & the system preferences. It's not the same as the state
+   * settings.colorScheme which can also be "auto". Any component that need to explicitly use the color scheme rather
+   * than relying on the CSS classes should use this value.
+   */
+  colorScheme: "light" | "dark";
   activeSpace: UserStoreApplicationSpace;
-  userCollections: Readonly<UserCollectionItem>[];
+
+  settings: Readonly<UserSettings>;
+  collections: Readonly<UserCollectionItem>[];
   recentlyOpened: UserStoreCollectionLink[];
 };
 
 type Actions = {
   reset: () => void;
   setActiveSpace: (activeSpace: UserStoreApplicationSpace) => void;
-  setUserCollectionItems: (userCollections: UserCollectionItem[]) => void;
-  resizeSidebar: (width: number) => void;
+  setCollectionItems: (collections: UserCollectionItem[]) => void;
+  setColorScheme: (colorScheme: "light" | "dark") => void;
 };
 
 export const useUserStore = create<State & Actions>((set) => {
   // User is a mutable object so we are keeping it out of the store.
 
   return {
-    sidebarSize: 256,
+    colorScheme: UserSettings.calculateColorScheme("auto"),
     activeSpace: "connection",
-    userCollections: [],
+    settings: null,
+    collections: [],
     recentlyOpened: [],
 
     reset() {
       const user = User.current;
       set((state) => ({
         ...state,
+        colorScheme: UserSettings.calculateColorScheme(user.settings.colorScheme),
         activeSpace: "user",
-        userCollections: user.collections.map((c) => c.clone()),
+        settings: user.settings.clone(),
+        collections: user.collections.map((c) => c.clone()),
       }));
     },
 
@@ -42,12 +54,12 @@ export const useUserStore = create<State & Actions>((set) => {
       set((state) => ({ ...state, activeSpace: activeSpace }));
     },
 
-    setUserCollectionItems(userCollections: UserCollectionItem[]) {
-      set((state) => ({ ...state, userCollections: userCollections.map((c) => c.clone()) }));
+    setCollectionItems(collections: UserCollectionItem[]) {
+      set((state) => ({ ...state, collections: collections.map((c) => c.clone()) }));
     },
 
-    resizeSidebar(width: number) {
-      set((state) => ({ ...state, sidebarSize: width }));
+    setColorScheme(colorScheme: "light" | "dark") {
+      set((state) => ({ ...state, colorScheme: colorScheme }));
     },
   };
 });

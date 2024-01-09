@@ -9,19 +9,20 @@ import Titlebar from "@/components/titlebar/Titlebar";
 import Space from "@/components/spaces/Space";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
+import CommandButton from "../core/CommandButton";
 
 export default function UserSpace() {
   console.debug("Rendering UserSpace");
-  const userCollections = useUserStore((state) => state.userCollections);
+  const userCollections = useUserStore((state) => state.collections);
   return (
     <>
       <Space>
         <Titlebar>
           <Toolbar>
-            <Toolbar.CommandButton command="sidebar.toggle" />
+            <CommandButton command="sidebar.toggle" />
           </Toolbar>
           <Toolbar>
-            <Toolbar.CommandButton command="settings" />
+            <CommandButton command="settings" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">

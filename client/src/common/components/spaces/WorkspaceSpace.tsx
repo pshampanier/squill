@@ -13,6 +13,7 @@ import PagesTabs from "@/components/titlebar/PagesTabs";
 import PageLinks from "@/components/PageLinks";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
+import CommandButton from "@/components/core/CommandButton";
 
 export default function WorkspaceSpace() {
   console.debug("Rendering WorkspaceSpace");
@@ -24,11 +25,11 @@ export default function WorkspaceSpace() {
       <Space>
         <Titlebar>
           <Toolbar>
-            <Toolbar.CommandButton command="sidebar.toggle" />
+            <CommandButton command="sidebar.toggle" />
           </Toolbar>
           <PagesTabs />
           <Toolbar>
-            <Toolbar.CommandButton command="settings" />
+            <CommandButton command="settings" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">

@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 
 import ResizePanel from "@/components/core/ResizePanel";
 import SidebarIcon from "@/icons/sidebar.svg?react";
+import { secondary as colors } from "@/utils/colors";
 
 registerCommand({
   name: "sidebar.toggle",
@@ -59,8 +60,10 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   }, [visible]);
 
   const asideClasses = cx(
-    "flex flex-row flex-none overflow-x-auto bg-gray-100",
+    "flex flex-row flex-none overflow-y-hidden overflow-x-hidden",
+    "text-sm",
     "transition-transform duration-500",
+    colors("background", "text"),
     visible ? "translate-x-0" : "-translate-x-full",
     className
   );
@@ -69,7 +72,7 @@ export default function Sidebar({ size, className, children }: SidebarProps) {
   return (
     <>
       <aside ref={sidebarRef} className={asideClasses} style={{ width: `${sidebarSize}px` }}>
-        <nav className="flex flex-col flex-grow space-y-1.5 mt-4 mb-4 px-5">{children}</nav>
+        <nav className="flex flex-col flex-grow space-y-1.5 mt-4 mb-4 px-5 overflow-y-scroll">{children}</nav>
         <ResizePanel
           className={resizePanelClasses}
           width={sidebarSize}

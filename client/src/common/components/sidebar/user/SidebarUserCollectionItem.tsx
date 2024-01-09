@@ -18,7 +18,7 @@ export default function SidebarUserCollectionItem({ item }: SidebarUserFolderPro
     label: item.name,
   };
 
-  const setUserCollectionItems = useUserStore((state) => state.setUserCollectionItems);
+  const setUserCollectionItems = useUserStore((state) => state.setCollectionItems);
   const setActiveSpace = useUserStore((state) => state.setActiveSpace);
   const reset = useWorkspaceStore((state) => state.reset);
 

@@ -31,8 +31,15 @@ export default function SwitchPreview() {
         <Preview.Title>Disabled</Preview.Title>
         <Preview.Description>Disabled switch.</Preview.Description>
         <PreviewBox>
-          <div className="flex flex-col space-y-2">
-            <Switch size="md" disabled />
+          <div className="flex flex-col space-y-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-2">
+              <Switch id="label-unchecked-disabled" disabled />{" "}
+              <label htmlFor="label-unchecked-disabled">Unchecked</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch size="md" id="label-checked-disabled" defaultChecked disabled />{" "}
+              <label htmlFor="label-checked-disabled">Checked</label>
+            </div>
           </div>
         </PreviewBox>
       </Preview>

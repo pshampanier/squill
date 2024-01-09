@@ -2,7 +2,10 @@ type Plateform = "windows" | "macos" | "linux" | "unknown";
 
 export class Env {
   readonly plateform: Plateform = this.detectPlateform();
-  readonly colorScheme: "light" | "dark" = this.detectColorScheme();
+
+  get colorScheme(): "light" | "dark" {
+    return this.detectColorScheme();
+  }
 
   /**
    * Detect the plateform using the web hints if available, otherwise fallback to the navigator.

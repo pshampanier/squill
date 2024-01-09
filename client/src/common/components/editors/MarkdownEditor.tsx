@@ -6,6 +6,7 @@ import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 import { editors } from "@/resources/editors";
 import { useWorkspaceStore, WorkspacePage } from "@/stores/WorkspaceStore";
+import { useUserStore } from "@/stores/UserStore";
 
 import React, { useEffect, useState, useRef } from "react";
 
@@ -13,17 +14,18 @@ import MonacoEditor from "react-monaco-editor";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import IconButton from "@/components/core/IconButton";
 import PageLoader from "@/components/PageLoader";
 
 import MarkdownIcon from "@/icons/markdown-file.svg?react";
 import EditCommandIcon from "@/icons/edit.svg?react";
 import PreviewCommandIcon from "@/icons/preview.svg?react";
+import Button from "../core/Button";
 
 const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");
   const [content, setContent] = useState<string>("");
   const setModified = useWorkspaceStore((state) => state.setModified);
+  const colorScheme = useUserStore((state) => state.colorScheme);
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
   const initialContent = useRef<string>();
   const modified = useRef<boolean>(false);
@@ -79,24 +81,30 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
         <div
           className={cx(
             "w-full h-full relative",
-            "overflow-y-scroll markdown-body",
+            "overflow-y-scroll markdown-body bg-transparent",
             mode === "preview" ? "block" : "hidden"
           )}
         >
-          <IconButton
-            className="absolute top-1 right-5 z-50 text-blue-200"
+          <Button
+            className="absolute top-1 right-5 z-50"
             icon={EditCommandIcon}
             onClick={handleShowEditor}
+            type="ghost"
           />
           <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
         </div>
 
         <div className={"relative w-full h-full " + (mode === "editor" ? "block" : "hidden")}>
-          <IconButton className="absolute top-1 right-5 z-50" icon={PreviewCommandIcon} onClick={handleShowPreview} />
+          <Button
+            className="absolute top-1 right-5 z-50"
+            icon={PreviewCommandIcon}
+            onClick={handleShowPreview}
+            type="ghost"
+          />
           <MonacoEditor
             className="w-full h-full"
             language="markdown"
-            theme={"vs-" + User.current.settings.theme}
+            theme={`app-${colorScheme}-theme`}
             value={content}
             options={options}
             editorDidMount={(editor) => {

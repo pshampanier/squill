@@ -250,7 +250,6 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
       /* c8 ignore start */
       if (!items) {
         raise(`The 'items' option is required for the decoration @serialise("array")`);
-        throw new SyntaxError(`The 'items' option is required for the decoration @serialise("array")`);
       }
       /* c8 ignore end */
       return (value: unknown, key: string | number) => {

@@ -1,6 +1,8 @@
 import cx from "classix";
 import { SVGIcon } from "@/utils/types";
 import React, { createContext, useContext, useRef, useState } from "react";
+import { assert } from "@/utils/telemetry";
+import { secondary as colors } from "@/utils/colors";
 
 type ButtonGroupProps = {
   children: React.ReactNode;
@@ -43,6 +45,9 @@ function ButtonGroup({ children, size, defaultValue, disabled, onChange }: Butto
   const values = React.Children.count(children);
   const valueIndex = childrenNames.current.indexOf(value);
 
+  assert(valueIndex !== -1, "ButtonGroup: value prop must be one of the children's name");
+  assert(values > 0 && values <= 12, "ButtonGroup: must have at least one child and at most 12 children");
+
   const gridSize = [
     "grid-cols-1",
     "grid-cols-2",
@@ -65,8 +70,10 @@ function ButtonGroup({ children, size, defaultValue, disabled, onChange }: Butto
     size === "lg" && "h-9"
   );
 
+  // the span element is used to display the selected button
   const spanClasses = cx(
-    disabled ? "bg-gray-300" : "bg-blue-600",
+    colors("selected:background"),
+    disabled && "disabled:opacity-50 disabled:pointer-events-none",
     "absolute rounded-md shadow-sm",
     "transition-all ease-in-out duration-200",
     size === "xs" && "h-[22px]",
@@ -79,10 +86,7 @@ function ButtonGroup({ children, size, defaultValue, disabled, onChange }: Butto
     left: `calc((100% / ${values}) * ${valueIndex})`,
   };
 
-  const divClasses = cx(
-    "relative bg-gray-100 rounded-lg transition p-1 dark:bg-gray-700",
-    !disabled && "hover:bg-gray-200 dark:hover:bg-gray-700"
-  );
+  const divClasses = cx("relative rounded-lg transition p-1 flex-shrink-0", colors("background", "text"));
 
   return (
     <div className={divClasses}>
@@ -103,17 +107,18 @@ type ButtonGroupItemProps = {
   disabled?: boolean;
   onClick?: (name: string) => void;
 };
+
 function ButtonGroupItem({ name, label, icon, disabled, onClick }: ButtonGroupItemProps) {
   const { value } = useContext(ButtonGroupContext);
   const selected = value === name;
   const classes = cx(
-    !disabled && selected && "text-white dark:bg-gray-800 dark:text-gray-400",
-    !disabled && !selected && "hover:text-gray-700 dark:hover:text-white",
-    disabled && "text-gray-400",
-    "flex flex-row items-center text-xs font-medium whitespace-nowrap text-ellipsis overflow-hidden",
-    "bg-transparent rounded-md px-3",
-    "dark:text-gray-400 z-50",
-    "transition-colors ease-in-out duration-200"
+    "flex flex-row items-center justify-center text-xs font-medium whitespace-nowrap text-ellipsis overflow-hidden",
+    "rounded-md px-3 z-50",
+    "transition-colors ease-in-out duration-200",
+    selected && colors("selected:text"),
+    !selected && colors("hover:text", "hover:background"),
+    !selected && "hover:bg-opacity-30 dark:hover:bg-opacity-30",
+    disabled && "disabled:opacity-50 disabled:pointer-events-none"
   );
   const handleClick = () => {
     if (onClick) {
