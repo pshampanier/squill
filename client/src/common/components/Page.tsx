@@ -7,6 +7,6 @@ type PageProps = {
 };
 
 export default function Page({ className, children }: PageProps) {
-  const classes = cx("flex flex-col flex-grow flex-1 overflow-hidden h-full p-3 dark:bg-gray-800", className);
+  const classes = cx("flex flex-col flex-grow flex-1 overflow-hidden h-full dark:bg-gray-800", className);
   return <div className={classes}>{children}</div>;
 }

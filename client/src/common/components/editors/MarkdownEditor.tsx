@@ -80,7 +80,7 @@ const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page
       <>
         <div
           className={cx(
-            "w-full h-full relative",
+            "w-full h-full relative p-2",
             "overflow-y-scroll markdown-body bg-transparent",
             mode === "preview" ? "block" : "hidden"
           )}
