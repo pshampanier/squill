@@ -5,10 +5,14 @@ type SwitchProps = {
   size?: "xs" | "sm" | "md" | "lg";
   defaultChecked?: boolean;
   disabled?: boolean;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange?: (value: boolean) => void;
 };
 
 export default function Switch({ id, size, defaultChecked, disabled, onChange }: SwitchProps) {
+  const handleOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    onChange && onChange(event.target.checked);
+  };
+
   const classes = cx(
     size === "xs" && "w-[40px] h-[22px] before:w-[18px] before:h-[18px]",
     size === "sm" && "w-11 h-6 before:w-5 before:h-5",
@@ -35,7 +39,7 @@ export default function Switch({ id, size, defaultChecked, disabled, onChange }:
       className={classes}
       disabled={disabled}
       defaultChecked={defaultChecked}
-      onChange={onChange}
+      onChange={handleOnChange}
     />
   );
 }

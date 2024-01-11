@@ -21,7 +21,7 @@ Button.defaultProps = {
 export default function Button({ type, className, icon, text, tooltip, onClick, colors, disabled }: ButtonProps) {
   colors = colors || useContext(ColorsContext) || primary;
   const classes = cx(
-    "flex flex-row h-9 items-center space-x-1 p-2 rounded box-border border-2",
+    "flex flex-row h-9 items-center space-x-1 p-2 rounded box-border border-2 text-sm",
     colors("text"),
     (type === "solid" || type === "ghost") && "border-transparent",
     type === "solid" && colors("selected:background", "selected:text", "hover:background", "hover:text"),
