@@ -1,4 +1,3 @@
-import { WorkspacePage } from "@/stores/WorkspaceStore";
 import { SVGIcon } from "@/utils/types";
 
 export type Editor = {
@@ -20,7 +19,7 @@ export type Editor = {
   /**
    * The Readt component to be used for the editor.
    */
-  readonly component: React.FunctionComponent<{ page: WorkspacePage }>;
+  readonly component: React.FunctionComponent<{ pageId: string }>;
 };
 
 export const editors = (function () {

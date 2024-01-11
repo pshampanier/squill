@@ -5,7 +5,7 @@ import { cx } from "classix";
 import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 import { editors } from "@/resources/editors";
-import { useWorkspaceStore, WorkspacePage } from "@/stores/WorkspaceStore";
+import { useWorkspaceStore } from "@/stores/WorkspaceStore";
 import { useUserStore } from "@/stores/UserStore";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -21,10 +21,11 @@ import EditCommandIcon from "@/icons/edit.svg?react";
 import PreviewCommandIcon from "@/icons/preview.svg?react";
 import Button from "../core/Button";
 
-const MarkdownEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
+const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");
   const [content, setContent] = useState<string>("");
   const setModified = useWorkspaceStore((state) => state.setModified);
+  const page = useWorkspaceStore((state) => state.pages.find((page) => page.id === pageId));
   const colorScheme = useUserStore((state) => state.colorScheme);
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
   const initialContent = useRef<string>();

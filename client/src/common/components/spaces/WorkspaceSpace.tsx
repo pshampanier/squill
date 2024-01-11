@@ -41,7 +41,7 @@ export default function WorkspaceSpace() {
             </SidebarSection>
             <SidebarSection label="explorer">
               {collections.map((item: CollectionItem<WorkspaceCollectionItemType>) => {
-                return <SidebarWorkspaceCollectionItem key={item.id} item={item} />;
+                return <SidebarWorkspaceCollectionItem key={item.id} itemId={item.id} />;
               })}
             </SidebarSection>
           </Sidebar>

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { editors } from "@/resources/editors";
 
-import { WorkspacePage, useWorkspaceStore } from "@/stores/WorkspaceStore";
+import { useWorkspaceStore } from "@/stores/WorkspaceStore";
 
 import SqlIcon from "@/icons/sql-file.svg?react";
 import MonacoEditor from "react-monaco-editor";
@@ -11,9 +11,10 @@ import { User } from "@/resources/user/user";
 import { Workspace } from "@/resources/workspace/workspace";
 import { useUserStore } from "@/stores/UserStore";
 
-const SqlEditor: React.FunctionComponent<{ page: WorkspacePage }> = ({ page }) => {
+const SqlEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
   const colorScheme = useUserStore((state) => state.colorScheme);
   const setModified = useWorkspaceStore((state) => state.setModified);
+  const page = useWorkspaceStore((state) => state.pages.find((page) => page.id === pageId));
   const [pageState, setPageState] = useState<"loading" | "ready">("loading");
   const [content, setContent] = useState<string>("");
   const initialContent = useRef<string>();

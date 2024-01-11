@@ -5,11 +5,12 @@ import { useWorkspaceStore } from "@/stores/WorkspaceStore";
 import SidebarItem from "../SidebarItem";
 import FolderIcon from "@/icons/folder.svg?react";
 
-type SidebarWorkspaceCollectionItem = {
-  item: Readonly<WorkspaceCollectionItem>;
+type SidebarWorkspaceCollectionItemProps = {
+  itemId: string;
 };
 
-export default function SidebarWorkspaceCollectionItem({ item }: SidebarWorkspaceCollectionItem) {
+export default function SidebarWorkspaceCollectionItem({ itemId }: SidebarWorkspaceCollectionItemProps) {
+  const { item } = useWorkspaceStore((state) => state.getCollectionItemById(itemId));
   const setCollections = useWorkspaceStore((state) => state.setCollections);
   const setActivePage = useWorkspaceStore((state) => state.setActivePage);
   const setActiveId = useWorkspaceStore((state) => state.setActiveId);
@@ -17,18 +18,18 @@ export default function SidebarWorkspaceCollectionItem({ item }: SidebarWorkspac
   const activeId = useWorkspaceStore((state) => state.activeId);
   const activePageId = useWorkspaceStore((state) => state.activePageId);
   const replaceActivePage = useWorkspaceStore((state) => state.replaceActivePage);
-  const page = useWorkspaceStore((state) => state.pages.find((page) => page.itemId === item.id));
+  const page = useWorkspaceStore((state) => state.pages.find((page) => page.itemId === itemId));
   const activePage = useWorkspaceStore((state) => state.pages.find((page) => page.id === activePageId));
 
   const openFolder = async (): Promise<void> => {
     const workspace = Workspace.current;
-    await workspace.loadFolder(item.id);
+    await workspace.loadFolder(itemId);
     setCollections(workspace.collections);
-    setActiveId(item.id);
+    setActiveId(itemId);
   };
 
   const openFile = async (): Promise<void> => {
-    if (activeId !== item.id) {
+    if (activeId !== itemId) {
       if (page) {
         // Already opened, we just need to activate it
         setActivePage(page.id);
@@ -66,7 +67,7 @@ export default function SidebarWorkspaceCollectionItem({ item }: SidebarWorkspac
     return (
       <SidebarItem {...itemProps} loaderfn={openFolder} icon={FolderIcon} collapsible>
         {item.children?.map((child: WorkspaceCollectionItem) => {
-          return <SidebarWorkspaceCollectionItem key={child.id} item={child} />;
+          return <SidebarWorkspaceCollectionItem key={child.id} itemId={child.id} />;
         })}
       </SidebarItem>
     );

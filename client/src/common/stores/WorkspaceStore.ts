@@ -1,6 +1,7 @@
+import { CollectionItem } from "@/resources/collection-item";
 import { Editor } from "@/resources/editors";
 import { Environment } from "@/resources/workspace/environment";
-import { Workspace, WorkspaceCollectionItem } from "@/resources/workspace/workspace";
+import { Workspace, WorkspaceCollectionItem, WorkspaceCollectionItemType } from "@/resources/workspace/workspace";
 import { create } from "zustand";
 
 export type WorkspacePage = {
@@ -39,6 +40,7 @@ type Actions = {
   setModified: (pageId: string, modified: boolean) => void;
   replaceActivePage: (itemId: string, title: string, editor: Editor) => void;
   findPage(callbackFn: (page: WorkspacePage) => boolean): WorkspacePage | undefined;
+  getCollectionItemById(id: string): { path: string[]; item: WorkspaceCollectionItem };
 };
 
 const initialState: State = {
@@ -170,6 +172,10 @@ export const useWorkspaceStore = create<State & Actions>((set, get) => {
 
     findPage(predicate: (page: WorkspacePage) => boolean): WorkspacePage | undefined {
       return get().pages.find(predicate);
+    },
+
+    getCollectionItemById(id: string): { path: string[]; item: WorkspaceCollectionItem } {
+      return CollectionItem.find<WorkspaceCollectionItemType>(get().collections, id);
     },
   };
 });

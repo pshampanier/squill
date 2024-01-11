@@ -12,7 +12,7 @@ export default function Editor() {
     const classes = cx("w-full h-full", page.id === activePageId ? "block" : "hidden");
     return (
       <Page key={"editor-" + page.id} className={classes}>
-        <EditorComponent key={page.id} page={page} />
+        <EditorComponent key={page.id} pageId={page.id} />
       </Page>
     );
   });
