@@ -1,4 +1,6 @@
 import Page from "@/components/Page";
+import { primary as colors } from "@/utils/colors";
+import cx from "classix";
 
 type SettingsPageProps = {
   title: string;
@@ -22,7 +24,7 @@ type SettingProps = {
 
 function Setting({ title, description, children }: SettingProps) {
   return (
-    <div className="flex flex-row border-t py-2">
+    <div className={cx("flex flex-row border-t py-2", colors("border"))}>
       <div className="flex flex-col space-y-1">
         <div>{title}</div>
         <div className="text-xs">{description}</div>

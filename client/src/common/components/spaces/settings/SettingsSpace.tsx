@@ -3,6 +3,7 @@ import { SVGIcon } from "@/utils/types";
 import { UserSettings } from "@/resources/user/user-settings";
 import { primary as colors } from "@/utils/colors";
 import equal from "deep-equal";
+import cx from "classix";
 
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarItem from "@/components/sidebar/SidebarItem";
@@ -91,12 +92,12 @@ export default function SettingsSpace() {
               })}
             </SidebarSection>
           </SpaceSidebar>
-          <Main className={colors("text")}>
+          <Main className={colors("background", "text")}>
             <div className="flex flex-col items-center w-full">
               <div className="flex flex-col w-3/4 p-8 min-w-[600px] h-full">
                 {selectedPage === "general" && <SettingsPageGeneral />}
                 {selectedPage === "text-editor" && <SettingsPageEditor />}
-                <div className="flex flex-row justify-end space-x-1 border-t pt-4">
+                <div className={cx("flex flex-row justify-end space-x-1 border-t pt-4", colors("border"))}>
                   <Button text="Cancel" type="outline" onClick={handleClose} />
                   <Button text="Apply" type="solid" disabled={!modified} />
                 </div>
