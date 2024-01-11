@@ -1,5 +1,5 @@
 import { cx } from "classix";
-import { ReactNode, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 
 import { Spinner } from "@/components/core/Spinner";
 import Tooltip from "@/components/core/Tooltip";
@@ -8,6 +8,7 @@ import ChevronIcon from "@/icons/chevron-right.svg?react";
 import LockClosedIcon from "@/icons/lock-closed.svg?react";
 import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
 import { secondary as colors } from "@/utils/colors";
+import { registerAction, unregisterAction } from "@/utils/commands";
 
 /**
  * @property label - the text to display for the item.
@@ -67,6 +68,24 @@ export default function SidebarItem({
       });
   };
 
+  // We need to use a ref to store the function because we need to register it as a command action, and we would be able
+  // unregister it later if the component was re-rendered (renamed would be a different function instance)
+  const rename = useRef(() => {
+    return;
+  });
+
+  const handleFocus = () => {
+    console.log("registering sidebar.rename");
+    registerAction("sidebar.rename", rename.current);
+    return;
+  };
+
+  const handleBlur = () => {
+    console.log("unregistering sidebar.rename");
+    unregisterAction("sidebar.rename", rename.current);
+    return;
+  };
+
   const classes = cx(
     "flex items-center gap-x-2 py-2 px-2 w-full rounded-lg",
     "font-medium items-center",
@@ -78,7 +97,7 @@ export default function SidebarItem({
 
   return (
     <div>
-      <button className={classes} onClick={handleClick}>
+      <button className={classes} onClick={handleClick} onFocus={handleFocus} onBlur={handleBlur}>
         {Icon && <Icon className="w-5 h-5" />}
         <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
         <span className="flex ml-auto gap-x-1 items-center">

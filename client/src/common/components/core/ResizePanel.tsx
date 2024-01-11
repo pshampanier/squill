@@ -7,12 +7,17 @@ type ResizePanelProps = {
   minWidth?: number;
   maxWidth?: number;
   className?: string;
-  onResize: (width: number) => void;
+  onResize?: (width: number) => void;
+  onResizeEnd?: (width: number) => void;
 };
 
-export default function ResizePanel({ width, minWidth, maxWidth, className, onResize }: ResizePanelProps) {
+export default function ResizePanel({ width, minWidth, maxWidth, className, onResize, onResizeEnd }: ResizePanelProps) {
   const [dragging, setDragging] = useState(false);
   const [dragStartAt, setDragStartAt] = useState(0);
+
+  const calculateWidth = (event: React.PointerEvent<HTMLDivElement>) => {
+    return width + event.clientX - dragStartAt;
+  };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     setDragging(true);
@@ -21,15 +26,17 @@ export default function ResizePanel({ width, minWidth, maxWidth, className, onRe
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging) return;
-    const dragAmount = event.clientX - dragStartAt;
-    if (minWidth && width + dragAmount < minWidth) {
+    if (!dragging || !onResize) return;
+    const width = calculateWidth(event);
+    if (minWidth && width < minWidth) {
       event.currentTarget.style.cursor = "e-resize";
-    } else if (maxWidth && width + dragAmount > maxWidth) {
+      onResize(minWidth);
+    } else if (maxWidth && width > maxWidth) {
       event.currentTarget.style.cursor = "w-resize";
+      onResize(maxWidth);
     } else {
       event.currentTarget.style.cursor = "col-resize";
-      onResize(width + dragAmount);
+      onResize(width);
       setDragStartAt(event.clientX); // reset drag start for the next move
     }
   };
@@ -37,6 +44,9 @@ export default function ResizePanel({ width, minWidth, maxWidth, className, onRe
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
     setDragging(false);
     event.currentTarget.releasePointerCapture(event.pointerId);
+    if (onResizeEnd) {
+      onResizeEnd(Math.max(minWidth, Math.min(maxWidth, calculateWidth(event))));
+    }
   };
 
   const classes = cx(

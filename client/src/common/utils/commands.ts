@@ -1,4 +1,6 @@
 import { KeyboardShortcut, SVGIcon } from "@/utils/types";
+import { env } from "@/utils/env";
+import { raise } from "@/utils/telemetry";
 import SettingsIcon from "@/icons/settings.svg?react";
 
 type CommandAction = () => void;
@@ -33,7 +35,12 @@ export function registerCommand(...command: Command[]) {
       // a bug and should be fixed) or the module has been reloaded (hot reload in debug).
       console.warn(`Command '${c.name}' already registered`);
     } else {
-      commands[c.name] = { ...c, actions: [] };
+      let shortcut = c.shortcut;
+      if (Array.isArray(shortcut)) {
+        // If the shortcut differs between macOS and Windows/Linux, we keep only the shortcut for the current plateform.
+        shortcut = shortcut[env.plateform === "macos" ? 0 : 1];
+      }
+      commands[c.name] = { ...c, shortcut: shortcut, actions: [] };
     }
   });
 }
@@ -41,7 +48,7 @@ export function registerCommand(...command: Command[]) {
 export function getCommand(name: string): Command {
   const command = commands[name];
   if (!command) {
-    throw new Error(`Command '${name}' not registered`);
+    raise(`Command '${name}' not registered`);
   } else {
     return command;
   }
@@ -50,9 +57,9 @@ export function getCommand(name: string): Command {
 export function registerAction(command: string, callback: CommandAction) {
   const c = commands[command];
   if (!c) {
-    throw new Error(`Command '${command}' not registered`);
+    raise(`Command '${command}' not registered`);
   } else if (c.actions.includes(callback)) {
-    throw new Error(`The given action is already registered for the command '${command}'`);
+    raise(`The given action is already registered for the command '${command}'`);
   } else {
     c.actions.push(callback);
   }
@@ -61,11 +68,11 @@ export function registerAction(command: string, callback: CommandAction) {
 export function unregisterAction(command: string, callback: CommandAction) {
   const c = commands[command];
   if (!c) {
-    throw new Error(`Command '${command}' not registered`);
+    raise(`Command '${command}' not registered`);
   } else {
     const index = c.actions.indexOf(callback);
     if (index === -1) {
-      throw new Error(`The given action is not registered for the command '${command}'`);
+      raise(`The given action is not registered for the command '${command}'`);
     } else {
       c.actions.splice(index, 1);
     }
@@ -75,10 +82,46 @@ export function unregisterAction(command: string, callback: CommandAction) {
 export function executeCommand(name: string) {
   const c = commands[name];
   if (!c) {
-    throw new Error(`Command '${name}' not registered`);
+    raise(`Command '${name}' not registered`);
   } else {
-    c.actions.forEach((action) => action());
+    executeActions(c.actions);
   }
+}
+
+export function registerGlobalKeyListeners() {
+  window.addEventListener("keydown", (event) => {
+    // If the shortcut involves a combinaison of modifier keys, the order is: Ctrl, Alt, Shift, Meta.
+    const shortcut = getShortcut(event);
+    if (shortcut) {
+      const command = Object.values(commands).find((c) => c.shortcut === shortcut);
+      if (command) {
+        event.preventDefault();
+        executeActions(command.actions);
+      }
+    }
+  });
+}
+
+/**
+ * Transform a KeyboardEvent into a shortcut string.
+ *
+ * @param event the KeyboardEvent to transform.
+
+* @returns a string representing the shortcut (ex: "Alt+Meta+F") or null if the event does not represent a shortcut.
+ */
+function getShortcut(event: KeyboardEvent): string {
+  if (!event.key) return null; // A shortcut must have a key.
+  const keys: string[] = [];
+  event.ctrlKey && keys.push("Ctrl");
+  event.altKey && keys.push("Alt");
+  event.shiftKey && keys.push("Shift");
+  event.metaKey && keys.push("Meta");
+  keys.push(event.key.length === 1 ? event.key.toUpperCase() : event.key);
+  return keys.join("+");
+}
+
+function executeActions(actions: CommandAction[]) {
+  actions.forEach((action) => action());
 }
 
 registerCommand(
@@ -87,3 +130,5 @@ registerCommand(
   { name: "clipboard.cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
   { name: "settings", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon }
 );
+
+registerGlobalKeyListeners();

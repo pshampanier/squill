@@ -2,7 +2,6 @@ import { useWorkspaceStore } from "@/stores/WorkspaceStore";
 import { Environment } from "@/resources/workspace/environment";
 import { CollectionItem } from "@/resources/collection-item";
 import { WorkspaceCollectionItemType } from "@/resources/workspace/workspace";
-import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarEnvironmentItem from "@/components/sidebar/workspace/SidebarEnvironmentItem";
 import SidebarWorkspaceCollectionItem from "@/components/sidebar/workspace/SidebarWorkspaceCollectionItem";
@@ -14,6 +13,7 @@ import PageLinks from "@/components/PageLinks";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
+import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 
 export default function WorkspaceSpace() {
   console.debug("Rendering WorkspaceSpace");
@@ -33,7 +33,7 @@ export default function WorkspaceSpace() {
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
-          <Sidebar>
+          <SpaceSidebar>
             <SidebarSection label="environments">
               {environments.map((env: Environment) => {
                 return <SidebarEnvironmentItem key={env.id} env={env} />;
@@ -44,7 +44,7 @@ export default function WorkspaceSpace() {
                 return <SidebarWorkspaceCollectionItem key={item.id} itemId={item.id} />;
               })}
             </SidebarSection>
-          </Sidebar>
+          </SpaceSidebar>
           <Main>
             {activePageId ? (
               <Editor />

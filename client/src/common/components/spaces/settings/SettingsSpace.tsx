@@ -1,4 +1,3 @@
-import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarItem from "@/components/sidebar/SidebarItem";
 import Titlebar from "@/components/titlebar/Titlebar";
@@ -13,6 +12,7 @@ import { useState } from "react";
 import { SVGIcon } from "@/utils/types";
 import Button from "@/components/core/Button";
 import CommandButton from "@/components/core/CommandButton";
+import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 
 type SettingsPageName = "general" | "text-editor";
 
@@ -50,7 +50,7 @@ export default function SettingsSpace() {
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
-          <Sidebar>
+          <SpaceSidebar>
             <SidebarSection label="Settings">
               {pages.map((page) => {
                 return (
@@ -64,7 +64,7 @@ export default function SettingsSpace() {
                 );
               })}
             </SidebarSection>
-          </Sidebar>
+          </SpaceSidebar>
           <Main>
             <div className="flex items-center justify-center w-full h-full">
               <div className="text-center text-gray-500 dark:text-gray-400">

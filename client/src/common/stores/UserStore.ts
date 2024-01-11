@@ -1,6 +1,7 @@
 import { User, UserApplicationSpace, UserCollectionItem, UserCollectionLink } from "@/resources/user/user";
 import { UserSettings } from "@/resources/user/user-settings";
 import { create } from "zustand";
+import { DEFAULT_WIDTH as DEFAULT_SIDEBAR_WIDTH } from "@/components/sidebar/Sidebar";
 
 type UserStoreApplicationSpace = "connection" | "logon" | UserApplicationSpace;
 
@@ -15,6 +16,15 @@ type State = {
    * than relying on the CSS classes should use this value.
    */
   colorScheme: "light" | "dark";
+
+  /**
+   * The size of the sidebar in pixels.
+   */
+  sidebarWidth: number;
+
+  /**
+   * The current active space.
+   */
   activeSpace: UserStoreApplicationSpace;
 
   settings: Readonly<UserSettings>;
@@ -24,6 +34,7 @@ type State = {
 
 type Actions = {
   reset: () => void;
+  setSidebarWidth: (width: number) => void;
   setActiveSpace: (activeSpace: UserStoreApplicationSpace) => void;
   setCollectionItems: (collections: UserCollectionItem[]) => void;
   setColorScheme: (colorScheme: "light" | "dark") => void;
@@ -33,6 +44,7 @@ export const useUserStore = create<State & Actions>((set) => {
   // User is a mutable object so we are keeping it out of the store.
 
   return {
+    sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
     colorScheme: UserSettings.calculateColorScheme("auto"),
     activeSpace: "connection",
     settings: null,
@@ -48,6 +60,10 @@ export const useUserStore = create<State & Actions>((set) => {
         settings: user.settings.clone(),
         collections: user.collections.map((c) => c.clone()),
       }));
+    },
+
+    setSidebarWidth(width: number) {
+      set((state) => ({ ...state, sidebarWidth: width }));
     },
 
     setActiveSpace(activeSpace: UserStoreApplicationSpace) {

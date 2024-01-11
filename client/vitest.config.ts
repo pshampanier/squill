@@ -6,6 +6,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       root: "src",
+      environment: "happy-dom",
       coverage: {
         enabled: true,
         reporter: ["html"],
