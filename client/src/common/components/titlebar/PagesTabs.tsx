@@ -3,6 +3,7 @@ import { WorkspacePage, useWorkspaceStore } from "@/stores/WorkspaceStore";
 import PlusIcon from "@/icons/plus.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
 import CloseCircleIcon from "@/icons/close-circle.svg?react";
+import { useUserStore } from "@/stores/UserStore";
 
 function PagesTabs() {
   const pages = useWorkspaceStore((state) => state.pages);
@@ -50,6 +51,8 @@ type TabProps = {
 };
 
 function Tab({ page, selected, onSelect, onClose }: TabProps) {
+  const showFileExtensions = useUserStore((state) => state.settings.showFileExtensions);
+
   const Icon = page.editor.icon;
   const CloseButtonIcon = page.modified ? CloseCircleIcon : CloseIcon;
   const backgroundColor = selected
@@ -57,6 +60,9 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
     : "hover:bg-blue-600 focus:bg-blue-700";
   const iconBackgroundColor = selected ? "hover:bg-blue-500" : "hover:bg-blue-700";
   const text = "text-xs text-left whitespace-nowrap overflow-hidden overflow-ellipsis";
+
+  // Showing the file extension only if the setting is enabled
+  const title = showFileExtensions ? page.title : page.title.replace(/\.[^/.]+$/, "");
 
   return (
     <button
@@ -66,7 +72,7 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
       }}
     >
       <Icon className="w-5 h-5" />
-      <span className="mx-2 text-xs font-medium">{page.title}</span>
+      <span className="mx-2 text-xs font-medium">{title}</span>
       <a href="#" className="flex ml-auto min-w-fit">
         <CloseButtonIcon
           className={`w-5 h-5 px-1 rounded ${iconBackgroundColor}`}

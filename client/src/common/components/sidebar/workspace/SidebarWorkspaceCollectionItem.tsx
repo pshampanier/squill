@@ -4,6 +4,7 @@ import { useWorkspaceStore } from "@/stores/WorkspaceStore";
 
 import SidebarItem from "../SidebarItem";
 import FolderIcon from "@/icons/folder.svg?react";
+import { useUserStore } from "@/stores/UserStore";
 
 type SidebarWorkspaceCollectionItemProps = {
   itemId: string;
@@ -20,6 +21,10 @@ export default function SidebarWorkspaceCollectionItem({ itemId }: SidebarWorksp
   const replaceActivePage = useWorkspaceStore((state) => state.replaceActivePage);
   const page = useWorkspaceStore((state) => state.pages.find((page) => page.itemId === itemId));
   const activePage = useWorkspaceStore((state) => state.pages.find((page) => page.id === activePageId));
+  const showFileExtensions = useUserStore((state) => state.settings.showFileExtensions);
+
+  // If the item is a file, we need to remove the extension from the name
+  const name = item.type === "folder" || showFileExtensions ? item.name : item.name.replace(/\.[^/.]+$/, "");
 
   const openFolder = async (): Promise<void> => {
     const workspace = Workspace.current;
@@ -59,7 +64,7 @@ export default function SidebarWorkspaceCollectionItem({ itemId }: SidebarWorksp
 
   const itemProps = {
     onClick: handleOnClick,
-    label: item.name,
+    label: name,
     selected: activeId === item.id,
   };
 
