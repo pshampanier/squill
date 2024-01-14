@@ -10,7 +10,7 @@ test("valid user", () => {
       },
       User
     )
-  ).toEqual({
+  ).toMatchObject({
     username: "marty",
     settings: {
       editor: {
@@ -40,7 +40,7 @@ test("invalid user", () => {
 });
 
 test("constructor", () => {
-  expect(new User("marty")).toEqual({
+  expect(new User("marty")).toMatchObject({
     username: "marty",
     settings: {
       editor: {

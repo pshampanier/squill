@@ -1,4 +1,3 @@
-import "github-markdown-css/github-markdown.css";
 import { editor as monacoEditor } from "monaco-editor";
 import { cx } from "classix";
 

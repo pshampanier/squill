@@ -4,7 +4,7 @@ import Preview from "../Preview";
 
 export default function SwitchPreview() {
   return (
-    <div className="flex flex-col space-y-10 w-3/4">
+    <>
       <Preview>
         <Preview.Title>Sizes</Preview.Title>
         <Preview.Description>
@@ -61,6 +61,6 @@ export default function SwitchPreview() {
           </div>
         </PreviewBox>
       </Preview>
-    </div>
+    </>
   );
 }

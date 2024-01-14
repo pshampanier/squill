@@ -13,7 +13,7 @@ const COPY_ICON_CLASSES = cx(
 
 export default function ColorsPreview() {
   return (
-    <div className="flex flex-col space-y-10 w-3/4">
+    <>
       <Preview>
         <Preview.Title>Primary colors</Preview.Title>
         <Preview.Description>Colors usage.</Preview.Description>
@@ -47,7 +47,7 @@ export default function ColorsPreview() {
           </div>
         </PreviewBox>
       </Preview>
-    </div>
+    </>
   );
 }
 

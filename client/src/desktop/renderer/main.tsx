@@ -2,7 +2,7 @@ import ReactDOM from "react-dom/client";
 import { App } from "@/components/App";
 
 import "@/utils/monaco-workers";
-import "@/assets/styles/main.css";
+import "@/assets/styles/main.less";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
 

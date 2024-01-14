@@ -1,21 +1,22 @@
 import { env } from "@/utils/env";
 import { formatRegExp, serializable } from "@/utils/serializable";
+import { immerable } from "immer";
 
 const COLOR_SCHEME = ["light", "dark", "auto"] as const;
 const MINIMAP = ["show", "hide", "auto"] as const;
 const RENDER_WHITESPACE = ["all", "none", "boundary", "selection", "trailing"] as const;
 
-type RenderWhitespace = (typeof RENDER_WHITESPACE)[number];
-type Minimap = (typeof MINIMAP)[number];
+export type RenderWhitespaceValue = (typeof RENDER_WHITESPACE)[number];
+export type MinimapValue = (typeof MINIMAP)[number];
 
 export type ColorScheme = (typeof COLOR_SCHEME)[number];
 
-class EditorSettings {
+export class EditorSettings {
   @serializable("string", { format: formatRegExp(MINIMAP), trim: true })
-  minimap: Minimap = "hide";
+  minimap: MinimapValue = "hide";
 
   @serializable("string", { format: formatRegExp(RENDER_WHITESPACE), trim: true })
-  renderWhitespace: RenderWhitespace = "none";
+  renderWhitespace: RenderWhitespaceValue = "none";
 
   getMonacoEditorSettings(): object {
     return {
@@ -29,6 +30,8 @@ class EditorSettings {
   clone(): Readonly<EditorSettings> {
     return Object.freeze(Object.assign(new EditorSettings(), this));
   }
+
+  [immerable] = true;
 }
 
 export class UserSettings {
@@ -72,4 +75,6 @@ export class UserSettings {
     }
     return colorScheme;
   }
+
+  [immerable] = true;
 }

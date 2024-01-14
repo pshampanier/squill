@@ -1,6 +1,6 @@
 import "@/components/editors/index.tsx";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { User } from "@/resources/user/user";
 import { Agent } from "@/resources/agent.ts";
 import { useUserStore } from "@/stores/UserStore";
@@ -9,17 +9,24 @@ import { registerAction, unregisterAction } from "@/utils/commands";
 import UserSpace from "@/components/spaces/UserSpace";
 import WorkspaceSpace from "@/components/spaces/WorkspaceSpace";
 import SettingsSpace from "@/components/spaces/settings/SettingsSpace";
-import ApplySystemPreferences from "./ApplySystemPreferences";
+import ApplySystemPreferences from "@/components/ApplySystemPreferences";
 
 export function App() {
   const agentUrl = useState(window.location.href.split("/").slice(0, -1).join("/"))[0];
   const activeSpace = useUserStore((state) => state.activeSpace);
-  const setActiveSpace = useUserStore((state) => state.setActiveSpace);
   const reset = useUserStore((state) => state.reset);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+
+  const closeSettings = useRef(() => {
+    console.log("Closing settings");
+    setSettingsOpen(false);
+    unregisterAction("settings.close", closeSettings.current);
+  });
 
   const openSettings = () => {
     console.log("Opening settings");
-    setActiveSpace("settings");
+    setSettingsOpen(true);
+    registerAction("settings.close", closeSettings.current);
   };
 
   useEffect(() => {
@@ -35,18 +42,18 @@ export function App() {
   }, [agentUrl, reset]);
 
   useEffect(() => {
-    registerAction("settings", openSettings);
+    registerAction("settings.open", openSettings);
     return () => {
-      unregisterAction("settings", openSettings);
+      unregisterAction("settings.open", openSettings);
     };
   });
 
   return (
     <>
       <ApplySystemPreferences />
-      {activeSpace === "user" && <UserSpace />}
-      {activeSpace === "workspace" && <WorkspaceSpace />}
-      {activeSpace === "settings" && <SettingsSpace />}
+      {settingsOpen && <SettingsSpace />}
+      {activeSpace === "user" && <UserSpace className={settingsOpen && "hidden"} />}
+      {activeSpace === "workspace" && <WorkspaceSpace className={settingsOpen && "hidden"} />}
     </>
   );
 }

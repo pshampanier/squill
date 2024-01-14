@@ -5,24 +5,24 @@ import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarUserCollectionItem from "@/components/sidebar/user/SidebarUserCollectionItem";
 import PageLinks from "@/components/PageLinks";
 import Titlebar from "@/components/titlebar/Titlebar";
-import Space from "@/components/spaces/Space";
+import Space, { SpaceProps } from "@/components/spaces/Space";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
 import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 
-export default function UserSpace() {
+export default function UserSpace(props: SpaceProps) {
   console.debug("Rendering UserSpace");
   const userCollections = useUserStore((state) => state.collections);
   return (
     <>
-      <Space>
+      <Space {...props}>
         <Titlebar>
           <Toolbar>
             <CommandButton command="sidebar.toggle" />
           </Toolbar>
           <Toolbar>
-            <CommandButton command="settings" />
+            <CommandButton command="settings.open" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">

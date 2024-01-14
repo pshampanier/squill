@@ -1,6 +1,6 @@
 import { Resource } from "@/resources/resource";
 import { User } from "@/resources/user/user";
-import { serializable } from "@/utils/serializable";
+import { serializable, serialize } from "@/utils/serializable";
 import { AuthenticationMethods, AUTHENTICATION_METHODS, AuthRequest, AuthUserPassword } from "@/utils/auth";
 
 const API_PATH = "/api/v1";
@@ -53,6 +53,10 @@ export class Agent {
 
   async get<T extends object>(path: string, options?: FetchOptions): Promise<Resource<T>> {
     return this.fetch(path, "GET", options);
+  }
+
+  async put<T extends object>(path: string, body: T, options?: FetchOptions): Promise<Resource<T>> {
+    return this.fetch(path, "PUT", { ...options, body: JSON.stringify(serialize(body)) });
   }
 
   async logon(auth: AuthRequest): Promise<User> {

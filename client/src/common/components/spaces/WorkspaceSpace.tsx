@@ -7,7 +7,7 @@ import SidebarEnvironmentItem from "@/components/sidebar/workspace/SidebarEnviro
 import SidebarWorkspaceCollectionItem from "@/components/sidebar/workspace/SidebarWorkspaceCollectionItem";
 import Editor from "@/components/Editor";
 import Titlebar from "@/components/titlebar/Titlebar";
-import Space from "@/components/spaces/Space";
+import Space, { SpaceProps } from "@/components/spaces/Space";
 import PagesTabs from "@/components/titlebar/PagesTabs";
 import PageLinks from "@/components/PageLinks";
 import Main from "@/components/Main";
@@ -15,21 +15,21 @@ import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
 import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 
-export default function WorkspaceSpace() {
+export default function WorkspaceSpace(props: SpaceProps) {
   console.debug("Rendering WorkspaceSpace");
   const environments = useWorkspaceStore((state) => state.environments);
   const collections = useWorkspaceStore((state) => state.collections);
   const activePageId = useWorkspaceStore((state) => state.activePageId);
   return (
     <>
-      <Space>
+      <Space {...props}>
         <Titlebar>
           <Toolbar>
             <CommandButton command="sidebar.toggle" />
           </Toolbar>
           <PagesTabs />
           <Toolbar>
-            <CommandButton command="settings" />
+            <CommandButton command="settings.open" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">

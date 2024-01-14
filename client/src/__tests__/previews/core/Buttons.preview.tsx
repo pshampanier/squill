@@ -8,7 +8,7 @@ import UserIcon from "@/icons/user.svg?react";
 
 export default function ButtonsPreview() {
   return (
-    <div className="flex flex-col space-y-10 w-3/4">
+    <>
       {/*
        * Types
        */}
@@ -123,6 +123,6 @@ export default function ButtonsPreview() {
           </div>
         </PreviewBox>
       </Preview>
-    </div>
+    </>
   );
 }

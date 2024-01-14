@@ -14,3 +14,14 @@
   vertical-align: middle;
   user-select: none;
 }
+
+.light {
+  @import (less) "github-markdown-css/github-markdown-light.css";
+}
+
+.dark {
+  @import (less) "github-markdown-css/github-markdown-dark.css";
+  .markdown-body {
+    background-color: transparent;
+  }
+}

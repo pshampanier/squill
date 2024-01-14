@@ -37,3 +37,18 @@ export type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
  * IMPORTANT: The shortcut is case sensitive.
  */
 export type KeyboardShortcut = [string, string] | string;
+
+/**
+ * DeepPartial<T> is a recursive type that makes every property in T optional. If a property is an array, it makes every
+ * item in the array a DeepPartial. If a property is an object, it makes every property in that object a DeepPartial.
+ * This continues recursively for all nested objects and arrays.
+ */
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends (infer U)[]
+    ? DeepPartial<U>[]
+    : T[P] extends ReadonlyArray<infer U>
+    ? ReadonlyArray<DeepPartial<U>>
+    : T[P] extends object
+    ? DeepPartial<T[P]>
+    : T[P];
+};

@@ -1,4 +1,4 @@
-import { listCollectionFolder, getWorkspace } from "@/api/v1/user";
+import { listCollectionFolder, getWorkspace, saveSettings } from "@/api/v1/user";
 import { serializable } from "@/utils/serializable";
 import { CollectionItem, CollectionItemLink } from "@/resources/collection-item";
 import { ResourceRef } from "@/resources/resource-ref";
@@ -17,7 +17,7 @@ export class User {
   username!: string;
 
   @serializable("object", { factory: UserSettings })
-  readonly settings: UserSettings = new UserSettings();
+  settings: UserSettings = new UserSettings();
 
   @serializable("array", {
     items: { type: "object", options: { factory: CollectionItem<UserCollectionItemType>, skip: "serialize" } },
@@ -39,6 +39,10 @@ export class User {
       const [username] = args as [string];
       this.username = username;
     }
+  }
+
+  async saveSettings(settings: UserSettings) {
+    this.settings = await saveSettings(this, settings);
   }
 
   /**

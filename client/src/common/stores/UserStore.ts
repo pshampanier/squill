@@ -34,6 +34,7 @@ type State = {
 
 type Actions = {
   reset: () => void;
+  resetSettings: () => void;
   setSidebarWidth: (width: number) => void;
   setActiveSpace: (activeSpace: UserStoreApplicationSpace) => void;
   setCollectionItems: (collections: UserCollectionItem[]) => void;
@@ -41,8 +42,6 @@ type Actions = {
 };
 
 export const useUserStore = create<State & Actions>((set) => {
-  // User is a mutable object so we are keeping it out of the store.
-
   return {
     sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
     colorScheme: UserSettings.calculateColorScheme("auto"),
@@ -51,6 +50,9 @@ export const useUserStore = create<State & Actions>((set) => {
     collections: [],
     recentlyOpened: [],
 
+    /**
+     * Reset the store when a new user is logged in.
+     */
     reset() {
       const user = User.current;
       set((state) => ({
@@ -59,6 +61,18 @@ export const useUserStore = create<State & Actions>((set) => {
         activeSpace: "user",
         settings: user.settings.clone(),
         collections: user.collections.map((c) => c.clone()),
+      }));
+    },
+
+    /**
+     * Reset the store when user settings have been modified.
+     */
+    resetSettings() {
+      const user = User.current;
+      set((state) => ({
+        ...state,
+        colorScheme: UserSettings.calculateColorScheme(user.settings.colorScheme),
+        settings: user.settings.clone(),
       }));
     },
 

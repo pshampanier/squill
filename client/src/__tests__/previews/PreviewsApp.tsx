@@ -41,21 +41,23 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Colors" />
         </SidebarSection>
       </Sidebar>
-      <Page className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400">
+      <Page className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll">
         <header className="flex grid-flow-row w-full mb-4 justify-end">
           <ButtonGroup defaultValue={defaultColorScheme} size="xs" onChange={applyColorScheme}>
             <ButtonGroup.Item name="light" icon={ThemeLightIcon} />
             <ButtonGroup.Item name="dark" icon={ThemeDarkIcon} />
           </ButtonGroup>
         </header>
-        {view === "ButtonGroup" && <ButtonGroupPreview />}
-        {view === "Buttons" && <ButtonsPreview />}
-        {view === "Colors" && <ColorsPreview />}
-        {view === "KBD" && <KBDPreview />}
-        {view === "Sidebar" && <SidebarPreview />}
-        {view === "Space" && <SpacePreview />}
-        {view === "Switch" && <SwitchPreview />}
-        {view === "Tooltip" && <TooltipPreview />}
+        <div className="flex flex-col space-y-10 w-3/4">
+          {view === "ButtonGroup" && <ButtonGroupPreview />}
+          {view === "Buttons" && <ButtonsPreview />}
+          {view === "Colors" && <ColorsPreview />}
+          {view === "KBD" && <KBDPreview />}
+          {view === "Sidebar" && <SidebarPreview />}
+          {view === "Space" && <SpacePreview />}
+          {view === "Switch" && <SwitchPreview />}
+          {view === "Tooltip" && <TooltipPreview />}
+        </div>
       </Page>
     </>
   );

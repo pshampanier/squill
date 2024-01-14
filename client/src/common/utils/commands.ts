@@ -2,11 +2,13 @@ import { KeyboardShortcut, SVGIcon } from "@/utils/types";
 import { env } from "@/utils/env";
 import { raise } from "@/utils/telemetry";
 import SettingsIcon from "@/icons/settings.svg?react";
+import CloseIcon from "@/icons/close.svg?react";
 
 type CommandAction = () => void;
 
 export type Command = {
   readonly name: string;
+  readonly label?: string;
   readonly description: string;
   readonly shortcut: KeyboardShortcut;
   readonly icon?: SVGIcon;
@@ -128,7 +130,8 @@ registerCommand(
   { name: "clipboard.copy", description: "Copy selected text", shortcut: ["Meta+C", "Ctrl+C"] },
   { name: "clipboard.paste", description: "Paste text", shortcut: ["Meta+V", "Ctrl+V"] },
   { name: "clipboard.cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
-  { name: "settings", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon }
+  { name: "settings.open", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon },
+  { name: "settings.close", description: "Close", shortcut: "Escape", icon: CloseIcon }
 );
 
 registerGlobalKeyListeners();

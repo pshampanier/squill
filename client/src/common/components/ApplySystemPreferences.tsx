@@ -10,15 +10,16 @@ export default function ApplySystemPreferences(): null {
     const currentColorScheme = UserSettings.calculateColorScheme(colorScheme);
     document.documentElement.classList.remove(currentColorScheme === "dark" ? "light" : "dark");
     document.documentElement.classList.add(currentColorScheme === "dark" ? "dark" : "light");
+    document.documentElement.setAttribute("data-theme", currentColorScheme);
     setColorScheme(currentColorScheme);
     return currentColorScheme;
   };
 
   useEffect(() => {
+    const currentColorScheme = applyColorScheme(colorSchemeSetting);
     if (colorSchemeSetting === "auto") {
       // The current color scheme is based on the user's system preferences, so we need to listen for changes
       // to the user's system preferences and update the color scheme accordingly.
-      const currentColorScheme = applyColorScheme(colorSchemeSetting);
       const mql = window.matchMedia(`(prefers-color-scheme: ${currentColorScheme})`);
       mql.onchange = () => {
         applyColorScheme(colorSchemeSetting);

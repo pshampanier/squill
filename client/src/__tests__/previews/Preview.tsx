@@ -3,7 +3,7 @@ type PreviewProps = {
 };
 
 function Preview({ children }: PreviewProps) {
-  return <div className="flex flex-col ">{children}</div>;
+  return <div className="flex flex-col">{children}</div>;
 }
 function PreviewTitle({ children }: PreviewProps) {
   return <h1 className="relative text-md font-bold text-gray-800 dark:text-white">{children}</h1>;

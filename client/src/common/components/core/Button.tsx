@@ -3,8 +3,10 @@ import { ColorsFunction, primary } from "@/utils/colors";
 import { cx } from "classix";
 import { useContext } from "react";
 
+export type ButtonType = "solid" | "outline" | "ghost";
+
 type ButtonProps = {
-  type?: "solid" | "outline" | "ghost";
+  type?: ButtonType;
   icon?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
   text?: string;
   tooltip?: string;
