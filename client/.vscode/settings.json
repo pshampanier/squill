@@ -9,7 +9,5 @@
     "strings": true
   },
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "eslint.options": {
-    "root_folder": "./client"
-  }
+  "testing.automaticallyOpenPeekView": "never"
 }

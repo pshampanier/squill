@@ -3,16 +3,6 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "desktop:start",
-      "problemMatcher": [],
-      "label": "npm: desktop:start",
-      "detail": "Build & start the desktop app",
-      "options": {
-        "cwd": "${workspaceFolder}/client"
-      }
-    },
-    {
-      "type": "npm",
       "script": "webapp:dev",
       "problemMatcher": [],
       "label": "vite dev",
@@ -21,7 +11,7 @@
         "instanceLimit": 1
       },
       "options": {
-        "cwd": "${workspaceFolder}/client"
+        "cwd": "${workspaceFolder}"
       }
     }
   ]

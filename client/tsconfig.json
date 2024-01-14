@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "es2015",
+    "target": "ES2020",
+    "module": "ESNext",
 
+    "useDefineForClassFields": true,
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
@@ -22,19 +23,20 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
 
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": ["DOM", "DOM.Iterable", "ES2020"],
 
     /* Paths */
     "baseUrl": "./src",
     "paths": {
-      "@/api/*": ["common/api/*"],
-      "@/components/*": ["common/components/*"],
-      "@/resources/*": ["common/resources/*"],
-      "@/stores/*": ["common/stores/*"],
-      "@/utils/*": ["common/utils/*"],
+      "@/api/*": ["api/*"],
+      "@/components/*": ["components/*"],
+      "@/resources/*": ["resources/*"],
+      "@/stores/*": ["stores/*"],
+      "@/utils/*": ["utils/*"],
       "@/assets/*": ["assets/*"],
       "@/icons/*": ["assets/icons/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
