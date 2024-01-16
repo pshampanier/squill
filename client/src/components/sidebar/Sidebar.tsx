@@ -92,7 +92,7 @@ export default function Sidebar({
   const asideClasses = cx(
     "flex flex-row flex-none overflow-y-hidden overflow-x-hidden",
     "text-sm",
-    "transition-transform duration-500",
+    "transition-transform duration-500 transform-gpu",
     colors("background", "text"),
     visible ? "translate-x-0" : "-translate-x-full",
     className

@@ -4,7 +4,7 @@
   "description": "SQL Workspace",
   "scripts": {
     "dev": "vite",
-    "webapp:build": "npx tsc && vite build",
+    "build": "npx tsc && vite build",
     "coverage": "vitest run --coverage",
     "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0",
     "clean": "rm -rf build/",

@@ -3,7 +3,7 @@
   "tasks": [
     {
       "type": "npm",
-      "script": "webapp:dev",
+      "script": "dev",
       "problemMatcher": [],
       "label": "vite dev",
       "detail": "Running vite dev for the webapp",
@@ -13,6 +13,23 @@
       "options": {
         "cwd": "${workspaceFolder}"
       }
+    },
+    {
+      "label": "ui:dev",
+      "type": "shell",
+      // `dev` keeps running in the background
+      // ideally you should also configure a `problemMatcher`
+      // see https://code.visualstudio.com/docs/editor/tasks#_can-a-background-task-be-used-as-a-prelaunchtask-in-launchjson
+      "isBackground": true,
+      "command": "npm",
+      "args": ["run", "dev"]
+    },
+    {
+      "label": "ui:build",
+      "type": "shell",
+      // change this to your `beforeBuildCommand`:
+      "command": "npm",
+      "args": ["run", "build"]
     }
   ]
 }

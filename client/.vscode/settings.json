@@ -9,5 +9,8 @@
     "strings": true
   },
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "testing.automaticallyOpenPeekView": "never"
+  "testing.automaticallyOpenPeekView": "never",
+  "[rust]": {
+    "editor.defaultFormatter": "jinxdash.prettier-rust"
+  }
 }

@@ -21,7 +21,7 @@ function PagesTabs() {
   };
 
   return (
-    <div className="flex flex-row w-full space-x-1 non-draggable">
+    <div className="flex flex-row w-full space-x-1">
       {pages.map((page) => {
         return (
           <Tab
@@ -38,7 +38,7 @@ function PagesTabs() {
           <PlusIcon className={`w-8 h-8 px-1 rounded`} />
         </button>
       )}
-      <div className="flex-grow draggable" />
+      <div className="flex-grow" data-tauri-drag-region />
     </div>
   );
 }
