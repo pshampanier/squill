@@ -101,7 +101,7 @@ export default function SidebarItem({
         {Icon && <Icon className="w-5 h-5" />}
         <span className="text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis">{label}</span>
         <span className="flex ml-auto gap-x-1 items-center">
-          {loadingState === "loading" && <Spinner />}
+          {loadingState === "loading" && <Spinner size="sm" />}
           {loadingState === "error" && (
             <Tooltip position="right" align="end" theme="error" text={loadingError?.message}>
               <ErrorIcon className="text-red-400 w-4 h-4" />

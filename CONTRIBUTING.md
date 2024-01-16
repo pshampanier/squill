@@ -2,16 +2,16 @@
 
 ### Desktop app
 
-Select the configuration `desktop (client)` in **Run and Debug**.
+Select the configuration `desktop (debug)` in **Run and Debug**.
 
 ### Web app
 
 ```sh
-cd client/webapp
+cd webapp
 npm run dev
 ```
 
-Then select the configuration `webapp (client)` in **Run and Debug**.
+Then select the configuration `webapp` in **Run and Debug**.
 
 ## Testing Github actions
 
@@ -22,9 +22,15 @@ Then select the configuration `webapp (client)` in **Run and Debug**.
 act
 ```
 
+## Components preview
+
+A preview of all components can be seen at
+
+> [http://localhost:1420/src/\_\_tests\_\_/previews/previews.html](http://localhost:1420/src/__tests__/previews/previews.html)
+
 ## Coding Guidelines
 
-Follow [Airbnb JavaScript Style Guide() {](https://github.com/airbnb/javascript#airbnb-javascript-style-guide-)
+Follow [Airbnb JavaScript Style Guide()](https://github.com/airbnb/javascript#airbnb-javascript-style-guide-)
 
 ### Do not use enums
 

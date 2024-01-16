@@ -29,6 +29,7 @@
   "collections": [
     { "name": "Models", "type": "folder" },
     { "name": "README.md", "type": "file" },
+    { "name": "MARKDOWN.md", "type": "file" },
     { "name": "script.sql", "type": "file" }
   ]
 }

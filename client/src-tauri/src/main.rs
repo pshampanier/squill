@@ -1,6 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri::App;
+
 /**
  * The default port used by the local agent.
  */
@@ -31,19 +33,22 @@ fn get_variable(name: &str) -> String {
     }
 }
 
-use tauri::Manager;
+fn setup(_app: &mut App) {
+    #[cfg(debug_assertions)]
+    {
+        use tauri::Manager;
+        _app.get_window("main").unwrap().open_devtools();
+    }
+}
+
 fn main() {
     tauri::Builder
         ::default()
+        .invoke_handler(tauri::generate_handler![toogle_devtools, get_variable])
         .setup(|app| {
-            #[cfg(debug_assertions)]
-            {
-                let window = app.get_window("main").unwrap();
-                window.open_devtools();
-            }
+            setup(app);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![toogle_devtools, get_variable])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
