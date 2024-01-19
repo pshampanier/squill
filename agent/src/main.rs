@@ -2,6 +2,7 @@ use std::process::exit;
 
 mod commandline;
 mod settings;
+mod error;
 
 fn main() {
     println!("{} {}", env!("CARGO_PKG_DESCRIPTION"), env!("CARGO_PKG_VERSION"));
