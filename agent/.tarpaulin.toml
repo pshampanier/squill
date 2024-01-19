@@ -1,0 +1,9 @@
+[config]
+output-dir = "build"
+target-dir = "build"
+implicit-test-threads = true
+
+[report]
+out = ["Html", "Xml"]
+output-dir = "build"
+
