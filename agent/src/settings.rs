@@ -1,16 +1,24 @@
 use crate::commandline::{ self, CommandArgs };
-use crate::error::UserError;
-use crate::error::Result;
-use crate::error::UserContext;
 use std::fmt;
+use std::net::Ipv4Addr;
 use std::path::{ PathBuf, Path };
 use serde::{ Deserialize, Serialize };
 use lazy_static::lazy_static;
 use ini::Ini;
+use anyhow::{ anyhow, Context, Result };
 
 const AGENT_CONF: &str = "agent.conf";
 
-const DEFAULT_PORT: u16 = 8765;
+/**
+ * Default address used to serve the API.
+ */
+const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1";
+
+/**
+ * Default port used to serve the API.
+ * The default port is 0 which means that the OS will choose a free port.
+ */
+const DEFAULT_PORT: u16 = 0;
 
 /**
  * Get the default base directory for the agent.
@@ -23,7 +31,7 @@ const DEFAULT_PORT: u16 = 8765;
  * macOS $HOME/Library/Application\ Support/one-sql/
  * Linux $HOME/.one-sql/
  */
-fn get_default_base_dir() -> String {
+pub fn get_default_base_dir() -> String {
     let mut root_dir = PathBuf::new();
     #[cfg(target_os = "macos")]
     {
@@ -45,16 +53,48 @@ fn get_default_base_dir() -> String {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct AgentSettings {
+    /// Specifies the TCP/IP address on which the server is to listen for connections from client applications.
+    /// The entry 0.0.0.0 allows listening for all IPv4 addresses.
+    pub listen_address: String,
+
     /// The tcpip port to listen to
-    port: u16,
+    pub port: u16,
 
     /// The base directory used to store the files
-    base_dir: String,
+    pub base_dir: String,
+}
+
+impl AgentSettings {
+    pub fn load_from_file(&mut self, config_file: &String) -> Result<()> {
+        let ini = Ini::load_from_file(config_file)?;
+        let section = ini.section(None::<String>).unwrap();
+        for (key, value) in section.iter() {
+            match key {
+                "listen_address" => {
+                    let address: Ipv4Addr = value
+                        .parse()
+                        .with_context(|| { format!("{key}={value}") })?;
+                    self.listen_address = address.to_string();
+                }
+                "port" => {
+                    self.port = value.parse::<u16>().with_context(|| { format!("{key}={value}") })?;
+                }
+                "base_dir" => {
+                    self.base_dir = value.to_string();
+                }
+                _ => {
+                    return Err(anyhow!("Invalid entry: {}={}", key, value));
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Default for AgentSettings {
     fn default() -> Self {
         Self {
+            listen_address: DEFAULT_LISTEN_ADDRESS.to_string(),
             port: DEFAULT_PORT,
             base_dir: get_default_base_dir(),
         }
@@ -83,6 +123,7 @@ impl fmt::Display for AgentSettings {
 fn get_config(settings: &AgentSettings) -> Ini {
     let mut ini = Ini::new();
     ini.with_section(None::<String>)
+        .set("listen_address", settings.listen_address.to_string())
         .set("port", settings.port.to_string())
         .set("base_dir", settings.base_dir.to_string());
     ini
@@ -113,16 +154,9 @@ fn make_settings(base_dir: &str, args: &CommandArgs) -> Result<AgentSettings> {
         file.to_str().unwrap().to_string()
     };
     if Path::new(&config_file).exists() {
-        let ini = Ini::load_from_file(&config_file).context(
-            &format!("Cannot read config file: {0}", config_file)
-        )?;
-        let section = ini.section(None::<String>).unwrap();
-        if section.contains_key("port") {
-            settings.port = section.get("port").unwrap().parse::<u16>()?;
-        }
-        if section.contains_key("base_dir") {
-            settings.base_dir = section.get("base_dir").unwrap().to_string();
-        }
+        settings
+            .load_from_file(&config_file)
+            .with_context(|| format!("{}: unable to read the configuration file.", config_file))?;
     }
 
     // 3) apply command line
@@ -131,6 +165,9 @@ fn make_settings(base_dir: &str, args: &CommandArgs) -> Result<AgentSettings> {
     }
     if args.port.is_some() {
         settings.port = args.port.unwrap();
+    }
+    if args.listen_address.is_some() {
+        settings.listen_address = args.listen_address.unwrap().to_string();
     }
 
     Ok(settings)
@@ -147,15 +184,6 @@ pub fn get_path(file: &str) -> String {
     let mut path = PathBuf::from(&SETTINGS.base_dir);
     path.push(file);
     path.to_str().unwrap().to_string()
-}
-
-/**
- * Implement the From trait to convert an ini::Error into a UserError.
- */
-impl From<ini::Error> for UserError {
-    fn from(err: ini::Error) -> UserError {
-        UserError::new(&err.to_string())
-    }
 }
 
 #[cfg(test)]
@@ -175,7 +203,7 @@ mod tests {
             base_dir: "/tmp".to_string(),
             ..Default::default()
         };
-        assert_eq!(format!("{}", settings), "port=8765\nbase_dir=/tmp\n");
+        assert_eq!("listen_address=127.0.0.1\nport=0\nbase_dir=/tmp\n", format!("{}", settings));
     }
 
     #[test]
@@ -204,6 +232,7 @@ mod tests {
             let mut expected = AgentSettings::default();
             expected.port = 1234;
             expected.base_dir = "/tmp".to_string();
+            expected.listen_address = "0.0.0.0".to_string();
             let base_dir = tempdir().unwrap();
             let mut file = PathBuf::from(base_dir.path());
             file.push(AGENT_CONF);
@@ -213,6 +242,7 @@ mod tests {
                     r#"
                 port="1234"
                 base_dir="/tmp"
+                listen_address="0.0.0.0"
             "#
                 )
                 .unwrap();
@@ -228,13 +258,14 @@ mod tests {
         {
             let mut expected = AgentSettings::default();
             expected.port = 5678;
+            expected.listen_address = "0.0.0.0".to_string();
             let base_dir = tempdir().unwrap();
             let mut file = PathBuf::from(base_dir.path());
             file.push(AGENT_CONF);
             std::fs::write(file, "port=1234").unwrap();
             let actual = make_settings(
                 base_dir.path().to_str().unwrap(),
-                &CommandArgs::parse_from(["agent", "--port", "5678"])
+                &CommandArgs::parse_from(["agent", "--port", "5678", "--listen-address", "0.0.0.0"])
             ).unwrap();
             assert_eq!(expected, actual);
         }
@@ -244,7 +275,7 @@ mod tests {
             let base_dir = tempdir().unwrap();
             let mut file = PathBuf::from(base_dir.path());
             file.push(AGENT_CONF);
-            std::fs::write(file, "port=abc").unwrap();
+            std::fs::write(file, "listen_address=127.0.0.X").unwrap();
             let actual = make_settings(
                 base_dir.path().to_str().unwrap(),
                 &CommandArgs::parse_from(["agent"])

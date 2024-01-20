@@ -1,14 +1,20 @@
+use std::net::Ipv4Addr;
+
 use clap::Parser;
 use lazy_static::lazy_static;
 
 #[derive(Parser)]
-#[command(author, version, about, long_about = None)]
+#[command(author, version, about = None, long_about = None)]
 pub struct CommandArgs {
     /// The base directory used to store the files.
     #[arg(short, long)]
     pub base_dir: Option<String>,
 
-    /// The tcpip port to listen to.
+    /// The TCP/IP address to listen to.
+    #[arg(long)]
+    pub listen_address: Option<Ipv4Addr>,
+
+    /// The TCP/IP port to listen to.
     #[arg(short, long)]
     pub port: Option<u16>,
 
