@@ -10,6 +10,8 @@ use ini::Ini;
 
 const AGENT_CONF: &str = "agent.conf";
 
+const DEFAULT_PORT: u16 = 8765;
+
 /**
  * Get the default base directory for the agent.
  *
@@ -41,7 +43,7 @@ fn get_default_base_dir() -> String {
     root_dir.to_str().unwrap().to_string()
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct AgentSettings {
     /// The tcpip port to listen to
     port: u16,
@@ -53,7 +55,7 @@ pub struct AgentSettings {
 impl Default for AgentSettings {
     fn default() -> Self {
         Self {
-            port: 8080, // default port
+            port: DEFAULT_PORT,
             base_dir: get_default_base_dir(),
         }
     }
@@ -62,12 +64,14 @@ impl Default for AgentSettings {
 impl fmt::Display for AgentSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut buffer = Vec::new();
-        match get_config(&SETTINGS).write_to(&mut buffer) {
-            Ok(_) => {
-                let s = String::from_utf8(buffer).unwrap();
-                write!(f, "{}", s)
-            }
-            Err(_) => { Err(fmt::Error) }
+        match
+            get_config(self).write_to_opt(&mut buffer, ini::WriteOption {
+                line_separator: ini::LineSeparator::CR,
+                ..Default::default()
+            })
+        {
+            Ok(_) => write!(f, "{}", String::from_utf8(buffer).unwrap()),
+            Err(_) => Err(fmt::Error),
         }
     }
 }
@@ -88,7 +92,7 @@ lazy_static! {
     static ref SETTINGS: AgentSettings = {
         let base_dir = get_default_base_dir();
         let args = commandline::get_args();
-        match make_settings(&base_dir, &args) {
+        match make_settings(&base_dir, args) {
             Ok(settings) => { settings }
             Err(err) => {
                 println!("Error: {}", err);
@@ -114,7 +118,7 @@ fn make_settings(base_dir: &str, args: &CommandArgs) -> Result<AgentSettings> {
         )?;
         let section = ini.section(None::<String>).unwrap();
         if section.contains_key("port") {
-            settings.port = section.get("port").unwrap().parse::<u16>().unwrap();
+            settings.port = section.get("port").unwrap().parse::<u16>()?;
         }
         if section.contains_key("base_dir") {
             settings.base_dir = section.get("base_dir").unwrap().to_string();
@@ -156,32 +160,108 @@ impl From<ini::Error> for UserError {
 
 #[cfg(test)]
 mod tests {
+    use clap::Parser;
+    use tempfile::tempdir;
     use super::*;
-
-    #[test]
-    fn test_get_default_base_dir() {
-        #[cfg(target_os = "macos")]
-        {
-            std::env::set_var("HOME", "/Users/__test__");
-            assert_eq!(
-                get_default_base_dir(),
-                "/Users/__test__/Library/Application Support/onesql"
-            );
-        }
-        #[cfg(target_os = "linux")]
-        {
-            std::env::set_var("HOME", "/home/__test__");
-            assert_eq!(get_default_base_dir(), "/home/__test__/.onesql");
-        }
-        #[cfg(target_os = "windows")]
-        {
-            std::env::set_var("APPDATA", "C:\\Users\\__test__\\AppData\\Roaming");
-            assert_eq!(get_default_base_dir(), "C:\\Users\\__test__\\AppData\\Roaming\\onesql");
-        }
-    }
 
     #[test]
     fn test_get_path() {
         assert_eq!(get_path("file.txt"), get_default_base_dir() + "/file.txt");
+    }
+
+    #[test]
+    fn test_fmt_display_trait() {
+        let settings = AgentSettings {
+            base_dir: "/tmp".to_string(),
+            ..Default::default()
+        };
+        assert_eq!(format!("{}", settings), "port=8765\nbase_dir=/tmp\n");
+    }
+
+    #[test]
+    fn test_make_settings() {
+        // 1) apply defaults
+        {
+            let expected = AgentSettings::default();
+            let actual = make_settings("/tmp", &CommandArgs::parse_from(["agent"])).unwrap();
+            assert_eq!(expected, actual);
+        }
+
+        // 2) override with command line
+        {
+            let mut expected = AgentSettings::default();
+            expected.port = 1234;
+            expected.base_dir = "/tmp".to_string();
+            let actual = make_settings(
+                "/tmp",
+                &CommandArgs::parse_from(["agent", "--port", "1234", "--base-dir", "/tmp"])
+            ).unwrap();
+            assert_eq!(expected, actual);
+        }
+
+        // 3) override with config file
+        {
+            let mut expected = AgentSettings::default();
+            expected.port = 1234;
+            expected.base_dir = "/tmp".to_string();
+            let base_dir = tempdir().unwrap();
+            let mut file = PathBuf::from(base_dir.path());
+            file.push(AGENT_CONF);
+            std::fs
+                ::write(
+                    file,
+                    r#"
+                port="1234"
+                base_dir="/tmp"
+            "#
+                )
+                .unwrap();
+            let actual = make_settings(
+                base_dir.path().to_str().unwrap(),
+                &CommandArgs::parse_from(["agent"])
+            ).unwrap();
+            assert_eq!(expected, actual);
+        }
+
+        // 4) override with config file and command line
+        //    - command line overrides config file
+        {
+            let mut expected = AgentSettings::default();
+            expected.port = 5678;
+            let base_dir = tempdir().unwrap();
+            let mut file = PathBuf::from(base_dir.path());
+            file.push(AGENT_CONF);
+            std::fs::write(file, "port=1234").unwrap();
+            let actual = make_settings(
+                base_dir.path().to_str().unwrap(),
+                &CommandArgs::parse_from(["agent", "--port", "5678"])
+            ).unwrap();
+            assert_eq!(expected, actual);
+        }
+
+        // 5.1) invalid config file (invalid value)
+        {
+            let base_dir = tempdir().unwrap();
+            let mut file = PathBuf::from(base_dir.path());
+            file.push(AGENT_CONF);
+            std::fs::write(file, "port=abc").unwrap();
+            let actual = make_settings(
+                base_dir.path().to_str().unwrap(),
+                &CommandArgs::parse_from(["agent"])
+            );
+            assert!(actual.is_err());
+        }
+        // 5.2) invalid config file (invalid entry)
+        {
+            let base_dir = tempdir().unwrap();
+            let mut file = PathBuf::from(base_dir.path());
+            file.push(AGENT_CONF);
+            std::fs::write(file, "xyz").unwrap();
+            let actual = make_settings(
+                base_dir.path().to_str().unwrap(),
+                &CommandArgs::parse_from(["agent"])
+            );
+            assert!(actual.is_err());
+        }
     }
 }

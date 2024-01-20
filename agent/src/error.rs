@@ -21,11 +21,7 @@ impl fmt::Display for UserError {
     }
 }
 
-impl Error for UserError {
-    fn description(&self) -> &str {
-        &self.message
-    }
-}
+impl Error for UserError {}
 
 impl UserError {
     pub fn new(message: &str) -> Self {
@@ -47,9 +43,18 @@ impl<T, E: std::error::Error> UserContext<T> for std::result::Result<T, E> where
             Err(err) => {
                 let mut err = UserError::from(err);
                 err.context = context.to_string();
-                return Err(err);
+                Err(err)
             }
         }
+    }
+}
+
+/**
+ * Implement the From trait to convert an some standard errors into a UserError.
+ */
+impl From<std::num::ParseIntError> for UserError {
+    fn from(err: std::num::ParseIntError) -> UserError {
+        UserError::new(&err.to_string())
     }
 }
 
@@ -68,11 +73,7 @@ mod tests {
         }
     }
 
-    impl Error for TestError {
-        fn description(&self) -> &str {
-            &self.message
-        }
-    }
+    impl Error for TestError {}
 
     impl From<TestError> for UserError {
         fn from(err: TestError) -> UserError {
@@ -80,11 +81,30 @@ mod tests {
         }
     }
 
+    /**
+     * Implement the From trait to convert an Var::Error into a UserError to test the UserContext trait.
+     */
+    impl From<std::env::VarError> for UserError {
+        fn from(err: std::env::VarError) -> UserError {
+            UserError::new(&err.to_string())
+        }
+    }
+
+    fn test_context_ok() -> Result<String> {
+        std::env::set_var("error_test_context_ok", "test");
+        std::env::var("error_test_context_ok").context("context")
+    }
+
+    fn test_context_error() -> Result<String> {
+        std::env::var("error_test_context_error").context("context")
+    }
+
     #[test]
     fn test_user_error() {
         let err = UserError::new("test");
         assert_eq!(err.message, "test");
         assert_eq!(err.context, "");
+        assert_eq!(err.to_string(), "test");
     }
 
     #[test]
@@ -95,5 +115,14 @@ mod tests {
         let err = result.unwrap_err();
         assert_eq!(err.message, "test");
         assert_eq!(err.context, "context");
+    }
+
+    #[test]
+    fn test_user_context_trait() {
+        let res_ok = test_context_ok();
+        assert_eq!(res_ok.is_ok(), true);
+
+        let res_err = test_context_error();
+        assert_eq!(res_err.is_ok(), false);
     }
 }

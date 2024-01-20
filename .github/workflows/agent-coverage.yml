@@ -1,6 +1,11 @@
 name: agent-coverage
 
-on: [push]
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
 jobs:
   test:
     name: coverage
@@ -23,4 +28,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           directory: ./agent/build
-          verbose: true
+          verbose: false
