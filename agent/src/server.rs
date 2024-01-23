@@ -1,8 +1,11 @@
 use crate::{ settings, api };
-use axum::Router;
+use crate::api::error::Error;
+use axum::{ Router, extract::Request, middleware::{ Next, from_fn }, response::Response };
 use anyhow::{ Result, Context };
 use tokio::signal;
 use tokio::net::TcpListener;
+
+const API_KEY_HEADER: &str = "X-API-Key";
 
 pub struct Server {}
 
@@ -25,13 +28,32 @@ impl Server {
 
     pub async fn run(&self, listener: TcpListener) -> Result<()> {
         // build our application with a route
-        let router = Router::new().nest("/api/v1", api::auth::routes());
+        let router = Router::new()
+            .nest("/api/v1", api::auth::routes())
+            .layer(from_fn(check_api_key));
 
         // start the server
         println!("listening on {}", listener.local_addr().unwrap().to_string());
         axum::serve(listener, router).with_graceful_shutdown(shutdown_signal()).await?;
         Ok(())
     }
+}
+
+/**
+ * Check the API key.
+ *
+ * The API key is passed in the X-API-Key header and is required for all requests.
+ */
+async fn check_api_key(req: Request, next: Next) -> Result<Response, Error> {
+    // requires the http crate to get the header name
+    let api_key_header = req.headers().get(API_KEY_HEADER);
+    if let Some(api_key) = api_key_header {
+        let value = api_key.to_str();
+        if value.is_ok() && value.unwrap() == settings::get_api_key() {
+            return Ok(next.run(req).await);
+        }
+    }
+    Err(Error::Forbidden)
 }
 
 async fn shutdown_signal() {

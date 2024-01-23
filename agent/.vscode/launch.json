@@ -15,7 +15,7 @@
           "kind": "bin"
         }
       },
-      "args": [],
+      "args": ["--port", "8080", "--api-key", "x-dev"],
       "cwd": "${workspaceFolder}"
     },
     {

@@ -13,6 +13,10 @@ pub struct CommandArgs {
     #[arg(long)]
     pub listen_address: Option<Ipv4Addr>,
 
+    /// The API Key.
+    #[arg(long)]
+    pub api_key: Option<String>,
+
     /// The TCP/IP port to listen to.
     #[arg(short, long)]
     pub port: Option<u16>,
@@ -35,6 +39,7 @@ pub fn get_args() -> &'static CommandArgs {
         &(CommandArgs {
             base_dir: None,
             listen_address: None,
+            api_key: None,
             port: None,
             verbose: false,
             show_config: false,

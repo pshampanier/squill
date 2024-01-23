@@ -207,6 +207,9 @@ fn make_settings(args: &commandline::CommandArgs) -> Result<AgentSettings> {
     if args.listen_address.is_some() {
         settings.listen_address = args.listen_address.unwrap().to_string();
     }
+    if args.api_key.is_some() {
+        settings.api_key = args.api_key.clone().unwrap().to_string();
+    }
 
     Ok(settings)
 }
@@ -359,9 +362,18 @@ pub mod tests {
             expected.port = 5678;
             expected.listen_address = "0.0.0.0".to_string();
             expected.base_dir = get_base_dir();
+            expected.api_key = "xxx".to_string();
             std::fs::write(app_dir.path().join(AGENT_CONF), "port=1234").unwrap();
             let actual = make_settings(
-                &CommandArgs::parse_from(["agent", "--port", "5678", "--listen-address", "0.0.0.0"])
+                &CommandArgs::parse_from([
+                    "agent",
+                    "--port",
+                    "5678",
+                    "--listen-address",
+                    "0.0.0.0",
+                    "--api-key",
+                    "xxx",
+                ])
             ).unwrap();
             assert_eq!(expected, actual);
             fs::remove_dir_all(app_dir).unwrap();
