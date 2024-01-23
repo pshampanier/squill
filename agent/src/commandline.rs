@@ -1,5 +1,4 @@
 use std::net::Ipv4Addr;
-
 use clap::Parser;
 use lazy_static::lazy_static;
 
@@ -32,5 +31,15 @@ lazy_static! {
 }
 
 pub fn get_args() -> &'static CommandArgs {
-    &ARGS
+    if cfg!(test) {
+        &(CommandArgs {
+            base_dir: None,
+            listen_address: None,
+            port: None,
+            verbose: false,
+            show_config: false,
+        })
+    } else {
+        &ARGS
+    }
 }
