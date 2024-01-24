@@ -13,7 +13,7 @@ pub struct CommandArgs {
     #[arg(long)]
     pub listen_address: Option<Ipv4Addr>,
 
-    /// The API Key.
+    /// Set the API Key expected in the X-API-Key header.
     #[arg(long)]
     pub api_key: Option<String>,
 

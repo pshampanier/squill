@@ -27,10 +27,9 @@ impl Server {
     }
 
     pub async fn run(&self, listener: TcpListener) -> Result<()> {
+        let routes = Router::new().merge(api::auth::routes()).merge(api::agent::routes());
         // build our application with a route
-        let router = Router::new()
-            .nest("/api/v1", api::auth::routes())
-            .layer(from_fn(check_api_key));
+        let router = Router::new().nest("/api/v1", routes).layer(from_fn(check_api_key));
 
         // start the server
         println!("listening on {}", listener.local_addr().unwrap().to_string());
@@ -39,11 +38,9 @@ impl Server {
     }
 }
 
-/**
- * Check the API key.
- *
- * The API key is passed in the X-API-Key header and is required for all requests.
- */
+/// Check the API key.
+///
+/// The API key is passed in the X-API-Key header and is required for all requests.
 async fn check_api_key(req: Request, next: Next) -> Result<Response, Error> {
     // requires the http crate to get the header name
     let api_key_header = req.headers().get(API_KEY_HEADER);

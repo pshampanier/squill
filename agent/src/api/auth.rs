@@ -5,11 +5,12 @@ use axum::extract::Json;
 use rand::Rng;
 use regex::Regex;
 use hex;
-use crate::{ api::error::ServerResult, settings };
+use crate::{ api::error::ServerResult, json_enum, settings };
 
 use super::error::Error;
 
 const USERNAME_LOCAL: &str = "local";
+const DEFAULT_TOKEN_EXPIRATION: u32 = 3600;
 
 lazy_static! {
     // A regular expression used to check the validity of a username.
@@ -20,8 +21,18 @@ lazy_static! {
     static ref RE_USERNAME: Regex = Regex::new(r"^[a-z0-9][a-z0-9\-_]{2,}$").unwrap();
 }
 
+json_enum!(AuthenticationMethod, UserPassword);
+
 #[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 struct LogonBody {
+    method: AuthenticationMethod,
+    credentials: Credentials,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct Credentials {
     username: String,
     password: String,
 }
@@ -29,6 +40,7 @@ struct LogonBody {
 #[derive(Serialize, Debug)]
 struct LogonResult {
     token: String,
+    expires: u32,
 }
 
 fn generate_token() -> String {
@@ -38,9 +50,14 @@ fn generate_token() -> String {
 }
 
 async fn logon(body: Json<LogonBody>) -> ServerResult<Json<LogonResult>> {
+    if body.method != AuthenticationMethod::UserPassword {
+        // Only the user/password authentication method is supported.
+        return Err(Error::BadRequest);
+    }
+
     // Usernames are case insensitive. We are using the lowercase version, especially whenever we need to access the
     // filesystem.
-    let username = body.username.to_lowercase();
+    let username = body.credentials.username.to_lowercase();
 
     // The username must be a valid username and the user must exists.
     if
@@ -51,13 +68,14 @@ async fn logon(body: Json<LogonBody>) -> ServerResult<Json<LogonResult>> {
         return Err(Error::Forbidden);
     }
 
-    if !body.password.is_empty() {
+    if !body.credentials.password.is_empty() {
         // As of now, we only support the local user and the password must be empty.
         return Err(Error::BadRequest);
     }
 
     let response = LogonResult {
         token: generate_token(),
+        expires: DEFAULT_TOKEN_EXPIRATION,
     };
 
     Ok(Json(response))
@@ -87,8 +105,11 @@ mod test {
         // 1) invalid user (the user directory does not exist)
         {
             let body = Json(LogonBody {
-                username: "local".to_string(),
-                password: "".to_string(),
+                method: AuthenticationMethod::UserPassword,
+                credentials: Credentials {
+                    username: "local".to_string(),
+                    password: "".to_string(),
+                },
             });
             assert!(matches!(logon(body).await, Err(Error::Forbidden)));
         }
@@ -97,8 +118,11 @@ mod test {
         {
             create_user("local").unwrap();
             let body = Json(LogonBody {
-                username: "local".to_string(),
-                password: "".to_string(),
+                method: AuthenticationMethod::UserPassword,
+                credentials: Credentials {
+                    username: "local".to_string(),
+                    password: "".to_string(),
+                },
             });
             let result = logon(body).await;
             assert!(result.is_ok());
@@ -109,8 +133,11 @@ mod test {
         // 3) unexpected username (not "local")
         {
             let body = Json(LogonBody {
-                username: "marty_mcfly".to_string(),
-                password: "".to_string(),
+                method: AuthenticationMethod::UserPassword,
+                credentials: Credentials {
+                    username: "marty_mcfly".to_string(),
+                    password: "".to_string(),
+                },
             });
             assert!(matches!(logon(body).await, Err(Error::Forbidden)));
         }
@@ -118,8 +145,11 @@ mod test {
         // 4) unexpected password (expected empty string)
         {
             let body = Json(LogonBody {
-                username: "local".to_string(),
-                password: "*****".to_string(),
+                method: AuthenticationMethod::UserPassword,
+                credentials: Credentials {
+                    username: "local".to_string(),
+                    password: "****".to_string(),
+                },
             });
             assert!(matches!(logon(body).await, Err(Error::BadRequest)));
         }

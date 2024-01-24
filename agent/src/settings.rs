@@ -31,17 +31,17 @@ lazy_static! {
         #[cfg(target_os = "macos")]
         {
             root_dir.push(std::env::var("HOME").unwrap());
-            root_dir.push("Library/Application Support/onesql");
+            root_dir.push(format!("Library/Application Support/{}", env!("CARGO_PKG_NAME")));
         }
         #[cfg(target_os = "linux")]
         {
             root_dir.push(std::env::var("HOME").unwrap());
-            root_dir.push(".onesql");
+            root_dir.push(format!(".{}", env!("CARGO_PKG_NAME")));
         }
         #[cfg(target_os = "windows")]
         {
             root_dir.push(std::env::var("APPDATA").unwrap());
-            root_dir.push("onesql");
+            root_dir.push(env!("CARGO_PKG_NAME"));
         }
         root_dir
     };
