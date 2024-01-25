@@ -81,7 +81,7 @@ async fn check_authentication(req: Request, next: Next) -> Result<Response, Erro
     if let Some(authorization_header) = authorization_header {
         match parse_authorization_header(authorization_header) {
             Ok(token) => {
-                // todo!("Check the security token");
+                // TODO: Check the security token
                 return Ok(next.run(req).await);
             }
             Err(_) => {

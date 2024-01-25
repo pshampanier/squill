@@ -3,6 +3,7 @@ mod settings;
 mod server;
 mod api;
 mod utils;
+mod models;
 mod pid_file;
 
 use std::{ path::Path, process::exit };

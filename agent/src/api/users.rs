@@ -1,73 +1,30 @@
 use crate::settings;
 use crate::api::error::ServerResult;
+use crate::models::users::User;
 use anyhow::{ Result, Context, anyhow };
 use axum::{ extract::Path, Json, Router, routing::get };
-use serde::{ Serialize, Deserialize };
-use uuid::Uuid;
-use crate::json_enum;
 
 pub const USER_FILENAME: &str = ".user.json";
 
-json_enum!(ColorScheme, Dark, Light, Auto);
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct UserSettings {
-    color_scheme: ColorScheme,
-    telemetry: bool,
-    show_recently_opened: bool,
-    show_favorites: bool,
-    show_file_extensions: bool,
-    editor_settings: EditorSettings,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct EditorSettings {
-    minimap: Minimap,
-    render_white_space: RenderWhitespace,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct User {
-    username: String,
-    user_id: String,
-    settings: Option<UserSettings>,
-}
-
-impl Default for User {
-    fn default() -> Self {
-        Self {
-            username: String::new(),
-            user_id: Uuid::new_v4().to_string(),
-            settings: Some(UserSettings {
-                color_scheme: ColorScheme::Auto,
-                telemetry: true,
-                show_recently_opened: false,
-                show_favorites: true,
-                show_file_extensions: false,
-                editor_settings: EditorSettings {
-                    minimap: Minimap::Hide,
-                    render_white_space: RenderWhitespace::None,
-                },
-            }),
-        }
-    }
-}
-
+/// GET /users/:username/user
+///
+/// Get the user data for the specified user, including:
+/// - username & user_id
+/// - settings
+/// - all root directories and files
+/// - all favorites
 async fn get_user(Path(username): Path<String>) -> ServerResult<Json<User>> {
     let user_dir = settings::get_user_dir(username.as_str());
-    let settings_file = user_dir.join(USER_FILENAME);
-    let settings_json = std::fs
-        ::read_to_string(settings_file.as_path())
+    let user_file = user_dir.join(USER_FILENAME);
+    let user_file_content = std::fs
+        ::read_to_string(user_file.as_path())
         .with_context(|| {
-            format!("Unable to read the settings file: {}", settings_file.to_str().unwrap())
+            format!("Unable to read the user file: {}", user_file.to_str().unwrap())
         })?;
     let user: User = serde_json
-        ::from_str(&settings_json)
+        ::from_str(&user_file_content)
         .with_context(|| {
-            format!("Unable to parse the settings file: {}", settings_file.to_str().unwrap())
+            format!("Unable to parse the user file: {}", user_file.to_str().unwrap())
         })?;
     Ok(Json(user))
 }
@@ -75,9 +32,6 @@ async fn get_user(Path(username): Path<String>) -> ServerResult<Json<User>> {
 pub fn authenticated_routes() -> Router {
     Router::new().route("/users/:username/user", get(get_user))
 }
-
-json_enum!(Minimap, Show, Hide, Auto);
-json_enum!(RenderWhitespace, None, Boundary, Selection, All, Trailing);
 
 pub fn create_user(username: &str) -> Result<()> {
     // TODO: check if the username does not start with ..

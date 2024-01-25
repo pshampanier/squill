@@ -3,7 +3,7 @@ macro_rules! json_enum {
     ($enum:ident, $($variant:ident),* $(,)?) => {
         #[derive(Serialize, Deserialize, PartialEq, Debug)]
         #[serde(rename_all = "snake_case")]
-        enum $enum {
+        pub enum $enum {
             $($variant,)*
         }
     };

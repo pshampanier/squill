@@ -1,12 +1,5 @@
-use serde::{ Serialize, Deserialize };
 use axum::{ extract::Json, routing::get, Router };
-use crate::api::error::ServerResult;
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Agent {
-    version: &'static str,
-}
+use crate::{ api::error::ServerResult, models::agent::Agent };
 
 /// GET /agent
 ///

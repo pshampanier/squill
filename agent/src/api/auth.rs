@@ -1,11 +1,11 @@
 use axum::{ Router, routing::post };
-use serde::{ Serialize, Deserialize };
 use lazy_static::lazy_static;
 use axum::extract::Json;
 use rand::Rng;
 use regex::Regex;
 use hex;
-use crate::{ api::error::ServerResult, api::users::USER_FILENAME, json_enum, settings };
+use crate::{ api::error::ServerResult, api::users::USER_FILENAME, settings };
+use crate::models::auth::{ TokenType, Authentication, SecurityToken, RefreshToken };
 
 use super::error::Error;
 
@@ -19,49 +19,6 @@ lazy_static! {
     // - The username must only contain lowercase letters, numbers, dashes, underscores and dots.
     // - The username must start with a letter or a number.
     static ref RE_USERNAME: Regex = Regex::new(r"^[a-z0-9][a-z0-9\-_]{2,}$").unwrap();
-}
-
-json_enum!(AuthenticationMethod, UserPassword);
-json_enum!(TokenType, Bearer);
-
-/// Body of the POST /auth/logon endpoint.
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct Authentication {
-    /// The authentication method.
-    /// As of now, only the UserPassword method is supported.
-    #[allow(dead_code)]
-    method: AuthenticationMethod,
-
-    /// The credentials used to authenticate the user.
-    credentials: Credentials,
-}
-
-/// Credentials used to authenticate a user.
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct Credentials {
-    username: String,
-    password: String,
-}
-
-/// Response of the POST /auth/logon endpoint.
-#[derive(Serialize, Debug)]
-struct SecurityToken {
-    /// The security token is a 256-bit random number encoded in hexadecimal.
-    token: String,
-
-    /// The type of the token (always "Bearer" for now)
-    token_type: TokenType,
-
-    /// The refresh token is used to generate a new security token.
-    refresh_token: String,
-
-    /// The number of seconds after which the token will expire.
-    expires: u32,
-
-    /// The user id associated with the token.
-    user_id: String,
 }
 
 /// POST /auth/logon
@@ -98,13 +55,6 @@ async fn logon(auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> 
     Ok(Json(response))
 }
 
-/// The request body of the POST /auth/refresh-token endpoint.
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct RefreshToken {
-    refresh_token: String,
-}
-
 /// TODO: TO BE IMPLEMENTED
 /// POST /auth/refresh-token
 async fn refresh_token(token: Json<RefreshToken>) -> ServerResult<Json<SecurityToken>> {
@@ -132,7 +82,7 @@ fn generate_token() -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::api::users::create_user;
+    use crate::{ api::users::create_user, models::auth::{ AuthenticationMethod, Credentials } };
     use super::*;
 
     #[test]
