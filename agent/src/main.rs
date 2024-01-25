@@ -34,18 +34,20 @@ async fn run(args: &commandline::Args) -> Result<()> {
             })?;
     }
     match &args.command {
-        commandline::Commands::Start { .. } => { start(&app_dir).await }
+        commandline::Commands::Start { .. } => {
+            return start(&app_dir).await;
+        }
         commandline::Commands::UserAdd { username } => {
-            api::users::create_user(username.as_str())
+            utils::users::create_user(username.as_str())?;
         }
         commandline::Commands::UserDel { username } => {
-            api::users::delete_user(username.as_str())
+            utils::users::delete_user(username.as_str())?;
         }
         commandline::Commands::ShowConfig => {
             settings::show_config();
-            Ok(())
         }
     }
+    Ok(())
 }
 
 async fn start(app_dir: &Path) -> Result<()> {

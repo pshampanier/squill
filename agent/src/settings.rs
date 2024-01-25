@@ -1,4 +1,5 @@
 use crate::commandline;
+use crate::utils::constants::USERS_DIRNAME;
 use std::fmt;
 use std::net::Ipv4Addr;
 use std::path::{ PathBuf, Path };
@@ -12,10 +13,6 @@ use lazy_static::lazy_static;
 use rand::Rng;
 
 const AGENT_CONF: &str = "agent.conf";
-
-/// Name of the directory used to store the files for the users.
-/// see get_user_dir()
-pub const USER_DIR: &str = "users";
 
 /**
  * Default address used to serve the API.
@@ -240,7 +237,7 @@ lazy_static! {
  * Get the directory used to store the files for the specified user.
  */
 pub fn get_user_dir(username: &str) -> PathBuf {
-    PathBuf::from(get_base_dir()).join(USER_DIR).join(username)
+    PathBuf::from(get_base_dir()).join(USERS_DIRNAME).join(username)
 }
 
 fn generate_api_key() -> String {

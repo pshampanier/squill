@@ -1,10 +1,10 @@
 use axum::{ Router, routing::post };
-use lazy_static::lazy_static;
 use axum::extract::Json;
 use rand::Rng;
-use regex::Regex;
 use hex;
-use crate::{ api::error::ServerResult, api::users::USER_FILENAME, settings };
+use crate::utils::validators::sanitize_username;
+use crate::utils::constants::USER_FILENAME;
+use crate::{ api::error::ServerResult, settings };
 use crate::models::auth::{ TokenType, Authentication, SecurityToken, RefreshToken };
 
 use super::error::Error;
@@ -12,27 +12,17 @@ use super::error::Error;
 const USERNAME_LOCAL: &str = "local";
 const DEFAULT_TOKEN_EXPIRATION: u32 = 3600;
 
-lazy_static! {
-    // A regular expression used to check the validity of a username.
-
-    // - The username must be at least 3 characters long.
-    // - The username must only contain lowercase letters, numbers, dashes, underscores and dots.
-    // - The username must start with a letter or a number.
-    static ref RE_USERNAME: Regex = Regex::new(r"^[a-z0-9][a-z0-9\-_]{2,}$").unwrap();
-}
-
 /// POST /auth/logon
 ///
 /// This endpoint is used to authenticate a user and to generate a security token.
 /// As for now it only supports the local user and the password must be empty.
 async fn logon(auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> {
-    // Usernames are case insensitive. We are using the lowercase version, especially whenever we need to access the
-    // filesystem.
-    let username = auth.credentials.username.to_lowercase();
+    // Usernames are case insensitive. We are using the lowercase version to prevent any duplicate issues when the
+    // filesystem is case insensitive.
+    let username = sanitize_username(auth.credentials.username.as_str())?;
 
     // The username must be a valid username and the user must exists.
     if
-        !RE_USERNAME.is_match(&username) ||
         !username.eq(USERNAME_LOCAL) ||
         !settings::get_user_dir(&username).join(USER_FILENAME).exists()
     {
@@ -82,7 +72,7 @@ fn generate_token() -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::{ api::users::create_user, models::auth::{ AuthenticationMethod, Credentials } };
+    use crate::{ utils::users::create_user, models::auth::{ AuthenticationMethod, Credentials } };
     use super::*;
 
     #[test]
