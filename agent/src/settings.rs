@@ -13,6 +13,10 @@ use rand::Rng;
 
 const AGENT_CONF: &str = "agent.conf";
 
+/// Name of the directory used to store the files for the users.
+/// see get_user_dir()
+pub const USER_DIR: &str = "users";
+
 /**
  * Default address used to serve the API.
  */
@@ -71,15 +75,15 @@ pub fn get_app_dir() -> PathBuf {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 struct AgentSettings {
+    /// The base directory used to store the files
+    base_dir: String,
+
     /// Specifies the TCP/IP address on which the server is to listen for connections from client applications.
     /// The entry 0.0.0.0 allows listening for all IPv4 addresses.
     listen_address: String,
 
     /// The tcpip port to listen to
     port: u16,
-
-    /// The base directory used to store the files
-    base_dir: String,
 
     /// The API key used to authenticate the client applications.
     api_key: String,
@@ -183,7 +187,7 @@ fn get_config(settings: &AgentSettings) -> Ini {
     ini
 }
 
-fn make_settings(args: &commandline::CommandArgs) -> Result<AgentSettings> {
+fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
     // 1) apply defaults
     let mut settings = AgentSettings::default();
 
@@ -199,16 +203,21 @@ fn make_settings(args: &commandline::CommandArgs) -> Result<AgentSettings> {
 
     // 3) apply command line
     if args.base_dir.is_some() {
-        settings.base_dir = args.base_dir.clone().unwrap().to_string();
+        settings.base_dir = args.base_dir.clone().unwrap();
     }
-    if args.port.is_some() {
-        settings.port = args.port.unwrap();
-    }
-    if args.listen_address.is_some() {
-        settings.listen_address = args.listen_address.unwrap().to_string();
-    }
-    if args.api_key.is_some() {
-        settings.api_key = args.api_key.clone().unwrap().to_string();
+    match &args.command {
+        commandline::Commands::Start { listen_address, port, api_key } => {
+            if listen_address.is_some() {
+                settings.listen_address = listen_address.clone().unwrap().to_string();
+            }
+            if port.is_some() {
+                settings.port = port.clone().unwrap();
+            }
+            if api_key.is_some() {
+                settings.api_key = api_key.clone().unwrap().to_string();
+            }
+        }
+        _ => {}
     }
 
     Ok(settings)
@@ -231,9 +240,7 @@ lazy_static! {
  * Get the directory used to store the files for the specified user.
  */
 pub fn get_user_dir(username: &str) -> PathBuf {
-    let mut user_dir = PathBuf::from(get_base_dir());
-    user_dir.push(username);
-    user_dir
+    PathBuf::from(get_base_dir()).join(USER_DIR).join(username)
 }
 
 fn generate_api_key() -> String {
@@ -254,7 +261,7 @@ pub fn show_config() {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::commandline::CommandArgs;
+    use crate::commandline::Args;
     use clap::Parser;
     use tempfile::tempdir;
     use std::fs;
@@ -313,7 +320,7 @@ pub mod tests {
         // 1) apply defaults
         {
             let expected = AgentSettings::default();
-            let actual = make_settings(&CommandArgs::parse_from(["agent"])).unwrap();
+            let actual = make_settings(&Args::parse_from(["agent", "start"])).unwrap();
             assert_eq!(expected, actual);
         }
 
@@ -323,7 +330,7 @@ pub mod tests {
             expected.port = 1234;
             expected.base_dir = "/test".to_string();
             let actual = make_settings(
-                &CommandArgs::parse_from(["agent", "--port", "1234", "--base-dir", "/test"])
+                &Args::parse_from(["agent", "--base-dir", "/test", "start", "--port", "1234"])
             ).unwrap();
             assert_eq!(expected, actual);
         }
@@ -348,7 +355,7 @@ pub mod tests {
             "#
                 )
                 .unwrap();
-            let actual = make_settings(&CommandArgs::parse_from(["agent"])).unwrap();
+            let actual = make_settings(&Args::parse_from(["agent", "start"])).unwrap();
             assert_eq!(expected, actual);
             fs::remove_dir_all(app_dir).unwrap();
         }
@@ -365,8 +372,9 @@ pub mod tests {
             expected.api_key = "xxx".to_string();
             std::fs::write(app_dir.path().join(AGENT_CONF), "port=1234").unwrap();
             let actual = make_settings(
-                &CommandArgs::parse_from([
+                &Args::parse_from([
                     "agent",
+                    "start",
                     "--port",
                     "5678",
                     "--listen-address",
@@ -384,7 +392,7 @@ pub mod tests {
             let app_dir = tempdir().unwrap();
             set_app_dir(app_dir.path());
             std::fs::write(app_dir.path().join(AGENT_CONF), "listen_address=127.0.0.X").unwrap();
-            let actual = make_settings(&CommandArgs::parse_from(["agent"]));
+            let actual = make_settings(&Args::parse_from(["agent", "start"]));
             assert!(actual.is_err());
             assert!(
                 actual.unwrap_err().to_string().ends_with("unable to read the configuration file.")
@@ -396,7 +404,7 @@ pub mod tests {
             let app_dir = tempdir().unwrap();
             set_app_dir(app_dir.path());
             std::fs::write(app_dir.path().join(AGENT_CONF), "xyz").unwrap();
-            let actual = make_settings(&CommandArgs::parse_from(["agent"]));
+            let actual = make_settings(&Args::parse_from(["agent", "start"]));
             assert!(actual.is_err());
             fs::remove_dir_all(app_dir).unwrap();
         }

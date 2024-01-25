@@ -2,7 +2,7 @@
 macro_rules! json_enum {
     ($enum:ident, $($variant:ident),* $(,)?) => {
         #[derive(Serialize, Deserialize, PartialEq, Debug)]
-        #[serde(rename_all = "camelCase")]
+        #[serde(rename_all = "snake_case")]
         enum $enum {
             $($variant,)*
         }
@@ -27,7 +27,7 @@ mod tests {
             value: TestEnum::ValueA,
         };
         let json = serde_json::to_string(&test).unwrap();
-        assert_eq!(json, r#"{"value":"valueA"}"#);
+        assert_eq!(json, r#"{"value":"value_a"}"#);
         let test: Test = serde_json::from_str(&json).unwrap();
         assert_eq!(test.value, TestEnum::ValueA);
     }

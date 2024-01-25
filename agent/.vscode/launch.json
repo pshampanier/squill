@@ -9,13 +9,13 @@
       "request": "launch",
       "name": "agent (debug)",
       "cargo": {
-        "args": ["build", "--bin=agent", "--package=agent"],
+        "args": ["build", "--bin=agent", "--package=one-sql"],
         "filter": {
           "name": "agent",
           "kind": "bin"
         }
       },
-      "args": ["--port", "8080", "--api-key", "x-dev"],
+      "args": ["start", "--port", "8080", "--api-key", "x-dev"],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -23,7 +23,7 @@
       "request": "launch",
       "name": "unit tests",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=agent", "--package=agent"],
+        "args": ["test", "--no-run", "--bin=agent", "--package=one-sql"],
         "filter": {
           "name": "agent",
           "kind": "bin"

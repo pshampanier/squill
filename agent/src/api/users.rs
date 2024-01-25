@@ -1,8 +1,12 @@
 use crate::settings;
+use crate::api::error::ServerResult;
 use anyhow::{ Result, Context, anyhow };
+use axum::{ extract::Path, Json, Router, routing::get };
 use serde::{ Serialize, Deserialize };
-
+use uuid::Uuid;
 use crate::json_enum;
+
+pub const USER_FILENAME: &str = ".user.json";
 
 json_enum!(ColorScheme, Dark, Light, Auto);
 
@@ -17,22 +21,6 @@ struct UserSettings {
     editor_settings: EditorSettings,
 }
 
-impl Default for UserSettings {
-    fn default() -> Self {
-        Self {
-            color_scheme: ColorScheme::Auto,
-            telemetry: true,
-            show_recently_opened: false,
-            show_favorites: true,
-            show_file_extensions: false,
-            editor_settings: EditorSettings {
-                minimap: Minimap::Hide,
-                render_white_space: RenderWhitespace::None,
-            },
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct EditorSettings {
@@ -40,13 +28,72 @@ struct EditorSettings {
     render_white_space: RenderWhitespace,
 }
 
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct User {
+    username: String,
+    user_id: String,
+    settings: Option<UserSettings>,
+}
+
+impl Default for User {
+    fn default() -> Self {
+        Self {
+            username: String::new(),
+            user_id: Uuid::new_v4().to_string(),
+            settings: Some(UserSettings {
+                color_scheme: ColorScheme::Auto,
+                telemetry: true,
+                show_recently_opened: false,
+                show_favorites: true,
+                show_file_extensions: false,
+                editor_settings: EditorSettings {
+                    minimap: Minimap::Hide,
+                    render_white_space: RenderWhitespace::None,
+                },
+            }),
+        }
+    }
+}
+
+async fn get_user(Path(username): Path<String>) -> ServerResult<Json<User>> {
+    let user_dir = settings::get_user_dir(username.as_str());
+    let settings_file = user_dir.join(USER_FILENAME);
+    let settings_json = std::fs
+        ::read_to_string(settings_file.as_path())
+        .with_context(|| {
+            format!("Unable to read the settings file: {}", settings_file.to_str().unwrap())
+        })?;
+    let user: User = serde_json
+        ::from_str(&settings_json)
+        .with_context(|| {
+            format!("Unable to parse the settings file: {}", settings_file.to_str().unwrap())
+        })?;
+    Ok(Json(user))
+}
+
+pub fn authenticated_routes() -> Router {
+    Router::new().route("/users/:username/user", get(get_user))
+}
+
 json_enum!(Minimap, Show, Hide, Auto);
 json_enum!(RenderWhitespace, None, Boundary, Selection, All, Trailing);
 
 pub fn create_user(username: &str) -> Result<()> {
+    // TODO: check if the username does not start with ..
     let user_dir = settings::get_user_dir(username);
     if user_dir.exists() {
         return Err(anyhow!("The user already exists."));
+    }
+
+    if let Some(parent) = user_dir.parent() {
+        if !parent.exists() {
+            std::fs
+                ::create_dir(parent)
+                .with_context(||
+                    format!("Unable to create the user directory: {}", parent.to_str().unwrap())
+                )?;
+        }
     }
 
     std::fs
@@ -55,13 +102,30 @@ pub fn create_user(username: &str) -> Result<()> {
             format!("Unable to create the user directory: {}", user_dir.to_str().unwrap())
         )?;
 
-    let settings_file = user_dir.join(".settings.json");
-    let settings = UserSettings::default();
-    let settings_json = serde_json::to_string_pretty(&settings).unwrap();
+    let user_file = user_dir.join(USER_FILENAME);
+    let user = User {
+        username: username.to_string(),
+        ..User::default()
+    };
+    let user_json = serde_json::to_string_pretty(&user)?;
     std::fs
-        ::write(settings_file.as_path(), settings_json)
+        ::write(user_file.as_path(), user_json)
         .with_context(||
-            format!("Unable to create the settings file: {}", settings_file.to_str().unwrap())
+            format!("Unable to create the settings file: {}", user_file.to_str().unwrap())
+        )?;
+    Ok(())
+}
+
+pub fn delete_user(username: &str) -> Result<()> {
+    // TODO: check if the username does not start with ..
+    let user_dir = settings::get_user_dir(username);
+    if !user_dir.exists() {
+        return Err(anyhow!("The user {} does not exist.", username));
+    }
+    std::fs
+        ::remove_dir_all(user_dir.as_path())
+        .with_context(||
+            format!("Unable to delete the user directory: {}", user_dir.to_str().unwrap())
         )?;
     Ok(())
 }
@@ -79,7 +143,7 @@ mod tests {
         let user_dir = settings::get_user_dir(username);
         assert!(user_dir.exists());
         assert!(user_dir.is_dir());
-        assert!(user_dir.join(".settings.json").exists());
+        assert!(user_dir.join(USER_FILENAME).exists());
         std::fs::remove_dir_all(temp_dir).unwrap();
     }
 }

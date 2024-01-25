@@ -5,7 +5,7 @@ use axum::extract::Json;
 use rand::Rng;
 use regex::Regex;
 use hex;
-use crate::{ api::error::ServerResult, json_enum, settings };
+use crate::{ api::error::ServerResult, api::users::USER_FILENAME, json_enum, settings };
 
 use super::error::Error;
 
@@ -22,14 +22,22 @@ lazy_static! {
 }
 
 json_enum!(AuthenticationMethod, UserPassword);
+json_enum!(TokenType, Bearer);
 
+/// Body of the POST /auth/logon endpoint.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-struct LogonBody {
+struct Authentication {
+    /// The authentication method.
+    /// As of now, only the UserPassword method is supported.
+    #[allow(dead_code)]
     method: AuthenticationMethod,
+
+    /// The credentials used to authenticate the user.
     credentials: Credentials,
 }
 
+/// Credentials used to authenticate a user.
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct Credentials {
@@ -37,52 +45,89 @@ struct Credentials {
     password: String,
 }
 
+/// Response of the POST /auth/logon endpoint.
 #[derive(Serialize, Debug)]
-struct LogonResult {
+struct SecurityToken {
+    /// The security token is a 256-bit random number encoded in hexadecimal.
     token: String,
+
+    /// The type of the token (always "Bearer" for now)
+    token_type: TokenType,
+
+    /// The refresh token is used to generate a new security token.
+    refresh_token: String,
+
+    /// The number of seconds after which the token will expire.
     expires: u32,
+
+    /// The user id associated with the token.
+    user_id: String,
 }
 
-fn generate_token() -> String {
-    let mut rng = rand::thread_rng();
-    let token: [u8; 32] = rng.gen();
-    return hex::encode(token);
-}
-
-async fn logon(body: Json<LogonBody>) -> ServerResult<Json<LogonResult>> {
-    if body.method != AuthenticationMethod::UserPassword {
-        // Only the user/password authentication method is supported.
-        return Err(Error::BadRequest);
-    }
-
+/// POST /auth/logon
+///
+/// This endpoint is used to authenticate a user and to generate a security token.
+/// As for now it only supports the local user and the password must be empty.
+async fn logon(auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> {
     // Usernames are case insensitive. We are using the lowercase version, especially whenever we need to access the
     // filesystem.
-    let username = body.credentials.username.to_lowercase();
+    let username = auth.credentials.username.to_lowercase();
 
     // The username must be a valid username and the user must exists.
     if
         !RE_USERNAME.is_match(&username) ||
         !username.eq(USERNAME_LOCAL) ||
-        !settings::get_user_dir(&username).join(".settings.json").exists()
+        !settings::get_user_dir(&username).join(USER_FILENAME).exists()
     {
         return Err(Error::Forbidden);
     }
 
-    if !body.credentials.password.is_empty() {
+    if !auth.credentials.password.is_empty() {
         // As of now, we only support the local user and the password must be empty.
-        return Err(Error::BadRequest);
+        return Err(Error::BadRequest("Password must be empty".to_string()));
     }
 
-    let response = LogonResult {
+    let response = SecurityToken {
         token: generate_token(),
+        token_type: TokenType::Bearer,
+        refresh_token: generate_token(),
         expires: DEFAULT_TOKEN_EXPIRATION,
+        user_id: "todo".to_string(), // TODO: Get the user id from the context.
     };
 
     Ok(Json(response))
 }
 
+/// The request body of the POST /auth/refresh-token endpoint.
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+struct RefreshToken {
+    refresh_token: String,
+}
+
+/// TODO: TO BE IMPLEMENTED
+/// POST /auth/refresh-token
+async fn refresh_token(token: Json<RefreshToken>) -> ServerResult<Json<SecurityToken>> {
+    if token.refresh_token.is_empty() {
+        return Err(Error::BadRequest("The refresh token is empty".to_string()));
+    }
+    todo!()
+}
+
 pub fn routes() -> Router {
-    Router::new().route("/auth/logon", post(logon))
+    Router::new()
+        .route("/auth/logon", post(logon))
+        .route("/auth/refresh-token", post(refresh_token))
+}
+
+/// Generate a security token.
+///
+/// The security token is a 256-bit random number encoded in hexadecimal. We are using the `rand` crate to generate the
+/// random number which is considered cryptographically secure (source: https://bit.ly/3vOrqSh).
+fn generate_token() -> String {
+    let mut rng = rand::thread_rng();
+    let token: [u8; 32] = rng.gen();
+    return hex::encode(token);
 }
 
 #[cfg(test)]
@@ -104,7 +149,7 @@ mod test {
 
         // 1) invalid user (the user directory does not exist)
         {
-            let body = Json(LogonBody {
+            let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials {
                     username: "local".to_string(),
@@ -117,7 +162,7 @@ mod test {
         // 2) valid user
         {
             create_user("local").unwrap();
-            let body = Json(LogonBody {
+            let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials {
                     username: "local".to_string(),
@@ -132,7 +177,7 @@ mod test {
 
         // 3) unexpected username (not "local")
         {
-            let body = Json(LogonBody {
+            let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials {
                     username: "marty_mcfly".to_string(),
@@ -144,14 +189,14 @@ mod test {
 
         // 4) unexpected password (expected empty string)
         {
-            let body = Json(LogonBody {
+            let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials {
                     username: "local".to_string(),
                     password: "****".to_string(),
                 },
             });
-            assert!(matches!(logon(body).await, Err(Error::BadRequest)));
+            assert!(matches!(logon(body).await, Err(Error::BadRequest(_))));
         }
 
         // cleanup
