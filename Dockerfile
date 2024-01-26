@@ -5,7 +5,6 @@ ENV PATH="/usr/local/cargo/bin:${PATH}"
 RUN cargo install cargo-tarpaulin
 RUN chmod -R 777 /usr/local/cargo/registry
 
+# We need to create a user to run the tests (some unit tests are failing if we run them as root)
 RUN useradd -m ci
-USER ci
-ENV CARGO_BUILD_TARGET_DIR=/tmp/x86_64-unknown-linux-gnu
-WORKDIR /home/ci
+ENV CARGO_BUILD_TARGET_DIR=build
