@@ -38,7 +38,7 @@ pub struct SecurityToken {
     pub refresh_token: String,
 
     /// The number of seconds after which the token will expire.
-    pub expires: u32,
+    pub expires_in: u32,
 
     /// The user id associated with the token.
     pub user_id: String,

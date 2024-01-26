@@ -9,6 +9,7 @@ mod pid_file;
 use std::{ path::Path, process::exit };
 use anyhow::{ Result, Context };
 use crate::pid_file::{ save_pid_file, delete_pid_file, PID_FILENAME };
+use crate::server::web::Server;
 
 #[tokio::main]
 async fn main() {
@@ -59,7 +60,7 @@ async fn start(app_dir: &Path) -> Result<()> {
     );
 
     // server initialization
-    let server = server::Server::default();
+    let server = Server::default();
     let listener = server.bind().await?;
 
     // save the file agent.pid

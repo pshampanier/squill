@@ -34,11 +34,11 @@ async fn logon(auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> 
         return Err(Error::BadRequest("Password must be empty".to_string()));
     }
 
-    let response = SecurityToken {
+    let response: SecurityToken = SecurityToken {
         token: generate_token(),
         token_type: TokenType::Bearer,
         refresh_token: generate_token(),
-        expires: DEFAULT_TOKEN_EXPIRATION,
+        expires_in: DEFAULT_TOKEN_EXPIRATION,
         user_id: "todo".to_string(), // TODO: Get the user id from the context.
     };
 
