@@ -31,3 +31,14 @@ cargo tarpaulin --target-dir=${CARGO_BUILD_TARGET_DIR} && open build/tarpaulin-r
 ```
 
 A github action [agent-coverage.yml](../.github/workflows/agent-coverage.yml) is configured to be run on every push on the `main` branch and results are published on [codecov.io](https://app.codecov.io/gh/pshampanier/one-sql).
+
+# Github actions
+
+## Testing Github actions
+
+> [!IMPORTANT]
+> Install [`act`](https://github.com/nektos/act).
+
+```sh
+act --workflows .github/workflows/agent-coverage.yml
+```

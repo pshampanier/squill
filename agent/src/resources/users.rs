@@ -51,9 +51,22 @@ pub fn delete_user(username: &str) -> Result<()> {
     Ok(())
 }
 
+/// Load the user from the filesystem.
+pub fn get_user(username: &str) -> Result<User> {
+    // First we need to sanitize the username to make sure it will not pose security threats sur as directory traversal.
+    let username = crate::utils::validators::sanitize_username(username)?;
+    let user_dir = settings::get_user_dir(&username);
+    if !user_dir.exists() {
+        return Err(anyhow!("The user {} does not exist.", &username));
+    }
+    let user_file = user_dir.join(USER_FILENAME);
+    let user = std::fs::read_to_string(user_file.as_path())?;
+    Ok(serde_json::from_str(user.as_str())?)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::utils::{ constants::USERS_DIRNAME, tests::set_readonly };
+    use crate::utils::{ constants::USERS_DIRNAME, tests::set_readonly, tests::settings };
     use super::*;
 
     #[test]
@@ -61,7 +74,7 @@ mod tests {
         // setup
         let username = "test_user";
         let temp_dir = tempfile::tempdir().unwrap();
-        settings::tests::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
+        settings::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
         let user_dir = settings::get_user_dir(username);
 
         // 1. create a user (expect to succeed)
@@ -83,7 +96,7 @@ mod tests {
         std::fs::set_permissions(&users_dir, restore_permissions).unwrap();
 
         // 5. set the base directory to a non-existent directory (expect to fail)
-        settings::tests::set_base_dir(
+        settings::set_base_dir(
             temp_dir.path().join("non/existent/directory").as_path().to_str().unwrap().to_string()
         );
         assert!(create_user("doc").is_err());
@@ -97,7 +110,7 @@ mod tests {
         // setup
         let username = "test_user";
         let temp_dir = tempfile::tempdir().unwrap();
-        settings::tests::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
+        settings::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
         let user_dir = settings::get_user_dir(username);
         let _ = create_user(username);
 
@@ -118,6 +131,27 @@ mod tests {
 
         // 5. delete a user with an invalid username (expect to fail)
         assert!(delete_user("invalid/username").is_err());
+
+        // cleanup
+        std::fs::remove_dir_all(temp_dir).unwrap();
+    }
+
+    #[test]
+    fn test_get_user() {
+        // setup
+        let username = "test_user";
+        let temp_dir = tempfile::tempdir().unwrap();
+        settings::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
+        let _ = create_user(username);
+
+        // 1. get an existing user (expect to succeed)
+        assert!(get_user(username).is_ok());
+
+        // 2. get a non-existent user (expect to fail)
+        assert!(get_user("non_existent_user").is_err());
+
+        // 3. get a user with an invalid username (expect to fail)
+        assert!(get_user("invalid/username").is_err());
 
         // cleanup
         std::fs::remove_dir_all(temp_dir).unwrap();

@@ -5,18 +5,26 @@ type Error = Box<dyn std::error::Error>;
 
 pub const PID_FILENAME: &str = "agent.pid";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct PidFile {
-    pid: u32,
-    port: u16,
-    api_key: String,
+    pub pid: u32,
+    pub port: u16,
+    pub api_key: String,
 }
 
-pub fn load_pid_file(dir: &Path) -> Result<PidFile, Error> {
+/// Load the pid file (if any).
+///
+/// This function will return None if the pid file does not exists, cannot be read or if the content of the file is not
+/// valid.
+pub fn load_pid_file(dir: &Path) -> Option<PidFile> {
     let file = dir.join(PID_FILENAME);
-    let content = std::fs::read_to_string(file)?;
-    let pid_file: PidFile = toml::from_str(&content)?;
-    Ok(pid_file)
+    let Ok(content) = std::fs::read_to_string(file) else {
+        return None;
+    };
+    let Ok(pid_file) = toml::from_str::<PidFile>(&content) else {
+        return None;
+    };
+    Some(pid_file)
 }
 
 pub fn delete_pid_file(dir: &Path) -> Result<(), Error> {

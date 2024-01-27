@@ -1,5 +1,6 @@
 use axum::{ extract::Json, routing::get, Router };
 use crate::{ api::error::ServerResult, models::agent::Agent };
+use crate::server::state::ServerState;
 
 /// GET /agent
 ///
@@ -14,8 +15,8 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
     Ok(Json(response))
 }
 
-pub fn routes() -> Router {
-    Router::new().route("/agent", get(get_agent))
+pub fn routes(state: ServerState) -> Router {
+    Router::new().route("/agent", get(get_agent)).with_state(state)
 }
 
 #[cfg(test)]

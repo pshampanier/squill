@@ -27,8 +27,9 @@ impl IntoResponse for Error {
     }
 }
 
+// TODO: log the original error
 impl From<AnyhowError> for Error {
-    fn from(error: AnyhowError) -> Self {
+    fn from(_: AnyhowError) -> Self {
         Error::InternalServerError
     }
 }

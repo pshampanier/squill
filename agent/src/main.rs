@@ -4,11 +4,10 @@ mod server;
 mod api;
 mod utils;
 mod models;
-mod pid_file;
+mod resources;
 
-use std::{ path::Path, process::exit };
+use std::{ process::exit };
 use anyhow::{ Result, Context };
-use crate::pid_file::{ save_pid_file, delete_pid_file, PID_FILENAME };
 use crate::server::web::Server;
 
 #[tokio::main]
@@ -36,54 +35,17 @@ async fn run(args: &commandline::Args) -> Result<()> {
     }
     match &args.command {
         commandline::Commands::Start { .. } => {
-            return start(&app_dir).await;
+            return Server::start().await;
         }
         commandline::Commands::UserAdd { username } => {
-            utils::users::create_user(username.as_str())?;
+            resources::users::create_user(username.as_str())?;
         }
         commandline::Commands::UserDel { username } => {
-            utils::users::delete_user(username.as_str())?;
+            resources::users::delete_user(username.as_str())?;
         }
         commandline::Commands::ShowConfig => {
             settings::show_config();
         }
     }
     Ok(())
-}
-
-async fn start(app_dir: &Path) -> Result<()> {
-    println!(
-        "{} {} (pid={})",
-        env!("CARGO_PKG_DESCRIPTION"),
-        env!("CARGO_PKG_VERSION"),
-        std::process::id()
-    );
-
-    // server initialization
-    let server = Server::default();
-    let listener = server.bind().await?;
-
-    // save the file agent.pid
-    save_pid_file(
-        app_dir,
-        &listener.local_addr().unwrap(),
-        settings::get_api_key().as_str()
-    ).expect(
-        format!(
-            "Unable to save the pid file: {}",
-            app_dir.join(PID_FILENAME).to_str().unwrap()
-        ).as_str()
-    );
-
-    // run the server
-    let result = server.start(listener).await;
-
-    // delete the file agent.pid
-    delete_pid_file(&app_dir).expect(
-        format!(
-            "Unable to delete the pid file: {}",
-            app_dir.join(PID_FILENAME).to_str().unwrap()
-        ).as_str()
-    );
-    result
 }

@@ -2,6 +2,7 @@ use crate::settings;
 use crate::api::error::ServerResult;
 use crate::models::users::User;
 use crate::utils::constants::USER_FILENAME;
+use crate::server::state::ServerState;
 use anyhow::Context;
 use axum::{ extract::Path, Json, Router, routing::get };
 
@@ -30,6 +31,6 @@ async fn get_user(Path(username): Path<String>) -> ServerResult<Json<User>> {
     Ok(Json(user))
 }
 
-pub fn authenticated_routes() -> Router {
-    Router::new().route("/users/:username/user", get(get_user))
+pub fn authenticated_routes(state: ServerState) -> Router {
+    Router::new().route("/users/:username/user", get(get_user)).with_state(state)
 }

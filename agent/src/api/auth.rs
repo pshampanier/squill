@@ -1,22 +1,38 @@
 use axum::{ Router, routing::post };
-use axum::extract::Json;
+use axum::extract::{ Json, State };
 use rand::Rng;
 use hex;
+use crate::resources::users;
 use crate::utils::validators::sanitize_username;
 use crate::utils::constants::USER_FILENAME;
 use crate::{ api::error::ServerResult, settings };
 use crate::models::auth::{ TokenType, Authentication, SecurityToken, RefreshToken };
+use crate::server::state::ServerState;
 
 use super::error::Error;
 
 const USERNAME_LOCAL: &str = "local";
-const DEFAULT_TOKEN_EXPIRATION: u32 = 3600;
+
+impl Default for SecurityToken {
+    fn default() -> Self {
+        Self {
+            token: generate_token(),
+            token_type: TokenType::Bearer,
+            refresh_token: generate_token(),
+            expires_in: settings::get_token_expiration(),
+            user_id: "".to_string(),
+        }
+    }
+}
 
 /// POST /auth/logon
 ///
 /// This endpoint is used to authenticate a user and to generate a security token.
 /// As for now it only supports the local user and the password must be empty.
-async fn logon(auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> {
+async fn logon(
+    State(state): State<ServerState>,
+    auth: Json<Authentication>
+) -> ServerResult<Json<SecurityToken>> {
     // Usernames are case insensitive. We are using the lowercase version to prevent any duplicate issues when the
     // filesystem is case insensitive.
     let username = sanitize_username(auth.credentials.username.as_str())?;
@@ -34,15 +50,19 @@ async fn logon(auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> 
         return Err(Error::BadRequest("Password must be empty".to_string()));
     }
 
-    let response: SecurityToken = SecurityToken {
-        token: generate_token(),
-        token_type: TokenType::Bearer,
-        refresh_token: generate_token(),
-        expires_in: DEFAULT_TOKEN_EXPIRATION,
-        user_id: "todo".to_string(), // TODO: Get the user id from the context.
+    let Ok(user) = users::get_user(&username) else {
+        // The user does not exists.
+        return Err(Error::Forbidden);
     };
 
-    Ok(Json(response))
+    // Create a security token.
+    let token = SecurityToken {
+        user_id: user.user_id.clone(),
+        ..Default::default()
+    };
+
+    state.add_user_session(&token, &user.username);
+    Ok(Json(token))
 }
 
 /// TODO: TO BE IMPLEMENTED
@@ -54,10 +74,11 @@ async fn refresh_token(token: Json<RefreshToken>) -> ServerResult<Json<SecurityT
     todo!()
 }
 
-pub fn routes() -> Router {
+pub fn routes(state: ServerState) -> Router {
     Router::new()
         .route("/auth/logon", post(logon))
         .route("/auth/refresh-token", post(refresh_token))
+        .with_state(state)
 }
 
 /// Generate a security token.
@@ -72,7 +93,11 @@ fn generate_token() -> String {
 
 #[cfg(test)]
 mod test {
-    use crate::{ utils::users::create_user, models::auth::{ AuthenticationMethod, Credentials } };
+    use crate::{
+        resources::users::create_user,
+        models::auth::{ AuthenticationMethod, Credentials },
+    };
+    use crate::utils::tests::settings;
     use super::*;
 
     #[test]
@@ -85,7 +110,7 @@ mod test {
     async fn test_logon() {
         // setup
         let temp_dir = tempfile::tempdir().unwrap();
-        settings::tests::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
+        settings::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
 
         // 1) invalid user (the user directory does not exist)
         {
@@ -96,7 +121,8 @@ mod test {
                     password: "".to_string(),
                 },
             });
-            assert!(matches!(logon(body).await, Err(Error::Forbidden)));
+            let state = axum::extract::State(ServerState::new());
+            assert!(matches!(logon(state, body).await, Err(Error::Forbidden)));
         }
 
         // 2) valid user
@@ -109,7 +135,8 @@ mod test {
                     password: "".to_string(),
                 },
             });
-            let result = logon(body).await;
+            let state = axum::extract::State(ServerState::new());
+            let result = logon(state, body).await;
             assert!(result.is_ok());
             let result = result.unwrap();
             assert_eq!(result.token.len(), 64);
@@ -124,7 +151,8 @@ mod test {
                     password: "".to_string(),
                 },
             });
-            assert!(matches!(logon(body).await, Err(Error::Forbidden)));
+            let state = axum::extract::State(ServerState::new());
+            assert!(matches!(logon(state, body).await, Err(Error::Forbidden)));
         }
 
         // 4) unexpected password (expected empty string)
@@ -136,7 +164,8 @@ mod test {
                     password: "****".to_string(),
                 },
             });
-            assert!(matches!(logon(body).await, Err(Error::BadRequest(_))));
+            let state = axum::extract::State(ServerState::new());
+            assert!(matches!(logon(state, body).await, Err(Error::BadRequest(_))));
         }
 
         // cleanup
