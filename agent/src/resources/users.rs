@@ -27,11 +27,9 @@ pub fn create_user(username: &str) -> Result<User> {
             format!("Unable to create the user directory: {}", user_dir.to_str().unwrap())
         )?;
 
+    let user = User::default();
+
     let user_file = user_dir.join(USER_FILENAME);
-    let user = User {
-        username: username,
-        ..User::default()
-    };
     std::fs::write(user_file.as_path(), serde_json::to_string_pretty(&user)?)?;
     Ok(user)
 }

@@ -31,4 +31,10 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           directory: ./agent/build
-          verbose: false
+          verbose: false        
+
+      - name: Security audit
+        if: always()
+        working-directory: ./agent
+        run: |
+          cargo audit

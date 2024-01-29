@@ -1,6 +1,7 @@
 use crate::commandline;
 use crate::utils::constants::USERS_DIRNAME;
 use crate::models::agent::AgentSettings;
+use crate::settings_getters;
 use std::fmt;
 use std::net::Ipv4Addr;
 use std::path::{ PathBuf, Path };
@@ -9,8 +10,6 @@ use anyhow::{ anyhow, Context, Result };
 
 #[cfg(not(test))]
 use lazy_static::lazy_static;
-#[cfg(not(test))]
-use rand::Rng;
 
 #[cfg(test)]
 use std::cell::RefCell;
@@ -70,31 +69,13 @@ pub fn get_app_dir() -> PathBuf {
     APP_DIR.clone()
 }
 
-/// For each property of the AgentSettings struct, generate a getter function.
-///
-/// The generated function will return the value of the property from the global SETTINGS static variable. In test mode,
-/// the generated function will return a value from the thread local variable SETTINGS, allowing to override the value.
-macro_rules! settings_getters {
-    ($($getter:ident, $field:ident: $type:ty),* $(,)?) => {
-        $(
-            pub fn $getter() -> $type {
-                #[cfg(not(test))]
-                {
-                    SETTINGS.$field.clone()
-                }
-                #[cfg(test)]
-                crate::utils::tests::settings::SETTINGS.with(|settings| { settings.borrow().$field.clone() })
-            }
-        )*
-    };
-}
-
 settings_getters! {
     get_listen_address, listen_address: String,
     get_port, port: u16,
     get_base_dir, base_dir: String,
     get_api_key, api_key: String,
     get_max_user_sessions, max_user_sessions: usize,
+    get_max_refresh_tokens, max_refresh_tokens: usize,
     get_token_expiration, token_expiration: u32,
 
 }
@@ -211,17 +192,6 @@ lazy_static! {
  */
 pub fn get_user_dir(username: &str) -> PathBuf {
     PathBuf::from(get_base_dir()).join(USERS_DIRNAME).join(username)
-}
-
-fn generate_api_key() -> String {
-    #[cfg(not(test))]
-    {
-        let mut rng = rand::thread_rng();
-        let token: [u8; 32] = rng.gen();
-        return hex::encode(token);
-    }
-    #[cfg(test)]
-    "cf55f65...".to_string()
 }
 
 pub fn show_config() {

@@ -26,9 +26,7 @@ json_enum!(Minimap, Show, Hide, Auto);
 json_enum!(RenderWhitespace, None, Boundary, Selection, All, Trailing);
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct User {
-    pub username: String,
     pub user_id: String,
     pub settings: Option<UserSettings>,
 }
@@ -36,7 +34,6 @@ pub struct User {
 impl Default for User {
     fn default() -> Self {
         Self {
-            username: String::new(),
             user_id: Uuid::new_v4().to_string(),
             settings: Some(UserSettings {
                 color_scheme: ColorScheme::Auto,

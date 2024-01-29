@@ -22,11 +22,7 @@ pub fn set_readonly(path: &std::path::Path) -> std::fs::Permissions {
 pub mod settings {
     use crate::{ models::agent::AgentSettings, settings };
     use std::{ cell::RefCell, path::{ Path, PathBuf } };
-    pub fn set_app_dir(new_app_dir: &Path) {
-        crate::settings::APP_DIR.with(|app_dir| {
-            *app_dir.borrow_mut() = new_app_dir.to_path_buf();
-        });
-    }
+    use crate::settings_getters;
 
     thread_local! {
         pub static SETTINGS: RefCell<AgentSettings> = RefCell::new(AgentSettings::default());
@@ -44,11 +40,41 @@ pub mod settings {
         };
     }
 
+    // For convinience, generate getters & setters for the settings used in tests.
+    // This allows to get/set the settings in tests modules as follows:
+    //
+    //    use crate::utils::tests::settings;
+    //
+    //    settings::set_base_dir("new_base_dir");
+    //    let base_dir = settings::get_base_dir();
+    //
+    //    let api_key = settings::get_api_key();
+    //    settings::set_api_key("new_api_key");
+
+    settings_setters!(set_base_dir, base_dir: String);
+    settings_setters!(set_token_expiration, token_expiration: u32);
+    settings_setters!(set_listen_address, listen_address: String);
+
+    pub fn set_app_dir(new_app_dir: &Path) {
+        crate::settings::APP_DIR.with(|app_dir| {
+            *app_dir.borrow_mut() = new_app_dir.to_path_buf();
+        });
+    }
+
+    // For convinience, generate getters for the settings used in tests.
+    // This allows to get the settings in tests modules as follows:
+    //
+    //    use crate::utils::tests::settings;
+    //
+    //    let base_dir = settings::get_base_dir();
+    //    let api_key = settings::get_api_key();
+
+    settings_getters! {
+        get_api_key, api_key: String,
+    }
+
     /// Get the directory used to store the files for the specified user.
     pub fn get_user_dir(username: &str) -> PathBuf {
         settings::get_user_dir(username)
     }
-
-    settings_setters!(set_base_dir, base_dir: String);
-    settings_setters!(set_token_expiration, token_expiration: u32);
 }

@@ -6,7 +6,6 @@ json_enum!(TokenType, Bearer);
 
 /// Body of the POST /auth/logon endpoint.
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct Authentication {
     /// The authentication method.
     /// As of now, only the UserPassword method is supported.
@@ -19,14 +18,13 @@ pub struct Authentication {
 
 /// Credentials used to authenticate a user.
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct Credentials {
     pub username: String,
     pub password: String,
 }
 
 /// Response of the POST /auth/logon endpoint.
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Clone)]
 pub struct SecurityToken {
     /// The security token is a 256-bit random number encoded in hexadecimal.
     pub token: String,
@@ -46,7 +44,7 @@ pub struct SecurityToken {
 
 /// The request body of the POST /auth/refresh-token endpoint.
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
+#[cfg_attr(test, derive(Serialize))]
 pub struct RefreshToken {
     pub refresh_token: String,
 }

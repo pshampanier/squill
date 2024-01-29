@@ -1,10 +1,11 @@
+use axum::http::header::InvalidHeaderValue;
 use axum::response::{ IntoResponse, Response };
 use axum::http::StatusCode;
 use anyhow::Error as AnyhowError;
 
 pub type ServerResult<T> = std::result::Result<T, Error>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Error {
     // NotFound,
     Forbidden,
@@ -28,8 +29,19 @@ impl IntoResponse for Error {
 }
 
 // TODO: log the original error
-impl From<AnyhowError> for Error {
+impl From<anyhow::Error> for Error {
     fn from(_: AnyhowError) -> Self {
+        Error::InternalServerError
+    }
+}
+
+/// Convert an `InvalidHeaderValue` into a `BadRequest` error.
+///
+/// This is used to convert the error returned by `HeaderValue::from_str` into a `InternalServerError` error.
+/// I'm making the assumption that the only time this error occurs is when adding a header into the reponse, not when
+/// parsing a header from the request because the last should trigger a `BadRequest` instead.
+impl From<InvalidHeaderValue> for Error {
+    fn from(_: InvalidHeaderValue) -> Self {
         Error::InternalServerError
     }
 }

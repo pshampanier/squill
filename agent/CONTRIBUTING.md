@@ -40,5 +40,5 @@ A github action [agent-coverage.yml](../.github/workflows/agent-coverage.yml) is
 > Install [`act`](https://github.com/nektos/act).
 
 ```sh
-act --workflows .github/workflows/agent-coverage.yml
+act --workflows .github/workflows/agent.yml
 ```

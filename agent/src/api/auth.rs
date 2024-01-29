@@ -1,8 +1,9 @@
+use hex;
+use rand::Rng;
 use axum::{ Router, routing::post };
 use axum::extract::{ Json, State };
-use rand::Rng;
-use hex;
 use crate::resources::users;
+use crate::server::context::RequestContext;
 use crate::utils::validators::sanitize_username;
 use crate::utils::constants::USER_FILENAME;
 use crate::{ api::error::ServerResult, settings };
@@ -61,24 +62,35 @@ async fn logon(
         ..Default::default()
     };
 
-    state.add_user_session(&token, &user.username);
+    state.add_user_session(&token, &username);
     Ok(Json(token))
 }
 
-/// TODO: TO BE IMPLEMENTED
 /// POST /auth/refresh-token
-async fn refresh_token(token: Json<RefreshToken>) -> ServerResult<Json<SecurityToken>> {
+/// TODO: TO BE IMPLEMENTED
+async fn refresh_token(
+    context: ServerResult<RequestContext>,
+    State(state): State<ServerState>,
+    token: Json<RefreshToken>
+) -> ServerResult<Json<SecurityToken>> {
     if token.refresh_token.is_empty() {
         return Err(Error::BadRequest("The refresh token is empty".to_string()));
     }
-    todo!()
+    let Some(token) = state.refresh_token(&context?.get_user_id(), &token.refresh_token) else {
+        return Err(Error::Forbidden);
+    };
+    let token = token.as_ref().clone();
+    Ok(Json(token))
 }
 
+/// Create a router for the endpoints that can be reached without authentication.
 pub fn routes(state: ServerState) -> Router {
-    Router::new()
-        .route("/auth/logon", post(logon))
-        .route("/auth/refresh-token", post(refresh_token))
-        .with_state(state)
+    Router::new().route("/auth/logon", post(logon)).with_state(state)
+}
+
+/// Create a router for the endpoints that requires authentication to be reached.
+pub fn authenticated_routes(state: ServerState) -> Router {
+    Router::new().route("/auth/refresh-token", post(refresh_token)).with_state(state)
 }
 
 /// Generate a security token.
@@ -86,8 +98,7 @@ pub fn routes(state: ServerState) -> Router {
 /// The security token is a 256-bit random number encoded in hexadecimal. We are using the `rand` crate to generate the
 /// random number which is considered cryptographically secure (source: https://bit.ly/3vOrqSh).
 fn generate_token() -> String {
-    let mut rng = rand::thread_rng();
-    let token: [u8; 32] = rng.gen();
+    let token: [u8; 32] = rand::thread_rng().gen();
     return hex::encode(token);
 }
 

@@ -1,21 +1,31 @@
 use crate::{ settings, api };
-use crate::api::error::Error;
+use crate::api::error::{ Error, ServerResult };
 use crate::server::state::ServerState;
+use crate::server::context::RequestContext;
 use crate::server::pid_file::{ save_pid_file, delete_pid_file, load_pid_file, PID_FILENAME };
+use crate::utils::constants::{ X_API_KEY_HEADER, X_REQUEST_ID_HEADER };
+use std::time::{ SystemTime, UNIX_EPOCH };
+use axum::extract::State;
 use axum::http::{ self, HeaderValue };
-use axum::{ Router, extract::Request, middleware::{ Next, from_fn }, response::Response };
+use axum::middleware::{ from_fn, from_fn_with_state, Next };
+use axum::{ Router, extract::Request, response::Response };
 use anyhow::{ Result, Context };
+use rand::Rng;
 use tokio::signal;
 use tokio::net::TcpListener;
 use sysinfo::{ Pid, System };
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::{ Sender, Receiver };
 
-const API_KEY_HEADER: &str = "X-API-Key";
-
-pub struct Server {}
+pub struct Server {
+    stop_channel_sender: Option<Sender<()>>,
+}
 
 impl Default for Server {
     fn default() -> Self {
-        Self {}
+        Self {
+            stop_channel_sender: None,
+        }
     }
 }
 
@@ -32,32 +42,23 @@ impl Server {
         Self::check_if_running().await?;
 
         // Server initialization
-        let server = Server::default();
+        let mut server = Server::default();
         let listener = server.bind().await?;
 
         // Save the file agent.pid
         let app_dir = settings::get_app_dir();
-        save_pid_file(
-            &app_dir,
-            &listener.local_addr().unwrap(),
-            settings::get_api_key().as_str()
-        ).expect(
-            format!(
-                "Unable to save the pid file: {}",
-                app_dir.join(PID_FILENAME).to_str().unwrap()
-            ).as_str()
-        );
+        save_pid_file(&app_dir, &listener.local_addr()?, &settings::get_api_key()).or(
+            Err(anyhow::anyhow!("Unable to save the pid file: {:?}", app_dir.join(PID_FILENAME)))
+        )?;
 
         // Run the server
         let result = server.run(listener).await;
 
         // delete the file agent.pid
-        delete_pid_file(&app_dir).expect(
-            format!(
-                "Unable to delete the pid file: {}",
-                app_dir.join(PID_FILENAME).to_str().unwrap()
-            ).as_str()
-        );
+        delete_pid_file(&app_dir).or(
+            Err(anyhow::anyhow!("Unable to delete the pid file: {:?}", app_dir.join(PID_FILENAME)))
+        )?;
+
         result
     }
 
@@ -74,13 +75,8 @@ impl Server {
             })
     }
 
-    /// Run the server.
-    ///
-    /// This function will start the server and will not return until the server is stopped.
-    async fn run(&self, listener: TcpListener) -> Result<()> {
-        // create the server state
-        let state = ServerState::new();
-
+    /// Create the API router.
+    fn api(state: &ServerState) -> Router {
         // routes that don't required authentication
         let routes = Router::new()
             .merge(api::auth::routes(state.clone()))
@@ -90,17 +86,50 @@ impl Server {
         let auth_routes = Router::new().merge(
             api::users
                 ::authenticated_routes(state.clone())
+                .merge(api::auth::authenticated_routes(state.clone()))
                 .layer(from_fn(check_api_key))
-                .layer(from_fn(check_authentication))
+                .layer(from_fn_with_state(state.clone(), check_authentication))
         );
 
         // all routes are nested under the /api/v1 path
-        let api = Router::new().nest("/api/v1", routes.merge(auth_routes));
+        return Router::new().nest("/api/v1", routes.merge(auth_routes));
+    }
+
+    /// Run the server.
+    ///
+    /// This function will start the server and will not return until the server is stopped.
+    async fn run(&mut self, listener: TcpListener) -> Result<()> {
+        // create the server state
+        let state = ServerState::new();
+
+        // Get the router that will handle all the requests for the REST API.
+        let api = Self::api(&state);
+
+        // create a channel to stop the server (used for unit tests only)
+        let (stop_channel_sender, stop_channel_receiver) = mpsc::channel::<()>(100);
+        self.stop_channel_sender = Some(stop_channel_sender.clone());
 
         // start the server
         println!("listening on {}", listener.local_addr().unwrap().to_string());
-        axum::serve(listener, api).with_graceful_shutdown(shutdown_signal()).await?;
+        axum
+            ::serve(listener, api)
+            .with_graceful_shutdown(shutdown_signal(stop_channel_receiver)).await?;
         Ok(())
+    }
+
+    /// Stop the server.
+    ///
+    /// This method will send a message to the server to stop it or will return an error if the server is not running.
+    #[cfg(test)]
+    pub async fn stop(&self) -> Result<()> {
+        match self.stop_channel_sender.as_ref() {
+            Some(stop_channel_sender) => {
+                stop_channel_sender
+                    .send(()).await
+                    .with_context(|| "Unable to send the stop the server.")
+            }
+            None => { Err(anyhow::anyhow!("The server is not running.")) }
+        }
     }
 
     /// Check if the server is already running.
@@ -117,8 +146,8 @@ impl Server {
         };
 
         // Check an alternative that works on the Apple Store
-        let s = System::new_all();
-        if s.process(Pid::from_u32(pid_file.pid)).is_some() {
+        let running_proc = System::new_all();
+        if running_proc.process(Pid::from_u32(pid_file.pid)).is_none() {
             // The process is no longer running
             return Ok(());
         }
@@ -132,12 +161,19 @@ impl Server {
 ///
 /// The API key is passed in the X-API-Key header and is required for all requests.
 /// If the API key is not provided or invalid, the request will be rejected with a 403 Forbidden error.
-async fn check_api_key(req: Request, next: Next) -> Result<Response, Error> {
-    let api_key_header = req.headers().get(API_KEY_HEADER);
+async fn check_api_key(mut req: Request, next: Next) -> ServerResult<Response> {
+    let api_key_header = req.headers().get(X_API_KEY_HEADER);
     if let Some(api_key) = api_key_header {
         let value = api_key.to_str();
         if value.is_ok() && value.unwrap() == settings::get_api_key() {
-            return Ok(next.run(req).await);
+            // We've found the api key, before continuing to the next middleware, we need to add the context request
+            // TODO: If there is already a request id in the request header, we should not generate a new one.
+            let request_id = gen_request_id();
+            let context = RequestContext::new(&request_id);
+            req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
+            let mut response = next.run(req).await;
+            response.headers_mut().insert(X_REQUEST_ID_HEADER, HeaderValue::from_str(&request_id)?);
+            return Ok(response);
         }
     }
     Err(Error::Forbidden)
@@ -148,22 +184,32 @@ async fn check_api_key(req: Request, next: Next) -> Result<Response, Error> {
 /// The security token is passed in the Authorization header and is required for most of the requests.
 /// If the security token is not provided, the request will be rejected with a 403 Forbidden error.
 /// If the security token is provided but is invalid, the request will be rejected with a 400 Bad Request error.
-async fn check_authentication(req: Request, next: Next) -> Result<Response, Error> {
+async fn check_authentication(
+    State(state): State<ServerState>,
+    context: ServerResult<RequestContext>,
+    req: Request,
+    next: Next
+) -> ServerResult<Response> {
     let authorization_header = req.headers().get(http::header::AUTHORIZATION);
-    if let Some(authorization_header) = authorization_header {
-        match parse_authorization_header(authorization_header) {
-            Ok(token) => {
-                // TODO: Check the security token
-                return Ok(next.run(req).await);
-            }
-            Err(_) => {
-                return Err(Error::BadRequest("(Invalid 'Authorization' header)".to_string()));
-            }
-        }
-    }
-    return Err(Error::Forbidden);
+    let Some(authorization_header) = authorization_header else {
+        // The Authorization header is missing.
+        return Err(Error::Forbidden);
+    };
+    let Ok(token) = parse_authorization_header(authorization_header) else {
+        return Err(Error::BadRequest("(Invalid 'Authorization' header)".to_string()));
+    };
 
-    // Parse the 'Authorization' header.
+    let Some(user_session) = state.get_user_session(&token) else {
+        return Err(Error::Forbidden);
+    };
+
+    // Add the user_session information to the context of the request.
+    let mut context = context?;
+    context.add_user_session(&user_session);
+
+    return Ok(next.run(req).await);
+
+    // Parse the 'Authorization' header and return the token.
     fn parse_authorization_header(authorization_header: &HeaderValue) -> Result<String> {
         let parts: Vec<&str> = authorization_header.to_str()?.split(" ").collect();
         if parts.len() != 2 || parts[0] != "Bearer" {
@@ -173,13 +219,28 @@ async fn check_authentication(req: Request, next: Next) -> Result<Response, Erro
     }
 }
 
+/// Generate a request id.
+///
+/// The request id is used to track a request through the system. It is generated using a random number and the current
+/// time. This method generates a request id that is random enough to prevent collision and that is sortable by time but
+/// keeps the request id short enough to be used in the logs.
+fn gen_request_id() -> String {
+    let epoch = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
+    let suffix: [u8; 2] = rand::thread_rng().gen();
+    format!("{}-{}", hex::encode(epoch.to_be_bytes()), hex::encode(suffix))
+}
+
 /// Configure the signal handlers.
 ///
 /// This function will return when the user presses Ctrl+C or when the process receives a SIGTERM signal, allowing the
 /// graceful shutdown of the server.
-async fn shutdown_signal() {
+async fn shutdown_signal(mut stop_receiver: Receiver<()>) {
     let ctrl_c = async {
         signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
+    };
+
+    let stop_message = async {
+        stop_receiver.recv().await.expect("failed to receive stop message handler");
     };
 
     #[cfg(unix)]
@@ -195,6 +256,142 @@ async fn shutdown_signal() {
 
     tokio::select! {
         _ = ctrl_c => {},
+        _ = stop_message => {},
         _ = terminate => { println!("Received SIGTERM") },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::{ body::Body, http::header::{ AUTHORIZATION, CONTENT_TYPE } };
+    use tempfile::tempdir;
+    use crate::{ models::auth::SecurityToken, utils::tests::settings };
+    use crate::models::auth::RefreshToken;
+    use super::*;
+    use tower::ServiceExt; // for `call`, `oneshot`, and `ready`
+
+    #[tokio::test]
+    async fn test_bind() {
+        // 1. Invalid listen address
+        settings::set_listen_address("invalid_address".to_string());
+        assert!(Server::default().bind().await.is_err());
+
+        // 2. Valid listen address
+        settings::set_listen_address("127.0.0.1".to_string());
+        assert!(Server::default().bind().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_start() {
+        // 1. Cannot create the pid file
+        settings::set_app_dir(tempdir().unwrap().path());
+        assert!(Server::start().await.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_check_api_key() {
+        let state = ServerState::new();
+
+        // 1. Missing API key
+        let response = super::Server
+            ::api(&state)
+            .oneshot(Request::builder().uri("/api/v1/agent").body(Body::empty()).unwrap()).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::FORBIDDEN);
+
+        // 2. Invalid API key
+        let response = super::Server
+            ::api(&state)
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/agent")
+                    .header(X_API_KEY_HEADER, "invalid_api_key")
+                    .body(Body::empty())
+                    .unwrap()
+            ).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::FORBIDDEN);
+
+        // 3. Valid API key
+        let response = super::Server
+            ::api(&state)
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/agent")
+                    .header(X_API_KEY_HEADER, settings::get_api_key())
+                    .body(Body::empty())
+                    .unwrap()
+            ).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::OK);
+        assert!(response.headers().contains_key(X_REQUEST_ID_HEADER));
+        assert!(response.headers().get(X_REQUEST_ID_HEADER).unwrap().to_str().unwrap().len() > 0);
+    }
+
+    #[tokio::test]
+    async fn test_check_authentication() {
+        // We are using /api/v1/auth/refresh-token for this test because all it needs is a valid security token
+        // to pass the autentication middleware and a valid refresh token to run successfully.
+        let state = ServerState::new();
+        let security_token = SecurityToken::default();
+        state.add_user_session(&security_token, "username");
+
+        let body = serde_json
+            ::to_string(
+                &(RefreshToken {
+                    refresh_token: security_token.refresh_token.clone(),
+                })
+            )
+            .unwrap();
+
+        // 1. Invalid security token
+        let response = super::Server
+            ::api(&state)
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/auth/refresh-token")
+                    .method("POST")
+                    .header(X_API_KEY_HEADER, settings::get_api_key())
+                    .header(AUTHORIZATION, format!("Bearer {}", "invalid_token"))
+                    .header(CONTENT_TYPE, "application/json")
+                    .body(body.clone())
+                    .unwrap()
+            ).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::FORBIDDEN);
+
+        // 2. Missing Authorization header
+        let response = super::Server
+            ::api(&state)
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/auth/refresh-token")
+                    .method("POST")
+                    .header(X_API_KEY_HEADER, settings::get_api_key())
+                    .header(CONTENT_TYPE, "application/json")
+                    .body(body.clone())
+                    .unwrap()
+            ).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::FORBIDDEN);
+
+        // 3. Invalid Authorization header (not the expected format)
+        let response = super::Server
+            ::api(&state)
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/auth/refresh-token")
+                    .method("POST")
+                    .header(X_API_KEY_HEADER, settings::get_api_key())
+                    .header(CONTENT_TYPE, "application/json")
+                    .header(AUTHORIZATION, "invalid_authorization_header")
+                    .body(body.clone())
+                    .unwrap()
+            ).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::BAD_REQUEST);
+
+        // 2. Valid security token
+        // Need to finalize the implementation of the refresh token endpoint before we can test this...
     }
 }
