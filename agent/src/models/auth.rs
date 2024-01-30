@@ -9,7 +9,6 @@ json_enum!(TokenType, Bearer);
 pub struct Authentication {
     /// The authentication method.
     /// As of now, only the UserPassword method is supported.
-    #[allow(dead_code)]
     pub method: AuthenticationMethod,
 
     /// The credentials used to authenticate the user.

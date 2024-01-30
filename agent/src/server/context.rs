@@ -19,7 +19,6 @@ impl RequestContext {
     }
 
     pub fn add_user_session(&mut self, user_session: &UserSession) {
-        self.username = user_session.get_username().to_string();
         self.user_id = user_session.get_user_id().to_string();
     }
 
@@ -33,6 +32,7 @@ impl RequestContext {
         &self.username
     }
 
+    #[allow(dead_code)]
     pub fn get_user_id(&self) -> &str {
         self.user_id.as_str()
     }

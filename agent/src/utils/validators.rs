@@ -1,6 +1,8 @@
 use anyhow::{ anyhow, Result };
+use axum::http::HeaderValue;
 use lazy_static::lazy_static;
 use regex::Regex;
+use crate::models::auth::AuthenticationMethod;
 
 /// Sanitize a username.
 ///
@@ -26,9 +28,59 @@ pub fn sanitize_username(username: &str) -> Result<String> {
     Ok(username)
 }
 
+/// Parse the 'Authorization' header.
+///
+/// #Returns
+/// Returns the token if the header is syntaxically valid, otherwise returns an error.
+pub fn parse_authorization_header(
+    authentication_method: AuthenticationMethod,
+    authorization_header: &HeaderValue
+) -> Result<String> {
+    match authentication_method {
+        AuthenticationMethod::UserPassword => {
+            let parts: Vec<&str> = authorization_header.to_str()?.split(" ").collect();
+            if parts.len() != 2 || parts[0] != "Bearer" {
+                return Err(anyhow::anyhow!("Invalid syntax, expecting 'Bearer <token>'"));
+            }
+            Ok(parts[1].to_string())
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_parse_authorization_header() {
+        // 1) invalid syntax
+        let authorization_header = HeaderValue::from_static("Bearer");
+        assert!(
+            parse_authorization_header(
+                AuthenticationMethod::UserPassword,
+                &authorization_header
+            ).is_err()
+        );
+
+        // 2) invalid authentication method
+        let authorization_header = HeaderValue::from_static("Basic abcdef");
+        assert!(
+            parse_authorization_header(
+                AuthenticationMethod::UserPassword,
+                &authorization_header
+            ).is_err()
+        );
+
+        // 3) valid syntax
+        let authorization_header = HeaderValue::from_static("Bearer abcdef");
+        assert_eq!(
+            parse_authorization_header(
+                AuthenticationMethod::UserPassword,
+                &authorization_header
+            ).unwrap(),
+            "abcdef"
+        );
+    }
 
     #[test]
     fn test_sanitize_username() {

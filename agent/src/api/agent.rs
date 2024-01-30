@@ -1,4 +1,5 @@
 use axum::{ extract::Json, routing::get, Router };
+use crate::models::agent::AgentSettings;
 use crate::{ api::error::ServerResult, models::agent::Agent };
 use crate::server::state::ServerState;
 
@@ -15,8 +16,19 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
     Ok(Json(response))
 }
 
+async fn get_agent_setting() -> ServerResult<Json<AgentSettings>> {
+    // let response = settings::get_agent_settings();
+    // Ok(Json(response))
+    todo!()
+}
+
 pub fn routes(state: ServerState) -> Router {
     Router::new().route("/agent", get(get_agent)).with_state(state)
+}
+
+/// Create a router for the endpoints that requires authentication to be reached.
+pub fn authenticated_routes(state: ServerState) -> Router {
+    Router::new().route("/agent/settings", get(get_agent_setting)).with_state(state)
 }
 
 #[cfg(test)]
