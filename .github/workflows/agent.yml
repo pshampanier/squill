@@ -1,4 +1,4 @@
-name: agent-coverage
+name: agent-unit-tests
 
 on:
   push:
