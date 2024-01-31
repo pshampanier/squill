@@ -89,8 +89,8 @@ impl Server {
             api::users
                 ::authenticated_routes(state.clone())
                 .merge(api::agent::authenticated_routes(state.clone()))
-                .layer(from_fn(check_api_key))
                 .layer(from_fn_with_state(state.clone(), check_authentication))
+                .layer(from_fn(check_api_key))
         );
 
         // all routes are nested under the /api/v1 path
@@ -190,7 +190,7 @@ async fn check_api_key(mut req: Request, next: Next) -> ServerResult<Response> {
 async fn check_authentication(
     State(state): State<ServerState>,
     context: ServerResult<RequestContext>,
-    req: Request,
+    mut req: Request,
     next: Next
 ) -> ServerResult<Response> {
     let authorization_header = req.headers().get(http::header::AUTHORIZATION);
@@ -211,7 +211,8 @@ async fn check_authentication(
 
     // Add the user_session information to the context of the request.
     let mut context = context?;
-    context.add_user_session(&user_session);
+    context.add_user_session(user_session);
+    req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
 
     return Ok(next.run(req).await);
 }
@@ -260,10 +261,9 @@ async fn shutdown_signal(mut stop_receiver: Receiver<()>) {
 
 #[cfg(test)]
 mod tests {
-    use axum::{ body::Body, http::header::{ AUTHORIZATION, CONTENT_TYPE } };
+    use axum::{ body::Body, http::header::AUTHORIZATION };
     use tempfile::tempdir;
-    use crate::utils::tests::settings;
-    use crate::models::auth::RefreshToken;
+    use crate::{ resources::users::create_user, utils::tests::settings };
     use super::*;
     use tower::ServiceExt; // for `call`, `oneshot`, and `ready`
 
@@ -326,34 +326,24 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_check_authentication() {
+        // We are using GET /users/:username/user for this test since this endpoint requires authentication.
+        let base_dir = tempdir().unwrap();
         let state = ServerState::new();
-        let security_token = state.add_user_session("username", "user_id");
-
-        let body = serde_json
-            ::to_string(
-                &(RefreshToken {
-                    refresh_token: security_token.refresh_token.clone(),
-                })
-            )
-            .unwrap();
-
-        //
-        // SHOULD USE ANOTHER ENDPOINT FOR THIS TEST...
-        //
+        let security_token = state.add_user_session("local", "user_id");
+        settings::set_base_dir(base_dir.path().to_str().unwrap().to_string());
+        let _ = create_user("local");
 
         // 1. Invalid security token
         let response = super::Server
             ::api(&state)
             .oneshot(
                 Request::builder()
-                    .uri("/api/v1/auth/refresh-token")
-                    .method("POST")
+                    .uri("/api/v1/users/local/user")
+                    .method("GET")
                     .header(X_API_KEY_HEADER, settings::get_api_key())
                     .header(AUTHORIZATION, format!("Bearer {}", "invalid_token"))
-                    .header(CONTENT_TYPE, "application/json")
-                    .body(body.clone())
+                    .body(Body::empty())
                     .unwrap()
             ).await
             .unwrap();
@@ -364,11 +354,10 @@ mod tests {
             ::api(&state)
             .oneshot(
                 Request::builder()
-                    .uri("/api/v1/auth/refresh-token")
-                    .method("POST")
+                    .uri("/api/v1/users/local/user")
+                    .method("GET")
                     .header(X_API_KEY_HEADER, settings::get_api_key())
-                    .header(CONTENT_TYPE, "application/json")
-                    .body(body.clone())
+                    .body(Body::empty())
                     .unwrap()
             ).await
             .unwrap();
@@ -379,18 +368,29 @@ mod tests {
             ::api(&state)
             .oneshot(
                 Request::builder()
-                    .uri("/api/v1/auth/refresh-token")
-                    .method("POST")
+                    .uri("/api/v1/users/local/user")
+                    .method("GET")
                     .header(X_API_KEY_HEADER, settings::get_api_key())
-                    .header(CONTENT_TYPE, "application/json")
                     .header(AUTHORIZATION, "invalid_authorization_header")
-                    .body(body.clone())
+                    .body(Body::empty())
                     .unwrap()
             ).await
             .unwrap();
         assert_eq!(response.status(), http::StatusCode::BAD_REQUEST);
 
-        // 2. Valid security token
-        // Need to finalize the implementation of the refresh token endpoint before we can test this...
+        // 4. Valid security token
+        let response = super::Server
+            ::api(&state)
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/users/local/user")
+                    .method("GET")
+                    .header(X_API_KEY_HEADER, settings::get_api_key())
+                    .header(AUTHORIZATION, format!("Bearer {}", security_token.token.as_str()))
+                    .body(Body::empty())
+                    .unwrap()
+            ).await
+            .unwrap();
+        assert_eq!(response.status(), http::StatusCode::OK);
     }
 }

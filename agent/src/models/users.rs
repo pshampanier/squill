@@ -5,7 +5,6 @@ use uuid::Uuid;
 json_enum!(ColorScheme, Dark, Light, Auto);
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct UserSettings {
     pub color_scheme: ColorScheme,
     pub telemetry: bool,
@@ -16,7 +15,6 @@ pub struct UserSettings {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct EditorSettings {
     pub minimap: Minimap,
     pub render_white_space: RenderWhitespace,

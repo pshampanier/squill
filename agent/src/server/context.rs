@@ -1,11 +1,16 @@
+use std::sync::Arc;
+
 use axum::{ async_trait, extract::FromRequestParts, http::request::Parts };
-use crate::{ api::error::{ Error, ServerResult }, server::state::UserSession };
+use crate::{
+    api::error::{ Error, ServerResult },
+    server::state::UserSession,
+    utils::constants::USERNAME_ANONYMOUS,
+};
 
 #[derive(Clone)]
 pub struct RequestContext {
     _request_id: String,
-    username: String,
-    user_id: String,
+    user_session: Option<Arc<UserSession>>,
 }
 
 impl RequestContext {
@@ -13,13 +18,12 @@ impl RequestContext {
     pub fn new(request_id: &str) -> Self {
         Self {
             _request_id: request_id.to_string(),
-            username: String::new(),
-            user_id: String::new(),
+            user_session: None,
         }
     }
 
-    pub fn add_user_session(&mut self, user_session: &UserSession) {
-        self.user_id = user_session.get_user_id().to_string();
+    pub fn add_user_session(&mut self, user_session: Arc<UserSession>) {
+        self.user_session = Some(user_session);
     }
 
     /// Get the request id.
@@ -29,12 +33,10 @@ impl RequestContext {
 
     /// Get the user session.
     pub fn get_username(&self) -> &str {
-        &self.username
-    }
-
-    #[allow(dead_code)]
-    pub fn get_user_id(&self) -> &str {
-        self.user_id.as_str()
+        match self.user_session.as_ref() {
+            Some(user_session) => user_session.get_username(),
+            None => USERNAME_ANONYMOUS,
+        }
     }
 }
 

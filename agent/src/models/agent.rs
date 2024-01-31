@@ -8,7 +8,6 @@ const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1";
 const DEFAULT_PORT: u16 = 0;
 
 #[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Agent {
     pub version: &'static str,
 }
@@ -47,7 +46,7 @@ impl Default for AgentSettings {
             listen_address: DEFAULT_LISTEN_ADDRESS.to_string(),
             port: DEFAULT_PORT,
             base_dir: ".".to_string(),
-            api_key: "".to_string(),
+            api_key: String::new(),
             max_user_sessions: 100,
             max_refresh_tokens: 100,
             token_expiration: 3600,

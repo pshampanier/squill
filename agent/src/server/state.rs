@@ -28,6 +28,11 @@ pub struct UserSession {
 }
 
 impl UserSession {
+    /// Get the username.
+    pub fn get_username(&self) -> &str {
+        self.username.as_str()
+    }
+
     /// Get the user id.
     pub fn get_user_id(&self) -> &str {
         self.security_token.user_id.as_str()
