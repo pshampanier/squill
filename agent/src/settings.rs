@@ -9,7 +9,7 @@ use ini::Ini;
 use anyhow::{ anyhow, Context, Result };
 
 #[cfg(not(test))]
-use lazy_static::lazy_static;
+use ::{ lazy_static::lazy_static, tracing::error };
 
 #[cfg(test)]
 use std::cell::RefCell;
@@ -210,7 +210,7 @@ lazy_static! {
         match make_settings(commandline::get_args()) {
             Ok(settings) => { settings }
             Err(err) => {
-                println!("Error: {}", err);
+                error!("{}", err);
                 std::process::exit(1);
             }
         }
