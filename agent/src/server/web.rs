@@ -25,7 +25,7 @@ impl Server {
             "{} {}.{} {} (pid={})",
             env!("CARGO_PKG_DESCRIPTION"),
             env!("CARGO_PKG_VERSION"),
-            super::super::built_info::GIT_COMMIT_HASH_SHORT.unwrap(),
+            super::super::built_info::GIT_COMMIT_HASH_SHORT.unwrap_or("ci"),
             super::super::built_info::TARGET,
             std::process::id()
         );
