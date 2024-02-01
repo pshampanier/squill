@@ -16,6 +16,9 @@
         }
       },
       "args": ["start", "--port", "8080", "--api-key", "x-dev"],
+      "env": {
+        "RUST_LOG": "trace"
+      },
       "cwd": "${workspaceFolder}"
     },
     {

@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1.0.79"
-axum = { version="0.7.4", features = ["macros"] }
+axum = { version="0.7.4", features = ["macros", "tracing"] }
 clap = { version = "4.4.18", features = ["derive"] }
 hex = "0.4.3"
 lazy_static = "1.4.0"
@@ -26,13 +26,16 @@ serde_json = "1.0.111"
 sysinfo = "0.30.5"
 tokio = { version = "1.35.1", features = ["full"] }
 toml = "0.8.8"
+tower-http = { version = "0.5.1",  features = ["trace"] }
+tracing = "0.1.40"
+tracing-subscriber = "0.3.18"
 uuid = { version = "1.7.0", features = ["v4"] }
+reqwest = "0.11.24"
 
 [dev-dependencies]
 nix = { version = "0.27.1", features = ["signal", "process"] }
 tempfile = "3.9.0"
 tower = "0.4.13"
-reqwest = "0.11.24"
 
 [build-dependencies]
 built = { version = "0.7.1", features = ["git2"] }

@@ -6,6 +6,8 @@ mod utils;
 mod models;
 mod resources;
 
+use tracing::error;
+use tracing_subscriber;
 use anyhow::{ Result, Context };
 use crate::server::web::Server;
 
@@ -16,11 +18,14 @@ pub mod built_info {
 
 #[tokio::main]
 async fn main() {
+    // install global collector configured based on RUST_LOG env var.
+    tracing_subscriber::fmt::init();
+
     let args = commandline::get_args();
     match run(args).await {
         Ok(_) => {}
         Err(error) => {
-            println!("Error: {}", error);
+            error!("{}", error);
             std::process::exit(1);
         }
     }
@@ -28,7 +33,7 @@ async fn main() {
 
 /// Initialize and start the web server
 async fn run(args: &commandline::Args) -> Result<()> {
-    // We must be able to create files in the app directory (such as agent.pid, logs...).
+    // we must be able to create files in the app directory (such as agent.pid, logs...).
     let app_dir = settings::get_app_dir();
     if !app_dir.exists() {
         std::fs

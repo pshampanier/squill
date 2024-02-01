@@ -1,6 +1,7 @@
 use std::{ io::Write, path::Path };
 use serde::{ Deserialize, Serialize };
 use anyhow::{ Context, Result };
+use tracing::{ trace, warn };
 
 pub const PID_FILENAME: &str = "agent.pid";
 
@@ -17,13 +18,16 @@ pub struct PidFile {
 /// valid.
 pub fn load_pid_file(dir: &Path) -> Option<PidFile> {
     let file = dir.join(PID_FILENAME);
-    let Ok(content) = std::fs::read_to_string(file) else {
+    let Ok(content) = std::fs::read_to_string(&file) else {
         return None;
     };
-    let Ok(pid_file) = toml::from_str::<PidFile>(&content) else {
-        return None;
-    };
-    Some(pid_file)
+    match toml::from_str::<PidFile>(&content) {
+        Ok(pid_file) => Some(pid_file),
+        Err(error) => {
+            warn!("Cannot parse the pid file: '{:?}'. Error: {}", &file, error);
+            None
+        }
+    }
 }
 
 pub fn delete_pid_file(dir: &Path) -> Result<()> {
@@ -33,6 +37,7 @@ pub fn delete_pid_file(dir: &Path) -> Result<()> {
             ::remove_file(&file)
             .with_context(|| format!("Cannot delete the pid file: '{:?}'.", file))?;
     }
+    trace!("the pid file has been deleted.");
     Ok(())
 }
 

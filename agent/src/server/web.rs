@@ -16,12 +16,14 @@ use rand::Rng;
 use tokio::signal;
 use tokio::net::TcpListener;
 use sysinfo::{ Pid, System };
+use tracing::{ info, warn, Level };
+use tower_http::trace::{ self, TraceLayer };
 
 pub struct Server {}
 
 impl Server {
     pub async fn start() -> Result<()> {
-        println!(
+        info!(
             "{} {}.{} {} (pid={})",
             env!("CARGO_PKG_DESCRIPTION"),
             env!("CARGO_PKG_VERSION"),
@@ -95,10 +97,14 @@ impl Server {
         let state = ServerState::new();
 
         // Get the router that will handle all the requests for the REST API.
-        let api = Self::api(&state);
+        let api = Self::api(&state).layer(
+            TraceLayer::new_for_http()
+                .make_span_with(trace::DefaultMakeSpan::new().level(Level::TRACE))
+                .on_response(trace::DefaultOnResponse::new().level(Level::TRACE))
+        );
 
         // start the server
-        println!("listening on {}", listener.local_addr().unwrap().to_string());
+        info!("Listening on {}", listener.local_addr().unwrap().to_string());
         axum::serve(listener, api).with_graceful_shutdown(shutdown_signal()).await?;
         Ok(())
     }
@@ -116,15 +122,41 @@ impl Server {
             return Ok(());
         };
 
+        warn!("The server may already be running (pid={})", pid_file.pid);
+
         // Check an alternative that works on the Apple Store
         let running_proc = System::new_all();
         if running_proc.process(Pid::from_u32(pid_file.pid)).is_none() {
             // The process is no longer running
+            info!("No process with pid={} found, continue...", pid_file.pid);
             return Ok(());
         }
 
-        // TODO: Check of the server is responding to an API request
-        todo!()
+        // Check of the server is responding to an API request
+        let http_client = reqwest::Client::new();
+        match
+            http_client
+                .get(format!("http://localhost:{}/api/v1/agent", pid_file.port))
+                .header(X_API_KEY_HEADER, pid_file.api_key)
+                .send().await
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    return Err(
+                        anyhow::anyhow!("The server is already running (pid={})", pid_file.pid)
+                    );
+                } else {
+                    info!(
+                        "The server is running but not responding to an API request, continue..."
+                    );
+                    Ok(())
+                }
+            }
+            Err(_) => {
+                info!("The server is not responding to an API request, continue...");
+                Ok(())
+            }
+        }
     }
 }
 
@@ -147,6 +179,7 @@ async fn check_api_key(mut req: Request, next: Next) -> ServerResult<Response> {
             return Ok(response);
         }
     }
+    warn!("Invalid or missing API key.");
     Err(Error::Forbidden)
 }
 
@@ -164,6 +197,7 @@ async fn check_authentication(
     let authorization_header = req.headers().get(http::header::AUTHORIZATION);
     let Some(authorization_header) = authorization_header else {
         // The Authorization header is missing.
+        warn!("Authorization header is missing.");
         return Err(Error::Forbidden);
     };
     let Ok(security_token) = parse_authorization_header(
@@ -174,6 +208,7 @@ async fn check_authentication(
     };
 
     let Some(user_session) = state.get_user_session(&security_token) else {
+        warn!("Invalid security token.");
         return Err(Error::Forbidden);
     };
 
