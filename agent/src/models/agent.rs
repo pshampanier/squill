@@ -1,12 +1,5 @@
 use serde::{ Serialize, Deserialize };
 
-/// Default address used to serve the API.
-const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1";
-
-/// Default port used to serve the API.
-/// The default port is 0 which means that the OS will choose a free port.
-const DEFAULT_PORT: u16 = 0;
-
 #[derive(Serialize, Deserialize)]
 pub struct Agent {
     pub version: &'static str,
@@ -38,18 +31,4 @@ pub struct AgentSettings {
     /// The number of seconds after which a security token will expire.
     /// This does not applies to the refresh token which only expires when it is evicted from the cache.
     pub token_expiration: u32,
-}
-
-impl Default for AgentSettings {
-    fn default() -> Self {
-        Self {
-            listen_address: DEFAULT_LISTEN_ADDRESS.to_string(),
-            port: DEFAULT_PORT,
-            base_dir: ".".to_string(),
-            api_key: String::new(),
-            max_user_sessions: 100,
-            max_refresh_tokens: 100,
-            token_expiration: 3600,
-        }
-    }
 }

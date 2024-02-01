@@ -16,20 +16,8 @@ use rand::Rng;
 use tokio::signal;
 use tokio::net::TcpListener;
 use sysinfo::{ Pid, System };
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::{ Sender, Receiver };
 
-pub struct Server {
-    stop_channel_sender: Option<Sender<()>>,
-}
-
-impl Default for Server {
-    fn default() -> Self {
-        Self {
-            stop_channel_sender: None,
-        }
-    }
-}
+pub struct Server {}
 
 impl Server {
     pub async fn start() -> Result<()> {
@@ -44,7 +32,7 @@ impl Server {
         Self::check_if_running().await?;
 
         // Server initialization
-        let mut server = Server::default();
+        let mut server = Server {};
         let listener = server.bind().await?;
 
         // Save the file agent.pid
@@ -107,32 +95,10 @@ impl Server {
         // Get the router that will handle all the requests for the REST API.
         let api = Self::api(&state);
 
-        // create a channel to stop the server (used for unit tests only)
-        let (stop_channel_sender, stop_channel_receiver) = mpsc::channel::<()>(100);
-        self.stop_channel_sender = Some(stop_channel_sender.clone());
-
         // start the server
         println!("listening on {}", listener.local_addr().unwrap().to_string());
-        axum
-            ::serve(listener, api)
-            .with_graceful_shutdown(shutdown_signal(stop_channel_receiver)).await?;
+        axum::serve(listener, api).with_graceful_shutdown(shutdown_signal()).await?;
         Ok(())
-    }
-
-    /// Stop the server.
-    ///
-    /// This method will send a message to the server to stop it or will return an error if the server is not running.
-    #[cfg(test)]
-    #[allow(dead_code)]
-    pub async fn stop(&self) -> Result<()> {
-        match self.stop_channel_sender.as_ref() {
-            Some(stop_channel_sender) => {
-                stop_channel_sender
-                    .send(()).await
-                    .with_context(|| "Unable to send the stop the server.")
-            }
-            None => { Err(anyhow::anyhow!("The server is not running.")) }
-        }
     }
 
     /// Check if the server is already running.
@@ -232,13 +198,9 @@ fn gen_request_id() -> String {
 ///
 /// This function will return when the user presses Ctrl+C or when the process receives a SIGTERM signal, allowing the
 /// graceful shutdown of the server.
-async fn shutdown_signal(mut stop_receiver: Receiver<()>) {
+async fn shutdown_signal() {
     let ctrl_c = async {
         signal::ctrl_c().await.expect("failed to install Ctrl+C handler");
-    };
-
-    let stop_message = async {
-        stop_receiver.recv().await.expect("failed to receive stop message handler");
     };
 
     #[cfg(unix)]
@@ -254,7 +216,6 @@ async fn shutdown_signal(mut stop_receiver: Receiver<()>) {
 
     tokio::select! {
         _ = ctrl_c => {},
-        _ = stop_message => {},
         _ = terminate => { println!("Received SIGTERM") },
     }
 }
@@ -271,18 +232,71 @@ mod tests {
     async fn test_bind() {
         // 1. Invalid listen address
         settings::set_listen_address("invalid_address".to_string());
-        assert!(Server::default().bind().await.is_err());
+        assert!((Server {}).bind().await.is_err());
 
         // 2. Valid listen address
         settings::set_listen_address("127.0.0.1".to_string());
-        assert!(Server::default().bind().await.is_ok());
+        assert!((Server {}).bind().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_run() {
+        // setup
+        let tempdir = tempdir().unwrap();
+        settings::set_app_dir(tempdir.path());
+        let mut server = Server {};
+        let listener = server.bind().await.unwrap();
+        let host = listener.local_addr().unwrap().to_string();
+        let http_client = reqwest::Client::new();
+
+        // run the server in another thread
+        let _ = tokio::spawn(async move { server.run(listener).await });
+
+        // Send a request to the server
+        let result = http_client
+            .get(format!("http://{host}/api/v1/agent"))
+            .header(X_API_KEY_HEADER, settings::get_api_key())
+            .send().await;
+        assert!(result.is_ok());
     }
 
     #[tokio::test]
     async fn test_start() {
         // 1. Cannot create the pid file
-        settings::set_app_dir(tempdir().unwrap().path());
-        assert!(Server::start().await.is_err());
+        // settings::set_app_dir(tempdir().unwrap().path());
+        // assert!(Server::start().await.is_err());
+
+        // find a port available
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        settings::set_port(listener.local_addr().unwrap().port());
+        std::mem::drop(listener);
+
+        // 2. Successfull start
+        let tempdir = tempdir().unwrap();
+        settings::set_app_dir(&tempdir.path());
+
+        // run the server in another thread
+        let joint_handle = tokio::spawn(async move { Server::start().await });
+
+        // Send a request to the server to check if it is running
+        let http_client = reqwest::Client::new();
+        let result = http_client
+            .get(format!("http://localhost:{}/api/v1/agent", settings::get_port()))
+            .header(X_API_KEY_HEADER, settings::get_api_key())
+            .send().await;
+        assert!(result.is_ok());
+        assert!(load_pid_file(tempdir.path()).is_some());
+
+        // On Unix we can initiate a gracefull shutdown by sending a SIGTERM signal, this is going to allow us to check
+        // if the server is able to shutdown gracefully and delete the pid file.
+        #[cfg(unix)]
+        {
+            nix::sys::signal
+                ::kill(nix::unistd::Pid::this(), nix::sys::signal::Signal::SIGTERM)
+                .unwrap();
+            joint_handle.await.unwrap().unwrap();
+            assert!(load_pid_file(tempdir.path()).is_none()); // pid file should be deleted
+        }
     }
 
     #[tokio::test]

@@ -6,7 +6,6 @@ mod utils;
 mod models;
 mod resources;
 
-use std::{ process::exit };
 use anyhow::{ Result, Context };
 use crate::server::web::Server;
 
@@ -17,7 +16,7 @@ async fn main() {
         Ok(_) => {}
         Err(error) => {
             println!("Error: {}", error);
-            exit(1);
+            std::process::exit(1);
         }
     }
 }

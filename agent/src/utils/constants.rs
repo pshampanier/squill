@@ -10,3 +10,11 @@ pub const X_REQUEST_ID_HEADER: &str = "X-Request-ID";
 
 /// Username used for unauthenticated requests.
 pub const USERNAME_ANONYMOUS: &str = "anonymous";
+
+//
+// Environment variables
+//
+
+/// Name of the environment variable used to specify the app directory.
+
+pub const ENV_VAR_APP_DIR: &str = "ONESQL_APP_DIR";

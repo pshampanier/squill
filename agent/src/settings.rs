@@ -1,5 +1,5 @@
 use crate::commandline;
-use crate::utils::constants::USERS_DIRNAME;
+use crate::utils::constants::{ ENV_VAR_APP_DIR, USERS_DIRNAME };
 use crate::models::agent::AgentSettings;
 use crate::settings_getters;
 use std::fmt;
@@ -16,29 +16,43 @@ use std::cell::RefCell;
 
 const AGENT_CONF: &str = "agent.conf";
 
+/// Default address used to serve the API.
+const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1";
+
+/// Default port used to serve the API.
+/// The default port is 0 which means that the OS will choose a free port.
+const DEFAULT_PORT: u16 = 0;
+
 #[cfg(not(test))]
 lazy_static! {
     /// Application directory location.
     ///
     /// The app directory (app_dir) is used to store files used internally by the agent  (e.g. agent.conf, .agent.pid, ...).
-    /// This location cannot be overridden, it's always located in a directory specific to the OS where the agent can access
-    /// without requiring elevated privileges.
+    /// This location can only be overiden by an environment variable, otherwise it's always located in a directory
+    /// specific to the OS where the agent can access without requiring elevated privileges.
     static ref APP_DIR: PathBuf = {
         let mut root_dir = PathBuf::new();
-        #[cfg(target_os = "macos")]
-        {
-            root_dir.push(std::env::var("HOME").unwrap());
-            root_dir.push(format!("Library/Application Support/{}", env!("CARGO_PKG_NAME")));
+        if let Ok(app_dir) = std::env::var(ENV_VAR_APP_DIR) {
+            root_dir.push(app_dir);
+        } else {
+            #[cfg(target_os = "macos")]
+            {
+                root_dir.push(std::env::var("HOME").unwrap());
+                root_dir.push(format!("Library/Application Support/{}", env!("CARGO_PKG_NAME")));
+            }
+            #[cfg(target_os = "linux")]
+            {
+                root_dir.push(std::env::var("HOME").unwrap());
+                root_dir.push(format!(".{}", env!("CARGO_PKG_NAME")));
+            }
+            #[cfg(target_os = "windows")]
+            {
+                root_dir.push(std::env::var("APPDATA").unwrap());
+                root_dir.push(env!("CARGO_PKG_NAME"));
+            }
         }
-        #[cfg(target_os = "linux")]
-        {
-            root_dir.push(std::env::var("HOME").unwrap());
-            root_dir.push(format!(".{}", env!("CARGO_PKG_NAME")));
-        }
-        #[cfg(target_os = "windows")]
-        {
-            root_dir.push(std::env::var("APPDATA").unwrap());
-            root_dir.push(env!("CARGO_PKG_NAME"));
+        if root_dir.is_relative() {
+            root_dir = std::env::current_dir().unwrap().join(root_dir);
         }
         root_dir
     };
@@ -46,7 +60,9 @@ lazy_static! {
 
 #[cfg(test)]
 thread_local! {
-    pub static APP_DIR: RefCell<PathBuf> = RefCell::new(PathBuf::new());
+    pub static APP_DIR: RefCell<PathBuf> = RefCell::new(
+        PathBuf::from(std::env::var(ENV_VAR_APP_DIR).or::<String>(Ok(String::new())).unwrap())
+    );
 }
 
 /// Get the app directory for the agent.
@@ -78,6 +94,20 @@ settings_getters! {
     get_max_refresh_tokens, max_refresh_tokens: usize,
     get_token_expiration, token_expiration: u32,
 
+}
+
+impl Default for AgentSettings {
+    fn default() -> Self {
+        Self {
+            listen_address: DEFAULT_LISTEN_ADDRESS.to_string(),
+            port: DEFAULT_PORT,
+            base_dir: get_app_dir().to_str().unwrap().to_string(),
+            api_key: String::new(),
+            max_user_sessions: 100,
+            max_refresh_tokens: 100,
+            token_expiration: 3600,
+        }
+    }
 }
 
 impl AgentSettings {

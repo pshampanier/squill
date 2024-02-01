@@ -1,7 +1,6 @@
 use std::{ io::Write, path::Path };
 use serde::{ Deserialize, Serialize };
-
-type Error = Box<dyn std::error::Error>;
+use anyhow::{ Context, Result };
 
 pub const PID_FILENAME: &str = "agent.pid";
 
@@ -27,19 +26,17 @@ pub fn load_pid_file(dir: &Path) -> Option<PidFile> {
     Some(pid_file)
 }
 
-pub fn delete_pid_file(dir: &Path) -> Result<(), Error> {
+pub fn delete_pid_file(dir: &Path) -> Result<()> {
     let file = dir.join(PID_FILENAME);
     if file.exists() {
-        std::fs::remove_file(file)?;
+        std::fs
+            ::remove_file(&file)
+            .with_context(|| format!("Cannot delete the pid file: '{:?}'.", file))?;
     }
     Ok(())
 }
 
-pub fn save_pid_file(
-    dir: &Path,
-    local_addr: &std::net::SocketAddr,
-    api_key: &str
-) -> Result<(), Error> {
+pub fn save_pid_file(dir: &Path, local_addr: &std::net::SocketAddr, api_key: &str) -> Result<()> {
     // save the port and the current pid to a file
     let content = PidFile {
         pid: std::process::id(),
@@ -47,7 +44,9 @@ pub fn save_pid_file(
         api_key: api_key.to_string(),
     };
     let mut file = std::fs::File::create(dir.join(PID_FILENAME))?;
-    file.write_all(toml::to_string_pretty(&content)?.as_bytes())?;
+    file
+        .write_all(toml::to_string_pretty(&content)?.as_bytes())
+        .with_context(|| format!("Cannot write the pid file: '{:?}'.", dir.join(PID_FILENAME)))?;
     Ok(())
 }
 
