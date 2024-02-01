@@ -9,6 +9,11 @@ mod resources;
 use anyhow::{ Result, Context };
 use crate::server::web::Server;
 
+/// Include the generated build information from the module built
+pub mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
+
 #[tokio::main]
 async fn main() {
     let args = commandline::get_args();
