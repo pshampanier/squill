@@ -1,6 +1,6 @@
 use crate::commandline;
 use crate::utils::constants::{ ENV_VAR_APP_DIR, USERS_DIRNAME };
-use crate::models::agent::AgentSettings;
+use crate::models::agent::{ AgentSettings, LogLevel };
 use crate::settings_getters;
 use std::fmt;
 use std::net::Ipv4Addr;
@@ -9,7 +9,7 @@ use ini::Ini;
 use anyhow::{ anyhow, Context, Result };
 
 #[cfg(not(test))]
-use ::{ lazy_static::lazy_static, tracing::error };
+use ::{ lazy_static::lazy_static, tracing::error, rand::Rng, hex };
 
 #[cfg(test)]
 use std::cell::RefCell;
@@ -93,7 +93,24 @@ settings_getters! {
     get_max_user_sessions, max_user_sessions: usize,
     get_max_refresh_tokens, max_refresh_tokens: usize,
     get_token_expiration, token_expiration: u32,
+    get_log_collector, log_collector: bool,
+    get_log_dir, log_dir: String,
+}
 
+pub fn get_log_level() -> tracing::Level {
+    #[cfg(not(test))]
+    let log_level = &SETTINGS.log_level;
+    #[cfg(test)]
+    let log_level = crate::utils::tests::settings::SETTINGS.with(|settings| {
+        settings.borrow().log_level.clone()
+    });
+    match log_level {
+        LogLevel::Error => tracing::Level::ERROR,
+        LogLevel::Warning => tracing::Level::WARN,
+        LogLevel::Info => tracing::Level::INFO,
+        LogLevel::Debug => tracing::Level::DEBUG,
+        LogLevel::Trace => tracing::Level::TRACE,
+    }
 }
 
 impl Default for AgentSettings {
@@ -102,10 +119,13 @@ impl Default for AgentSettings {
             listen_address: DEFAULT_LISTEN_ADDRESS.to_string(),
             port: DEFAULT_PORT,
             base_dir: get_app_dir().to_str().unwrap().to_string(),
-            api_key: String::new(),
+            api_key: generate_api_key(),
             max_user_sessions: 100,
             max_refresh_tokens: 100,
             token_expiration: 3600,
+            log_collector: true,
+            log_dir: get_app_dir().join("logs").to_str().unwrap().to_string(),
+            log_level: LogLevel::Info,
         }
     }
 }
@@ -217,9 +237,7 @@ lazy_static! {
     };
 }
 
-/**
- * Get the directory used to store the files for the specified user.
- */
+/// Get the directory used to store the files for the specified user.
 pub fn get_user_dir(username: &str) -> PathBuf {
     PathBuf::from(get_base_dir()).join(USERS_DIRNAME).join(username)
 }
@@ -227,6 +245,21 @@ pub fn get_user_dir(username: &str) -> PathBuf {
 pub fn show_config() {
     #[cfg(not(test))]
     println!("{}", *SETTINGS);
+}
+
+/// Generate a random API key.
+///
+/// The API key is used to authenticate the client of the REST API with the web server. By default a random key is
+/// generated every time the agent starts. This key can be overridden in the configuration file and the command line.
+fn generate_api_key() -> String {
+    #[cfg(not(test))]
+    {
+        let mut rng = rand::thread_rng();
+        let token: [u8; 32] = rng.gen();
+        return hex::encode(token);
+    }
+    #[cfg(test)]
+    "x-test-api-key".to_string()
 }
 
 #[cfg(test)]
@@ -279,13 +312,13 @@ mod tests {
 
         // 3) override with config file
         {
+            let app_dir = tempdir().unwrap();
+            settings::set_app_dir(app_dir.path());
             let mut expected = AgentSettings::default();
             expected.port = 1234;
             expected.base_dir = "/test".to_string();
             expected.listen_address = "0.0.0.0".to_string();
             expected.api_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string();
-            let app_dir = tempdir().unwrap();
-            settings::set_app_dir(app_dir.path());
             std::fs
                 ::write(
                     app_dir.path().join(AGENT_CONF),

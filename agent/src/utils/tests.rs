@@ -66,6 +66,9 @@ pub mod settings {
     settings_setters!(set_token_expiration, token_expiration: u32);
     settings_setters!(set_listen_address, listen_address: String);
     settings_setters!(set_port, port: u16);
+    settings_setters!(set_log_dir, log_dir: String);
+    settings_setters!(set_log_level, log_level: crate::models::agent::LogLevel);
+    settings_setters!(set_log_collector, log_collector: bool);
 
     pub fn set_app_dir(new_app_dir: &Path) {
         crate::settings::APP_DIR.with(|app_dir| {
