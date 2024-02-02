@@ -105,6 +105,7 @@ async fn run(args: &commandline::Args) -> Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::utils::tests::settings;
     #[test]
     fn test_init_tracing() {
@@ -116,13 +117,13 @@ mod tests {
         // 1) disable the log collector, the log directory should not be created.
         settings::set_log_collector(false);
         settings::set_log_dir(log_dir.parent().unwrap().to_str().unwrap().to_string());
-        super::init_tracing().unwrap();
+        get_tracing_subscriber().unwrap();
         assert!(!log_dir.exists());
 
         // 2) enable the log collector, the log directory should be created and logs written in that directory.
         settings::set_log_collector(true);
         settings::set_log_dir(log_dir.to_str().unwrap().to_string());
-        let subscriber = super::init_tracing().unwrap();
+        let subscriber = get_tracing_subscriber().unwrap();
         tracing::subscriber::with_default(subscriber, || {
             tracing::info!("test");
         });
