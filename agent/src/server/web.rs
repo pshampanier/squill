@@ -261,9 +261,57 @@ async fn shutdown_signal() {
 mod tests {
     use axum::{ body::Body, http::header::AUTHORIZATION };
     use tempfile::tempdir;
-    use crate::{ resources::users::create_user, utils::tests::settings };
+    use std::io::Write;
+    use crate::{ resources::users::create_user, server::pid_file::PidFile, utils::tests::settings };
     use super::*;
     use tower::ServiceExt; // for `call`, `oneshot`, and `ready`
+    use tokio::io::AsyncWriteExt;
+
+    #[tokio::test]
+    async fn test_check_if_running() {
+        // 1. No pid file
+        let app_dir = tempdir().unwrap();
+        settings::set_app_dir(&app_dir.path());
+        assert!(Server::check_if_running().await.is_ok());
+
+        // 2. The process is no longer running
+        let mut pid_file = PidFile {
+            pid: 0,
+            port: 1234,
+            api_key: "cf55f65...".to_string(),
+        };
+        std::fs::File
+            ::create(app_dir.path().join(PID_FILENAME))
+            .unwrap()
+            .write_all(toml::to_string_pretty(&pid_file).unwrap().as_bytes())
+            .unwrap();
+        assert!(Server::check_if_running().await.is_ok());
+
+        // 3. The server is running but not responding to an API request
+        let listener = tokio::net::TcpListener::bind("localhost:0").await.unwrap();
+        pid_file.pid = std::process::id();
+        pid_file.port = listener.local_addr().unwrap().port();
+        std::fs::File
+            ::create(app_dir.path().join(PID_FILENAME))
+            .unwrap()
+            .write_all(toml::to_string_pretty(&pid_file).unwrap().as_bytes())
+            .unwrap();
+        std::mem::drop(listener);
+        assert!(Server::check_if_running().await.is_ok());
+
+        // 4. The server is already running
+        let listener = tokio::net::TcpListener
+            ::bind(format!("localhost:{}", pid_file.port)).await
+            .unwrap();
+        let _ = tokio::spawn(async move {
+            let (mut tcp_stream, _) = listener.accept().await.unwrap();
+            tcp_stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").await.unwrap();
+            let (mut tcp_stream, _) = listener.accept().await.unwrap();
+            tcp_stream.write_all(b"HTTP/1.1 500 Internal Server Error\r\n\r\n").await.unwrap();
+        });
+        assert!(Server::check_if_running().await.is_err()); // 200 OK -> the server is responding
+        assert!(Server::check_if_running().await.is_ok()); // 500 Internal Server Error -> the server is running as expected
+    }
 
     #[tokio::test]
     async fn test_bind() {
@@ -286,7 +334,7 @@ mod tests {
         let host = listener.local_addr().unwrap().to_string();
         let http_client = reqwest::Client::new();
 
-        // run the server in another thread
+        // run the server as a task
         let _ = tokio::spawn(async move { server.run(listener).await });
 
         // Send a request to the server
