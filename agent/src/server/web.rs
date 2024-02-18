@@ -6,9 +6,10 @@ use crate::server::state::ServerState;
 use crate::server::context::RequestContext;
 use crate::server::pid_file::{ save_pid_file, delete_pid_file, load_pid_file, PID_FILENAME };
 use crate::utils::constants::{ X_API_KEY_HEADER, X_REQUEST_ID_HEADER };
+use std::str::FromStr;
 use std::time::{ SystemTime, UNIX_EPOCH };
 use axum::extract::State;
-use axum::http::{ self, HeaderValue };
+use axum::http::{ self, HeaderValue, Method };
 use axum::middleware::{ from_fn, from_fn_with_state, Next };
 use axum::{ Router, extract::Request, response::Response };
 use anyhow::{ Result, Context };
@@ -16,8 +17,10 @@ use rand::Rng;
 use tokio::signal;
 use tokio::net::TcpListener;
 use sysinfo::{ Pid, System };
-use tracing::{ info, warn, Level };
+use tracing::{ debug, info, warn, Level };
 use tower_http::trace::{ self, TraceLayer };
+use tower_http::cors::{ CorsLayer, Any };
+use http::header::{ AUTHORIZATION, ACCEPT, CONTENT_TYPE };
 
 pub struct Server {}
 
@@ -64,9 +67,7 @@ impl Server {
         let listen_addr = format!("{}:{}", settings::get_listen_address(), settings::get_port());
         tokio::net::TcpListener
             ::bind(&listen_addr).await
-            .with_context(|| {
-                format!("Unable to bind to the listen address: {}", listen_addr.to_string())
-            })
+            .with_context(|| { format!("Unable to bind to the listen address: {}", listen_addr) })
     }
 
     /// Create the API router.
@@ -86,7 +87,7 @@ impl Server {
         );
 
         // all routes are nested under the /api/v1 path
-        return Router::new().nest("/api/v1", routes.merge(auth_routes));
+        Router::new().nest("/api/v1", routes.merge(auth_routes))
     }
 
     /// Run the server.
@@ -103,9 +104,12 @@ impl Server {
                 .on_response(trace::DefaultOnResponse::new().level(Level::TRACE))
         );
 
+        // Add the CORS middleware
+        let layers = api.layer(get_cors_layer().context("Error while configuring CORS.")?);
+
         // start the server
         info!("Listening on {}", listener.local_addr().unwrap().to_string());
-        axum::serve(listener, api).with_graceful_shutdown(shutdown_signal()).await?;
+        axum::serve(listener, layers).with_graceful_shutdown(shutdown_signal()).await?;
         Ok(())
     }
 
@@ -113,7 +117,7 @@ impl Server {
     ///
     /// This function will return an error if the server is already running.
     /// In order to check if the server is running, this function will check if there is a pid file present on the file
-    /// system and if so will use it to try to connect the exising runnning agent. If there is an agent running and
+    /// system and if so will use it to try to connect the exiting running agent. If there is an agent running and
     /// responding to an API request, this function will return an error, otherwise it will return Ok(()).
     pub async fn check_if_running() -> Result<()> {
         // load the pid file (if any)
@@ -142,13 +146,9 @@ impl Server {
         {
             Ok(response) => {
                 if response.status().is_success() {
-                    return Err(
-                        anyhow::anyhow!("The server is already running (pid={})", pid_file.pid)
-                    );
+                    Err(anyhow::anyhow!("The server is already running (pid={})", pid_file.pid))
                 } else {
-                    info!(
-                        "The server is running but not responding to an API request, continue..."
-                    );
+                    info!("The server is running but not responding to an API request, continue...");
                     Ok(())
                 }
             }
@@ -159,6 +159,48 @@ impl Server {
         }
     }
 }
+
+/// Create the layer for the CORS middleware.
+fn get_cors_layer() -> Result<CorsLayer> {
+    let mut cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
+        .allow_headers([
+            AUTHORIZATION,
+            ACCEPT,
+            CONTENT_TYPE,
+            http::HeaderName::from_str(X_API_KEY_HEADER).unwrap(),
+            http::HeaderName::from_str(X_REQUEST_ID_HEADER).unwrap(),
+        ])
+        .max_age(settings::get_cors_max_age())
+        .expose_headers([http::HeaderName::from_str(X_REQUEST_ID_HEADER).unwrap()]);
+
+    let cors_allowed_origins_setting = settings::get_cors_allowed_origins();
+    if cors_allowed_origins_setting.contains(&"*".to_string()) {
+        if cors_allowed_origins_setting.len() > 1 {
+            return Err(
+                anyhow::anyhow!(
+                    "Wildcard origin (`*`) cannot be used with other origins in the setting 'cors_allowed_origins={:?}'.",
+                    cors_allowed_origins_setting
+                )
+            );
+        } else {
+            cors = cors.allow_origin(Any);
+        }
+    } else {
+        let mut allowed_origins: Vec<HeaderValue> = Vec::new();
+        for origin in settings::get_cors_allowed_origins() {
+            let allowed_origin = HeaderValue::from_str(origin.as_str()).with_context(|| {
+                format!("Invalid origin: '{}' from the setting 'cors_allowed_origins'.", origin)
+            })?;
+            allowed_origins.push(allowed_origin);
+        }
+        cors = cors.allow_origin(allowed_origins);
+    }
+
+    Ok(cors)
+}
+
+// "Authorization", "Content-Type", "X-Api-Key"
 
 /// Check the API key.
 ///
@@ -180,6 +222,7 @@ async fn check_api_key(mut req: Request, next: Next) -> ServerResult<Response> {
         }
     }
     warn!("Invalid or missing API key.");
+    debug!("headers: {:?}", req.headers());
     Err(Error::Forbidden)
 }
 
@@ -200,10 +243,7 @@ async fn check_authentication(
         warn!("Authorization header is missing.");
         return Err(Error::Forbidden);
     };
-    let Ok(security_token) = parse_authorization_header(
-        AuthenticationMethod::UserPassword,
-        authorization_header
-    ) else {
+    let Ok(security_token) = parse_authorization_header(AuthenticationMethod::UserPassword, authorization_header) else {
         return Err(Error::BadRequest("(Invalid 'Authorization' header)".to_string()));
     };
 
@@ -217,7 +257,7 @@ async fn check_authentication(
     context.add_user_session(user_session);
     req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
 
-    return Ok(next.run(req).await);
+    Ok(next.run(req).await)
 }
 
 /// Generate a request id.
@@ -271,7 +311,7 @@ mod tests {
     async fn test_check_if_running() {
         // 1. No pid file
         let app_dir = tempdir().unwrap();
-        settings::set_app_dir(&app_dir.path());
+        settings::set_app_dir(app_dir.path());
         assert!(Server::check_if_running().await.is_ok());
 
         // 2. The process is no longer running
@@ -300,10 +340,8 @@ mod tests {
         assert!(Server::check_if_running().await.is_ok());
 
         // 4. The server is already running
-        let listener = tokio::net::TcpListener
-            ::bind(format!("localhost:{}", pid_file.port)).await
-            .unwrap();
-        let _ = tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind(format!("localhost:{}", pid_file.port)).await.unwrap();
+        let handle = tokio::spawn(async move {
             let (mut tcp_stream, _) = listener.accept().await.unwrap();
             tcp_stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").await.unwrap();
             let (mut tcp_stream, _) = listener.accept().await.unwrap();
@@ -311,6 +349,7 @@ mod tests {
         });
         assert!(Server::check_if_running().await.is_err()); // 200 OK -> the server is responding
         assert!(Server::check_if_running().await.is_ok()); // 500 Internal Server Error -> the server is running as expected
+        std::mem::drop(handle)
     }
 
     #[tokio::test]
@@ -335,7 +374,7 @@ mod tests {
         let http_client = reqwest::Client::new();
 
         // run the server as a task
-        let _ = tokio::spawn(async move { server.run(listener).await });
+        let task_handle = tokio::spawn(async move { server.run(listener).await });
 
         // Send a request to the server
         let result = http_client
@@ -343,6 +382,7 @@ mod tests {
             .header(X_API_KEY_HEADER, settings::get_api_key())
             .send().await;
         assert!(result.is_ok());
+        std::mem::drop(task_handle);
     }
 
     #[tokio::test]
@@ -356,9 +396,9 @@ mod tests {
         settings::set_port(listener.local_addr().unwrap().port());
         std::mem::drop(listener);
 
-        // 2. Successfull start
+        // 2. Successful start
         let tempdir = tempdir().unwrap();
-        settings::set_app_dir(&tempdir.path());
+        settings::set_app_dir(tempdir.path());
 
         // run the server in another thread
         let joint_handle = tokio::spawn(async move { Server::start().await });
@@ -372,13 +412,11 @@ mod tests {
         assert!(result.is_ok());
         assert!(load_pid_file(tempdir.path()).is_some());
 
-        // On Unix we can initiate a gracefull shutdown by sending a SIGTERM signal, this is going to allow us to check
+        // On Unix we can initiate a graceful shutdown by sending a SIGTERM signal, this is going to allow us to check
         // if the server is able to shutdown gracefully and delete the pid file.
         #[cfg(unix)]
         {
-            nix::sys::signal
-                ::kill(nix::unistd::Pid::this(), nix::sys::signal::Signal::SIGTERM)
-                .unwrap();
+            nix::sys::signal::kill(nix::unistd::Pid::this(), nix::sys::signal::Signal::SIGTERM).unwrap();
             joint_handle.await.unwrap().unwrap();
             assert!(load_pid_file(tempdir.path()).is_none()); // pid file should be deleted
         }
@@ -421,7 +459,7 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), http::StatusCode::OK);
         assert!(response.headers().contains_key(X_REQUEST_ID_HEADER));
-        assert!(response.headers().get(X_REQUEST_ID_HEADER).unwrap().to_str().unwrap().len() > 0);
+        assert!(!response.headers().get(X_REQUEST_ID_HEADER).unwrap().to_str().unwrap().is_empty());
     }
 
     #[tokio::test]
@@ -429,9 +467,9 @@ mod tests {
         // We are using GET /users/:username/user for this test since this endpoint requires authentication.
         let base_dir = tempdir().unwrap();
         let state = ServerState::new();
-        let security_token = state.add_user_session("local", "user_id");
+        let security_token = state.add_user_session(&"local".into(), "user_id");
         settings::set_base_dir(base_dir.path().to_str().unwrap().to_string());
-        let _ = create_user("local");
+        let _ = create_user(&"local".into());
 
         // 1. Invalid security token
         let response = super::Server

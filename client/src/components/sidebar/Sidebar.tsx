@@ -63,12 +63,12 @@ export default function Sidebar({
     onVisibilityChange && onVisibilityChange(!visible);
   };
 
-  // To have a transition when hidding the sidebar we can use translate-x-0 but the issue is that the sidebar is
+  // To have a transition when hiding the sidebar we can use translate-x-0 but the issue is that the sidebar is
   // being translated out of view, but it still occupies space in the document flow, which is why the element to the
   // right of the sidebar is not moving. As a workaround we are also moving the next sibling element of the sidebar
   // changing their margin-left property. Also we need to set the width of the moved sibling element to it's current
   // width (before the translation) otherwise some children element such as the monaco editor will not be resized
-  // properly when the sidebar is comming back.
+  // properly when the sidebar is coming back.
   if (sidebarRef && sidebarRef.current) {
     let nextSibling = sidebarRef.current.nextSibling;
     while (nextSibling) {

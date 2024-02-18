@@ -1,6 +1,33 @@
 import { test, expect, describe } from "vitest";
 import { deserialize, serializable, serialize } from "@/utils/serializable";
 
+describe("snakeCase", () => {
+  test("serialize", () => {
+    class User {
+      @serializable("string", { snakeCase: "property" })
+      userId!: string;
+    }
+    expect(serialize<User>(Object.assign(new User(), { userId: "MartyMcFly" }))).toEqual({ user_id: "MartyMcFly" });
+  });
+
+  test("deserialize", () => {
+    class User {
+      @serializable("string", { snakeCase: "property" })
+      userId!: string;
+    }
+    expect(
+      deserialize<User>(
+        {
+          user_id: "MartyMcFly",
+        },
+        User
+      )
+    ).toEqual({
+      userId: "MartyMcFly",
+    });
+  });
+});
+
 describe("deserialization", () => {
   test("string", () => {
     class User {

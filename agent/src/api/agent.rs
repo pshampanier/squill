@@ -5,7 +5,7 @@ use crate::server::state::ServerState;
 
 /// GET /agent
 ///
-/// This endpoint is moslty used to check if the agent is running. No authentication is required but the API key must be
+/// This endpoint is mostly used to check if the agent is running. No authentication is required but the API key must be
 /// passed in the X-API-Key header.
 ///
 /// Returns the agent version.

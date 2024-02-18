@@ -1,4 +1,5 @@
 use crate::json_enum;
+use crate::models::variables::Variable;
 use serde::{ Serialize, Deserialize };
 use uuid::Uuid;
 
@@ -17,7 +18,7 @@ pub struct UserSettings {
 #[derive(Serialize, Deserialize)]
 pub struct EditorSettings {
     pub minimap: Minimap,
-    pub render_white_space: RenderWhitespace,
+    pub render_whitespace: RenderWhitespace,
 }
 
 json_enum!(Minimap, Show, Hide, Auto);
@@ -25,15 +26,19 @@ json_enum!(RenderWhitespace, None, Boundary, Selection, All, Trailing);
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
+    pub username: String,
     pub user_id: String,
-    pub settings: Option<UserSettings>,
+    pub settings: UserSettings,
+    pub variables: Vec<Variable>,
 }
 
 impl Default for User {
     fn default() -> Self {
         Self {
+            username: String::new(),
             user_id: Uuid::new_v4().to_string(),
-            settings: Some(UserSettings {
+            variables: Vec::new(),
+            settings: UserSettings {
                 color_scheme: ColorScheme::Auto,
                 telemetry: true,
                 show_recently_opened: false,
@@ -41,9 +46,9 @@ impl Default for User {
                 show_file_extensions: false,
                 editor_settings: EditorSettings {
                     minimap: Minimap::Hide,
-                    render_white_space: RenderWhitespace::None,
+                    render_whitespace: RenderWhitespace::None,
                 },
-            }),
+            },
         }
     }
 }

@@ -63,7 +63,7 @@ pub mod settings {
     //    settings::set_api_key("new_api_key");
 
     settings_setters!(set_base_dir, base_dir: String);
-    settings_setters!(set_token_expiration, token_expiration: u32);
+    settings_setters!(set_token_expiration, token_expiration: std::time::Duration);
     settings_setters!(set_listen_address, listen_address: String);
     settings_setters!(set_port, port: u16);
     settings_setters!(set_log_dir, log_dir: String);

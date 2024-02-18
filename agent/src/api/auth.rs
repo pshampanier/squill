@@ -5,17 +5,10 @@ use axum::extract::{ Json, State };
 use axum::http::header::{ HeaderMap, AUTHORIZATION };
 use crate::resources::users;
 use crate::utils::validators::{ parse_authorization_header, sanitize_username };
-use crate::{ api::error::ServerResult, settings };
+use crate::settings;
 use crate::server::state::ServerState;
-use crate::models::auth::{
-    Authentication,
-    AuthenticationMethod,
-    RefreshToken,
-    SecurityToken,
-    TokenType,
-};
-
-use super::error::Error;
+use crate::models::auth::{ Authentication, AuthenticationMethod, RefreshToken, SecurityToken, TokenType };
+use crate::api::error::{ Error, ServerResult };
 
 const USERNAME_LOCAL: &str = "local";
 
@@ -25,7 +18,7 @@ impl Default for SecurityToken {
             token: generate_token(),
             token_type: TokenType::Bearer,
             refresh_token: generate_token(),
-            expires_in: settings::get_token_expiration(),
+            expires_in: settings::get_token_expiration().as_secs() as u32,
             user_id: String::new(),
         }
     }
@@ -35,10 +28,7 @@ impl Default for SecurityToken {
 ///
 /// This endpoint is used to authenticate a user and to generate a security token.
 /// As for now it only supports the local user and the password must be empty.
-async fn logon(
-    State(state): State<ServerState>,
-    auth: Json<Authentication>
-) -> ServerResult<Json<SecurityToken>> {
+async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> {
     match auth.method {
         AuthenticationMethod::UserPassword => {
             // Usernames are case insensitive. We are using the lowercase version to prevent any duplicate issues when the
@@ -84,8 +74,8 @@ async fn refresh_token(
 ///
 /// This endpoint is used to logout a user, i.e. to invalidate the security and refresh tokens.
 /// While the Authorization header is required, this endpoint will not return a 403 Forbidden if the tokens are invalid
-/// or expired. Instead, it will return a 200 OK since the goal is only to invalidate the tokens. Neverthless if the
-/// Authorization header is missing or syntaxly wrong, a 400 Bad Request will be returned.
+/// or expired. Instead, it will return a 200 OK since the goal is only to invalidate the tokens. Nevertheless if the
+/// Authorization header is missing or syntactically wrong, a 400 Bad Request will be returned.
 async fn logout(State(state): State<ServerState>, headers: HeaderMap) -> ServerResult<()> {
     let authorization_header = headers.get(AUTHORIZATION);
     if authorization_header.is_none() {
@@ -94,13 +84,13 @@ async fn logout(State(state): State<ServerState>, headers: HeaderMap) -> ServerR
 
     let Ok(security_token) = parse_authorization_header(
         AuthenticationMethod::UserPassword,
-        &authorization_header.unwrap()
+        authorization_header.unwrap()
     ) else {
         return Err(Error::BadRequest("Invalid Authorization header".to_string()));
     };
 
     if let Some(user_session) = state.get_user_session(&security_token) {
-        state.revoke_secutity_token(&user_session.get_security_token());
+        state.revoke_security_token(&user_session.get_security_token());
     }
 
     Ok(())
@@ -118,10 +108,10 @@ pub fn routes(state: ServerState) -> Router {
 /// Generate a security token.
 ///
 /// The security token is a 256-bit random number encoded in hexadecimal. We are using the `rand` crate to generate the
-/// random number which is considered cryptographically secure (source: https://bit.ly/3vOrqSh).
+/// random number which is considered cryptographically secure (source: <https://bit.ly/3vOrqSh>).
 fn generate_token() -> String {
     let token: [u8; 32] = rand::thread_rng().gen();
-    return hex::encode(token);
+    hex::encode(token)
 }
 
 #[cfg(test)]
@@ -159,7 +149,7 @@ mod test {
 
         // 2) valid user
         {
-            create_user("local").unwrap();
+            create_user(&"local".into()).unwrap();
             let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials {
@@ -208,15 +198,12 @@ mod test {
     async fn test_refresh_token() {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
-        let security_token = state.add_user_session("local", "local_id");
+        let security_token = state.add_user_session(&"local".into(), "local_id");
 
         // 1) invalid refresh token
         assert!(
             matches!(
-                refresh_token(
-                    state.clone(),
-                    Json(RefreshToken { refresh_token: "invalid".to_string() })
-                ).await,
+                refresh_token(state.clone(), Json(RefreshToken { refresh_token: "invalid".to_string() })).await,
                 Err(Error::Forbidden)
             )
         );
@@ -235,7 +222,7 @@ mod test {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
         let mut headers = HeaderMap::new();
-        let security_token = state.add_user_session("local", "local_id");
+        let security_token = state.add_user_session(&"local".into(), "local_id");
 
         // 1) missing Authorization header
         assert!(matches!(logout(state.clone(), headers.clone()).await, Err(Error::BadRequest(_))));
@@ -245,14 +232,11 @@ mod test {
         assert!(matches!(logout(state.clone(), headers.clone()).await, Err(Error::BadRequest(_))));
 
         // 3) valid Authorization header
-        headers.insert(
-            AUTHORIZATION,
-            HeaderValue::from_str(&format!("Bearer {}", security_token.token)).unwrap()
-        );
-        assert!(matches!(logout(state.clone(), headers.clone()).await, Ok(_)));
+        headers.insert(AUTHORIZATION, HeaderValue::from_str(&format!("Bearer {}", security_token.token)).unwrap());
+        assert!(logout(state.clone(), headers.clone()).await.is_ok());
         assert!(state.get_user_session(&security_token.token).is_none());
 
         // 4) valid Authorization header but the security token is no longer valid
-        assert!(matches!(logout(state.clone(), headers.clone()).await, Ok(_)));
+        assert!(logout(state.clone(), headers.clone()).await.is_ok());
     }
 }

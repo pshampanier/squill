@@ -17,7 +17,7 @@ export default function Titlebar({ children }: TitlebarProps) {
   // appWindow.onResize() listener is async we need to use a ref to store the unregister function.
   const [fullscreen, setFullscreen] = React.useState<boolean>(false);
   const unregisterOnResize = useRef<UnlistenFn>(null);
-  if (env.applicationType === "desktop" && env.plateform === "macos") {
+  if (env.applicationType === "desktop" && env.platform === "macos") {
     useEffect(() => {
       appWindow
         .onResized(() => {
@@ -39,7 +39,7 @@ export default function Titlebar({ children }: TitlebarProps) {
     "flex space-x-2 h-11 p-1 justify-between text-white w-full",
     colors("background"),
     // On macOs, add a padding to the left of the titlebar for the default buttons (open/close/maximize)
-    env.applicationType === "desktop" && env.plateform === "macos" && !fullscreen && "pl-[64px]"
+    env.applicationType === "desktop" && env.platform === "macos" && !fullscreen && "pl-[64px]"
   );
   return (
     <ColorsContext.Provider value={colors}>

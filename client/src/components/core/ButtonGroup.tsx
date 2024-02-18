@@ -17,7 +17,7 @@ const ButtonGroupContext = createContext(null);
 function ButtonGroup({ children, size, defaultValue, disabled, onChange }: ButtonGroupProps) {
   const [value, setValue] = useState(defaultValue);
 
-  // collecting the name of the chidren components
+  // collecting the name of the children components
   const childrenNames = useRef(
     React.Children.map(children, (child) => {
       if (React.isValidElement(child)) {

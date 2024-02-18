@@ -1,5 +1,5 @@
 import { KeyboardShortcut } from "@/utils/types";
-import { env } from "@/utils/env";
+import { getCurrentEnvironmentShortcut } from "@/utils/commands";
 
 import Meta from "@/assets/keys/meta.svg?react";
 import Alt from "@/assets/keys/alt.svg?react";
@@ -27,7 +27,7 @@ function Key({ name }: { name: string }) {
 }
 
 export default function KBD({ shortcut }: KeyboardShortcutProps) {
-  const s = !Array.isArray(shortcut) ? shortcut : env.plateform == "macos" ? shortcut[0] : shortcut[1];
+  const s = getCurrentEnvironmentShortcut(shortcut);
   return (
     <span className="flex flex-wrap items-center gap-x-1 h-6 text-sm text-gray-400 dark:text-gray-600">
       {s.split("+").map((key, index) => {

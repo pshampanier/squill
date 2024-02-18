@@ -1,11 +1,7 @@
 use std::sync::Arc;
 
 use axum::{ async_trait, extract::FromRequestParts, http::request::Parts };
-use crate::{
-    api::error::{ Error, ServerResult },
-    server::state::UserSession,
-    utils::constants::USERNAME_ANONYMOUS,
-};
+use crate::{ api::error::{ Error, ServerResult }, server::state::UserSession, utils::constants::USERNAME_ANONYMOUS };
 
 #[derive(Clone)]
 pub struct RequestContext {

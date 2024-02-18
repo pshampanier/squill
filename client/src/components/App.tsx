@@ -1,20 +1,26 @@
 import "@/components/editors/index.tsx";
 
 import { useEffect, useRef, useState } from "react";
-import { User } from "@/resources/user/user";
+import { User } from "@/models/users";
 import { Agent } from "@/resources/agent.ts";
-import { useUserStore } from "@/stores/UserStore";
 import { registerAction, unregisterAction } from "@/utils/commands";
-import { env } from "@/utils/env";
+import { AgentConnectionParameters, env } from "@/utils/env";
+import Users from "@/resources/users";
 
 import UserSpace from "@/components/spaces/UserSpace";
 import WorkspaceSpace from "@/components/spaces/WorkspaceSpace";
 import SettingsSpace from "@/components/spaces/settings/SettingsSpace";
 import ApplySystemPreferences from "@/components/ApplySystemPreferences";
 import ConnectionSpace from "@/components/spaces/ConnectionSpace";
+import { AuthRequest } from "@/models/auth";
+import { useAppStore } from "@/stores/AppStore";
+import { calculateColorScheme } from "@/utils/colors";
+import { useUserStore } from "@/stores/UserStore";
 
 export function App() {
-  const activeSpace = useUserStore((state) => state.activeSpace);
+  const activeSpace = useAppStore((state) => state.activeSpace);
+  const setActiveSpace = useAppStore((state) => state.setActiveSpace);
+  const setColorScheme = useAppStore((state) => state.setColorScheme);
   const reset = useUserStore((state) => state.reset);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
 
@@ -31,18 +37,27 @@ export function App() {
   };
 
   useEffect(() => {
-    env.getLocalAgentUrl().then((agentUrl) => {
-      console.log(`Connecting agent: ${agentUrl}`);
-      Agent.connect(agentUrl)
+    env.getAgentConnectionParameters().then((params: AgentConnectionParameters) => {
+      console.log(`Connecting agent: ${params.url}`);
+      Agent.connect(params.url, params.apiKey)
         .then(() => {
-          return User.logon({ method: "user_password", credentials: { username: "local", password: "" } });
+          const authRequest = new AuthRequest({
+            method: "user_password",
+            credentials: { username: "local", password: "" },
+          });
+          return Users.logon(authRequest);
         })
         .then((user: User) => {
-          console.log(`${user.username} logged in`);
+          console.log(`user '${user.username}' logged in`);
           reset();
+          setActiveSpace("user");
+          setColorScheme(calculateColorScheme(user.settings.colorScheme));
+        })
+        .catch((err) => {
+          console.error(err);
         });
     });
-  }, [reset]);
+  }, []);
 
   useEffect(() => {
     registerAction("settings.open", openSettings);

@@ -39,8 +39,13 @@ export function registerCommand(...command: Command[]) {
     } else {
       let shortcut = c.shortcut;
       if (Array.isArray(shortcut)) {
-        // If the shortcut differs between macOS and Windows/Linux, we keep only the shortcut for the current plateform.
-        shortcut = shortcut[env.plateform === "macos" ? 0 : 1];
+        if (Array.isArray(shortcut[0])) {
+          // If the shortcut differs between the desktop application and the web browser, we keep only the shortcut for
+          // the current environment.
+          shortcut = shortcut[env.applicationType === "desktop" ? 0 : 1];
+        }
+        // If the shortcut differs between macOS and Windows/Linux, we keep only the shortcut for the current platform.
+        shortcut = shortcut[env.platform === "macos" ? 0 : 1];
       }
       commands[c.name] = { ...c, shortcut: shortcut, actions: [] };
     }
@@ -64,6 +69,25 @@ export function registerAction(command: string, callback: CommandAction) {
     raise(`The given action is already registered for the command '${command}'`);
   } else {
     c.actions.push(callback);
+  }
+}
+
+/**
+ * Register the given action for the given command if it is not already registered.
+ *
+ * @param command The command to register the action for.
+ * @param callback The action to register.
+ * @returns `true` if the action was registered, `false` if it was already registered.
+ */
+export function registerActionIfNeeded(command: string, callback: CommandAction): boolean {
+  const c = commands[command];
+  if (!c) {
+    raise(`Command '${command}' not registered`);
+  } else if (!c.actions.includes(callback)) {
+    c.actions.push(callback);
+    return true;
+  } else {
+    return false;
   }
 }
 
@@ -92,16 +116,47 @@ export function executeCommand(name: string) {
 
 export function registerGlobalKeyListeners() {
   window.addEventListener("keydown", (event) => {
-    // If the shortcut involves a combinaison of modifier keys, the order is: Ctrl, Alt, Shift, Meta.
+    // If the shortcut involves a combination of modifier keys, the order is: Ctrl, Alt, Shift, Meta.
     const shortcut = getShortcut(event);
     if (shortcut) {
       const command = Object.values(commands).find((c) => c.shortcut === shortcut);
       if (command) {
         event.preventDefault();
+        console.debug(`Executing command '${command.name}'`);
         executeActions(command.actions);
       }
     }
   });
+}
+
+/**
+ * Extract the actual shortcut for the current environment from the given shortcuts.
+ *
+ * A shortcuts can be a string, an array of two strings or an array of two arrays of two strings defined as follow:
+ *
+ * ```
+ *           Windows/Linux
+ *                       │
+ *   all     macOS       │
+ *     │         │       │           Desktop             Web
+ *     ▼         ▼       ▼        ──────────────    ──────────────
+ *  string | [string, string] | [[string, string], [string, string]]
+ * ```
+ *
+ * This method will return the string representing the shortcut for the current environment.
+ */
+export function getCurrentEnvironmentShortcut(shortcuts: KeyboardShortcut): string {
+  let shortcut = shortcuts;
+  if (Array.isArray(shortcut)) {
+    if (Array.isArray(shortcut[0])) {
+      // If the shortcut differs between the desktop application and the web browser, we keep only the shortcut for
+      // the current environment.
+      shortcut = shortcut[env.applicationType === "desktop" ? 0 : 1];
+    }
+    // If the shortcut differs between macOS and Windows/Linux, we keep only the shortcut for the current platform.
+    shortcut = shortcut[env.platform === "macos" ? 0 : 1];
+  }
+  return shortcut as string;
 }
 
 /**

@@ -15,7 +15,7 @@ const DEFAULT_LOCAL_AGENT_PORT: &'static str = "4173";
  * Show/Hide the developer tools
  */
 #[tauri::command]
-fn toogle_devtools(_window: tauri::Window) {
+fn toggle_devtools(_window: tauri::Window) {
     #[cfg(debug_assertions)]
     if _window.is_devtools_open() {
         _window.close_devtools();
@@ -44,7 +44,7 @@ fn setup(_app: &mut App) {
 fn main() {
     tauri::Builder
         ::default()
-        .invoke_handler(tauri::generate_handler![toogle_devtools, get_variable])
+        .invoke_handler(tauri::generate_handler![toggle_devtools, get_variable])
         .setup(|app| {
             setup(app);
             Ok(())

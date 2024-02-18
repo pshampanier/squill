@@ -5,6 +5,7 @@ use lru::LruCache;
 
 use crate::models::auth::SecurityToken;
 use crate::settings;
+use crate::utils::validators::Username;
 
 /// The user session cache.
 ///
@@ -19,10 +20,10 @@ type RefreshTokenCache = Arc<Mutex<LruCache<String, Arc<RefreshToken>>>>;
 /// A user session stored in the cache.
 ///
 /// The user session is the server side of the security token. It contains a reference to the whole security token
-/// information trasmited to the client, including the refresh token. The key in the cache is the security token value
-/// ifself.
+/// information transmitted to the client, including the refresh token. The key in the cache is the security token value
+/// itself.
 pub struct UserSession {
-    username: String,
+    username: Username,
     expires_at: u32,
     security_token: Arc<SecurityToken>,
 }
@@ -68,14 +69,10 @@ impl ServerState {
     pub fn new() -> Self {
         Self {
             refresh_tokens: Arc::new(
-                Mutex::new(
-                    LruCache::new(NonZeroUsize::new(settings::get_max_refresh_tokens()).unwrap())
-                )
+                Mutex::new(LruCache::new(NonZeroUsize::new(settings::get_max_refresh_tokens()).unwrap()))
             ),
             user_sessions: Arc::new(
-                Mutex::new(
-                    LruCache::new(NonZeroUsize::new(settings::get_max_user_sessions()).unwrap())
-                )
+                Mutex::new(LruCache::new(NonZeroUsize::new(settings::get_max_user_sessions()).unwrap()))
             ),
         }
     }
@@ -83,7 +80,7 @@ impl ServerState {
     /// Add a user session to the cache.
     ///
     /// This method will replace an existing user session if the token is already in the cache.
-    pub fn add_user_session(&self, username: &str, user_id: &str) -> Arc<SecurityToken> {
+    pub fn add_user_session(&self, username: &Username, user_id: &str) -> Arc<SecurityToken> {
         // Create the security token.
         let security_token = Arc::new(SecurityToken {
             user_id: user_id.to_string(),
@@ -92,7 +89,7 @@ impl ServerState {
 
         // Create the user session.
         let user_session = Arc::new(UserSession {
-            username: username.to_string(),
+            username: username.clone(),
             security_token: security_token.clone(),
             expires_at: Self::get_expiration_time(security_token.expires_in),
         });
@@ -135,18 +132,18 @@ impl ServerState {
                     Some(user_session) => {
                         if user_session.expires_at > Self::get_expiration_time(0) {
                             // TODO: add a metric about the number hits.
-                            return Option::Some(user_session.clone());
+                            Option::Some(user_session.clone())
                         } else {
                             // expired, remove it from the cache
                             // TODO: add a metric about the number hits on expired tokens.
                             user_sessions.pop(token);
-                            return Option::None;
+                            Option::None
                         }
                     }
                     None => {
                         // not found
                         // TODO: add a metric about the number miss.
-                        return Option::None;
+                        Option::None
                     }
                 }
             }
@@ -186,7 +183,7 @@ impl ServerState {
     /// The new security token.
     pub fn refresh_security_token(&self, refresh_token: &RefreshToken) -> Arc<SecurityToken> {
         // Creation of a new security token
-        let security_token = self.add_user_session(
+        let security_token: Arc<SecurityToken> = self.add_user_session(
             &refresh_token.user_session.username,
             refresh_token.user_session.get_user_id()
         );
@@ -218,7 +215,7 @@ impl ServerState {
     ///
     /// The given security token will be removed from the cache. Neither the security token nor the refresh token will
     /// be usable anymore.
-    pub fn revoke_secutity_token(&self, security_token: &SecurityToken) {
+    pub fn revoke_security_token(&self, security_token: &SecurityToken) {
         // Remove the previous security token from the cache.
         match self.user_sessions.lock() {
             Ok(mut user_sessions) => {
@@ -240,7 +237,7 @@ impl ServerState {
         }
     }
 
-    /// Caculate the expiration time based on the current time and a duration in seconds.
+    /// Calculate the expiration time based on the current time and a duration in seconds.
     ///
     /// # Arguments
     /// duration - The duration from now in seconds.
@@ -248,8 +245,7 @@ impl ServerState {
     /// # Returns
     /// The expiration time in seconds since the UNIX epoch.
     fn get_expiration_time(duration: u32) -> u32 {
-        (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as u32) +
-            duration
+        (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as u32) + duration
     }
 }
 
@@ -261,25 +257,25 @@ mod tests {
     #[test]
     fn test_add_user_session() {
         let state = ServerState::new();
-        let session_token = state.add_user_session("username", "user_id");
+        let session_token = state.add_user_session(&"username".into(), "user_id");
         assert!(state.get_user_session(&session_token.token).is_some());
     }
 
     #[test]
     fn test_get_user_session() {
         let state = ServerState::new();
-        let security_token = state.add_user_session("username", "user_id");
+        let security_token = state.add_user_session(&"username".into(), "user_id");
 
         // 1. get a non existing user session
-        assert!(state.get_user_session("non_existant_token").is_none());
+        assert!(state.get_user_session("non_existent_token").is_none());
 
         // 2. get an existing user session
         let user_session = state.get_user_session(&security_token.token).unwrap();
         assert_eq!(user_session.get_user_id(), security_token.user_id);
 
         // 3. get an expired user session
-        settings::set_token_expiration(0);
-        let security_token_expired = state.add_user_session("username_expired", "user_id");
+        settings::set_token_expiration(std::time::Duration::from_secs(0));
+        let security_token_expired = state.add_user_session(&"username_expired".into(), "user_id");
         assert!(state.get_user_session(&security_token_expired.token).is_none());
     }
 
@@ -287,7 +283,7 @@ mod tests {
     fn test_refresh_security_token() {
         // setup: create a security token
         let state = ServerState::new();
-        let security_token = state.add_user_session("username", "user_id");
+        let security_token = state.add_user_session(&"username".into(), "user_id");
         let refresh_token = state.get_refresh_token(&security_token.refresh_token).unwrap();
 
         // refresh the security token using the refresh token

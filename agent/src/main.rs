@@ -9,9 +9,11 @@ mod resources;
 use std::path::PathBuf;
 use tracing_appender::rolling;
 use tracing::{ error, Subscriber };
-use tracing_subscriber::{ self };
+use tracing_subscriber::{ self, filter::EnvFilter };
 use tracing_subscriber::{ Registry, prelude::* };
 use anyhow::{ Result, Context };
+use utils::constants::ENV_VAR_LOG_LEVEL;
+use utils::validators::sanitize_username;
 use crate::server::web::Server;
 
 /// Include the generated build information from the module built
@@ -44,7 +46,8 @@ fn get_tracing_subscriber() -> Result<Box<dyn Subscriber + Send + Sync>> {
         .with_line_number(false)
         .with_ansi(true)
         .with_file(false)
-        .with_target(true);
+        .with_target(true)
+        .with_filter(EnvFilter::from_env(ENV_VAR_LOG_LEVEL));
 
     let file_log = if settings::get_log_collector() {
         // the logging collector is enabled, we must be initiate the creation of log files.
@@ -52,9 +55,7 @@ fn get_tracing_subscriber() -> Result<Box<dyn Subscriber + Send + Sync>> {
         if !log_dir.exists() {
             std::fs
                 ::create_dir_all(log_dir.as_path())
-                .with_context(|| {
-                    format!("Unable to create the log directory: {}", log_dir.to_str().unwrap())
-                })?;
+                .with_context(|| { format!("Unable to create the log directory: {}", log_dir.to_str().unwrap()) })?;
         }
         let file_appender = rolling::daily(log_dir, "agent.log");
         Some(
@@ -63,6 +64,7 @@ fn get_tracing_subscriber() -> Result<Box<dyn Subscriber + Send + Sync>> {
                 .with_ansi(false)
                 .with_thread_ids(true)
                 .with_writer(file_appender.with_max_level(settings::get_log_level()))
+                .with_filter(EnvFilter::from_env(ENV_VAR_LOG_LEVEL))
         )
     } else {
         None
@@ -78,9 +80,7 @@ async fn run(args: &commandline::Args) -> Result<()> {
     if !app_dir.exists() {
         std::fs
             ::create_dir_all(app_dir.as_path())
-            .with_context(|| {
-                format!("Unable to create the application directory: {}", app_dir.to_str().unwrap())
-            })?;
+            .with_context(|| { format!("Unable to create the application directory: {}", app_dir.to_str().unwrap()) })?;
     }
     // now that the command line has been parsed, the app_directory exists we can initialize the tracing system.
     tracing::subscriber::set_global_default(get_tracing_subscriber()?)?;
@@ -91,10 +91,10 @@ async fn run(args: &commandline::Args) -> Result<()> {
             return Server::start().await;
         }
         commandline::Commands::UserAdd { username } => {
-            resources::users::create_user(username.as_str())?;
+            resources::users::create_user(&sanitize_username(username)?)?;
         }
         commandline::Commands::UserDel { username } => {
-            resources::users::delete_user(username.as_str())?;
+            resources::users::delete_user(&sanitize_username(username)?)?;
         }
         commandline::Commands::ShowConfig => {
             settings::show_config();
@@ -132,9 +132,7 @@ mod tests {
             .unwrap()
             .filter_map(|res| {
                 res.ok().and_then(|entry| {
-                    if
-                        entry.path().file_name().unwrap().to_str().unwrap().starts_with("agent.log")
-                    {
+                    if entry.path().file_name().unwrap().to_str().unwrap().starts_with("agent.log") {
                         Some(entry.path())
                     } else {
                         None

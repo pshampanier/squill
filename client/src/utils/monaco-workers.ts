@@ -3,6 +3,7 @@ import { PRIMARY_COLORS, rgbColor } from "./colors";
 
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import { EditorSettings } from "@/models/users";
 
 self.MonacoEnvironment = {
   getWorker: function (_, label) {
@@ -39,3 +40,12 @@ monaco.editor.defineTheme("app-dark-theme", {
     "editor.background": rgbColor(PRIMARY_COLORS, "background", "dark"),
   },
 });
+
+export function getMonacoOptions(settings: EditorSettings) {
+  return {
+    minimap: {
+      enabled: settings.minimap === "show" || settings.minimap === "auto",
+    },
+    renderWhitespace: settings.renderWhitespace,
+  };
+}

@@ -1,11 +1,15 @@
 import { createContext, useState } from "react";
 import { DeepPartial, SVGIcon } from "@/utils/types";
-import { UserSettings } from "@/resources/user/user-settings";
 import { primary as colors } from "@/utils/colors";
 import equal from "deep-equal";
 import cx from "classix";
 import { produce } from "immer";
 import merge from "lodash/merge";
+import { UserSettings } from "@/models/users";
+import Users from "@/resources/users";
+import { NO_ICON } from "@/utils/constants";
+import { executeCommand } from "@/utils/commands";
+import { useUserStore } from "@/stores/UserStore";
 
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarItem from "@/components/sidebar/SidebarItem";
@@ -19,12 +23,7 @@ import CommandButton from "@/components/core/CommandButton";
 import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGeneral";
 import SettingsPageEditor from "@/components/spaces/settings/SettingsPageEditor";
-
 import SettingsIcon from "@/icons/settings.svg?react";
-import { User } from "@/resources/user/user";
-import { NO_ICON } from "@/utils/constants";
-import { executeCommand } from "@/utils/commands";
-import { useUserStore } from "@/stores/UserStore";
 
 type UserSettingsContext = {
   userSettings: Readonly<UserSettings>;
@@ -45,7 +44,7 @@ export default function SettingsSpace() {
   console.debug("Rendering SettingsSpace");
 
   const [selectedPage, selectPage] = useState<SettingsPageName>("general");
-  const [userSettings, setUserSettings] = useState<Readonly<UserSettings>>(User.current.settings.clone());
+  const [userSettings, setUserSettings] = useState<UserSettings>(produce(Users.current.settings, () => {}));
   const [modified, setModified] = useState<boolean>(false);
   const resetSettings = useUserStore((state) => state.resetSettings);
 
@@ -55,7 +54,7 @@ export default function SettingsSpace() {
   };
 
   const applySettings = async () => {
-    await User.current.saveSettings(userSettings);
+    await Users.saveSettings(userSettings);
     resetSettings();
     executeCommand("settings.close");
   };
@@ -64,7 +63,7 @@ export default function SettingsSpace() {
     const newSettings = produce(userSettings, (draft) => {
       return merge(draft, settings);
     });
-    setModified(!equal(newSettings, User.current.settings));
+    setModified(!equal(newSettings, Users.current.settings));
     setUserSettings(newSettings);
   };
 

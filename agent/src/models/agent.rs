@@ -33,9 +33,11 @@ pub struct AgentSettings {
 
     /// The number of seconds after which a security token will expire.
     /// This does not applies to the refresh token which only expires when it is evicted from the cache.
-    pub token_expiration: u32,
+    pub token_expiration: std::time::Duration,
 
     /// Enable the logging collector to store the logs into log files.
+    ///
+    /// #default: false
     pub log_collector: bool,
 
     /// The location of the log file directory.
@@ -43,5 +45,18 @@ pub struct AgentSettings {
 
     /// The log level to be used by the logging collector.
     /// Any log below this level will be ignored.
+    ///
+    /// #default: "Info"
     pub log_level: LogLevel,
+
+    /// Set the value of the [Access-Control-Allow-Origin](https://mzl.la/3HIZBx5) header.
+    ///
+    /// The value of this header indicates what origin sites are allowed to access the resources of the server.
+    /// #default: ["*"]
+    pub cors_allowed_origins: Vec<String>,
+
+    /// Set the value of the [Access-Control-Max-Age](https://mzl.la/4826hRC) header.
+    ///
+    /// #default: 86400
+    pub cors_max_age: std::time::Duration,
 }

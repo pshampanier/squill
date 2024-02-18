@@ -28,7 +28,7 @@ lazy_static! {
     /// Application directory location.
     ///
     /// The app directory (app_dir) is used to store files used internally by the agent  (e.g. agent.conf, .agent.pid, ...).
-    /// This location can only be overiden by an environment variable, otherwise it's always located in a directory
+    /// This location can only be override by an environment variable, otherwise it's always located in a directory
     /// specific to the OS where the agent can access without requiring elevated privileges.
     static ref APP_DIR: PathBuf = {
         let mut root_dir = PathBuf::new();
@@ -61,7 +61,7 @@ lazy_static! {
 #[cfg(test)]
 thread_local! {
     pub static APP_DIR: RefCell<PathBuf> = RefCell::new(
-        PathBuf::from(std::env::var(ENV_VAR_APP_DIR).or::<String>(Ok(String::new())).unwrap())
+        PathBuf::from(std::env::var(ENV_VAR_APP_DIR).unwrap_or(".".to_string()))
     );
 }
 
@@ -92,18 +92,18 @@ settings_getters! {
     get_api_key, api_key: String,
     get_max_user_sessions, max_user_sessions: usize,
     get_max_refresh_tokens, max_refresh_tokens: usize,
-    get_token_expiration, token_expiration: u32,
+    get_token_expiration, token_expiration: std::time::Duration,
     get_log_collector, log_collector: bool,
     get_log_dir, log_dir: String,
+    get_cors_allowed_origins, cors_allowed_origins: Vec<String>,
+    get_cors_max_age, cors_max_age: std::time::Duration,
 }
 
 pub fn get_log_level() -> tracing::Level {
     #[cfg(not(test))]
     let log_level = &SETTINGS.log_level;
     #[cfg(test)]
-    let log_level = crate::utils::tests::settings::SETTINGS.with(|settings| {
-        settings.borrow().log_level.clone()
-    });
+    let log_level = crate::utils::tests::settings::SETTINGS.with(|settings| { settings.borrow().log_level.clone() });
     match log_level {
         LogLevel::Error => tracing::Level::ERROR,
         LogLevel::Warning => tracing::Level::WARN,
@@ -122,10 +122,12 @@ impl Default for AgentSettings {
             api_key: generate_api_key(),
             max_user_sessions: 100,
             max_refresh_tokens: 100,
-            token_expiration: 3600,
+            token_expiration: std::time::Duration::from_secs(3600),
             log_collector: true,
             log_dir: get_app_dir().join("logs").to_str().unwrap().to_string(),
             log_level: LogLevel::Info,
+            cors_allowed_origins: vec!["*".to_string()],
+            cors_max_age: std::time::Duration::from_secs(86400),
         }
     }
 }
@@ -137,9 +139,7 @@ impl AgentSettings {
         for (key, value) in section.iter() {
             match key {
                 "listen_address" => {
-                    let address: Ipv4Addr = value
-                        .parse()
-                        .with_context(|| { format!("{key}={value}") })?;
+                    let address: Ipv4Addr = value.parse().with_context(|| { format!("{key}={value}") })?;
                     self.listen_address = address.to_string();
                 }
                 "port" => {
@@ -197,28 +197,27 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
     if config_file.exists() {
         settings
             .load_from_file(config_file.as_path())
-            .with_context(||
-                format!("{}: unable to read the configuration file.", config_file.to_str().unwrap())
-            )?;
+            .with_context(|| format!("{}: unable to read the configuration file.", config_file.to_str().unwrap()))?;
     }
 
     // 3) apply command line
     if args.base_dir.is_some() {
         settings.base_dir = args.base_dir.clone().unwrap();
     }
-    match &args.command {
-        commandline::Commands::Start { listen_address, port, api_key } => {
-            if listen_address.is_some() {
-                settings.listen_address = listen_address.clone().unwrap().to_string();
-            }
-            if port.is_some() {
-                settings.port = port.clone().unwrap();
-            }
-            if api_key.is_some() {
-                settings.api_key = api_key.clone().unwrap().to_string();
-            }
+    if args.verbose {
+        settings.log_level = LogLevel::Debug;
+    }
+
+    if let commandline::Commands::Start { listen_address, port, api_key } = &args.command {
+        if listen_address.is_some() {
+            settings.listen_address = (*listen_address).unwrap().to_string();
         }
-        _ => {}
+        if port.is_some() {
+            settings.port = (*port).unwrap();
+        }
+        if api_key.is_some() {
+            settings.api_key = api_key.clone().unwrap().to_string();
+        }
     }
 
     Ok(settings)
@@ -256,7 +255,7 @@ fn generate_api_key() -> String {
     {
         let mut rng = rand::thread_rng();
         let token: [u8; 32] = rng.gen();
-        return hex::encode(token);
+        hex::encode(token)
     }
     #[cfg(test)]
     "x-test-api-key".to_string()
@@ -285,7 +284,7 @@ mod tests {
             api_key=cf55f65...
             "
                 .to_string()
-                .replace(" ", ""),
+                .replace(' ', ""),
             format!("{}", settings)
         );
     }
@@ -301,9 +300,7 @@ mod tests {
 
         // 2) override with command line
         {
-            let mut expected = AgentSettings::default();
-            expected.port = 1234;
-            expected.base_dir = "/test".to_string();
+            let expected = AgentSettings { port: 1234, base_dir: "/test".to_string(), ..Default::default() };
             let actual = make_settings(
                 &Args::parse_from(["agent", "--base-dir", "/test", "start", "--port", "1234"])
             ).unwrap();
@@ -314,11 +311,13 @@ mod tests {
         {
             let app_dir = tempdir().unwrap();
             settings::set_app_dir(app_dir.path());
-            let mut expected = AgentSettings::default();
-            expected.port = 1234;
-            expected.base_dir = "/test".to_string();
-            expected.listen_address = "0.0.0.0".to_string();
-            expected.api_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string();
+            let expected = AgentSettings {
+                port: 1234,
+                base_dir: "/test".to_string(),
+                listen_address: "0.0.0.0".to_string(),
+                api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string(),
+                ..Default::default()
+            };
             std::fs
                 ::write(
                     app_dir.path().join(AGENT_CONF),
@@ -340,11 +339,13 @@ mod tests {
         {
             let app_dir = tempdir().unwrap();
             settings::set_app_dir(app_dir.path());
-            let mut expected = AgentSettings::default();
-            expected.port = 5678;
-            expected.listen_address = "0.0.0.0".to_string();
-            expected.base_dir = get_base_dir();
-            expected.api_key = "xxx".to_string();
+            let expected = AgentSettings {
+                port: 5678,
+                listen_address: "0.0.0.0".to_string(),
+                base_dir: get_base_dir(),
+                api_key: "xxx".to_string(),
+                ..Default::default()
+            };
             std::fs::write(app_dir.path().join(AGENT_CONF), "port=1234").unwrap();
             let actual = make_settings(
                 &Args::parse_from([
@@ -369,9 +370,7 @@ mod tests {
             std::fs::write(app_dir.path().join(AGENT_CONF), "listen_address=127.0.0.X").unwrap();
             let actual = make_settings(&Args::parse_from(["agent", "start"]));
             assert!(actual.is_err());
-            assert!(
-                actual.unwrap_err().to_string().ends_with("unable to read the configuration file.")
-            );
+            assert!(actual.unwrap_err().to_string().ends_with("unable to read the configuration file."));
             fs::remove_dir_all(app_dir).unwrap();
         }
         // 5.2) invalid config file (invalid entry)

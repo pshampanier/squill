@@ -1,4 +1,4 @@
-export class SerialisationError extends Error {
+export class SerializationError extends Error {
   original: unknown;
   context?: string;
 
@@ -26,7 +26,7 @@ export class SerialisationError extends Error {
     return message;
   }
 
-  addContext(context?: string | number): SerialisationError {
+  addContext(context?: string | number): SerializationError {
     if (typeof context === "number") {
       this.context = "[" + context + "]" + (this.context ? "." + this.context : "");
     } else if (typeof context === "string" && context.length > 0) {
@@ -35,11 +35,11 @@ export class SerialisationError extends Error {
     return this;
   }
 
-  static make(error: unknown): SerialisationError {
-    if (error instanceof SerialisationError) {
+  static make(error: unknown): SerializationError {
+    if (error instanceof SerializationError) {
       return error;
     } else {
-      return new SerialisationError(error);
+      return new SerializationError(error);
     }
   }
 }
@@ -53,7 +53,7 @@ export function safeDeserialization<T>(
   try {
     return callbackfn(...args, key);
   } catch (e) {
-    throw SerialisationError.make(e).addContext(key);
+    throw SerializationError.make(e).addContext(key);
   }
 }
 
@@ -67,13 +67,13 @@ type DeserializeNumberOptions<T> = {
  *
  * @param value the value to be validated.
  * @param options
- * @throws {@link SerialisationError} if the value does not meet the options.
+ * @throws {@link SerializationError} if the value does not meet the options.
  */
 function validateNumber<T>(value: T, options: DeserializeNumberOptions<T>): void {
   if (options.min !== undefined && options.min !== null && value < options.min) {
-    throw new SerialisationError(`${value} is invalid, should be at least ${options.min}`);
+    throw new SerializationError(`${value} is invalid, should be at least ${options.min}`);
   } else if (options.max !== undefined && options.max !== null && value > options.max) {
-    throw new SerialisationError(`${value} is invalid, should be at most ${options.max}`);
+    throw new SerializationError(`${value} is invalid, should be at most ${options.max}`);
   }
 }
 
@@ -92,7 +92,7 @@ export function deserializeInteger(value: unknown, options?: DeserializeNumberOp
       i = parseInt(value?.replace(/[\s,]/g, ""));
     }
     if (i === undefined || isNaN(i)) {
-      throw new SerialisationError(`'${value || ""}' is not a valid integer`);
+      throw new SerializationError(`'${value || ""}' is not a valid integer`);
     } else if (options) {
       validateNumber(i, options);
     }
@@ -116,7 +116,7 @@ export function deserializeBoolean(value: unknown, options?: DeserializeBooleanO
         return false;
       }
     }
-    throw new SerialisationError(`'${value || ""}' is not a valid boolean`);
+    throw new SerializationError(`'${value || ""}' is not a valid boolean`);
   }, options?.name);
 }
 
@@ -164,14 +164,14 @@ export function deserializeString(value: unknown, options?: DeserializeStringOpt
       }
     }
     const expectedFormat = typeof options?.format === "string" ? ` (expected format: '${options.format}')` : "";
-    throw new SerialisationError(`'${value || ""}' is not valid${expectedFormat}`);
+    throw new SerializationError(`'${value || ""}' is not valid${expectedFormat}`);
   }, options?.name);
 }
 
 /**
  * Options of the {@link deserializeObject} function.
  *
- * @param name - The name of the object used for additionnal information if an error is thrown.
+ * @param name - The name of the object used for additional information if an error is thrown.
  * @param required - An array of required properties in the object.
  * @param thisArg - A value to use as this when executing `callbackfn`.
  */
@@ -190,7 +190,7 @@ export type DeserializeObjectOptions = {
  * @param index - The index of the property in `array`.
  * @param array - The array of all properties.
  * @return The deserialized value. If called with an unexpected key, the callback can return the `null` value to
- *         {@link deserializeObject} which will throw an explicit `SerialisationError`.
+ *         {@link deserializeObject} which will throw an explicit `SerializationError`.
  */
 type deserializeObjectCallbackfn = (
   property: [key: string, value: unknown],
@@ -209,7 +209,7 @@ type deserializeObjectCallbackfn = (
  *                     value for the property it has been called for, and is used to check for unexpected and required
  *                     properties.
  * @param options - Options.
- * @throws A {@link SerialisationError} if:
+ * @throws A {@link SerializationError} if:
  * - The given `value` is not an object.
  * - An unexpected key is found.
  * - A required property is missing.
@@ -225,7 +225,7 @@ export function deserializeObject(
       o = value as object;
     }
     if (o === undefined) {
-      throw new SerialisationError(`'${value || ""}' is not valid, object expected`);
+      throw new SerializationError(`'${value || ""}' is not valid, object expected`);
     }
 
     // We need to make a copy of required properties array because we are going to alter it.
@@ -245,15 +245,15 @@ export function deserializeObject(
         // deserialized, we don't have to worry about it dependencies.
         return;
       }
-      dependsOn.forEach((dependancy: string) => {
-        const dependancyIndex = entries.findIndex(([k]) => {
-          return k === dependancy;
+      dependsOn.forEach((dependency: string) => {
+        const dependencyIndex = entries.findIndex(([k]) => {
+          return k === dependency;
         });
-        if (dependancyIndex === -1) {
-          throw `The property '${property}' depends on '${dependancy}' which is not available`;
-        } else if (dependancyIndex > propertyIndex) {
-          // Push the dependancy right in front of the dependant property.
-          entries.splice(propertyIndex, 0, entries.splice(dependancyIndex, 1)[0]);
+        if (dependencyIndex === -1) {
+          throw `The property '${property}' depends on '${dependency}' which is not available`;
+        } else if (dependencyIndex > propertyIndex) {
+          // Push the dependency right in front of the dependant property.
+          entries.splice(propertyIndex, 0, entries.splice(dependencyIndex, 1)[0]);
           propertyIndex++;
         }
       });
@@ -264,7 +264,7 @@ export function deserializeObject(
       const i = required.indexOf(k);
       if (r === null) {
         // The callback has returned a null value indicating that property was not expected.
-        throw new SerialisationError(`Unexpected property '${k}'`);
+        throw new SerializationError(`Unexpected property '${k}'`);
       } else if (i != -1 && r !== undefined && !(typeof r === "string" && r.length === 0)) {
         // This is a required property and it has a value so we can remove it from the required list.
         required.splice(i, 1);
@@ -273,7 +273,7 @@ export function deserializeObject(
 
     // Checking if we have required properties that have been not found in the value to be deserialized.
     if (required.length > 0) {
-      throw new SerialisationError(`'${required.join("', '")}' of the required properties missing`);
+      throw new SerializationError(`'${required.join("', '")}' of the required properties missing`);
     }
 
     return options?.thisArg as object;
@@ -294,21 +294,21 @@ export function deserializeArray<T>(
 ): T[] {
   return safeDeserialization<Array<T>>(() => {
     if (!Array.isArray(value)) {
-      throw new SerialisationError(`'${value || ""}' is not an array`);
+      throw new SerializationError(`'${value || ""}' is not an array`);
     }
     const a = value as Array<unknown>;
     if (options?.minSize != undefined && options?.minSize != null && a.length < options.minSize) {
-      throw new SerialisationError(`Expecting at least ${options.minSize} item(s)`);
+      throw new SerializationError(`Expecting at least ${options.minSize} item(s)`);
     }
     if (options?.maxSize != undefined && options?.maxSize != null && a.length > options.maxSize) {
-      throw new SerialisationError(`Expecting at most ${options.maxSize} item(s)`);
+      throw new SerializationError(`Expecting at most ${options.maxSize} item(s)`);
     }
     const r = new Array<T>();
     a.forEach((item: unknown, index: number, array: unknown) => {
       try {
         r.push(callbackfn(item, index, array));
       } catch (e) {
-        throw SerialisationError.make(e).addContext(index);
+        throw SerializationError.make(e).addContext(index);
       }
     }, options?.thisArg);
     return r;

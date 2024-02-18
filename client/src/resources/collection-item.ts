@@ -42,10 +42,6 @@ export class CollectionItem<T> {
     }
   }
 
-  clone(): Readonly<CollectionItem<T>> {
-    return Object.freeze(new CollectionItem<T>(this.name, { type: this.type, id: this.id, children: this.children }));
-  }
-
   static find<T>(items: CollectionItem<T>[], id: string): { path: string[]; item: CollectionItem<T> } | null {
     for (const value of items) {
       if (value.id === id) {

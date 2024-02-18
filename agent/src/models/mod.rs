@@ -1,3 +1,9 @@
 pub mod auth;
 pub mod users;
 pub mod agent;
+pub mod variables;
+pub mod connections;
+pub mod environments;
+pub mod workspaces;
+pub mod collections;
+pub mod errors;

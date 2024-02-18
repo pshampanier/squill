@@ -1,7 +1,4 @@
 import { useWorkspaceStore } from "@/stores/WorkspaceStore";
-import { Environment } from "@/resources/workspace/environment";
-import { CollectionItem } from "@/resources/collection-item";
-import { WorkspaceCollectionItemType } from "@/resources/workspace/workspace";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import SidebarEnvironmentItem from "@/components/sidebar/workspace/SidebarEnvironmentItem";
 import SidebarWorkspaceCollectionItem from "@/components/sidebar/workspace/SidebarWorkspaceCollectionItem";
@@ -14,11 +11,13 @@ import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
 import SpaceSidebar from "@/components/spaces/SpaceSidebar";
+import { Environment } from "@/models/environments";
+import { WorkspaceItem } from "@/resources/workspaces";
 
 export default function WorkspaceSpace(props: SpaceProps) {
   console.debug("Rendering WorkspaceSpace");
   const environments = useWorkspaceStore((state) => state.environments);
-  const collections = useWorkspaceStore((state) => state.collections);
+  const items = useWorkspaceStore((state) => state.rootItemIds.map((id) => state.items.get(id)));
   const activePageId = useWorkspaceStore((state) => state.activePageId);
   return (
     <>
@@ -40,7 +39,7 @@ export default function WorkspaceSpace(props: SpaceProps) {
               })}
             </SidebarSection>
             <SidebarSection label="explorer">
-              {collections.map((item: CollectionItem<WorkspaceCollectionItemType>) => {
+              {items.map((item: WorkspaceItem) => {
                 return <SidebarWorkspaceCollectionItem key={item.id} itemId={item.id} />;
               })}
             </SidebarSection>

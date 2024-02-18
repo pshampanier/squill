@@ -1,19 +1,19 @@
 import { test, expect, vi } from "vitest";
 import { Env } from "@/utils/env";
 
-test("plateform", () => {
+test("platform", () => {
   // Windows
   vi.stubGlobal("navigator", {
     userAgentData: {
       platform: "Windows",
     },
   });
-  expect(new Env().plateform).toBe("windows");
+  expect(new Env().platform).toBe("windows");
   vi.stubGlobal("navigator", {
     userAgentData: undefined,
     platform: "Win32",
   });
-  expect(new Env().plateform).toBe("windows");
+  expect(new Env().platform).toBe("windows");
 
   // MacOS
   vi.stubGlobal("navigator", {
@@ -21,12 +21,12 @@ test("plateform", () => {
       platform: "macOS",
     },
   });
-  expect(new Env().plateform).toBe("macos");
+  expect(new Env().platform).toBe("macos");
   vi.stubGlobal("navigator", {
     userAgentData: undefined,
     platform: "MacIntel",
   });
-  expect(new Env().plateform).toBe("macos");
+  expect(new Env().platform).toBe("macos");
 
   // Linux
   vi.stubGlobal("navigator", {
@@ -34,12 +34,12 @@ test("plateform", () => {
       platform: "Linux",
     },
   });
-  expect(new Env().plateform).toBe("linux");
+  expect(new Env().platform).toBe("linux");
   vi.stubGlobal("navigator", {
     userAgentData: undefined,
     platform: "Linux x86_64",
   });
-  expect(new Env().plateform).toBe("linux");
+  expect(new Env().platform).toBe("linux");
 
   vi.unstubAllGlobals();
 });

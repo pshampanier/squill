@@ -24,6 +24,6 @@ if (env.applicationType === "desktop") {
     shortcut: "F12",
   });
   registerAction("devtools:toggle", () => {
-    invoke("toogle_devtools");
+    invoke("toggle_devtools");
   });
 }

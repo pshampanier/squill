@@ -1,5 +1,7 @@
 import tailwindColors from "tailwindcss/colors";
 import { raise } from "@/utils/telemetry";
+import { env } from "@/utils//env";
+import { ColorScheme } from "@/models/users";
 
 /*
  * IMPORTANT: this application is partially using dynamic classnames, in order to force tailwinds to generate the
@@ -55,6 +57,19 @@ export function rgbColor<T extends string>(colors: Record<T, string>, name: T, c
     }
   }
   raise(`'${tailwindColorName}' is not a valid tailwind color name (from '${name}: ${colors[name]}')`);
+}
+
+/**
+ * Calculate the color scheme of the application based on the given preference.
+ *
+ * @param colorScheme the color scheme preference.
+ * @returns the given color scheme if it is not "auto", otherwise the system preference.
+ */
+export function calculateColorScheme(colorScheme: ColorScheme): "light" | "dark" {
+  if (colorScheme === "auto") {
+    return env.colorScheme;
+  }
+  return colorScheme;
 }
 
 /**

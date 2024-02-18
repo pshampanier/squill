@@ -18,23 +18,29 @@ test("connect", async () => {
     },
   });
 
-  // with a trailling '/' at the end of the host
-  await Agent.connect("http://localhost/" /* trailling '/' */);
-  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent.json", {
+  // with a trailing '/' at the end of the host
+  await Agent.connect("http://localhost/" /* trailing '/' */, "x-test-api-key");
+  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent", {
     method: "GET",
+    headers: {
+      "X-Api-Key": "x-test-api-key",
+    },
   });
 
   vi.fn().mockClear();
 
-  // without a trailling '/' at the end of the host
-  await Agent.connect("http://localhost" /* no trailling '/' */);
-  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent.json", {
+  // without a trailing '/' at the end of the host
+  await Agent.connect("http://localhost" /* no trailing '/' */, "x-test-api-key");
+  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent", {
     method: "GET",
+    headers: {
+      "X-Api-Key": "x-test-api-key",
+    },
   });
 });
 
 test("logon", async () => {
-  const agent = await Agent.connect("http://localhost");
+  const agent = await Agent.connect("http://localhost", "x-test-api-key");
 
   global.fetch = vi.fn().mockResolvedValue({
     ok: true,
@@ -44,13 +50,17 @@ test("logon", async () => {
       },
     },
     text: () => {
-      return Promise.resolve(JSON.stringify({ username: "local" }));
+      return Promise.resolve("{}");
     },
   });
 
-  const user = await agent.logon({ method: "user_password", credentials: { username: "local", password: "" } });
-  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/users/local/user.json", {
-    method: "GET",
+  await agent.logon({ method: "user_password", credentials: { username: "local", password: "" } });
+  expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/auth/logon", {
+    method: "POST",
+    body: '{"method":"user_password","credentials":{"username":"local","password":""}}',
+    headers: {
+      "Content-Type": "application/json",
+      "X-Api-Key": "x-test-api-key",
+    },
   });
-  expect(user.username).toBe("local");
 });

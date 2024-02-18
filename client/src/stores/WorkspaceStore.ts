@@ -1,8 +1,8 @@
-import { CollectionItem } from "@/resources/collection-item";
 import { Editor } from "@/resources/editors";
-import { Environment } from "@/resources/workspace/environment";
-import { Workspace, WorkspaceCollectionItem, WorkspaceCollectionItemType } from "@/resources/workspace/workspace";
+import { Environment } from "@/models/environments";
+import { Workspace } from "@/models/workspaces";
 import { create } from "zustand";
+import { WorkspaceItem } from "@/resources/workspaces";
 
 export type WorkspacePage = {
   readonly id: string;
@@ -15,6 +15,7 @@ export type WorkspacePage = {
 type State = {
   /** The id of the active page */
   activePageId?: string;
+  pages: WorkspacePage[];
 
   /**
    * The id of the active item.
@@ -25,14 +26,13 @@ type State = {
    *   is selected in the sidebar, the active id will be id of the folder or the environment.
    */
   activeId?: string;
-  environments: Readonly<Environment>[];
-  collections: Readonly<WorkspaceCollectionItem>[];
-  pages: Readonly<WorkspacePage>[];
+  environments: Environment[];
+  items: Map<string, WorkspaceItem>;
+  rootItemIds: string[];
 };
 
 type Actions = {
   reset: () => void;
-  setCollections: (collections: WorkspaceCollectionItem[]) => void;
   setActivePage: (pageId: string) => void;
   setActiveId: (id: string) => void;
   addPage: (itemId: string, title: string, editor: Editor) => string;
@@ -40,7 +40,6 @@ type Actions = {
   setModified: (pageId: string, modified: boolean) => void;
   replaceActivePage: (itemId: string, title: string, editor: Editor) => void;
   findPage(callbackFn: (page: WorkspacePage) => boolean): WorkspacePage | undefined;
-  getCollectionItemById(id: string): { path: string[]; item: WorkspaceCollectionItem };
 };
 
 const initialState: State = {
@@ -48,14 +47,16 @@ const initialState: State = {
   activePageId: undefined,
   pages: [],
   environments: [],
-  collections: [],
+  rootItemIds: [],
+  items: new Map<string, WorkspaceItem>(),
 };
 
 export const useWorkspaceStore = create<State & Actions>((set, get) => {
   return {
     ...initialState,
     reset() {
-      const workspace = Workspace.current;
+      // const workspace = Workspace.current;
+      const workspace = new Workspace();
       if (!workspace) {
         set(() => ({
           ...initialState,
@@ -65,17 +66,10 @@ export const useWorkspaceStore = create<State & Actions>((set, get) => {
           activeId: undefined,
           activePageId: undefined,
           pages: [],
-          environments: workspace.environments.map((e) => e.clone()),
-          collections: workspace.collections.map((c) => c.clone()),
+          // environments: workspace.environments.map((e) => e.clone()),
+          // collections: workspace.collections.map((c) => c.clone()),
         }));
       }
-    },
-
-    setCollections(collections: WorkspaceCollectionItem[]) {
-      set((state) => ({
-        ...state,
-        collections: collections.map((c) => c.clone()),
-      }));
     },
 
     addPage(itemId: string, title: string, editor: Editor) {
@@ -96,7 +90,7 @@ export const useWorkspaceStore = create<State & Actions>((set, get) => {
 
     closePage(pageId: string) {
       // TODO: should prompt for save
-      // TODO: sould select the previous page
+      // TODO: should select the previous page
       set((state) => {
         const pages = state.pages.filter((page) => page.id !== pageId);
         const activePageId = pages.length > 0 ? pages[0].id : undefined;
@@ -172,10 +166,6 @@ export const useWorkspaceStore = create<State & Actions>((set, get) => {
 
     findPage(predicate: (page: WorkspacePage) => boolean): WorkspacePage | undefined {
       return get().pages.find(predicate);
-    },
-
-    getCollectionItemById(id: string): { path: string[]; item: WorkspaceCollectionItem } {
-      return CollectionItem.find<WorkspaceCollectionItemType>(get().collections, id);
     },
   };
 });

@@ -1,13 +1,10 @@
 import { editor as monacoEditor } from "monaco-editor";
 import { cx } from "classix";
 
-import { User } from "@/resources/user/user";
-import { Workspace } from "@/resources/workspace/workspace";
 import { editors } from "@/resources/editors";
 import { useWorkspaceStore } from "@/stores/WorkspaceStore";
-import { useUserStore } from "@/stores/UserStore";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 
 import MonacoEditor from "react-monaco-editor";
 import Markdown from "react-markdown";
@@ -18,23 +15,25 @@ import PageLoader from "@/components/PageLoader";
 import MarkdownIcon from "@/icons/markdown-file.svg?react";
 import EditCommandIcon from "@/icons/edit.svg?react";
 import PreviewCommandIcon from "@/icons/preview.svg?react";
-import Button from "../core/Button";
+import Button from "@/components/core/Button";
+import { useAppStore } from "@/stores/AppStore";
+import { useUserStore } from "@/stores/UserStore";
+import { getMonacoOptions } from "@/utils/monaco-workers";
 
 const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");
   const [content, setContent] = useState<string>("");
   const setModified = useWorkspaceStore((state) => state.setModified);
   const page = useWorkspaceStore((state) => state.pages.find((page) => page.id === pageId));
-  const colorScheme = useUserStore((state) => state.colorScheme);
+  const colorScheme = useAppStore((state) => state.colorScheme);
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
   const initialContent = useRef<string>();
   const modified = useRef<boolean>(false);
-
-  const workspace = Workspace.current;
+  const monacoOptions = useUserStore((state) => getMonacoOptions(state.settings.editorSettings));
 
   // Options for the Monaco editor
   const options = {
-    ...User.current.settings.editor.getMonacoEditorSettings(),
+    ...monacoOptions,
     automaticLayout: true,
   };
 
@@ -61,6 +60,7 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId })
     }
   };
 
+  /*
   useEffect(() => {
     if (mode === "loading") {
       console.log("MarkdownEditor: useEffect");
@@ -72,6 +72,7 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId })
       });
     }
   }, [mode, workspace, page.itemId]);
+  */
 
   if (mode === "loading") {
     return <PageLoader />;

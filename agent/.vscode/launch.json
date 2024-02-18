@@ -1,39 +1,39 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "agent (debug)",
-      "cargo": {
-        "args": ["build", "--bin=agent", "--package=one-sql"],
-        "filter": {
-          "name": "agent",
-          "kind": "bin"
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "agent (debug)",
+            "cargo": {
+                "args": ["build", "--bin=agent", "--package=one-sql"],
+                "filter": {
+                    "name": "agent",
+                    "kind": "bin"
+                }
+            },
+            "args": ["--verbose", "start", "--port", "8080", "--api-key", "x-dev"],
+            "env": {
+                "ONESQL_LOG_LEVEL": "trace,axum::rejection=trace"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "unit tests",
+            "cargo": {
+                "args": ["test", "--no-run", "--bin=agent", "--package=one-sql"],
+                "filter": {
+                    "name": "agent",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
         }
-      },
-      "args": ["start", "--port", "8080", "--api-key", "x-dev"],
-      "env": {
-        "RUST_LOG": "trace"
-      },
-      "cwd": "${workspaceFolder}"
-    },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "unit tests",
-      "cargo": {
-        "args": ["test", "--no-run", "--bin=agent", "--package=one-sql"],
-        "filter": {
-          "name": "agent",
-          "kind": "bin"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    }
-  ]
+    ]
 }

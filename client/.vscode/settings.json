@@ -9,8 +9,28 @@
     "strings": true
   },
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "testing.automaticallyOpenPeekView": "never",
   "[rust]": {
     "editor.defaultFormatter": "jinxdash.prettier-rust"
-  }
+  },
+  "testing.automaticallyOpenPeekView": "never",
+  "cSpell.words": [
+    "classix",
+    "dbname",
+    "dkey",
+    "dvalue",
+    "Fullcolor",
+    "immer",
+    "immerable",
+    "loaderfn",
+    "mydatabase",
+    "mypassword",
+    "myuser",
+    "skey",
+    "sval",
+    "svalue",
+    "tailwindcss",
+    "tauri",
+    "titlebar",
+    "zustand"
+  ]
 }

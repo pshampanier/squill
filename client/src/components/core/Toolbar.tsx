@@ -7,6 +7,6 @@ type ToolbarProps = {
 };
 
 export default function Toolbar({ className, children }: ToolbarProps) {
-  const classes = cx("flex flex-row items-center h-full space-x-1", className);
+  const classes = cx("flex flex-row items-center space-x-1", className);
   return <div className={classes}>{children}</div>;
 }

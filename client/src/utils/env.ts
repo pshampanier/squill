@@ -1,12 +1,17 @@
 /// <reference types="vite/client" />
 import { invoke } from "@tauri-apps/api/tauri";
 
-type Plateform = "windows" | "macos" | "linux" | "unknown";
+type Platform = "windows" | "macos" | "linux" | "unknown";
 type ApplicationType = "desktop" | "web";
 type BuildType = "debug" | "release";
 
+export type AgentConnectionParameters = {
+  url: string;
+  apiKey: string;
+};
+
 export class Env {
-  readonly plateform: Plateform = this.detectPlateform();
+  readonly platform: Platform = this.detectPlatform();
 
   get colorScheme(): "light" | "dark" {
     return this.detectColorScheme();
@@ -20,25 +25,33 @@ export class Env {
     return import.meta.env.DEV ? "debug" : "release";
   }
 
+  // Get the value of a variable from the environment.
+  //
+  // - When running in a Tauri application, the variable is fetched from the using the command get_variable implemented
+  //   in Rust.
+  // - When running in a web browser in dev mode, the variable is fetched from the environment using the Vite
+  //   environment variables defined in .env files (see https://vitejs.dev/guide/env-and-mode.html).
   async getVariable(name: string): Promise<string | undefined> {
     if (window.__TAURI__) {
       return invoke("get_variable", { name });
+    } else if (import.meta.env.DEV) {
+      // Because vite only expose variable prefixed with VITE_ we need to prefix the variable name with VITE_.
+      return import.meta.env["VITE_" + name];
     }
   }
 
-  async getLocalAgentUrl(): Promise<string> {
-    let url = await this.getVariable("LOCAL_AGENT_URL");
-    if (!url) {
-      url = window.location.href.split("/").slice(0, -1).join("/");
-    }
-    return url;
+  async getAgentConnectionParameters(): Promise<AgentConnectionParameters> {
+    return {
+      url: await this.getVariable("LOCAL_AGENT_URL"),
+      apiKey: await this.getVariable("LOCAL_AGENT_API_KEY"),
+    };
   }
 
   /**
-   * Detect the plateform using the web hints if available, otherwise fallback to the navigator.
-   * @returns Detected plateform.
+   * Detect the platform using the web hints if available, otherwise fallback to the navigator.
+   * @returns Detected platform.
    */
-  private detectPlateform(): Plateform {
+  private detectPlatform(): Platform {
     // @ts-expect-error Property 'userAgentData' does not exist on type 'Navigator'
     const platform = (navigator.userAgentData?.platform || navigator.platform || "")?.toLowerCase();
     if (platform.startsWith("win")) return "windows";
@@ -48,7 +61,7 @@ export class Env {
   }
 
   /**
-   * Detect the prefered color scheme from the operating system.
+   * Detect the preferred color scheme from the operating system.
    * @returns Detected color scheme.
    */
   private detectColorScheme(): "light" | "dark" {

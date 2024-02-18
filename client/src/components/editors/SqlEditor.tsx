@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { editors } from "@/resources/editors";
 
 import { useWorkspaceStore } from "@/stores/WorkspaceStore";
@@ -7,24 +7,23 @@ import SqlIcon from "@/icons/sql-file.svg?react";
 import MonacoEditor from "react-monaco-editor";
 import PageLoader from "@/components/PageLoader";
 
-import { User } from "@/resources/user/user";
-import { Workspace } from "@/resources/workspace/workspace";
+import { useAppStore } from "@/stores/AppStore";
+import { getMonacoOptions } from "@/utils/monaco-workers";
 import { useUserStore } from "@/stores/UserStore";
 
 const SqlEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
-  const colorScheme = useUserStore((state) => state.colorScheme);
+  const colorScheme = useAppStore((state) => state.colorScheme);
   const setModified = useWorkspaceStore((state) => state.setModified);
   const page = useWorkspaceStore((state) => state.pages.find((page) => page.id === pageId));
-  const [pageState, setPageState] = useState<"loading" | "ready">("loading");
-  const [content, setContent] = useState<string>("");
+  const [pageState] = useState<"loading" | "ready">("loading");
+  const [content] = useState<string>("");
   const initialContent = useRef<string>();
   const modified = useRef<boolean>(false);
-
-  const currentUser = User.current;
+  const monacoOptions = useUserStore((state) => getMonacoOptions(state.settings.editorSettings));
 
   // Options for the Monaco editor
   const options = {
-    ...currentUser.settings.editor.getMonacoEditorSettings(),
+    monacoOptions,
     automaticLayout: true,
   };
 
@@ -40,6 +39,7 @@ const SqlEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
     }
   };
 
+  /*
   useEffect(() => {
     if (pageState === "loading") {
       Workspace.current.loadCollectionItem(page.itemId).then(([resource]) => {
@@ -49,6 +49,7 @@ const SqlEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
       });
     }
   }, [pageState, page.itemId]);
+  */
 
   if (pageState === "loading") {
     return <PageLoader />;

@@ -1,36 +1,40 @@
-import { Variable } from "@/resources/workspace/variable";
+import { Variable } from "@/models/variables";
 import { describe, test, expect } from "vitest";
 import { deserialize } from "@/utils/serializable";
 
 describe("Variables", () => {
   test("constructors", () => {
     // No parameters (used for deserialization)
-    expect(new Variable()).toEqual({});
+    expect(new Variable()).toMatchObject({});
 
     // Initialization
-    expect(new Variable("test", "text", { value: "hello world" })).toEqual({
+    expect(
+      new Variable({
+        name: "test",
+        value: { text: "hello world" },
+      })
+    ).toMatchObject({
       name: "test",
-      type: "text",
-      _value: "hello world",
+      value: { text: "hello world" },
     });
   });
 
   test("set value text", () => {
-    const a = new Variable("a", "text");
-    a.value = "hello world";
-    expect(a.value).toBe("hello world");
+    const a = new Variable({ name: "a" });
+    a.value = { text: "hello world" };
+    expect(a.value.text).toBe("hello world");
   });
 
   test("set value secret", () => {
-    const a = new Variable("a", "secret");
-    a.value = "******";
-    expect(a.value).toBe("******");
+    const a = new Variable({ name: "a" });
+    a.value = { secret: "******" };
+    expect(a.value.secret).toBe("******");
   });
 
   test("set value integer", () => {
-    const a = new Variable("a", "integer");
-    a.value = 42;
-    expect(a.value).toBe(42);
+    const a = new Variable({ name: "a" });
+    a.value = { integer: 42 };
+    expect(a.value.integer).toBe(42);
   });
 
   test("Variable deserialization", () => {
@@ -39,15 +43,13 @@ describe("Variables", () => {
       deserialize<Variable>(
         {
           name: "file",
-          value: "test.txt",
-          type: "text",
+          value: { text: "test.txt" },
         },
         Variable
       )
-    ).toEqual({
+    ).toMatchObject({
       name: "file",
-      _value: "test.txt",
-      type: "text",
+      _value: { text: "test.txt" },
     });
 
     // secret
@@ -55,15 +57,13 @@ describe("Variables", () => {
       deserialize<Variable>(
         {
           name: "password",
-          type: "secret",
-          value: "***********",
+          value: { secret: "***********" },
         },
         Variable
       )
-    ).toEqual({
+    ).toMatchObject({
       name: "password",
-      type: "secret",
-      _value: "***********",
+      _value: { secret: "***********" },
     });
 
     // integer
@@ -71,15 +71,13 @@ describe("Variables", () => {
       deserialize<Variable>(
         {
           name: "max",
-          value: "42",
-          type: "integer",
+          value: { integer: 42 },
         },
         Variable
       )
-    ).toEqual({
+    ).toMatchObject({
       name: "max",
-      _value: 42,
-      type: "integer",
+      _value: { integer: 42 },
     });
 
     // no value
@@ -87,13 +85,11 @@ describe("Variables", () => {
       deserialize<Variable>(
         {
           name: "max",
-          type: "integer",
         },
         Variable
       )
-    ).toEqual({
+    ).toMatchObject({
       name: "max",
-      type: "integer",
     });
   });
 
@@ -101,16 +97,7 @@ describe("Variables", () => {
     expect(() => {
       deserialize<Variable>(
         {
-          name: "max",
-        },
-        Variable
-      );
-    }).toThrowError(/'type' of the required properties missing/);
-
-    expect(() => {
-      deserialize<Variable>(
-        {
-          type: "text",
+          value: { integer: 42 },
         },
         Variable
       );
@@ -130,29 +117,18 @@ describe("Variables", () => {
     expect(() => {
       deserialize<Variable>(
         {
-          type: "unknown",
+          name: "file",
+          value: { text: 42 },
         },
         Variable
       );
-    }).toThrowError(/'unknown' is not valid for the property 'type'/);
+    }).toThrowError(/'42' is not valid at 'value.text'/);
 
     expect(() => {
       deserialize<Variable>(
         {
           name: "file",
-          value: 42,
-          type: "text",
-        },
-        Variable
-      );
-    }).toThrowError(/'42' is not valid for the property 'value'/);
-
-    expect(() => {
-      deserialize<Variable>(
-        {
-          name: "file",
-          xvalue: "test",
-          type: "text",
+          xvalue: { text: "test" },
         },
         Variable
       );

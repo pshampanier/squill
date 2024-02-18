@@ -1,13 +1,15 @@
-import { ColorScheme, UserSettings } from "@/resources/user/user-settings";
+import { ColorScheme } from "@/models/users";
+import { useAppStore } from "@/stores/AppStore";
 import { useUserStore } from "@/stores/UserStore";
+import { calculateColorScheme } from "@/utils/colors";
 import { useEffect } from "react";
 
 export default function ApplySystemPreferences(): null {
   const colorSchemeSetting = useUserStore((state) => state.settings?.colorScheme);
-  const setColorScheme = useUserStore((state) => state.setColorScheme);
+  const setColorScheme = useAppStore((state) => state.setColorScheme);
 
   const applyColorScheme = (colorScheme: ColorScheme): "light" | "dark" => {
-    const currentColorScheme = UserSettings.calculateColorScheme(colorScheme);
+    const currentColorScheme = calculateColorScheme(colorScheme);
     document.documentElement.classList.remove(currentColorScheme === "dark" ? "light" : "dark");
     document.documentElement.classList.add(currentColorScheme === "dark" ? "dark" : "light");
     document.documentElement.setAttribute("data-theme", currentColorScheme);

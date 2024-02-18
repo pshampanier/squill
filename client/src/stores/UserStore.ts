@@ -1,66 +1,76 @@
-import { User, UserApplicationSpace, UserCollectionItem, UserCollectionLink } from "@/resources/user/user";
-import { UserSettings } from "@/resources/user/user-settings";
+import Users from "@/resources/users";
+import { UserSettings } from "@/models/users";
+import { CatalogEntry } from "@/resources/users";
+import { produce } from "immer";
 import { create } from "zustand";
-import { DEFAULT_WIDTH as DEFAULT_SIDEBAR_WIDTH } from "@/components/sidebar/Sidebar";
 
-type UserStoreApplicationSpace = "connection" | "logon" | UserApplicationSpace;
-
-// We can directly use the type UserCollectionLink because because all its properties are readonly.
-export type UserStoreCollectionLink = UserCollectionLink;
+export type CatalogRoot = "environments" | "workspaces" | "favorites";
 
 type State = {
-  /**
-   * The current color scheme of the application.
-   * This value is calculated based on the user settings & the system preferences. It's not the same as the state
-   * settings.colorScheme which can also be "auto". Any component that need to explicitly use the color scheme rather
-   * than relying on the CSS classes should use this value.
-   */
-  colorScheme: "light" | "dark";
+  settings: UserSettings | null;
+
+  environments: string[];
+  workspaces: string[];
+  favorites: string[];
+
+  catalog: Map<string, CatalogEntry>;
 
   /**
-   * The size of the sidebar in pixels.
+   * The id of the active catalog entry.
    */
-  sidebarWidth: number;
-
-  /**
-   * The current active space.
-   */
-  activeSpace: UserStoreApplicationSpace;
-
-  settings: Readonly<UserSettings>;
-  collections: Readonly<UserCollectionItem>[];
-  recentlyOpened: UserStoreCollectionLink[];
+  activeId: string | null;
 };
 
 type Actions = {
+  /**
+   * Reset the store when a new user is logged in.
+   */
   reset: () => void;
+
+  /**
+   * Reset the store when user settings have been modified.
+   */
   resetSettings: () => void;
-  setSidebarWidth: (width: number) => void;
-  setActiveSpace: (activeSpace: UserStoreApplicationSpace) => void;
-  setCollectionItems: (collections: UserCollectionItem[]) => void;
-  setColorScheme: (colorScheme: "light" | "dark") => void;
+
+  /**
+   * Load the catalog for the given path and add it to the store.
+   */
+  loadCatalog: (path: string, id?: string) => Promise<void>;
+
+  /**
+   * Rename an entry in the catalog.
+   *
+   * The entry is first renamed on the server and then the store is updated if the server operation is successful,
+   * otherwise a exception is thrown.
+   */
+  renameCatalogEntry: (id: string, path: string, newName: string) => Promise<void>;
+
+  /**
+   * Set the active catalog entry.
+   */
+  setActiveId: (id: string | null) => void;
 };
 
 export const useUserStore = create<State & Actions>((set) => {
   return {
-    sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
-    colorScheme: UserSettings.calculateColorScheme("auto"),
-    activeSpace: "connection",
     settings: null,
-    collections: [],
-    recentlyOpened: [],
+
+    environments: [],
+    workspaces: [],
+    favorites: [],
+
+    catalog: new Map<string, CatalogEntry>(),
+
+    activeId: null,
 
     /**
      * Reset the store when a new user is logged in.
      */
     reset() {
-      const user = User.current;
+      const user = Users.current;
       set((state) => ({
         ...state,
-        colorScheme: UserSettings.calculateColorScheme(user.settings.colorScheme),
-        activeSpace: "user",
-        settings: user.settings.clone(),
-        collections: user.collections.map((c) => c.clone()),
+        settings: produce(user.settings, () => {}),
       }));
     },
 
@@ -68,28 +78,93 @@ export const useUserStore = create<State & Actions>((set) => {
      * Reset the store when user settings have been modified.
      */
     resetSettings() {
-      const user = User.current;
+      const user = Users.current;
       set((state) => ({
         ...state,
-        colorScheme: UserSettings.calculateColorScheme(user.settings.colorScheme),
-        settings: user.settings.clone(),
+        settings: produce(user.settings, () => {}),
       }));
     },
 
-    setSidebarWidth(width: number) {
-      set((state) => ({ ...state, sidebarWidth: width }));
+    /**
+     * Load the catalog for the given path and add it to the store.
+     */
+    async loadCatalog(path: string, id: string | undefined) {
+      const entries = await Users.readCatalog(path);
+      entries.sort((a, b) => a.name.localeCompare(b.name));
+      if (id === undefined) {
+        // This is a root of the catalog.
+        // - add the entries's id to the right root of the catalog (environments, workspaces, favorites, etc.)
+        // - add the entries to `catalog`
+        set((state) => ({
+          ...state,
+          [path]: entries.map((entry) => entry.id),
+          catalog: mergeCatalog(state.catalog, entries),
+        }));
+      } else {
+        // This is a folder in the catalog.
+        // - add the children to then folder's entry in `catalog`.
+        // - add the entries to `catalog`
+        set((state) => ({
+          ...state,
+          catalog: mergeAndMutateCatalog(state.catalog, entries, id, (entry) => ({ ...entry, children: entries })),
+        }));
+      }
     },
 
-    setActiveSpace(activeSpace: UserStoreApplicationSpace) {
-      set((state) => ({ ...state, activeSpace: activeSpace }));
+    /**
+     * Rename an entry in the catalog.
+     */
+    async renameCatalogEntry(id: string, path: string, newName: string) {
+      await Users.renameCatalogEntry(path, newName);
+      set((state) => ({
+        ...state,
+        catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, name: newName })),
+      }));
     },
 
-    setCollectionItems(collections: UserCollectionItem[]) {
-      set((state) => ({ ...state, collections: collections.map((c) => c.clone()) }));
-    },
-
-    setColorScheme(colorScheme: "light" | "dark") {
-      set((state) => ({ ...state, colorScheme: colorScheme }));
+    /**
+     * Set the active catalog entry.
+     */
+    setActiveId(id: string | null) {
+      set((state) => ({
+        ...state,
+        activeId: id,
+      }));
     },
   };
 });
+
+//
+function mergeCatalog(catalog: Map<string, CatalogEntry>, entries: CatalogEntry[]) {
+  const newCatalog = new Map(catalog);
+  for (const entry of entries) {
+    newCatalog.set(entry.id, entry);
+  }
+  return newCatalog;
+}
+
+function mutateCatalog(catalog: Map<string, CatalogEntry>, id: string, mutator: (entry: CatalogEntry) => CatalogEntry) {
+  const newCatalog = new Map<string, CatalogEntry>();
+  for (const [key, entry] of catalog) {
+    if (key === id) {
+      newCatalog.set(key, mutator(entry));
+    } else {
+      newCatalog.set(key, entry);
+    }
+  }
+  return newCatalog;
+}
+
+function mergeAndMutateCatalog(
+  catalog: Map<string, CatalogEntry>,
+  entries: CatalogEntry[],
+  id: string,
+  mutator: (entry: CatalogEntry) => CatalogEntry
+) {
+  const newCatalog = new Map(catalog);
+  for (const entry of entries) {
+    newCatalog.set(entry.id, mutator(entry));
+  }
+  newCatalog.set(id, mutator(newCatalog.get(id)!));
+  return newCatalog;
+}

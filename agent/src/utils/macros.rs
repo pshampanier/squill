@@ -23,7 +23,7 @@ macro_rules! settings_getters {
                     SETTINGS.$field.clone()
                 }
                 #[cfg(test)]
-                crate::utils::tests::settings::SETTINGS.with(|settings| { settings.borrow().$field.clone() })
+                $crate::utils::tests::settings::SETTINGS.with(|settings| { settings.borrow().$field.clone() })
             }
         )*
     };

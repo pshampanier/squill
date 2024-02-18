@@ -9,20 +9,24 @@ import {
   deserializeString,
   DeserializeStringFormatOption,
   safeDeserialization,
-  SerialisationError,
+  SerializationError,
 } from "@/utils/serializers";
 import { raise } from "@/utils/telemetry";
 
-const METADATA_SERIALISER = Symbol("serializer");
+const METADATA_SERIALIZER = Symbol("serializer");
 const METADATA_DESERIALIZER = Symbol("deserializer");
 const METADATA_DEPENDENCIES = Symbol("dependencies");
 const METADATA_REQUIRED = Symbol("required");
+
+function isClassInstance(obj: object): boolean {
+  return obj.constructor !== Object;
+}
 
 /**
  * Function used as an object property deserializer.
  *
  * Those functions are always called with `this` being the object initialized by the deserialization.
- * When declaring your custom deserializer uing the `deserializer option`, you can specify the type of `this`  as the
+ * When declaring your custom deserializer using the `deserializer option`, you can specify the type of `this`  as the
  * first parameter of the function:
  *
  * @example
@@ -77,6 +81,12 @@ export function deserialize<T extends object>(value: unknown, factory: ObjectFac
 /**
  * Serialize an object or an array that use the @serialization decoration.
  *
+ * This function is used to serialize a class instance or an array of class instances that use the @serialization
+ * decoration.
+ *
+ * If the target is an array of plain object or a plain object, the function will act as a pass-through and just return
+ * the target.
+ *
  * @param target The target object or array to serialize.
  * @param key The property key if this object is a nested property.
  * @returns The object or array serialized according to the @serialization decorations.
@@ -85,23 +95,27 @@ export function serialize<T extends object>(target: T | T[], key?: string | numb
   try {
     if (Array.isArray(target)) {
       return target.map((item, index) => {
-        return safeDeserialization(serialize, index, item as T);
+        if (isClassInstance(item)) return safeDeserialization(serialize, index, item as T);
+        else return item;
       });
-    } else {
+    } else if (isClassInstance(target)) {
       let serializedTarget = {};
       Object.entries(target)
         .filter(([, value]) => value != undefined && value != null)
         .forEach(([key, value]) => {
-          const serializer: Serializer | undefined = Reflect.getMetadata(METADATA_SERIALISER, target, key);
+          const serializer: Serializer | undefined = Reflect.getMetadata(METADATA_SERIALIZER, target, key);
           if (serializer) {
             const [skey, svalue] = safeDeserialization(serializer, key, value);
             serializedTarget = { ...serializedTarget, [skey as string]: svalue };
           }
         });
       return serializedTarget;
+    } else {
+      // for plain objects we are acting as a pass-through
+      return target;
     }
   } catch (e) {
-    throw SerialisationError.make(e).addContext(key);
+    throw SerializationError.make(e).addContext(key);
   }
 }
 
@@ -125,6 +139,8 @@ type SerializableType = "string" | "boolean" | "integer" | "object" | "identifie
  *
  * @property name - The name of the property in the serialized object. If not specified, the name of the property.
  * @property required - If true, the property is required in the serialized object.
+ * @property snakeCase - Convert the property name and value to/from snake case. If "property", only the property name
+ *                       is converted, if "value", only the value is converted, if "all", both are converted.
  * @property dependencies - The list of properties that must be defined in the object to serialize/deserialize this property.
  * @property deserializer - A custom deserializer function.
  * @property serializer - A custom serializer function.
@@ -134,6 +150,7 @@ type SerializableType = "string" | "boolean" | "integer" | "object" | "identifie
 type SerializableCommonOptions = {
   name?: string;
   required?: boolean;
+  snakeCase?: "property" | "value" | "all";
   dependencies?: string[] | string;
   deserializer?: Deserializer;
   serializer?: Serializer;
@@ -167,19 +184,41 @@ type SerializableOptions<T extends object> = SerializableCommonOptions &
   SerializableObjectOptions<T> &
   SerializableArrayOptions<T>;
 
+// Generate a function that transforms a property name to a serialized property name.
+//
+// This function is used to apply the `snakeCase` and `name` options of the @serializable decoration.
+// For example, if the `snakeCase` option is set to "property" or "all", the function will convert the property name
+// to snake case (e.g. "myProperty" => "my_property").
+//
+// This method uses the `snakeCase` and `name` options.
+function getSerializerKeyFunction(options?: SerializableCommonOptions): (key: string | number) => string {
+  if (options?.snakeCase === "property" || options?.snakeCase === "all") {
+    options?.name && raise("The 'name' option is not compatible with the 'snakeCase' option.");
+    return (key: string | number): string => {
+      return (key as string).replace(/([A-Z])/g, "_$1").toLowerCase();
+    };
+  } else if (options?.name) {
+    return () => options.name;
+  } else {
+    return (key: string | number): string => {
+      return key as string;
+    };
+  }
+}
+
 function makeSerializer<T extends object>(type: SerializableType, options?: SerializableOptions<T>): Serializer {
+  const fnTransformKey = getSerializerKeyFunction(options);
   switch (type) {
     case "object": {
       return (value: unknown, key: string | number) => {
-        const propertyKey = options?.name ?? key;
-        return [propertyKey, serialize(value as object, key)];
+        return [fnTransformKey(key), serialize(value as object, key)];
       };
     }
     case "array": {
       const items = options?.items;
       /* c8 ignore start */
       if (!items) {
-        raise(`The 'items' option is required for the decoration @serialise("array")`);
+        raise(`The 'items' option is required for the decoration @serialize("array")`);
       }
       /* c8 ignore end */
       const itemSerializer = makeSerializer(items.type, items.options);
@@ -192,7 +231,7 @@ function makeSerializer<T extends object>(type: SerializableType, options?: Seri
               const [, sval] = itemSerializer(value, index);
               return sval;
             } catch (e) {
-              SerialisationError.make(e).addContext(index);
+              SerializationError.make(e).addContext(index);
             }
           }),
         ];
@@ -200,14 +239,13 @@ function makeSerializer<T extends object>(type: SerializableType, options?: Seri
     }
     case null: {
       return (_: unknown, key: string | number) => {
-        const propertyKey = options?.name ?? key;
-        return [propertyKey, null];
+        return [fnTransformKey(key), null];
       };
     }
     default: {
+      // TODO: Add the support of SnakeCase on the value.
       return (value: unknown, key: string | number) => {
-        const propertyKey = options?.name ?? key;
-        return [propertyKey, value];
+        return [fnTransformKey(key), value];
       };
     }
   }
@@ -217,21 +255,47 @@ function safeKey(key: string | number): string | undefined {
   return typeof key === "string" ? key : undefined;
 }
 
+// Generate a function that transforms a serialized property name to an object property name.
+//
+// This function is used to apply the `snakeCase` and `name` options of the @serializable decoration.
+// For example, if the `snakeCase` option is set to "property" or "all", the function will convert the serialized
+// property name (expected to be snake_case) to camelCase (e.g. "my_property" => "myProperty").
+//
+// This method uses the `snakeCase` and `name` options.
+function getDeserializerKeyFunction(options?: SerializableCommonOptions): (key: string | number) => string {
+  if (options?.snakeCase === "property" || options?.snakeCase === "all") {
+    options?.name && raise("The 'name' option is not compatible with the 'snakeCase' option.");
+    return (key: string | number): string => {
+      return (key as string).replace(/_(\w)/g, (_match, letter) => {
+        return letter.toUpperCase();
+      });
+    };
+  } else if (options?.name) {
+    return () => options.name;
+  } else {
+    return (key: string | number): string => {
+      return key as string;
+    };
+  }
+}
+
 function makeDeserializer<T extends object>(type: SerializableType, options?: SerializableOptions<T>): Deserializer {
+  const fnTransformKey = getDeserializerKeyFunction(options);
   switch (type) {
     case "string": {
+      // TODO: Add the support of SnakeCase on the value.
       return (value: unknown, key: string | number) => {
-        return [key, deserializeString(value, { ...options, name: safeKey(key) })];
+        return [fnTransformKey(key), deserializeString(value, { ...options, name: safeKey(key) })];
       };
     }
     case "integer": {
       return (value: unknown, key: string | number) => {
-        return [key, deserializeInteger(value, { ...options, name: safeKey(key) })];
+        return [fnTransformKey(key), deserializeInteger(value, { ...options, name: safeKey(key) })];
       };
     }
     case "boolean": {
       return (value: unknown, key: string | number) => {
-        return [key, deserializeBoolean(value, { ...options, name: safeKey(key) })];
+        return [fnTransformKey(key), deserializeBoolean(value, { ...options, name: safeKey(key) })];
       };
     }
     case "object": {
@@ -239,17 +303,17 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
         const objectFactory: ObjectFactory<T> | undefined = options?.factory;
         /* c8 ignore start */
         if (!objectFactory) {
-          raise(`The 'factory' option is required for the decoration @serialise("object")`);
+          raise(`The 'factory' option is required for the decoration @serialize("object")`);
         }
         /* c8 ignore end */
-        return [key, deserialize<T>(value, objectFactory, safeKey(key))];
+        return [fnTransformKey(key), deserialize<T>(value, objectFactory, safeKey(key))];
       };
     }
     case "array": {
       const items = options?.items;
       /* c8 ignore start */
       if (!items) {
-        raise(`The 'items' option is required for the decoration @serialise("array")`);
+        raise(`The 'items' option is required for the decoration @serialize("array")`);
       }
       /* c8 ignore end */
       return (value: unknown, key: string | number) => {
@@ -269,14 +333,14 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
     }
     case "any": {
       return (value: unknown, key: string | number) => {
-        return [key, value];
+        return [fnTransformKey(key), value];
       };
     }
     default: {
       // TODO:
       return (value: unknown, key: string | number) => {
         raise("Not implemented yet");
-        return [key, value];
+        return [fnTransformKey(key), value];
       };
     }
   }
@@ -284,11 +348,11 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
 
 export function serializable<T extends object>(type: SerializableType, options?: SerializableOptions<T>) {
   return function (target: object, key: string) {
-    // TODO: Check if we could use reflec-metadata:
+    // TODO: Check if we could use reflect-metadata:
     // - to get the type of a property.
     // => https://www.typescriptlang.org/docs/handbook/decorators.html#metadata
     // const __type = Reflect.getMetadata("design:type", target, key);
-    const propertyKey = options?.name ?? key;
+    const propertyKey = getSerializerKeyFunction(options)(key);
     if (options?.required) {
       const required = [...(Reflect.getMetadata(METADATA_REQUIRED, target) ?? []), propertyKey];
       Reflect.defineMetadata(METADATA_REQUIRED, required, target);
@@ -306,7 +370,7 @@ export function serializable<T extends object>(type: SerializableType, options?:
 
     // Serializer
     const serializer = options?.serializer ?? makeSerializer(type, options);
-    Reflect.defineMetadata(METADATA_SERIALISER, serializer, target, key);
+    Reflect.defineMetadata(METADATA_SERIALIZER, serializer, target, key);
   };
 }
 

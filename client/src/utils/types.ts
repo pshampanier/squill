@@ -15,8 +15,24 @@ export type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
  * If the shortcut differs between macOS and Windows/Linux, the shortcut must be an array of two strings, the first
  * begin the maxOS shortcut and the second the Windows/Linux shortcut (ex: ["Meta+C", "Ctrl+C"]).
  * The  'Command' (⌘) and 'Windows' (⊞) keys are written as 'Meta'.
- * If the shortcut involves a combinaison of modifier keys, the order is: Ctrl, Alt, Shift, Meta.
+ * If the shortcut involves a combination of modifier keys, the order is: Ctrl, Alt, Shift, Meta.
+ *
+ * If the shortcut differs between the desktop application and the web browser, the shortcut must be an array of two
+ * arrays, the first being the desktop application shortcut and the second the web browser shortcut. This is useful
+ * when the shortcut is reserved by a web browser such has ⌘T (open a new tab) or ⌘W (close the current tab).
+ *
+ * ```
+ *
+ *                                  Windows/Linux
+ *                                              │
+ *                          all     macOS       │
+ *                            │         │       │           Desktop             Web
+ *                            ▼         ▼       ▼        ──────────────    ──────────────
+ * type KeyboardShortcut = string | [string, string] | [[string, string], [string, string]]
+ * ```
+ *
  * Special keys are written as follow:
+ *
  * - Escape
  * - Enter
  * - Delete
@@ -35,8 +51,15 @@ export type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
  * - End
  *
  * IMPORTANT: The shortcut is case sensitive.
+ *
+ * @example
+ * - "Ctrl+Shift+M": the shortcut is Ctrl+Shift+M on all platforms.
+ * - ["Meta+M", "Ctrl+M"]: the shortcut is Meta+M on macOS and Ctrl+M on Windows/Linux.
+ * - [["Meta+M", "Ctrl+M"], ["Meta+Shift+M", "Ctrl+Shift+M"]]: the shortcut is Meta+M on macOS and Ctrl+M on
+ *   Windows/Linux for the desktop application but Meta+Shift+M on macOS and Ctrl+Shift+M on Windows/Linux in a web
+ *   browser.
  */
-export type KeyboardShortcut = [string, string] | string;
+export type KeyboardShortcut = string | [string, string] | [[string, string], [string, string]];
 
 /**
  * DeepPartial<T> is a recursive type that makes every property in T optional. If a property is an array, it makes every

@@ -10,10 +10,10 @@ import DarkIcon from "@/assets/icons/theme-dark.svg?react";
 import LinuxIcon from "@/assets/icons/linux-logo.svg?react";
 import WindowsIcon from "@/assets/icons/windows-logo.svg?react";
 import AppleIcon from "@/assets/icons/apple-logo.svg?react";
-import { ColorScheme } from "@/resources/user/user-settings";
+import { ColorScheme } from "@/models/users";
 
 const OperatingSystemsIcon =
-  env.plateform === "macos" ? AppleIcon : env.plateform === "windows" ? WindowsIcon : LinuxIcon;
+  env.platform === "macos" ? AppleIcon : env.platform === "windows" ? WindowsIcon : LinuxIcon;
 
 export default function SettingsPageGeneral() {
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
@@ -34,6 +34,15 @@ export default function SettingsPageGeneral() {
           <ButtonGroup.Item label="dark" name="dark" icon={DarkIcon} />
           <ButtonGroup.Item label="auto" name="auto" icon={OperatingSystemsIcon} />
         </ButtonGroup>
+      </SettingsPage.Setting>
+      <SettingsPage.Setting title="Show favorites" description="Show favorites in the sidebar.">
+        <Switch
+          size="sm"
+          defaultChecked={userSettings.showFavorites}
+          onChange={(value) => {
+            updateUserSettings({ showFavorites: value });
+          }}
+        />
       </SettingsPage.Setting>
       <SettingsPage.Setting
         title="Show file extensions"

@@ -1,4 +1,4 @@
-import { Environment } from "@/resources/workspace/environment";
+import { Environment } from "@/models/environments";
 
 import SidebarItem from "../SidebarItem";
 
