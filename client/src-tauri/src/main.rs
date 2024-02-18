@@ -7,7 +7,7 @@ use tauri::App;
  * The default port used by the local agent.
  */
 #[cfg(debug_assertions)]
-const DEFAULT_LOCAL_AGENT_PORT: &'static str = "1420";
+const DEFAULT_LOCAL_AGENT_PORT: &'static str = "8080";
 #[cfg(not(debug_assertions))]
 const DEFAULT_LOCAL_AGENT_PORT: &'static str = "4173";
 

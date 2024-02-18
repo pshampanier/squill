@@ -32,12 +32,14 @@ export class Env {
   // - When running in a web browser in dev mode, the variable is fetched from the environment using the Vite
   //   environment variables defined in .env files (see https://vitejs.dev/guide/env-and-mode.html).
   async getVariable(name: string): Promise<string | undefined> {
-    if (window.__TAURI__) {
-      return invoke("get_variable", { name });
-    } else if (import.meta.env.DEV) {
+    if (import.meta.env.DEV && import.meta.env["VITE_" + name]) {
       // Because vite only expose variable prefixed with VITE_ we need to prefix the variable name with VITE_.
       return import.meta.env["VITE_" + name];
     }
+    if (window.__TAURI__) {
+      return invoke("get_variable", { name });
+    }
+    return undefined;
   }
 
   async getAgentConnectionParameters(): Promise<AgentConnectionParameters> {
