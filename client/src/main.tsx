@@ -7,7 +7,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import "@/utils/monaco-workers";
 import "@/assets/styles/main.less";
 
-console.log(`One SQL ${env.applicationType} (${env.buildType})`);
+console.log(`Squill ${env.applicationType} (${env.buildType})`);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
 

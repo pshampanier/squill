@@ -9,7 +9,7 @@
             "request": "launch",
             "name": "agent (debug)",
             "cargo": {
-                "args": ["build", "--bin=agent", "--package=one-sql"],
+                "args": ["build", "--bin=agent", "--package=squill"],
                 "filter": {
                     "name": "agent",
                     "kind": "bin"
@@ -17,7 +17,8 @@
             },
             "args": ["--verbose", "start", "--port", "8080", "--api-key", "x-dev"],
             "env": {
-                "ONESQL_LOG_LEVEL": "trace,axum::rejection=trace"
+                "SQUILL_LOG_LEVEL": "trace,axum::rejection=trace",
+                "SQUILL_APP_DIR": "build/app_dir"
             },
             "cwd": "${workspaceFolder}"
         },
@@ -26,7 +27,7 @@
             "request": "launch",
             "name": "unit tests",
             "cargo": {
-                "args": ["test", "--no-run", "--bin=agent", "--package=one-sql"],
+                "args": ["test", "--no-run", "--bin=agent", "--package=squill"],
                 "filter": {
                     "name": "agent",
                     "kind": "bin"

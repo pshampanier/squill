@@ -999,37 +999,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
 
 [[package]]
-name = "one-sql"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "built",
- "clap",
- "git2",
- "hex",
- "lazy_static",
- "lru",
- "nix",
- "rand",
- "regex",
- "reqwest",
- "rust-ini",
- "serde",
- "serde_json",
- "sysinfo",
- "tempfile",
- "tokio",
- "toml",
- "tower",
- "tower-http",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
 name = "openssl"
 version = "0.10.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1520,6 +1489,37 @@ checksum = "7b5fac59a5cb5dd637972e5fca70daf0523c9067fcdc4842f053dae04a18f8e9"
 dependencies = [
  "libc",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "squill"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "built",
+ "clap",
+ "git2",
+ "hex",
+ "lazy_static",
+ "lru",
+ "nix",
+ "rand",
+ "regex",
+ "reqwest",
+ "rust-ini",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tempfile",
+ "tokio",
+ "toml",
+ "tower",
+ "tower-http",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

@@ -35,10 +35,10 @@ pub const WORKSPACE_SETTINGS_FILENAME: &str = ".workspace.json";
 //
 
 /// Name of the environment variable used to specify the app directory.
-pub const ENV_VAR_APP_DIR: &str = "ONESQL_APP_DIR";
+pub const ENV_VAR_APP_DIR: &str = "SQUILL_APP_DIR";
 
 /// Name of the environment variable used to specify the log level.
-pub const ENV_VAR_LOG_LEVEL: &str = "ONESQL_LOG_LEVEL";
+pub const ENV_VAR_LOG_LEVEL: &str = "SQUILL_LOG_LEVEL";
 
 /// Windows reserved names.
 /// Source: <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file>

@@ -12,7 +12,7 @@
 
 ## Code coverage
 
-[![codecov](https://codecov.io/gh/pshampanier/one-sql/graph/badge.svg?token=DNCTZ1WPTF)](https://codecov.io/gh/pshampanier/one-sql)
+[![codecov](https://codecov.io/gh/pshampanier/squill/graph/badge.svg?token=DNCTZ1WPTF)](https://codecov.io/gh/pshampanier/squill)
 
 The crate [`cargo-tarpaulin`](https://crates.io/crates/cargo-tarpaulin) is used for code coverage.
 
@@ -30,7 +30,7 @@ cargo install cargo-tarpaulin
 cargo tarpaulin --target-dir=${CARGO_BUILD_TARGET_DIR} && open build/tarpaulin-report.html
 ```
 
-A github action [agent-coverage.yml](../.github/workflows/agent-coverage.yml) is configured to be run on every push on the `main` branch and results are published on [codecov.io](https://app.codecov.io/gh/pshampanier/one-sql).
+A github action [agent-coverage.yml](../.github/workflows/agent-coverage.yml) is configured to be run on every push on the `main` branch and results are published on [codecov.io](https://app.codecov.io/gh/pshampanier/squill).
 
 # Github actions
 

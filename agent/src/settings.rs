@@ -73,9 +73,9 @@ thread_local! {
 /// (e.g. workspace, shared environment, ...).
 /// While the base directory can be overridden in agent.conf or the command line, the app directory cannot be overridden.
 ///
-/// - Windows: %APPDATA%\onesql\
-/// - macOS:   $HOME/Library/Application\ Support/onesql/
-/// - Linux:   $HOME/.onesql/
+/// - Windows: %APPDATA%\squill\
+/// - macOS:   $HOME/Library/Application\ Support/squill/
+/// - Linux:   $HOME/.squill/
 pub fn get_app_dir() -> PathBuf {
     #[cfg(test)]
     {

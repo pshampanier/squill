@@ -6,7 +6,7 @@
     "distDir": "../build/webapp"
   },
   "package": {
-    "productName": "one-sql",
+    "productName": "squill",
     "version": "0.0.1"
   },
   "tauri": {

@@ -1,5 +1,5 @@
 {
-  "name": "one-sql-client",
+  "name": "squill-client",
   "version": "0.0.1",
   "description": "SQL Workspace",
   "type": "module",
