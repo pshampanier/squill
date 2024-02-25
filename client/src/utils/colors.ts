@@ -90,6 +90,7 @@ export const COLOR_NAMES = [
   "hover:ghost-background",
   "hover:ghost-text",
   "selected:ghost-background",
+  "divide",
 ] as const;
 
 export type Colors = (typeof COLOR_NAMES)[number];
@@ -108,6 +109,7 @@ export const PRIMARY_COLORS: Record<Colors, string> = {
   "hover:ghost-background": "hover:bg-gray-100 hover:dark:bg-gray-700",
   "hover:ghost-text": "text-gray-600 dark:text-gray-100",
   "selected:ghost-background": undefined, // FIXME: this is not yet used
+  divide: "divide-gray-200 dark:divide-gray-700",
 };
 
 export function primary(...names: Colors[]): string {
@@ -127,6 +129,7 @@ export const SECONDARY_COLORS: Record<Colors, string> = {
   "hover:ghost-background": "hover:bg-gray-200 dark:hover:bg-gray-600",
   "hover:ghost-text": "text-gray-600 dark:text-gray-300",
   "selected:ghost-background": "bg-gray-200 dark:bg-gray-800",
+  divide: "divide-gray-300 dark:divide-gray-600",
 };
 
 export function secondary(...names: Colors[]): string {
@@ -151,6 +154,7 @@ export const TERTIARY_COLORS: Record<Colors, string> = {
   "hover:ghost-background": "hover:bg-blue-700 dark:hover:bg-blue-700",
   "hover:ghost-text": "text-white dark:text-white",
   "selected:ghost-background": undefined, // FIXME: this is not yet used
+  divide: "divide-blue-600 dark:divide-blue-500",
 };
 
 export function tertiary(...names: Colors[]): string {

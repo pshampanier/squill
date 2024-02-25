@@ -1,6 +1,6 @@
 import { executeCommand, getCommand } from "@/utils/commands";
 import { ColorsFunction } from "@/utils/colors";
-import Button, { ButtonType } from "@/components/core/Button";
+import Button, { ButtonVariant } from "@/components/core/Button";
 import { SVGIcon } from "@/utils/types";
 
 type CommandButtonProps = {
@@ -9,18 +9,26 @@ type CommandButtonProps = {
   icon?: SVGIcon;
   tooltip?: string;
   colors?: ColorsFunction;
-  type?: ButtonType;
+  variant?: ButtonVariant;
   className?: string;
 };
 
-export default function CommandButton({ command, text, icon, tooltip, colors, type, className }: CommandButtonProps) {
+export default function CommandButton({
+  command,
+  text,
+  icon,
+  tooltip,
+  colors,
+  variant,
+  className,
+}: CommandButtonProps) {
   const cmd = getCommand(command);
   const handleClick = () => {
     executeCommand(cmd.name);
   };
   return (
     <Button
-      type={type}
+      variant={variant}
       icon={icon === undefined ? cmd.icon : icon}
       onClick={handleClick}
       className={className}

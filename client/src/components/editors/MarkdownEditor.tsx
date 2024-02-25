@@ -90,7 +90,7 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId })
             className="absolute top-1 right-5 z-50"
             icon={EditCommandIcon}
             onClick={handleShowEditor}
-            type="ghost"
+            variant="ghost"
           />
           <Markdown remarkPlugins={[remarkGfm]}>{content}</Markdown>
         </div>
@@ -100,7 +100,7 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId })
             className="absolute top-1 right-5 z-50"
             icon={PreviewCommandIcon}
             onClick={handleShowPreview}
-            type="ghost"
+            variant="ghost"
           />
           <MonacoEditor
             className="w-full h-full"

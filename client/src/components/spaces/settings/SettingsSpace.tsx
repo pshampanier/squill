@@ -105,8 +105,8 @@ export default function SettingsSpace() {
                 {selectedPage === "general" && <SettingsPageGeneral />}
                 {selectedPage === "text-editor" && <SettingsPageEditor />}
                 <div className={cx("flex flex-row justify-end space-x-1 border-t pt-4", colors("border"))}>
-                  <CommandButton text="Cancel" type="outline" command="settings.close" icon={NO_ICON} />
-                  <Button text="Apply" type="solid" disabled={!modified} onClick={applySettings} />
+                  <CommandButton text="Cancel" variant="outline" command="settings.close" icon={NO_ICON} />
+                  <Button text="Apply" variant="solid" disabled={!modified} onClick={applySettings} />
                 </div>
               </div>
             </div>

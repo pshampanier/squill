@@ -38,8 +38,8 @@ export default function UserSpace(props: SpaceProps) {
           <SpaceSidebar>
             <ColorsContext.Provider value={secondaryColors}>
               <Toolbar>
-                <Button type="ghost" icon={FolderPlus} />
-                <Button type="ghost" icon={Plus} />
+                <Button variant="ghost" icon={FolderPlus} />
+                <Button variant="ghost" icon={Plus} />
               </Toolbar>
             </ColorsContext.Provider>
             <SidebarSection label="User's Catalog">

@@ -1,14 +1,14 @@
 ## Build
 
-### Environement variables
+### Environment variables
 
-- [`CARGO_BUILD_TARGET_DIR`](https://doc.rust-lang.org/cargo/reference/config.html#buildtarget-dir): the path to where all compiler output is placed. This is a combination of the architecture and the operating system (e.g. `aarch64-apple-darwin`).
+-   [`CARGO_BUILD_TARGET_DIR`](https://doc.rust-lang.org/cargo/reference/config.html#buildtarget-dir): the path to where all compiler output is placed. This is a combination of the architecture and the operating system (e.g. `aarch64-apple-darwin`).
 
-  | Operating Systems | Architecture    |
-  | ----------------- | --------------- |
-  | unknown-linux-gnu | x86_64, aarch64 |
-  | apple-darwin      | x86_64, aarch64 |
-  | pc-windows-msvc   | x86_64, aarch64 |
+    | Operating Systems | Architecture    |
+    | ----------------- | --------------- |
+    | unknown-linux-gnu | x86_64, aarch64 |
+    | apple-darwin      | x86_64, aarch64 |
+    | pc-windows-msvc   | x86_64, aarch64 |
 
 ## Code coverage
 

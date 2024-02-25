@@ -1,43 +1,75 @@
 import { ColorsContext } from "@/stores/ColorsContext";
 import { ColorsFunction, primary } from "@/utils/colors";
+import { SVGIcon } from "@/utils/types";
 import { cx } from "classix";
 import { useContext } from "react";
 
-export type ButtonType = "solid" | "outline" | "ghost";
+export type ButtonVariant = "solid" | "outline" | "ghost";
 
 type ButtonProps = {
-  type?: ButtonType;
-  icon?: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
+  variant?: ButtonVariant;
+  icon?: SVGIcon;
   text?: string;
   tooltip?: string;
   onClick?: () => void;
+  onBlur?: () => void;
   className?: string;
   colors?: ColorsFunction;
   disabled?: boolean;
+  children?: React.ReactNode;
+  tabIndex?: number;
 };
 
 Button.defaultProps = {
-  type: "ghost",
+  variant: "ghost",
 };
 
-export default function Button({ type, className, icon, text, tooltip, onClick, colors, disabled }: ButtonProps) {
+export default function Button({
+  variant,
+  className,
+  icon,
+  text,
+  tooltip,
+  onClick,
+  onBlur,
+  colors,
+  disabled,
+  children,
+  tabIndex,
+}: ButtonProps) {
   colors = colors || useContext(ColorsContext) || primary;
   const classes = cx(
-    "flex flex-row h-9 items-center space-x-1 p-2 rounded box-border border-2 text-sm",
+    "flex flex-row h-9 items-center p-2 rounded box-border border-2 text-sm",
     colors("text"),
-    (type === "solid" || type === "ghost") && "border-transparent",
-    type === "solid" && colors("selected:background", "selected:text", "hover:background", "hover:text"),
-    type === "outline" && "",
-    type === "outline" && colors("border", "hover:border"),
-    type === "ghost" && colors("hover:ghost-background", "hover:ghost-text"),
+    (variant === "solid" || variant === "ghost") && "border-transparent",
+    variant === "solid" && colors("selected:background", "selected:text", "hover:background", "hover:text"),
+    variant === "outline" && "",
+    variant === "outline" && colors("border", "hover:border"),
+    variant === "ghost" && colors("hover:ghost-background", "hover:ghost-text"),
     disabled && "disabled:opacity-50 disabled:pointer-events-none",
     className
   );
   const Icon = icon;
+
+  const handleOnBlur = () => {
+    if (onBlur) {
+      onBlur();
+    }
+  };
+
   return (
-    <button className={classes} onClick={onClick} title={tooltip} disabled={disabled} role="button">
+    <button
+      className={classes}
+      onClick={onClick}
+      onBlur={handleOnBlur}
+      title={tooltip}
+      disabled={disabled}
+      role="button"
+      tabIndex={tabIndex}
+    >
       {icon && <Icon className="w-5 h-5" />}
-      {text && <span>{text}</span>}
+      {text && <span className={icon && "ml-1"}>{text}</span>}
+      {children}
     </button>
   );
 }

@@ -52,9 +52,18 @@ export function registerCommand(...command: Command[]) {
   });
 }
 
-export function getCommand(name: string): Command {
+/**
+ * Get the command with the given name.
+ *
+ * This method can be called with `undefined` and will just return `undefined` in that scenario.
+ *
+ * @param name - Name of the command to get (ex: "clipboard.copy")
+ * @returns The command with the given name or undefined name was undefined.
+ * @throws An error if the command with the given name is not registered.
+ */
+export function getCommand(name: string | undefined): Command {
   const command = commands[name];
-  if (!command) {
+  if (!command && name !== undefined) {
     raise(`Command '${name}' not registered`);
   } else {
     return command;
@@ -120,8 +129,9 @@ export function registerGlobalKeyListeners() {
     const shortcut = getShortcut(event);
     if (shortcut) {
       const command = Object.values(commands).find((c) => c.shortcut === shortcut);
-      if (command) {
+      if (command && command.actions.length > 0) {
         event.preventDefault();
+        event.stopPropagation();
         console.debug(`Executing command '${command.name}'`);
         executeActions(command.actions);
       }
@@ -182,9 +192,9 @@ function executeActions(actions: CommandAction[]) {
 }
 
 registerCommand(
-  { name: "clipboard.copy", description: "Copy selected text", shortcut: ["Meta+C", "Ctrl+C"] },
-  { name: "clipboard.paste", description: "Paste text", shortcut: ["Meta+V", "Ctrl+V"] },
-  { name: "clipboard.cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
+  { name: "clipboard.copy", label: "Copy", description: "Copy selected text", shortcut: ["Meta+C", "Ctrl+C"] },
+  { name: "clipboard.paste", label: "Paste", description: "Paste text", shortcut: ["Meta+V", "Ctrl+V"] },
+  { name: "clipboard.cut", label: "Cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
   { name: "settings.open", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon },
   { name: "settings.close", description: "Close", shortcut: "Escape", icon: CloseIcon }
 );

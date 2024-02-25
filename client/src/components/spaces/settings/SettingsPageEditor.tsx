@@ -1,8 +1,8 @@
 import { useContext } from "react";
 import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
 import SettingsPage from "@/components/spaces/settings/SettingsPage";
-import ButtonGroup from "@/components/core/ButtonGroup";
-import { MinimapValue } from "@/models/users";
+import { MinimapValue, RenderWhitespaceValue } from "@/models/users";
+import Dropdown from "@/components/core/Dropdown";
 
 export default function SettingsPageEditor() {
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
@@ -10,17 +10,33 @@ export default function SettingsPageEditor() {
   return (
     <SettingsPage title="Editor settings">
       <SettingsPage.Setting title="Minimap" description="Controls whether the minimap is displayed or not.">
-        <ButtonGroup
+        <Dropdown
           defaultValue={userSettings.editorSettings.minimap}
           onChange={(value) => {
             updateUserSettings({ editorSettings: { minimap: value as MinimapValue } });
           }}
         >
-          <ButtonGroup.Item label="show" name="show" />
-          <ButtonGroup.Item label="hide" name="hide" />
-          <ButtonGroup.Item label="auto" name="auto" />
-        </ButtonGroup>
+          <Dropdown.Option label="Show" value="show" />
+          <Dropdown.Option label="Hide" value="hide" />
+          <Dropdown.Option label="Auto" value="auto" />
+        </Dropdown>
+      </SettingsPage.Setting>
+      <SettingsPage.Setting title="White spaces" description="Controls how to render the white spaces.">
+        <Dropdown
+          defaultValue={userSettings.editorSettings.renderWhitespace}
+          onChange={(value) => {
+            updateUserSettings({ editorSettings: { renderWhitespace: value as RenderWhitespaceValue } });
+          }}
+        >
+          <Dropdown.Option label="All" value="all" />
+          <Dropdown.Option label="None" value="none" />
+          <Dropdown.Option label="Boundary" value="boundary" />
+          <Dropdown.Option label="Selection" value="selection" />
+          <Dropdown.Option label="Trailing" value="trailing" />
+        </Dropdown>
       </SettingsPage.Setting>
     </SettingsPage>
   );
 }
+
+// const RENDER_WHITESPACE = ["all", "none", "boundary", "selection", "trailing"] as const;

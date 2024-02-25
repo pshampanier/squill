@@ -29,6 +29,7 @@ export default function SettingsPageGeneral() {
           onChange={(value) => {
             updateUserSettings({ colorScheme: value as ColorScheme });
           }}
+          size="md"
         >
           <ButtonGroup.Item label="light" name="light" icon={LightIcon} />
           <ButtonGroup.Item label="dark" name="dark" icon={DarkIcon} />

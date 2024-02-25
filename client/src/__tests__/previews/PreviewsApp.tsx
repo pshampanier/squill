@@ -15,6 +15,8 @@ import ButtonGroup from "@/components/core/ButtonGroup";
 
 import ThemeLightIcon from "@/icons/theme-light.svg?react";
 import ThemeDarkIcon from "@/icons/theme-dark.svg?react";
+import MenuPreview from "./core/Menu.preview";
+import DropdownPreview from "./core/Dropdown.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -31,8 +33,10 @@ export function PreviewsApp() {
         <SidebarSection label="components">
           <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Buttons" />
+          <PreviewSidebarItem view="Dropdown" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="KBD" />
+          <PreviewSidebarItem view="Menu" />
           <PreviewSidebarItem view="Sidebar" />
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
@@ -51,8 +55,10 @@ export function PreviewsApp() {
         <div className="flex flex-col space-y-10 w-3/4">
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
+          {view === "Dropdown" && <DropdownPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "KBD" && <KBDPreview />}
+          {view === "Menu" && <MenuPreview />}
           {view === "Sidebar" && <SidebarPreview />}
           {view === "Space" && <SpacePreview />}
           {view === "Switch" && <SwitchPreview />}
