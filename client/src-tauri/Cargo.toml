@@ -1,8 +1,8 @@
 [package]
-name = "tauri-app"
+name = "Squill"
 version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+description = "A Data Workbench"
+authors = ["Philippe Shampanier"]
 license = ""
 repository = ""
 edition = "2021"
