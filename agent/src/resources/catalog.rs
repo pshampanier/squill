@@ -314,10 +314,10 @@ mod tests {
         let path = CatalogPath::from("workspaces/read_only_folder");
         let new_name = CatalogPathComponent::from("new_readonly_folder");
         catalog::create_dir(&username, &path).unwrap();
-        let restore_permissions = crate::utils::tests::set_readonly(&to_fs_path(&username, &path));
+        let restore_permissions = crate::utils::tests::set_readonly(&to_fs_path(&username, &path).parent().unwrap());
         assert!(catalog::rename(&username, &path, &new_name).is_err());
         assert!(to_fs_path(&username, &path).exists());
-        std::fs::set_permissions(to_fs_path(&username, &path), restore_permissions).unwrap();
+        std::fs::set_permissions(to_fs_path(&username, &path).parent().unwrap(), restore_permissions).unwrap();
 
         // 6) Rename file that failed to create the new file
         let path = CatalogPath::from("workspaces/read_only_workspace");
