@@ -1,14 +1,14 @@
 import PreviewBox from "../PreviewBox";
-import KBD from "@/components/core/KBD";
+import Kbd from "@/components/core/Kbd";
 
 export default function KBDPreview() {
   return (
     <PreviewBox>
       <ul className="flex flex-col">
         <li className="flex flex-col">
-          <KBD shortcut={"Meta+Alt+Shift+Ctrl"} />
-          <KBD shortcut={"Ctrl+Enter"} />
-          <KBD shortcut={"Esc"} />
+          <Kbd shortcut={"Meta+Alt+Shift+Ctrl"} />
+          <Kbd shortcut={"Ctrl+Enter"} />
+          <Kbd shortcut={"Esc"} />
         </li>
       </ul>
     </PreviewBox>

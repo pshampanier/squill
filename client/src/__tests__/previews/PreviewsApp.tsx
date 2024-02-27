@@ -2,7 +2,7 @@ import Page from "@/components/Page";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import PreviewSidebarItem from "./PreviewSidebarItem";
-import KBDPreview from "./core/KBD.preview";
+import KbdPreview from "./core/Kbd.preview";
 import SpacePreview from "./layouts/Space.preview";
 import ColorsPreview from "./layouts/Colors.preview";
 import SidebarPreview from "./sidebar/Sidebar.preview";
@@ -35,7 +35,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Buttons" />
           <PreviewSidebarItem view="Dropdown" />
           <PreviewSidebarItem view="Tooltip" />
-          <PreviewSidebarItem view="KBD" />
+          <PreviewSidebarItem view="Kbd" />
           <PreviewSidebarItem view="Menu" />
           <PreviewSidebarItem view="Sidebar" />
           <PreviewSidebarItem view="Switch" />
@@ -57,7 +57,7 @@ export function PreviewsApp() {
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Dropdown" && <DropdownPreview />}
           {view === "Colors" && <ColorsPreview />}
-          {view === "KBD" && <KBDPreview />}
+          {view === "Kbd" && <KbdPreview />}
           {view === "Menu" && <MenuPreview />}
           {view === "Sidebar" && <SidebarPreview />}
           {view === "Space" && <SpacePreview />}

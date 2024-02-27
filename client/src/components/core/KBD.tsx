@@ -28,7 +28,7 @@ function Key({ name }: { name: string }) {
   }
 }
 
-export default function KBD({ shortcut, className }: KeyboardShortcutProps) {
+export default function Kbd({ shortcut, className }: KeyboardShortcutProps) {
   const s = getCurrentEnvironmentShortcut(shortcut);
   const classes = cx(
     "flex whitespace-nowrap items-center gap-x-1 h-6 text-sm text-gray-400 dark:text-gray-600",

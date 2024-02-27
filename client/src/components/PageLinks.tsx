@@ -1,6 +1,6 @@
 import React from "react";
-import KBD from "@/components/core/KBD";
 import { KeyboardShortcut } from "@/utils/types";
+import Kbd from "@/components/core/Kbd";
 
 type CommandLinksProps = {
   children: React.ReactNode;
@@ -22,7 +22,7 @@ const Link = ({ children, shortcut }: LinkProps) => {
         <a href="#">{children}</a>
       </dt>
       <dd className="table-cell text-left">
-        <KBD shortcut={shortcut} />
+        <Kbd shortcut={shortcut} />
       </dd>
     </dl>
   );

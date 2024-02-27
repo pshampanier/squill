@@ -1,6 +1,6 @@
 import { SVGIcon } from "@/utils/types";
 import cx from "classix";
-import KBD from "@/components/core/KBD";
+import Kbd from "@/components/core/Kbd";
 import { primary as colors } from "@/utils/colors";
 import { executeCommand, getCommand } from "@/utils/commands";
 import React, { SyntheticEvent, useEffect, useRef } from "react";
@@ -117,7 +117,7 @@ function MenuItem({ className, icon, label, children, disabled, onClick, command
       {Icon && <Icon className="flex-none w-5 h-5" />}
       {children}
       {label && <span className="flex grow whitespace-nowrap overflow-hidden truncate">{label}</span>}
-      {shortcut && <KBD className="ml-auto" shortcut={shortcut} />}
+      {shortcut && <Kbd className="ml-auto" shortcut={shortcut} />}
     </a>
   );
 }
