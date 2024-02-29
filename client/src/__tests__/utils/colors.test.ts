@@ -54,7 +54,7 @@ test("primary", () => {
 });
 
 test("secondary", () => {
-  expect(secondary("background")).toBe("bg-gray-100 dark:bg-gray-700");
+  expect(secondary("background")).toBe("bg-gray-50 dark:bg-gray-700");
   expect(secondary("text")).toBe("text-gray-600 dark:text-gray-300");
-  expect(secondary("background", "text")).toBe("bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300");
+  expect(secondary("background", "text")).toBe("bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300");
 });

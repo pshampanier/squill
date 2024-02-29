@@ -4,8 +4,19 @@
 import { create } from "zustand";
 import { DEFAULT_WIDTH as DEFAULT_SIDEBAR_WIDTH } from "@/components/sidebar/Sidebar";
 import { calculateColorScheme } from "@/utils/colors";
+import { Editor } from "@/resources/editors";
 
 type ApplicationSpace = "connection" | "logon" | "user" | "workspace";
+
+type Page = {
+  readonly id: string;
+  readonly itemId: string;
+  readonly path: string;
+  readonly title: string;
+  readonly editor: Editor;
+  readonly modified: boolean;
+  readonly readOnly: boolean;
+};
 
 type State = {
   /**
@@ -25,6 +36,16 @@ type State = {
    * The current active space.
    */
   activeSpace: ApplicationSpace;
+
+  /**
+   * The id of the active page.
+   */
+  activePageId?: string;
+
+  /**
+   * The pages that are currently open.
+   */
+  pages: Page[];
 };
 
 type Actions = {
@@ -41,6 +62,8 @@ export const useAppStore = create<State & Actions>((set) => {
     sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
     colorScheme: calculateColorScheme("auto"),
     activeSpace: "connection",
+    pages: [],
+    activePageId: undefined,
 
     setSidebarWidth(width: number) {
       set((state) => ({ ...state, sidebarWidth: width }));

@@ -1,9 +1,13 @@
+import cx from "classix";
+
 type PreviewProps = {
+  className?: string;
   children: React.ReactNode;
 };
 
-function Preview({ children }: PreviewProps) {
-  return <div className="flex flex-col">{children}</div>;
+function Preview({ children, className }: PreviewProps) {
+  const classes = cx("flex flex-col", className);
+  return <div className={classes}>{children}</div>;
 }
 function PreviewTitle({ children }: PreviewProps) {
   return <h1 className="relative text-md font-bold text-gray-800 dark:text-white">{children}</h1>;

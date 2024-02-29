@@ -17,6 +17,7 @@ import ThemeLightIcon from "@/icons/theme-light.svg?react";
 import ThemeDarkIcon from "@/icons/theme-dark.svg?react";
 import MenuPreview from "./core/Menu.preview";
 import DropdownPreview from "./core/Dropdown.preview";
+import StepperPreview from "./layouts/Stepper.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -43,6 +44,7 @@ export function PreviewsApp() {
         <SidebarSection label="layouts">
           <PreviewSidebarItem view="Space" />
           <PreviewSidebarItem view="Colors" />
+          <PreviewSidebarItem view="Stepper" />
         </SidebarSection>
       </Sidebar>
       <Page className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll">
@@ -52,7 +54,7 @@ export function PreviewsApp() {
             <ButtonGroup.Item name="dark" icon={ThemeDarkIcon} />
           </ButtonGroup>
         </header>
-        <div className="flex flex-col space-y-10 w-3/4">
+        <div className="flex flex-col space-y-10 w-3/4 h-full py-2">
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Dropdown" && <DropdownPreview />}
@@ -61,6 +63,7 @@ export function PreviewsApp() {
           {view === "Menu" && <MenuPreview />}
           {view === "Sidebar" && <SidebarPreview />}
           {view === "Space" && <SpacePreview />}
+          {view === "Stepper" && <StepperPreview />}
           {view === "Switch" && <SwitchPreview />}
           {view === "Tooltip" && <TooltipPreview />}
         </div>

@@ -117,18 +117,18 @@ export function primary(...names: Colors[]): string {
 }
 
 export const SECONDARY_COLORS: Record<Colors, string> = {
-  background: "bg-gray-100 dark:bg-gray-700",
+  background: "bg-gray-50 dark:bg-gray-700",
   "hover:background": primary("hover:background"),
   "selected:background": primary("selected:background"),
   text: "text-gray-600 dark:text-gray-300",
   "hover:text": primary("hover:text"),
   "selected:text": primary("selected:text"),
-  border: "border-gray-300 dark:border-gray-600",
+  border: "border-gray-200 dark:border-gray-600",
   "hover:border": primary("hover:border"),
   "heading-text": primary("heading-text"),
   "hover:ghost-background": "hover:bg-gray-200 dark:hover:bg-gray-600",
   "hover:ghost-text": "text-gray-600 dark:text-gray-300",
-  "selected:ghost-background": "bg-gray-200 dark:bg-gray-800",
+  "selected:ghost-background": "bg-gray-100 dark:bg-gray-800",
   divide: "divide-gray-300 dark:divide-gray-600",
 };
 

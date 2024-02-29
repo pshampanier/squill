@@ -2,7 +2,7 @@ import { ColorsContext } from "@/stores/ColorsContext";
 import { ColorsFunction, primary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
 import { cx } from "classix";
-import { useContext } from "react";
+import { SyntheticEvent, useContext } from "react";
 
 export type ButtonVariant = "solid" | "outline" | "ghost";
 
@@ -11,7 +11,7 @@ type ButtonProps = {
   icon?: SVGIcon;
   text?: string;
   tooltip?: string;
-  onClick?: () => void;
+  onClick?: (event: SyntheticEvent) => void;
   onBlur?: () => void;
   className?: string;
   colors?: ColorsFunction;
