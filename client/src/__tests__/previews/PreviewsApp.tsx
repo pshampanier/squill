@@ -18,6 +18,7 @@ import ThemeDarkIcon from "@/icons/theme-dark.svg?react";
 import MenuPreview from "./core/Menu.preview";
 import DropdownPreview from "./core/Dropdown.preview";
 import StepperPreview from "./layouts/Stepper.preview";
+import InputsPreview from "./core/Inputs.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -35,6 +36,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Buttons" />
           <PreviewSidebarItem view="Dropdown" />
+          <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
           <PreviewSidebarItem view="Menu" />
@@ -58,6 +60,7 @@ export function PreviewsApp() {
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Dropdown" && <DropdownPreview />}
+          {view === "Input" && <InputsPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
           {view === "Menu" && <MenuPreview />}

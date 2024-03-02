@@ -216,6 +216,8 @@ type NavStepProps = {
 
   /**
    * The callback to call when the nav step is clicked (internal use only).
+   *
+   * @param step The number of the step that was clicked.
    */
   onChange?: (step: number) => void;
 };
@@ -272,11 +274,38 @@ function NavStep({ step, title, icon, status, completedStep, active, count, onCh
 }
 
 type StepProps = {
+  /**
+   * An icon to display in the navigation bar for the step.
+   */
   icon: SVGIcon;
+
+  /**
+   * The title to display in the navigation bar for the step.
+   */
   title: string;
-  children: React.ReactNode;
+
+  /**
+   * The name of the step.
+   *
+   * This name is used to identify the step when the step is submitted.
+   */
   name?: string;
+
+  /**
+   * The callback to call when the step is submitted.
+   *
+   * This callback is called when the "Next" button is clicked and the step is the active step.
+   * The callback has the option to prevent the default behavior by calling `event.preventDefault()`.
+   *
+   * @param event The event originating the submit.
+   * @param name The name of the step.
+   */
   onSubmit?: (event: SyntheticEvent, name?: string) => void;
+
+  /**
+   * The content of the step.
+   */
+  children: React.ReactNode;
 };
 
 function Step({ children }: StepProps) {
