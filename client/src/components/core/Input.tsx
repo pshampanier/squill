@@ -118,20 +118,22 @@ export default function Input(props: InputProps) {
     }
   });
 
-  const containerClasses = cx(size === "sm" && "w-32", size === "md" && "w-56", size === "lg" && "w-80", className);
-  const labelClasses = cx("block mb-2 text-sm font-medium text-gray-900 dark:text-white");
-  const inputClasses = cx(
-    "block",
-    "focus:outline-none focus:ring focus:valid:ring-blue-500 focus:valid:border-blue-500 dark:focus:ring-blue-500 dark:focus:valid:border-blue-500",
-    "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
-    validated &&
-      "invalid:border-red-500 focus:invalid:ring-red-500 dark:invalid:border-red-500 dark:focus:invalid:ring-red-500"
-  );
+  const classes = {
+    container: cx(size === "sm" && "w-32", size === "md" && "w-56", size === "lg" && "w-80", className),
+    label: cx("block mb-2 text-sm font-medium text-gray-900 dark:text-white"),
+    input: cx(
+      "block",
+      "focus:outline-none focus:ring focus:valid:ring-blue-500 focus:valid:border-blue-500 dark:focus:ring-blue-500 dark:focus:valid:border-blue-500",
+      "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
+      validated &&
+        "invalid:border-red-600 focus:invalid:ring-red-600 dark:invalid:border-red-600 dark:focus:invalid:ring-red-600"
+    ),
+  };
 
   return (
-    <div className={containerClasses}>
+    <div className={classes.container}>
       {label && (
-        <label htmlFor="first_name" className={labelClasses}>
+        <label htmlFor="first_name" className={classes.label}>
           {label}
         </label>
       )}
@@ -144,7 +146,7 @@ export default function Input(props: InputProps) {
           type={type}
           id="first_name"
           step="0.01"
-          className={inputClasses}
+          className={classes.input}
           {...inputProperties}
           onInvalid={handleValidation}
           onBlur={handleBlur}

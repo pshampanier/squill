@@ -19,6 +19,7 @@ import MenuPreview from "./core/Menu.preview";
 import DropdownPreview from "./core/Dropdown.preview";
 import StepperPreview from "./layouts/Stepper.preview";
 import InputsPreview from "./core/Inputs.preview";
+import RadioPreview from "./core/Radio.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -40,6 +41,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
           <PreviewSidebarItem view="Menu" />
+          <PreviewSidebarItem view="Radio" />
           <PreviewSidebarItem view="Sidebar" />
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
@@ -64,6 +66,7 @@ export function PreviewsApp() {
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
           {view === "Menu" && <MenuPreview />}
+          {view === "Radio" && <RadioPreview />}
           {view === "Sidebar" && <SidebarPreview />}
           {view === "Space" && <SpacePreview />}
           {view === "Stepper" && <StepperPreview />}
