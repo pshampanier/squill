@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { ClassAttributes, InputHTMLAttributes, useState } from "react";
 
 export type UseRadioProps = {
   id?: string;
@@ -9,6 +9,7 @@ export type UseRadioProps = {
   readOnly?: boolean;
   tabIndex?: number;
   required?: boolean;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 export function useRadio(props: UseRadioProps) {
@@ -25,9 +26,16 @@ export function useRadio(props: UseRadioProps) {
     event.preventDefault(); // Prevent the web browser to show the default error message.
   };
 
-  const inputProperties = {
-    ...props,
+  const inputProperties: InputHTMLAttributes<HTMLInputElement> & ClassAttributes<HTMLInputElement> = {
     id: props.id || "radio-" + crypto.randomUUID().substring(0, 8),
+    name: props.name,
+    value: props.value,
+    defaultChecked: props.defaultChecked,
+    disabled: props.disabled,
+    readOnly: props.readOnly,
+    tabIndex: props.tabIndex,
+    required: props.required,
+    onChange: props.onChange,
     onInvalid: handleValidation,
   };
 

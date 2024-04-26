@@ -7,6 +7,7 @@ import { secondary as colors } from "@/utils/colors";
 type ButtonGroupProps = {
   children: React.ReactNode;
   size?: "xs" | "sm" | "md" | "lg";
+  className?: string;
   defaultValue?: string;
   disabled?: boolean;
   onChange?: (name: string) => void;
@@ -14,7 +15,7 @@ type ButtonGroupProps = {
 
 const ButtonGroupContext = createContext(null);
 
-function ButtonGroup({ children, size, defaultValue, disabled, onChange }: ButtonGroupProps) {
+function ButtonGroup({ children, size, className, defaultValue, disabled, onChange }: ButtonGroupProps) {
   const [value, setValue] = useState(defaultValue);
 
   // collecting the name of the children components
@@ -86,7 +87,7 @@ function ButtonGroup({ children, size, defaultValue, disabled, onChange }: Butto
     left: `calc((100% / ${values}) * ${valueIndex})`,
   };
 
-  const divClasses = cx("relative rounded-lg transition p-1 flex-shrink-0", colors("background", "text"));
+  const divClasses = cx("relative rounded-lg transition p-1 flex-shrink-0", colors("background", "text"), className);
 
   return (
     <div className={divClasses}>

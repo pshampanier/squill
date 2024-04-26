@@ -16,6 +16,7 @@ import { AuthRequest } from "@/models/auth";
 import { useAppStore } from "@/stores/AppStore";
 import { calculateColorScheme } from "@/utils/colors";
 import { useUserStore } from "@/stores/UserStore";
+import CommandManager from "@/components/CommandManager";
 
 export function App() {
   const activeSpace = useAppStore((state) => state.activeSpace);
@@ -69,6 +70,7 @@ export function App() {
   return (
     <>
       <ApplySystemPreferences />
+      <CommandManager />
       {settingsOpen && <SettingsSpace />}
       {activeSpace === "connection" && <ConnectionSpace />}
       {activeSpace === "user" && <UserSpace className={settingsOpen && "hidden"} />}

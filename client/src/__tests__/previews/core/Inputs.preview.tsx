@@ -19,7 +19,7 @@ export default function InputsPreview() {
             <Input type="text" size="sm" label="Small" placeholder="Enter a value" />
             <Input type="text" size="md" label="Medium" placeholder="Enter a value" />
             <Input type="text" size="lg" label="Large" placeholder="Enter a value" />
-            <Input type="text" size="full" label="Full" placeholder="Enter a value" />
+            <Input type="text" size="auto" label="Full" placeholder="Enter a value" />
           </div>
         </PreviewBox>
       </Preview>

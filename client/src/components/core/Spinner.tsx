@@ -23,7 +23,7 @@ export function Spinner({ size, delay }: SpinnerProps) {
   }
 
   const classes = cx(
-    "me-2 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600",
+    "me-2 text-gray-200 animate-spin dark:text-gray-500 fill-blue-600 dark:fill-blue-400",
     size === "xs" && "w-3 h-3",
     size === "sm" && "w-4 h-4",
     size === "md" && "w-6 h-6",

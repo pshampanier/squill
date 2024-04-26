@@ -82,6 +82,7 @@ impl Server {
             api::users
                 ::authenticated_routes(state.clone())
                 .merge(api::agent::authenticated_routes(state.clone()))
+                .merge(api::connections::authenticated_routes(state.clone()))
                 .layer(from_fn_with_state(state.clone(), check_authentication))
                 .layer(from_fn(check_api_key))
         );

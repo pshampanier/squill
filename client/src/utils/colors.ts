@@ -91,6 +91,21 @@ export const COLOR_NAMES = [
   "hover:ghost-text",
   "selected:ghost-background",
   "divide",
+  "message:background",
+  "info:background",
+  "success:background",
+  "warning:background",
+  "danger:background",
+  "message:border",
+  "info:border",
+  "success:border",
+  "warning:border",
+  "danger:border",
+  "message:text",
+  "info:text",
+  "success:text",
+  "warning:text",
+  "danger:text",
 ] as const;
 
 export type Colors = (typeof COLOR_NAMES)[number];
@@ -110,6 +125,21 @@ export const PRIMARY_COLORS: Record<Colors, string> = {
   "hover:ghost-text": "text-gray-600 dark:text-gray-100",
   "selected:ghost-background": undefined, // FIXME: this is not yet used
   divide: "divide-gray-200 dark:divide-gray-700",
+  "message:background": "bg-gray-50 dark:bg-white/[.05]",
+  "info:background": "bg-blue-100 dark:bg-blue-800/10",
+  "success:background": "bg-teal-100 dark:bg-teal-800/10",
+  "warning:background": "bg-yellow-100 dark:bg-yellow-800/10",
+  "danger:background": "bg-red-100 dark:bg-red-800/10",
+  "message:border": "border-gray-200 dark:border-white/10",
+  "info:border": "border-blue-200 dark:border-blue-900",
+  "success:border": "border-teal-200 dark:border-teal-900",
+  "warning:border": "border-yellow-200 dark:border-yellow-900",
+  "danger:border": "border-red-200 dark:border-red-900",
+  "message:text": "text-gray-600 dark:text-gray-400",
+  "info:text": "text-blue-800 dark:text-blue-500",
+  "success:text": "text-teal-800 dark:text-teal-500",
+  "warning:text": "text-yellow-800 dark:text-yellow-500",
+  "danger:text": "text-red-800 dark:text-red-500",
 };
 
 export function primary(...names: Colors[]): string {
@@ -130,6 +160,21 @@ export const SECONDARY_COLORS: Record<Colors, string> = {
   "hover:ghost-text": "text-gray-600 dark:text-gray-300",
   "selected:ghost-background": "bg-gray-100 dark:bg-gray-800",
   divide: "divide-gray-300 dark:divide-gray-600",
+  "message:background": primary("message:background"),
+  "info:background": primary("info:background"),
+  "success:background": primary("success:background"),
+  "warning:background": primary("warning:background"),
+  "danger:background": primary("danger:background"),
+  "message:border": primary("message:border"),
+  "info:border": primary("info:border"),
+  "success:border": primary("success:border"),
+  "warning:border": primary("warning:border"),
+  "danger:border": primary("danger:border"),
+  "message:text": primary("message:text"),
+  "info:text": primary("info:text"),
+  "success:text": primary("success:text"),
+  "warning:text": primary("warning:text"),
+  "danger:text": primary("danger:text"),
 };
 
 export function secondary(...names: Colors[]): string {
@@ -155,6 +200,21 @@ export const TERTIARY_COLORS: Record<Colors, string> = {
   "hover:ghost-text": "text-white dark:text-white",
   "selected:ghost-background": undefined, // FIXME: this is not yet used
   divide: "divide-blue-600 dark:divide-blue-500",
+  "message:background": primary("message:background"),
+  "info:background": primary("info:background"),
+  "success:background": primary("success:background"),
+  "warning:background": primary("warning:background"),
+  "danger:background": primary("danger:background"),
+  "message:border": primary("message:border"),
+  "info:border": primary("info:border"),
+  "success:border": primary("success:border"),
+  "warning:border": primary("warning:border"),
+  "danger:border": primary("danger:border"),
+  "message:text": primary("message:text"),
+  "info:text": primary("info:text"),
+  "success:text": primary("success:text"),
+  "warning:text": primary("warning:text"),
+  "danger:text": primary("danger:text"),
 };
 
 export function tertiary(...names: Colors[]): string {

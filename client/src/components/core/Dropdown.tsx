@@ -200,13 +200,7 @@ function Dropdown({
     });
   }
 
-  const classes = cx(
-    "relative inline-block",
-    size === "sm" && "w-32",
-    size === "md" && "w-56",
-    size === "lg" && "w-80",
-    className
-  );
+  const classes = cx("relative", size === "sm" && "w-32", size === "md" && "w-56", size === "lg" && "w-80", className);
   const iconClasses = cx(
     "flex w-4 h-4 ml-auto shrink-0",
     "transition-transform",

@@ -1,0 +1,282 @@
+openapi: "3.0.0"
+info:
+    version: "1.0.0"
+    title: "Sample API"
+    description: Buy or rent spacecrafts
+
+paths:
+    /agent:
+        get:
+            summary: Agent info.
+            description: Get the information about the running agent.
+            security:
+                - ApiKeyAuth: []
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/Agent"
+                "401":
+                    description: Unauthorized
+
+    /auth/logon:
+        post:
+            summary: Logon a user.
+            description: |
+                Logon a user and returns an authentication token.
+            security:
+                - ApiKeyAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Authentication"
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SecurityToken"
+                "400":
+                    description: Invalid username/password supplied
+                "401":
+                    description: Unauthorized
+
+    /auth/logout:
+        post:
+            summary: Logout a user.
+            description: |
+                This endpoint is used to logout a user, i.e. to invalidate the security and refresh tokens.
+                While the Authorization header is required, this endpoint will not return a 403 Forbidden if the
+                tokens are invalid or expired. Instead, it will return a 200 OK since the goal is only to 
+                invalidate the tokens. Nevertheless if the `Authorization` header is missing or syntactically
+                wrong, a 400 Bad Request will be returned.
+            security:
+                - ApiKeyAuth: []
+            responses:
+                "200":
+                    description: Successful operation
+                "400":
+                    description: Invalid username/password supplied
+                "401":
+                    description: Unauthorized
+
+    /auth/refresh-token:
+        post:
+            summary: Generate a new security token from a refresh token
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/RefreshToken"
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/SecurityToken"
+                "401":
+                    description: Unauthorized
+
+    /users/{username}/catalog:
+        get:
+            summary: List all catalog entries for the specified `username` and `path`.
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: username
+                  in: path
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/Username"
+                - name: path
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                "404":
+                    description: Path not found
+                "401":
+                    description: Unauthorized
+
+    /users/{username}/catalog/rename:
+        post:
+            summary: Rename a catalog entry for the specified `username` and `path`.
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: username
+                  in: path
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/Rename"
+                - name: path
+                  in: query
+                  required: true
+                  schema:
+                      type: string
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                "404":
+                    description: Path not found
+                "401":
+                    description: Unauthorized
+
+    /users/{username}/settings:
+        post:
+            summary: Save the user settings.
+            security:
+                - ApiKeyAuth: []
+            parameters:
+                - name: username
+                  in: path
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/Rename"
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                "404":
+                    description: Path not found
+                "401":
+                    description: Unauthorized
+
+    /users/{username}/user:
+        get:
+            parameters:
+                - name: username
+                  in: path
+                  required: true
+                  schema:
+                      $ref: "#/components/schemas/Username"
+            responses:
+                "200":
+                    description: Successful operation
+                    content:
+                        application/json:
+                            schema:
+                                type: string
+                "404":
+                    description: User not found
+                "401":
+                    description: Unauthorized
+
+components:
+    schemas:
+        Agent:
+            description: Description of the agent.
+            x-namespace: agent
+            type: object
+            required:
+                - version
+            properties:
+                version:
+                    type: string
+
+        Authentication:
+            x-namespace: auth
+            type: object
+            required:
+                - method
+                - credentials
+            properties:
+                method:
+                    type: string
+                    enum:
+                        - user_password
+                credentials:
+                    type: object
+                    properties:
+                        username:
+                            $ref: "#/components/schemas/Username"
+                        password:
+                            type: string
+                    required:
+                        - username
+                        - password
+
+        Error:
+            type: object
+            required:
+                - message
+            properties:
+                message:
+                    description: A human readable error message
+                    type: string
+
+        RefreshToken:
+            description: The request body of the POST /auth/refresh-token endpoint.
+            x-namespace: auth
+            type: object
+            properties:
+                refresh_token:
+                    type: string
+            required:
+                - refresh_token
+
+        Rename:
+            description: The request body of the POST /users/:username/catalog endpoint.
+            type: object
+            properties:
+                new_name:
+                    type: string
+            required:
+                - new_name
+
+        SecurityToken:
+            description: A security token used for authentication.
+            x-namespace: auth
+            type: object
+            properties:
+                token:
+                    type: string
+                token_type:
+                    type: string
+                    enum:
+                        - Bearer
+                refresh_token:
+                    type: string
+                expires_in:
+                    type: number
+                user_id:
+                    type: string
+
+        Username:
+            description: A username
+            type: string
+
+    securitySchemes:
+        ApiKeyAuth:
+            type: apiKey
+            in: header
+            name: X-Api-Key
+
+        BearerAuth:
+            type: http
+            scheme: bearer
+
+security:
+    - ApiKeyAuth: []
+    - BearerAuth: []

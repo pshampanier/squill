@@ -7,3 +7,5 @@ pub mod environments;
 pub mod workspaces;
 pub mod collections;
 pub mod errors;
+pub mod drivers;
+pub mod datasources;

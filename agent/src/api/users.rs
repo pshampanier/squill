@@ -1,6 +1,8 @@
+use crate::models::connections::Connection;
 use crate::models::users::UserSettings;
 use crate::resources::catalog;
 use crate::resources::catalog::CatalogEntry;
+use crate::resources::catalog::CatalogSection;
 use crate::resources::users;
 use crate::utils::validators;
 use crate::server::context::RequestContext;
@@ -9,10 +11,13 @@ use crate::api::error::Error;
 use crate::models::users::User;
 use crate::server::state::ServerState;
 use anyhow::Context;
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::routing::post;
 use axum::routing::put;
 use axum::{ Json, Router, routing::get };
 use axum::extract::{ Path, Query };
+use serde_json::Value;
 
 /// GET /users/:username/user
 ///
@@ -38,9 +43,9 @@ async fn get_user(context: ServerResult<RequestContext>, Path(username): Path<St
     }
 }
 
-/// Query parameters for the `read_user_catalog` function.
+/// Query parameters for the catalog.
 #[derive(serde::Deserialize)]
-struct ReadUserCatalogQuery {
+struct CatalogQueryParameters {
     path: String,
 }
 
@@ -69,7 +74,7 @@ struct ReadUserCatalogQuery {
 async fn read_user_catalog(
     context: ServerResult<RequestContext>,
     Path(username): Path<String>,
-    Query(params): Query<ReadUserCatalogQuery>
+    Query(params): Query<CatalogQueryParameters>
 ) -> ServerResult<Json<Vec<CatalogEntry>>> {
     // First we need to sanitize the username and path to make sure they will not pose security threats.
     let username = validators::sanitize_username(username.as_str())?;
@@ -103,7 +108,7 @@ struct RenameUserCatalogEntry {
 async fn rename_user_catalog_entry(
     context: ServerResult<RequestContext>,
     Path(username): Path<String>,
-    Query(params): Query<ReadUserCatalogQuery>,
+    Query(params): Query<CatalogQueryParameters>,
     Json(args): Json<RenameUserCatalogEntry>
 ) -> ServerResult<()> {
     // First we need to sanitize the username and path to make sure they will not pose security threats.
@@ -152,21 +157,62 @@ async fn save_user_settings(
     Ok(Json(user_settings))
 }
 
+/// POST /users/:username/catalog?path=...
+///
+/// Create a new resource in the user's catalog.
+async fn create_user_resource(
+    context: ServerResult<RequestContext>,
+    Path(username): Path<String>,
+    Query(params): Query<CatalogQueryParameters>,
+    resource: Json<Value>
+) -> impl IntoResponse {
+    // To ease the implementation of the function, a closure is used to handle the result of the function. This way
+    // we can use the `?` operator to propagate the error to the caller by leveraging the existing traits.
+    (|| -> ServerResult<StatusCode> {
+        let username = validators::sanitize_username(username.as_str())?;
+        let catalog_path = validators::sanitize_catalog_path(params.path.as_str())?;
+
+        // Make sure we are not trying to access a directory that we are not allowed to.
+        if username.ne(context?.get_username()) {
+            return Err(Error::Forbidden);
+        }
+
+        match CatalogSection::from_path(&catalog_path) {
+            CatalogSection::Connections => {
+                let connection: Connection = serde_json::from_value(resource.0)?;
+                users::create_user_resource(&username, &catalog_path, &connection)?;
+            }
+            CatalogSection::Environments => {
+                todo!();
+            }
+            CatalogSection::Favorites => {
+                todo!();
+            }
+            CatalogSection::Workspaces => {
+                todo!("Create a workspace");
+            }
+        }
+
+        Ok(StatusCode::CREATED)
+    })()
+}
+
 pub fn authenticated_routes(state: ServerState) -> Router {
     Router::new()
-        .route("/users/:username/user", get(get_user))
         .route("/users/:username/catalog", get(read_user_catalog))
+        .route("/users/:username/catalog", post(create_user_resource))
         .route("/users/:username/catalog/rename", post(rename_user_catalog_entry))
         .route("/users/:username/settings", put(save_user_settings))
+        .route("/users/:username/user", get(get_user))
         .with_state(state)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::api::users::tests::catalog::CatalogEntryType;
+    use crate::api::users::tests::catalog::{ CatalogEntryType, CatalogSection };
     use crate::resources::users::{ create_user, delete_user };
     use crate::server::state::ServerState;
-    use crate::utils::constants::{ DEFAULT_WORKSPACE_NAME, USER_CATALOG_WORKSPACES_DIRNAME };
+    use crate::utils::constants::DEFAULT_WORKSPACE_NAME;
     use crate::utils::user_error::UserError;
     use crate::utils::validators::Username;
     use crate::utils::tests::settings;
@@ -228,7 +274,7 @@ mod tests {
         let result = read_user_catalog(
             ServerResult::Ok(context),
             Path(username.to_string()),
-            Query(ReadUserCatalogQuery { path: USER_CATALOG_WORKSPACES_DIRNAME.to_string() })
+            Query(CatalogQueryParameters { path: CatalogSection::Workspaces.as_str().to_string() })
         ).await;
         assert!(result.is_ok());
         assert!(result.as_ref().unwrap().len() == 1);
@@ -241,7 +287,7 @@ mod tests {
         let result = read_user_catalog(
             ServerResult::Ok(context),
             Path("../user1".to_string()),
-            Query(ReadUserCatalogQuery { path: USER_CATALOG_WORKSPACES_DIRNAME.to_string() })
+            Query(CatalogQueryParameters { path: CatalogSection::Workspaces.as_str().to_string() })
         ).await;
         assert!(matches!(result, Err(Error::UserError(UserError::InvalidParameter(_)))));
 
@@ -251,7 +297,7 @@ mod tests {
         let result = read_user_catalog(
             ServerResult::Ok(context),
             Path(username.to_string()),
-            Query(ReadUserCatalogQuery { path: "../catalog/workspaces".to_string() })
+            Query(CatalogQueryParameters { path: "../catalog/workspaces".to_string() })
         ).await;
         assert!(matches!(result, Err(Error::InternalServerError)));
 
@@ -261,7 +307,7 @@ mod tests {
         let result = read_user_catalog(
             ServerResult::Ok(context),
             Path("another_user".to_string()),
-            Query(ReadUserCatalogQuery { path: USER_CATALOG_WORKSPACES_DIRNAME.to_string() })
+            Query(CatalogQueryParameters { path: CatalogSection::Workspaces.as_str().to_string() })
         ).await;
         assert!(matches!(result, Err(Error::Forbidden)));
 
@@ -271,8 +317,8 @@ mod tests {
         let result = read_user_catalog(
             ServerResult::Ok(context),
             Path(username.to_string()),
-            Query(ReadUserCatalogQuery {
-                path: format!("{}/path_that_does_not_exist", USER_CATALOG_WORKSPACES_DIRNAME),
+            Query(CatalogQueryParameters {
+                path: format!("{}/path_that_does_not_exist", CatalogSection::Workspaces.as_str()),
             })
         ).await;
         assert!(matches!(result, Err(Error::UserError(UserError::NotFound(_)))));

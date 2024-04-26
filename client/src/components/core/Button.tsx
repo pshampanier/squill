@@ -1,7 +1,7 @@
 import { ColorsContext } from "@/stores/ColorsContext";
 import { ColorsFunction, primary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
-import { cx } from "classix";
+import { twMerge as tw } from "tailwind-merge";
 import { SyntheticEvent, useContext } from "react";
 
 export type ButtonVariant = "solid" | "outline" | "ghost";
@@ -38,8 +38,8 @@ export default function Button({
   tabIndex,
 }: ButtonProps) {
   colors = colors || useContext(ColorsContext) || primary;
-  const classes = cx(
-    "flex flex-row h-9 items-center p-2 rounded box-border border-2 text-sm",
+  const classes = tw(
+    "flex flex-row h-9 items-center p-2 rounded box-border border-2 text-sm select-none ripple",
     colors("text"),
     (variant === "solid" || variant === "ghost") && "border-transparent",
     variant === "solid" && colors("selected:background", "selected:text", "hover:background", "hover:text"),

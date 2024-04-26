@@ -1,10 +1,10 @@
-mod commandline;
-mod settings;
-mod server;
 mod api;
-mod utils;
+mod commandline;
 mod models;
 mod resources;
+mod settings;
+mod server;
+mod utils;
 
 use std::path::PathBuf;
 use tracing_appender::rolling;

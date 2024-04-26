@@ -1,11 +1,7 @@
 use crate::err_param;
 use crate::models::auth::AuthenticationMethod;
-use crate::utils::constants::{
-    WINDOWS_RESERVED_NAMES,
-    USER_CATALOG_ENVIRONMENTS_DIRNAME,
-    USER_CATALOG_WORKSPACES_DIRNAME,
-    USER_CATALOG_FAVORITES_DIRNAME,
-};
+use crate::resources::catalog::CatalogSection;
+use crate::utils::constants::WINDOWS_RESERVED_NAMES;
 use anyhow::{ anyhow, Result };
 use axum::http::HeaderValue;
 use lazy_static::lazy_static;
@@ -126,9 +122,11 @@ pub fn sanitize_catalog_path(value: &str) -> Result<CatalogPath> {
     if path.components().count() == 0 {
         return Err(anyhow!("Empty path is not valid."));
     } else if
-        ![USER_CATALOG_ENVIRONMENTS_DIRNAME, USER_CATALOG_WORKSPACES_DIRNAME, USER_CATALOG_FAVORITES_DIRNAME].contains(
-            &path.components().next().unwrap().as_os_str().to_str().unwrap()
-        )
+        !CatalogSection::variants()
+            .into_iter()
+            .map(|v| v.as_str())
+            .collect::<Vec<&str>>()
+            .contains(&path.components().next().unwrap().as_os_str().to_str().unwrap())
     {
         // The path must be relative to the root of the user's catalog directory and so must start by either
         // `environments` or `workspaces`.
@@ -148,6 +146,10 @@ pub fn sanitize_catalog_path_component(value: &str) -> Result<CatalogPathCompone
         return Err(err_param!("'{}' is not allowed.", value));
     }
     Ok(Sanitized::new(value.to_string()))
+}
+
+pub fn join_catalog_path(parent: &CatalogPath, child: &CatalogPathComponent) -> CatalogPath {
+    Sanitized::new(format!("{}/{}", parent.as_str(), child.as_str()))
 }
 
 /// Check if a path component is valid.

@@ -15,7 +15,7 @@ export default function PreviewBox({ className, children }: PreviewBoxProps) {
 
   return (
     <div className={classes}>
-      <div className="flex p-4 w-full h-full ">{mode === "preview" && children}</div>
+      <div className="flex p-4 w-full h-full flex-col space-y-2">{mode === "preview" && children}</div>
     </div>
   );
 }

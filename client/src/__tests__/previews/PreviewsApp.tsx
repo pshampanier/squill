@@ -20,6 +20,8 @@ import DropdownPreview from "./core/Dropdown.preview";
 import StepperPreview from "./layouts/Stepper.preview";
 import InputsPreview from "./core/Inputs.preview";
 import RadioPreview from "./core/Radio.preview";
+import ModalPreview from "./layouts/Modal.preview";
+import AlertPreview from "./core/Alert.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -34,6 +36,7 @@ export function PreviewsApp() {
     <>
       <Sidebar>
         <SidebarSection label="components">
+          <PreviewSidebarItem view="Alert" />
           <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Buttons" />
           <PreviewSidebarItem view="Dropdown" />
@@ -46,8 +49,9 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
         <SidebarSection label="layouts">
-          <PreviewSidebarItem view="Space" />
           <PreviewSidebarItem view="Colors" />
+          <PreviewSidebarItem view="Modal" />
+          <PreviewSidebarItem view="Space" />
           <PreviewSidebarItem view="Stepper" />
         </SidebarSection>
       </Sidebar>
@@ -59,6 +63,7 @@ export function PreviewsApp() {
           </ButtonGroup>
         </header>
         <div className="flex flex-col space-y-10 w-3/4 h-full py-2">
+          {view === "Alert" && <AlertPreview />}
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Dropdown" && <DropdownPreview />}
@@ -66,6 +71,7 @@ export function PreviewsApp() {
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
           {view === "Menu" && <MenuPreview />}
+          {view === "Modal" && <ModalPreview />}
           {view === "Radio" && <RadioPreview />}
           {view === "Sidebar" && <SidebarPreview />}
           {view === "Space" && <SpacePreview />}

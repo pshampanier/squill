@@ -4,9 +4,6 @@ pub const USERS_DIRNAME: &str = "users";
 /// Name of the file used to store the user information.
 pub const USER_FILENAME: &str = "user.json";
 pub const USER_CATALOG_DIRNAME: &str = "catalog";
-pub const USER_CATALOG_ENVIRONMENTS_DIRNAME: &str = "environments";
-pub const USER_CATALOG_WORKSPACES_DIRNAME: &str = "workspaces";
-pub const USER_CATALOG_FAVORITES_DIRNAME: &str = "favorites";
 pub const USER_COLLECTIONS_DIRNAME: &str = "collections";
 pub const USER_DATA_DIRNAME: &str = "data";
 

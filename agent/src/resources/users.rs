@@ -1,20 +1,19 @@
 use crate::models::users::{ User, UserSettings };
 use crate::resources::workspaces::create_workspace;
-use crate::settings;
+use crate::{ err_conflict, settings };
 use crate::utils::constants::{
     DEFAULT_WORKSPACE_NAME,
     USER_CATALOG_DIRNAME,
-    USER_CATALOG_ENVIRONMENTS_DIRNAME,
-    USER_CATALOG_WORKSPACES_DIRNAME,
-    USER_CATALOG_FAVORITES_DIRNAME,
     USER_COLLECTIONS_DIRNAME,
     USER_DATA_DIRNAME,
     USER_FILENAME,
 };
-use crate::utils::validators::Username;
+use crate::utils::validators::{ join_catalog_path, sanitize_catalog_path_component, CatalogPath, Username };
 use anyhow::{ anyhow, Context, Result };
 use std::path::PathBuf;
 use crate::resources::catalog::{ self };
+use crate::resources::catalog::CatalogSection;
+use crate::resources::Resource;
 
 /// Create a new user.
 ///
@@ -63,6 +62,7 @@ pub fn create_user(username: &Username) -> Result<User> {
     // users
     // └── :username
     //     ├── catalog
+    //     │   ├── connections
     //     │   ├── environments
     //     │   ├── favorites
     //     │   └── workspaces
@@ -70,11 +70,11 @@ pub fn create_user(username: &Username) -> Result<User> {
     //     └── data
     //
     std::fs::create_dir(user_dir.join(USER_CATALOG_DIRNAME))?;
-    std::fs::create_dir(user_dir.join(USER_CATALOG_DIRNAME).join(USER_CATALOG_ENVIRONMENTS_DIRNAME))?;
-    std::fs::create_dir(user_dir.join(USER_CATALOG_DIRNAME).join(USER_CATALOG_FAVORITES_DIRNAME))?;
-    std::fs::create_dir(user_dir.join(USER_CATALOG_DIRNAME).join(USER_CATALOG_WORKSPACES_DIRNAME))?;
     std::fs::create_dir(user_dir.join(USER_COLLECTIONS_DIRNAME))?;
     std::fs::create_dir(user_dir.join(USER_DATA_DIRNAME))?;
+    for variant in CatalogSection::variants() {
+        std::fs::create_dir(user_dir.join(USER_CATALOG_DIRNAME).join(variant.as_str()))?;
+    }
 
     // Create a default workspace for the user and save it to the filesystem.
     let workflow_catalog_path = catalog::get_workspace_catalog_path(DEFAULT_WORKSPACE_NAME)?;
@@ -123,6 +123,37 @@ pub fn save_user_settings(username: &Username, user_settings: UserSettings) -> R
     Ok(user.settings)
 }
 
+/// Create a new resource for the user.
+///
+/// This function creates a new resource in the catalog and saves the resource itself to the filesystem
+/// under the collections directory.
+pub fn create_user_resource<T>(username: &Username, parent_path: &CatalogPath, resource: &T) -> Result<()>
+    where T: Resource
+{
+    // Sanitize the resource name to make sure it will not pose security threats.
+    let name = sanitize_catalog_path_component(resource.name())?;
+
+    // The full path of the resource in the catalog.
+    let catalog_path = join_catalog_path(parent_path, &name);
+
+    // The newly created resource must not conflict with an existing resource or folder.
+    if catalog::exists(username, &catalog_path) {
+        return Err(err_conflict!("'{}' already exists.", catalog_path));
+    }
+
+    // Create the resource in the catalog.
+    catalog::create_file(username, &catalog_path, resource.id())?;
+
+    // Save the resource to the filesystem.
+    if let Err(e) = resource.save(username) {
+        // If the save failed, we need to remove the resource entry from the catalog.
+        catalog::delete(username, &catalog_path)?;
+        return Err(e);
+    }
+
+    Ok(())
+}
+
 pub fn get_collections_dir(username: &Username) -> PathBuf {
     settings::get_user_dir(username.as_str()).join(USER_COLLECTIONS_DIRNAME)
 }
@@ -130,7 +161,43 @@ pub fn get_collections_dir(username: &Username) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::{ constants::USERS_DIRNAME, tests::set_readonly, tests::settings };
+    use crate::{
+        api::error::Error,
+        models::connections::Connection,
+        utils::{ constants::USERS_DIRNAME, tests::{ set_readonly, settings }, user_error::UserError },
+    };
+
+    #[test]
+    fn test_create_user_resource() {
+        // setup
+        let username: Username = "test_user".into();
+        let temp_dir = tempfile::tempdir().unwrap();
+        settings::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
+        create_user(&username).unwrap();
+
+        // 1. create a resource (expect to succeed)
+        let connection = Connection::new("Test Connection".to_string());
+        let parent_path = CatalogPath::from("connections");
+        assert!(create_user_resource(&username, &parent_path, &connection).is_ok());
+
+        // 2. create the same resource again (expect to fail)
+        let result = create_user_resource(&username, &parent_path, &connection);
+        assert!(result.is_err());
+        assert!(matches!(Error::from(result.unwrap_err()), Error::UserError(UserError::Conflict(_))));
+
+        // 3. set the base directory to a read-only directory (expect to fail)
+        let collection_dir = settings::get_user_dir(username.as_str()).join(USER_COLLECTIONS_DIRNAME);
+        let restore_permissions = set_readonly(&collection_dir);
+        let connection = Connection::new("Test Connection 2".to_string());
+        assert!(create_user_resource(&username, &parent_path, &connection).is_err());
+        std::fs::set_permissions(&collection_dir, restore_permissions).unwrap();
+
+        // 4. Using a name that contains a forbidden character (expect to fail)
+        let connection = Connection::new("Test/Connection".to_string());
+        let result = create_user_resource(&username, &parent_path, &connection);
+        assert!(result.is_err());
+        assert!(matches!(Error::from(result.unwrap_err()), Error::UserError(UserError::InvalidParameter(_))));
+    }
 
     #[test]
     fn test_create_user() {
@@ -158,9 +225,6 @@ mod tests {
         // 5. set the base directory to a non-existent directory (expect to fail)
         settings::set_base_dir(temp_dir.path().join("non/existent/directory").as_path().to_str().unwrap().to_string());
         assert!(create_user(&"doc".into()).is_err());
-
-        // cleanup
-        std::fs::remove_dir_all(temp_dir).unwrap();
     }
 
     #[test]

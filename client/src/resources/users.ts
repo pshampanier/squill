@@ -7,7 +7,7 @@ export type CatalogEntryType = "folder" | "workspace" | "environment" | "unknown
 export type CatalogEntry = CollectionItem<CatalogEntryType>;
 
 /**
- * Users resource
+ * User resources
  *
  * This resource is used to interact with the users of the application.
  * Once the logon method is called, the current user is stored in the Users object and can be accessed using the

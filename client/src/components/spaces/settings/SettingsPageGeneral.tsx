@@ -40,8 +40,8 @@ export default function SettingsPageGeneral() {
         <Switch
           size="sm"
           defaultChecked={userSettings.showFavorites}
-          onChange={(value) => {
-            updateUserSettings({ showFavorites: value });
+          onChange={(e) => {
+            updateUserSettings({ showFavorites: e.target.checked });
           }}
         />
       </SettingsPage.Setting>
@@ -52,8 +52,8 @@ export default function SettingsPageGeneral() {
         <Switch
           size="sm"
           defaultChecked={userSettings.showFileExtensions}
-          onChange={(value) => {
-            updateUserSettings({ showFileExtensions: value });
+          onChange={(e) => {
+            updateUserSettings({ showFileExtensions: e.target.checked });
           }}
         />
       </SettingsPage.Setting>
@@ -61,8 +61,8 @@ export default function SettingsPageGeneral() {
         <Switch
           size="sm"
           defaultChecked={userSettings.showRecentlyOpened}
-          onChange={(value) => {
-            updateUserSettings({ showRecentlyOpened: value });
+          onChange={(e) => {
+            updateUserSettings({ showRecentlyOpened: e.target.checked });
           }}
         />
       </SettingsPage.Setting>

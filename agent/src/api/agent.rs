@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use axum::{ extract::Json, routing::get, Router };
 use crate::models::agent::AgentSettings;
+use crate::models::drivers::{ Capability, Driver, DRIVER_PORT, DRIVER_USER };
 use crate::{ api::error::ServerResult, models::agent::Agent };
 use crate::server::state::ServerState;
 
@@ -12,6 +15,55 @@ use crate::server::state::ServerState;
 async fn get_agent() -> ServerResult<Json<Agent>> {
     let response = Agent {
         version: env!("CARGO_PKG_VERSION"),
+        drivers: vec![
+            Driver {
+                name: "sqlite".to_string(),
+                label: "SQLite".to_string(),
+                icon: "sqlite.svg".to_string(),
+                description: "SQLite is a C-language library that implements a small, fast, self-contained, high-reliability, full-featured, SQL database engine.".to_string(),
+                capabilities: vec![
+                    Capability::Sql,
+                    Capability::ConnectFile,
+                    Capability::ConnectString,
+                    Capability::ReadOnly
+                ],
+                ..Default::default()
+            },
+            Driver {
+                name: "postgresql".to_string(),
+                label: "PostgreSQL".to_string(),
+                icon: "postgresql.svg".to_string(),
+                description: "PostgreSQL is a powerful, open source object-relational database system with over 30 years of active development that has earned it a strong reputation for reliability, feature robustness, and performance.".to_string(),
+                capabilities: vec![
+                    Capability::Sql,
+                    Capability::AuthUserPassword,
+                    Capability::ConnectString,
+                    Capability::ConnectHost,
+                    Capability::ConnectSocket
+                ],
+                defaults: HashMap::from([
+                    (DRIVER_PORT.to_string(), "5432".to_string()),
+                    (DRIVER_USER.to_string(), "postgres".to_string()),
+                ]),
+            },
+            Driver {
+                name: "mysql".to_string(),
+                label: "MySQL".to_string(),
+                icon: "mysql.svg".to_string(),
+                description: "MySQL is an open-source relational database management system (RDBMS).".to_string(),
+                capabilities: vec![
+                    Capability::Sql,
+                    Capability::AuthUserPassword,
+                    Capability::ConnectString,
+                    Capability::ConnectHost,
+                    Capability::ConnectSocket
+                ],
+                defaults: HashMap::from([
+                    (DRIVER_PORT.to_string(), "3306".to_string()),
+                    (DRIVER_USER.to_string(), "root".to_string()),
+                ]),
+            }
+        ],
     };
     Ok(Json(response))
 }

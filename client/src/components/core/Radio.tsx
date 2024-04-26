@@ -13,6 +13,7 @@ type RadioProps = {
   className?: string;
   required?: boolean;
   colors?: ColorsFunction;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
 Radio.defaultProps = {
@@ -37,8 +38,6 @@ export default function Radio(props: RadioProps) {
     ),
     label: cx("ms-2 text-sm font-medium select-none", colors("text")),
   };
-
-  // onInvalid={handleValidation}
 
   return (
     <div className={classes.container}>

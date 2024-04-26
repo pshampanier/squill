@@ -10,6 +10,7 @@ import {
   MEDIA_TYPE_PLAIN_TEXT,
   HTTP_HEADER_X_API_KEY,
 } from "@/utils/constants";
+import { Driver } from "@/models/drivers";
 
 const API_PATH = "/api/v1";
 
@@ -37,6 +38,9 @@ export class Agent {
     items: { type: "string", options: { format: new RegExp(`^${AUTHENTICATION_METHOD.join("|")}$`) } },
   })
   readonly authenticationMethods!: AuthenticationMethod[];
+
+  @serializable("array", { items: { type: "object", options: { factory: Driver } } })
+  readonly drivers!: Driver[];
 
   /// The security token used to authenticate the client.
   private securityToken: SecurityToken = null;

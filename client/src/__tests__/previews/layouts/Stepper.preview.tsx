@@ -14,18 +14,18 @@ export default function StepperPreview() {
         <Preview.Description>
           The Stepper component is a navigation component that allows users to navigate through a series of steps.
         </Preview.Description>
-        <PreviewBox className="flex text-sm text-gray-500 h-full">
+        <PreviewBox className="flex text-sm text-gray-500 h-[500px]">
           <Stepper>
-            <Stepper.Step icon={WrenchIcon} title="Choose Driver">
+            <Stepper.Step name="driver" icon={WrenchIcon} title="Choose Driver">
               <p>Step 1 content</p>
             </Stepper.Step>
-            <Stepper.Step icon={StarIcon} title="Connection">
+            <Stepper.Step name="connection" icon={StarIcon} title="Connection">
               <p>Step 2 content</p>
             </Stepper.Step>
-            <Stepper.Step icon={UserIcon} title="Authentication">
+            <Stepper.Step name="auth" icon={UserIcon} title="Authentication">
               <p>Step 3 content</p>
             </Stepper.Step>
-            <Stepper.Step icon={UserIcon} title="Parameters">
+            <Stepper.Step name="params" icon={UserIcon} title="Parameters">
               <p>Step 4 content</p>
             </Stepper.Step>
           </Stepper>

@@ -53,18 +53,15 @@ impl From<anyhow::Error> for Error {
     }
 }
 
+impl From<UserError> for Error {
+    fn from(err: UserError) -> Self {
+        Error::UserError(err)
+    }
+}
+
 impl IntoResponse for UserError {
     fn into_response(self) -> Response<Body> {
         let (response_error, status) = match self {
-            UserError::NotFound(message) =>
-                (
-                    ResponseError {
-                        status: StatusCode::NOT_FOUND.as_u16(),
-                        code: "not_found".to_string(),
-                        message,
-                    },
-                    StatusCode::NOT_FOUND,
-                ),
             UserError::InvalidParameter(message) =>
                 (
                     ResponseError {
@@ -73,6 +70,24 @@ impl IntoResponse for UserError {
                         message,
                     },
                     StatusCode::BAD_REQUEST,
+                ),
+            UserError::Conflict(message) =>
+                (
+                    ResponseError {
+                        status: StatusCode::CONFLICT.as_u16(),
+                        code: "conflict".to_string(),
+                        message,
+                    },
+                    StatusCode::CONFLICT,
+                ),
+            UserError::NotFound(message) =>
+                (
+                    ResponseError {
+                        status: StatusCode::NOT_FOUND.as_u16(),
+                        code: "not_found".to_string(),
+                        message,
+                    },
+                    StatusCode::NOT_FOUND,
                 ),
         };
         match serde_json::to_string(&response_error) {
@@ -95,5 +110,12 @@ impl IntoResponse for UserError {
 impl From<InvalidHeaderValue> for Error {
     fn from(_: InvalidHeaderValue) -> Self {
         Error::InternalServerError
+    }
+}
+
+/// Convert a `serde_json::Error` into a `BadRequest` error.
+impl From<serde_json::Error> for Error {
+    fn from(err: serde_json::Error) -> Self {
+        Error::BadRequest(err.to_string())
     }
 }

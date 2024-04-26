@@ -1,9 +1,11 @@
 use crate::json_enum;
+use crate::models::drivers::Driver;
 use serde::{ Serialize, Deserialize };
 
 #[derive(Serialize, Deserialize)]
 pub struct Agent {
     pub version: &'static str,
+    pub drivers: Vec<Driver>,
 }
 
 json_enum!(LogLevel, Error, Warning, Info, Debug, Trace);
@@ -19,7 +21,7 @@ pub struct AgentSettings {
     /// The entry 0.0.0.0 allows listening for all IPv4 addresses.
     pub listen_address: String,
 
-    /// The tcpip port to listen to
+    /// The tcp/ip port to listen to
     pub port: u16,
 
     /// The API key used to authenticate the client applications.

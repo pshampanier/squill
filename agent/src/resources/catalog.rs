@@ -4,17 +4,13 @@ use crate::{
     models::collections::CollectionItem,
     settings,
     utils::{
-        constants::{
-            CATALOG_ENTRY_FILE_EXTENSION,
-            USER_CATALOG_DIRNAME,
-            USER_CATALOG_ENVIRONMENTS_DIRNAME,
-            USER_CATALOG_WORKSPACES_DIRNAME,
-        },
+        constants::{ CATALOG_ENTRY_FILE_EXTENSION, USER_CATALOG_DIRNAME },
         validators::{ sanitize_catalog_path, CatalogPath, CatalogPathComponent, Username },
     },
 };
 use anyhow::{ Context, Result };
 use serde::{ Deserialize, Serialize };
+use core::panic;
 use std::path::{ Path, PathBuf };
 use tracing::{ error, warn };
 
@@ -25,7 +21,9 @@ pub type CatalogEntry = CollectionItem<CatalogEntryType>;
 #[serde(rename_all = "snake_case")]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum CatalogEntryType {
+    Connection,
     Environment,
+    Favorite,
     Workspace,
     Folder,
     Unknown,
@@ -41,17 +39,72 @@ impl Default for CollectionItem<CatalogEntryType> {
     }
 }
 
+/// A Section of the catalog.
+///
+/// The catalog is organized in different sections:
+//
+/// ```text
+/// └── users
+///     └── :username
+///         ├── user.json
+///         └── catalog                   <- The root of the catalog
+///             ├── connections              |
+///             ├── environments          <- | Sections of the catalog
+///             ├── workspaces               |
+///             └── favorites                |
+/// ```
+#[derive(PartialEq, Debug)]
+pub enum CatalogSection {
+    Connections,
+    Environments,
+    Favorites,
+    Workspaces,
+}
+
+impl CatalogSection {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CatalogSection::Connections => "connections",
+            CatalogSection::Workspaces => "workspaces",
+            CatalogSection::Environments => "environments",
+            CatalogSection::Favorites => "favorites",
+        }
+    }
+
+    pub fn variants() -> Vec<&'static CatalogSection> {
+        vec![
+            &CatalogSection::Connections,
+            &CatalogSection::Workspaces,
+            &CatalogSection::Environments,
+            &CatalogSection::Favorites
+        ]
+    }
+
+    /// Get the section from a sanitized path.
+    ///
+    /// Because the path is sanitized, we can assume that the first component of the path is the section and this method
+    /// should never fail.
+    pub fn from_path(path: &CatalogPath) -> CatalogSection {
+        match path.as_str().split('/').next() {
+            Some("connections") => CatalogSection::Connections,
+            Some("workspaces") => CatalogSection::Workspaces,
+            Some("environments") => CatalogSection::Environments,
+            Some("favorites") => CatalogSection::Favorites,
+            _ => panic!("Invalid path: {}", path.as_str()),
+        }
+    }
+}
+
 /// Create a file catalog entry to the filesystem.
 ///
 /// The type of the entry is determined by the path.
-pub fn create_file(username: &Username, path: &CatalogPath) -> Result<CatalogEntry> {
-    let item_type = if path.as_str().starts_with(USER_CATALOG_WORKSPACES_DIRNAME) {
-        CatalogEntryType::Workspace
-    } else if path.as_str().starts_with(USER_CATALOG_ENVIRONMENTS_DIRNAME) {
-        CatalogEntryType::Environment
-    } else {
-        // We are assuming that the path is a valid and safe path since it comes from sanitize_catalog_path().
-        panic!("Invalid path: {}", path.as_str());
+pub fn create_file(username: &Username, path: &CatalogPath, id: &str) -> Result<CatalogEntry> {
+    let section = CatalogSection::from_path(path);
+    let item_type = match section {
+        CatalogSection::Workspaces => CatalogEntryType::Workspace,
+        CatalogSection::Environments => CatalogEntryType::Environment,
+        CatalogSection::Connections => CatalogEntryType::Connection,
+        CatalogSection::Favorites => panic!("Files cannot be created in section: {}", section.as_str()),
     };
     let fs_path = to_fs_path(username, path).with_extension(CATALOG_ENTRY_FILE_EXTENSION);
     if fs_path.exists() {
@@ -60,7 +113,7 @@ pub fn create_file(username: &Username, path: &CatalogPath) -> Result<CatalogEnt
     let entry = CatalogEntry {
         item_type,
         name: fs_path.file_stem().unwrap().to_str().unwrap().to_owned(),
-        ..CatalogEntry::default()
+        id: id.to_owned(),
     };
     write_fs_entry(&fs_path, &entry)?;
     Ok(entry)
@@ -237,7 +290,7 @@ fn to_fs_path(username: &Username, path: &CatalogPath) -> PathBuf {
 }
 
 pub fn get_workspace_catalog_path(path: &str) -> Result<CatalogPath> {
-    sanitize_catalog_path(format!("{}/{}", USER_CATALOG_WORKSPACES_DIRNAME, path).as_str())
+    sanitize_catalog_path(format!("{}/{}", CatalogSection::Workspaces.as_str(), path).as_str())
 }
 
 #[cfg(test)]
@@ -245,12 +298,31 @@ mod tests {
     use super::*;
     use crate::{
         resources::{ catalog, users::create_user },
-        utils::{
-            constants::{ DEFAULT_WORKSPACE_NAME, USER_CATALOG_WORKSPACES_DIRNAME },
-            tests::settings,
-            validators::Username,
-        },
+        utils::{ constants::DEFAULT_WORKSPACE_NAME, tests::settings, validators::Username },
     };
+
+    #[test]
+    fn test_catalog_section_as_str() {
+        assert_eq!(CatalogSection::Connections.as_str(), "connections");
+        assert_eq!(CatalogSection::Workspaces.as_str(), "workspaces");
+        assert_eq!(CatalogSection::Environments.as_str(), "environments");
+        assert_eq!(CatalogSection::Favorites.as_str(), "favorites");
+    }
+
+    #[test]
+    fn test_catalog_section_variants() {
+        assert_eq!(CatalogSection::variants().len(), 4);
+    }
+
+    #[test]
+    fn test_catalog_section_from_path() {
+        assert_eq!(CatalogSection::from_path(&CatalogPath::from("connections")), CatalogSection::Connections);
+        assert_eq!(CatalogSection::from_path(&CatalogPath::from("connections/My Conn")), CatalogSection::Connections);
+        assert_eq!(CatalogSection::from_path(&CatalogPath::from("workspaces/A/B")), CatalogSection::Workspaces);
+        assert_eq!(CatalogSection::from_path(&CatalogPath::from("environments")), CatalogSection::Environments);
+        assert_eq!(CatalogSection::from_path(&CatalogPath::from("favorites")), CatalogSection::Favorites);
+        assert!(std::panic::catch_unwind(|| CatalogSection::from_path(&CatalogPath::from("invalid/path"))).is_err());
+    }
 
     #[test]
     fn test_rename() {
@@ -277,7 +349,7 @@ mod tests {
 
         // 2) Rename a file
         let path = CatalogPath::from("workspaces/file_to_rename");
-        catalog::create_file(&username, &path).unwrap();
+        catalog::create_file(&username, &path, "id").unwrap();
         let new_name = CatalogPathComponent::from("new_file_name");
         assert!(catalog::rename(&username, &path, &new_name).is_ok());
         assert!(
@@ -314,7 +386,7 @@ mod tests {
         let path = CatalogPath::from("workspaces/read_only_folder");
         let new_name = CatalogPathComponent::from("new_readonly_folder");
         catalog::create_dir(&username, &path).unwrap();
-        let restore_permissions = crate::utils::tests::set_readonly(&to_fs_path(&username, &path).parent().unwrap());
+        let restore_permissions = crate::utils::tests::set_readonly(to_fs_path(&username, &path).parent().unwrap());
         assert!(catalog::rename(&username, &path, &new_name).is_err());
         assert!(to_fs_path(&username, &path).exists());
         std::fs::set_permissions(to_fs_path(&username, &path).parent().unwrap(), restore_permissions).unwrap();
@@ -322,7 +394,7 @@ mod tests {
         // 6) Rename file that failed to create the new file
         let path = CatalogPath::from("workspaces/read_only_workspace");
         let new_name = CatalogPathComponent::from("new_readonly_workspace");
-        catalog::create_file(&username, &path).unwrap();
+        catalog::create_file(&username, &path, "id").unwrap();
         let restore_permissions = crate::utils::tests::set_readonly(to_fs_path(&username, &path).parent().unwrap());
         assert!(catalog::rename(&username, &path, &new_name).is_err());
         assert!(to_fs_path(&username, &path).with_extension(CATALOG_ENTRY_FILE_EXTENSION).exists());
@@ -342,7 +414,7 @@ mod tests {
 
         // 1) Create a file
         let path = CatalogPath::from("workspaces/new");
-        assert!(catalog::create_file(&username, &path).is_ok());
+        assert!(catalog::create_file(&username, &path, "id").is_ok());
         assert!(
             settings
                 ::get_user_dir(username.as_str())
@@ -353,7 +425,14 @@ mod tests {
         );
 
         // 2) Create a file that already exists
-        assert!(catalog::create_file(&username, &path).is_err());
+        assert!(catalog::create_file(&username, &path, "id").is_err());
+
+        // 3) Create a file in the favorites section (expect to panic)
+        assert!(
+            std::panic
+                ::catch_unwind(|| { catalog::create_file(&username, &CatalogPath::from("favorites/new"), "id") })
+                .is_err()
+        );
 
         // cleanup
         std::fs::remove_dir_all(temp_dir.path()).unwrap();
@@ -377,7 +456,7 @@ mod tests {
 
         // 3) Create a directory that conflicts with a file
         let path = CatalogPath::from("workspaces/new_file");
-        catalog::create_file(&username, &path).unwrap();
+        catalog::create_file(&username, &path, "id").unwrap();
         assert!(catalog::create_dir(&username, &path).is_err());
 
         // cleanup
@@ -401,7 +480,7 @@ mod tests {
         // 2) Check if a file exists
         let path = CatalogPath::from("workspaces/new_file");
         assert!(!catalog::exists(&username, &path));
-        catalog::create_file(&username, &path).unwrap();
+        catalog::create_file(&username, &path, "id").unwrap();
         assert!(catalog::exists(&username, &path));
 
         // cleanup
@@ -424,7 +503,7 @@ mod tests {
 
         // 2) Delete a file
         let path = CatalogPath::from("workspaces/file_to_delete");
-        catalog::create_file(&username, &path).unwrap();
+        catalog::create_file(&username, &path, "id").unwrap();
         assert!(catalog::delete(&username, &path).is_ok());
         assert!(!settings::get_user_dir(username.as_str()).join(USER_CATALOG_DIRNAME).join(path.as_str()).exists());
 
@@ -441,7 +520,7 @@ mod tests {
         create_user(&username).unwrap();
 
         // 1. Read a valid path
-        let result = catalog::read_dir(&username, &CatalogPath::from(USER_CATALOG_WORKSPACES_DIRNAME));
+        let result = catalog::read_dir(&username, &CatalogPath::from(CatalogSection::Workspaces.as_str()));
         assert!(result.is_ok());
         assert!(result.as_ref().unwrap().len() == 1);
         assert!(result.as_ref().unwrap()[0].item_type.eq(&CatalogEntryType::Workspace));
@@ -451,7 +530,7 @@ mod tests {
         assert!(catalog::read_dir(&username, &CatalogPath::from("workspaces/invalid/path")).is_err());
 
         // 3. Read a file (expect to fail)
-        let default_workflow_path = PathBuf::from(USER_CATALOG_WORKSPACES_DIRNAME)
+        let default_workflow_path = PathBuf::from(CatalogSection::Workspaces.as_str())
             .join(DEFAULT_WORKSPACE_NAME)
             .with_extension(CATALOG_ENTRY_FILE_EXTENSION);
         assert!(read_dir(&username, &CatalogPath::from(&default_workflow_path)).is_err());

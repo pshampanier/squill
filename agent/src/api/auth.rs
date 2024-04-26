@@ -100,8 +100,8 @@ async fn logout(State(state): State<ServerState>, headers: HeaderMap) -> ServerR
 pub fn routes(state: ServerState) -> Router {
     Router::new()
         .route("/auth/logon", post(logon))
-        .route("/auth/refresh-token", post(refresh_token))
         .route("/auth/logout", post(logout))
+        .route("/auth/refresh-token", post(refresh_token))
         .with_state(state)
 }
 

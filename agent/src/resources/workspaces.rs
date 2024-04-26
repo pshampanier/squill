@@ -47,12 +47,14 @@ pub fn create_workspace(username: &Username, path: &CatalogPath) -> Result<Works
         return Err(anyhow!("The path '{}' already exists.", path.as_str()));
     }
 
+    let id = uuid::Uuid::new_v4().to_string();
+
     // Create the entry in the catalog.
-    let catalog_entry = catalog::create_file(username, path)?;
+    let catalog_entry = catalog::create_file(username, path, &id)?;
 
     // Save the workspace to the filesystem under collections/workspaces/:id.json
     let workspace = Workspace {
-        id: catalog_entry.id.clone(),
+        id,
         name: catalog_entry.name.clone(),
         ..Workspace::default()
     };

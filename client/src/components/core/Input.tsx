@@ -1,16 +1,26 @@
 import { ColorsFunction, primary } from "@/utils/colors";
 import cx from "classix";
-import React, { SyntheticEvent, useEffect, useState } from "react";
+import React, { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
 
 type InputProps = {
   type: "text" | "password" | "number";
 
+  /**
+   * An identifier (ID) which must be unique in the whole document.
+   */
+  id?: string;
+
+  /**
+   * Name of the form control.
+   *
+   * Submitted with the form as part of a name/value pair
+   */
   name?: string;
 
   /**
    * The initial value of the input.
    */
-  value?: string;
+  defaultValue?: string;
 
   /**
    * The label of the input.
@@ -25,7 +35,7 @@ type InputProps = {
   /**
    * The size of the dropdown (`sm`, `md` or `lg`).
    */
-  size?: "sm" | "md" | "lg" | "full";
+  size?: "sm" | "md" | "lg" | "auto";
 
   /**
    * The step attribute works with the number type input field.
@@ -35,7 +45,7 @@ type InputProps = {
    */
   step?: number;
 
-  onChange?: (event: SyntheticEvent) => void;
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (event: SyntheticEvent) => void;
   colors?: ColorsFunction;
   disabled?: boolean;
@@ -44,7 +54,6 @@ type InputProps = {
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
   className?: string;
-
   readonly?: boolean;
   required?: boolean;
   min?: number;
@@ -52,9 +61,32 @@ type InputProps = {
 };
 
 Input.defaultProps = {
-  size: "full",
+  size: "auto",
   colors: primary,
 };
+
+function getHelperText(validityState: ValidityState): string {
+  if (validityState.valueMissing) {
+    return "Required";
+  } else if (validityState.typeMismatch) {
+    return "Invalid";
+  } else if (validityState.tooShort) {
+    return "Too short";
+  } else if (validityState.tooLong) {
+    return "Too long";
+  } else if (validityState.rangeUnderflow) {
+    return "Too small";
+  } else if (validityState.rangeOverflow) {
+    return "Too big";
+  } else if (validityState.stepMismatch) {
+    return "Invalid";
+  } else if (validityState.badInput) {
+    return "Bad input";
+  } else if (validityState.customError) {
+    return "Error";
+  }
+  return "";
+}
 
 export default function Input(props: InputProps) {
   const { type, size, label, onBlur, prefix, suffix, className } = props;
@@ -64,14 +96,16 @@ export default function Input(props: InputProps) {
   // Because we want to show the validation message/state only after the user has tried to enter a value or submitted
   // the form, we need to keep track of whether the input has been validated or not. `validated` is a boolean that is
   // set to `true` after the input is validated for the first time, whatever the result of the validation.
-  const [validated, setValidated] = useState<boolean>(false);
+  const [validityState, setValidityState] = useState<ValidityState>();
 
   // Ref for the input, this is used to calculate the padding of the input when a prefix or a suffix is used.
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Properties for the input element
   const inputProperties = {
-    value: props.value,
+    id: props.id || "input-" + crypto.randomUUID().substring(0, 8),
+    name: props.name,
+    defaultValue: props.defaultValue,
     placeholder: props.placeholder,
     disabled: props.disabled,
     readOnly: props.readonly,
@@ -79,18 +113,14 @@ export default function Input(props: InputProps) {
     step: props.step,
     min: props.min,
     max: props.max,
+    onChange: props.onChange,
   };
 
   const handleValidation = (event: React.FormEvent<HTMLInputElement>) => {
-    // TODO: We need to handle the validation of the input here.
-    // const validity = event.currentTarget.validity;
-
-    // We are setting the input `validated` state to `true` so that the input shows the validation message/state.
-    setValidated(true);
-
+    // We are storing the input validity state.
+    setValidityState(event.currentTarget.validity);
     // We don't want the web browser to show the default error message.
     event.preventDefault();
-    return;
   };
 
   // When the input loses focus, we bubble the event and if the event is not cancelled we force the input to check
@@ -119,13 +149,20 @@ export default function Input(props: InputProps) {
   });
 
   const classes = {
-    container: cx(size === "sm" && "w-32", size === "md" && "w-56", size === "lg" && "w-80", className),
-    label: cx("block mb-2 text-sm font-medium text-gray-900 dark:text-white"),
+    container: cx(
+      "flex flex-col",
+      size === "sm" && "w-32",
+      size === "md" && "w-56",
+      size === "lg" && "w-80",
+      className
+    ),
+    label: cx("flex flex-row space-x-1 mb-2 text-sm font-medium items-center"),
+    helper: cx("flex text-xs rounded-sm px-1 py-0.5", "bg-red-100 text-red-600 dark:bg-red-600 dark:text-red-100"),
     input: cx(
-      "block",
+      "block shadow-sm bg-transparent",
       "focus:outline-none focus:ring focus:valid:ring-blue-500 focus:valid:border-blue-500 dark:focus:ring-blue-500 dark:focus:valid:border-blue-500",
-      "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
-      validated &&
+      "border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
+      validityState &&
         "invalid:border-red-600 focus:invalid:ring-red-600 dark:invalid:border-red-600 dark:focus:invalid:ring-red-600"
     ),
   };
@@ -133,8 +170,11 @@ export default function Input(props: InputProps) {
   return (
     <div className={classes.container}>
       {label && (
-        <label htmlFor="first_name" className={classes.label}>
-          {label}
+        <label htmlFor={inputProperties.id} className={classes.label}>
+          <p className="flex grow">{label}</p>
+          {validityState && !validityState.valid && (
+            <span className={classes.helper}>{getHelperText(validityState)}</span>
+          )}
         </label>
       )}
       <div className="relative">
@@ -145,7 +185,6 @@ export default function Input(props: InputProps) {
           ref={inputRef}
           type={type}
           id="first_name"
-          step="0.01"
           className={classes.input}
           {...inputProperties}
           onInvalid={handleValidation}

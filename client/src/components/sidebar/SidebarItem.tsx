@@ -13,12 +13,12 @@ import { registerActionIfNeeded, unregisterAction } from "@/utils/commands";
 
 type SidebarEditProps = {
   defaultValue: string;
-  onCancelled: () => void;
+  onCancel: () => void;
   onCompleted: (value: string) => Promise<void>;
   onChange?: (value: string) => void;
 };
 
-function SidebarEdit({ defaultValue, onChange, onCancelled, onCompleted }: SidebarEditProps) {
+function SidebarEdit({ defaultValue, onChange, onCancel, onCompleted }: SidebarEditProps) {
   /// The helper text will be displayed when the user's input is invalid.
   const [helper, setHelper] = useState<string>("");
 
@@ -33,7 +33,7 @@ function SidebarEdit({ defaultValue, onChange, onCancelled, onCompleted }: Sideb
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === "Escape") {
       event.stopPropagation();
-      onCancelled();
+      onCancel();
     } else if (event.key === "Enter" || event.key === "Tab") {
       event.stopPropagation();
       if (helper.length === 0) {
@@ -41,7 +41,7 @@ function SidebarEdit({ defaultValue, onChange, onCancelled, onCompleted }: Sideb
         const target = event.target as HTMLInputElement;
         if (target.value === defaultValue) {
           // No change, cancel the editing
-          onCancelled();
+          onCancel();
         } else {
           // There is a change, we can try to validate it calling the onCompleted async function.
           target.readOnly = true;
@@ -55,7 +55,7 @@ function SidebarEdit({ defaultValue, onChange, onCancelled, onCompleted }: Sideb
   };
 
   const handleBlur = () => {
-    onCancelled();
+    onCancel();
   };
 
   /// Validation of user's input when editing the name of a catalog entry.
@@ -234,7 +234,7 @@ export default function SidebarItem({
         ) : (
           <SidebarEdit
             defaultValue={label}
-            onCancelled={handleEditingCancelled}
+            onCancel={handleEditingCancelled}
             onCompleted={handleEditingCompleted}
             onChange={onChange}
           />

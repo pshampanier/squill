@@ -1,5 +1,9 @@
-import { serializable } from "@/utils/serializable";
+import { formatRegExp, serializable } from "@/utils/serializable";
 import { immerable } from "immer";
+import { Datasource as Datasources } from "@/models/datasources";
+
+const CONNECTION_MODE = ["host", "socket", "connection_string", "file"] as const;
+export type ConnectionMode = (typeof CONNECTION_MODE)[number];
 
 export class Connection {
   [immerable] = true;
@@ -7,37 +11,50 @@ export class Connection {
   @serializable("string", { required: true, format: "uuid" })
   id!: string;
 
-  @serializable("string", { required: true, format: "identifier" })
+  @serializable("string", { format: "identifier" })
+  driver!: string;
+
+  @serializable("string", { required: true })
   name!: string;
+
+  @serializable("string", { required: true, format: "identifier" })
+  alias!: string;
 
   @serializable("string")
   description?: string;
 
-  /**
-   * The connection string to use to connect to the database.
-   *
-   * 1. MySQL: Connection strings in MySQL typically follow the format
-   *    ```
-   *    server=localhost;user=myuser;database=mydatabase;port=3306;password=mypassword;
-   *    ```
-   *
-   * 2. PostgreSQL: PostgreSQL connection strings typically follow the format:
-   *    ```
-   *    host=localhost port=5432 dbname=mydatabase user=myuser password=mypassword
-   *    ```
-   *
-   * 3. SQL Server: Connection strings in SQL Server typically follow the format:
-   *    ```
-   *    Server=myServerAddress;Database=myDataBase;User Id=myUsername;Password=myPassword;
-   *    ```
-   *
-   * 4. Oracle: Oracle uses a slightly different format, typically something like
-   *    ```
-   *    username/password@hostname:port/service_name
-   *    ```
-   */
+  @serializable("string", { snakeCase: "property", format: formatRegExp(CONNECTION_MODE) })
+  mode!: ConnectionMode;
+
   @serializable("string")
-  connectionString: string;
+  host?: string;
+
+  @serializable("integer")
+  port?: number;
+
+  @serializable("string")
+  socket?: string;
+
+  @serializable("string")
+  file?: string;
+
+  @serializable("string", { snakeCase: "property" })
+  connectionString?: string;
+
+  @serializable("string")
+  username?: string;
+
+  @serializable("string")
+  password?: string;
+
+  @serializable("boolean", { snakeCase: "property" })
+  savePassword?: boolean;
+
+  @serializable("array", { items: { type: "object", options: { factory: Datasources } } })
+  datasources?: Datasources[];
+
+  @serializable("object")
+  options?: Record<string, string>;
 
   constructor(object: Partial<Connection>) {
     Object.assign(this, object);

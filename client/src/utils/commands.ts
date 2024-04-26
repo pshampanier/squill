@@ -4,7 +4,7 @@ import { raise } from "@/utils/telemetry";
 import SettingsIcon from "@/icons/settings.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
 
-type CommandAction = () => void;
+type CommandAction = (command: string) => void;
 
 export type Command = {
   readonly name: string;
@@ -119,7 +119,7 @@ export function executeCommand(name: string) {
   if (!c) {
     raise(`Command '${name}' not registered`);
   } else {
-    executeActions(c.actions);
+    executeActions(c, c.actions);
   }
 }
 
@@ -133,7 +133,7 @@ export function registerGlobalKeyListeners() {
         event.preventDefault();
         event.stopPropagation();
         console.debug(`Executing command '${command.name}'`);
-        executeActions(command.actions);
+        executeActions(command, command.actions);
       }
     }
   });
@@ -183,12 +183,78 @@ function getShortcut(event: KeyboardEvent): string {
   event.altKey && keys.push("Alt");
   event.shiftKey && keys.push("Shift");
   event.metaKey && keys.push("Meta");
-  keys.push(event.key.length === 1 ? event.key.toUpperCase() : event.key);
+  // Matching the key code to a character when possible.
+  // https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values
+  const codeMatch = event.code.match(/^(Key|Digit|Numpad)([A-Z0-9])/);
+  if (codeMatch) {
+    keys.push(codeMatch[2]);
+  } else {
+    switch (event.code) {
+      case "Minus":
+        keys.push("-");
+        break;
+      case "Equal":
+        keys.push("=");
+        break;
+      case "BracketLeft":
+        keys.push("[");
+        break;
+      case "BracketRight":
+        keys.push("]");
+        break;
+      case "Semicolon":
+        keys.push(";");
+        break;
+      case "Quote":
+        keys.push("'");
+        break;
+      case "Backquote":
+        keys.push("`");
+        break;
+      case "Backslash":
+        keys.push("\\");
+        break;
+      case "Comma":
+        keys.push(",");
+        break;
+      case "Period":
+        keys.push(".");
+        break;
+      case "Slash":
+        keys.push("/");
+        break;
+      case "NumpadMultiply":
+        keys.push("*");
+        break;
+      case "NumpadSubtract":
+        keys.push("-");
+        break;
+      case "NumpadAdd":
+        keys.push("+");
+        break;
+      case "NumpadDecimal":
+        keys.push(".");
+        break;
+      case "NumpadDivide":
+        keys.push("/");
+        break;
+      case "NumpadEnter":
+        keys.push("Enter");
+        break;
+      case "NumpadEqual":
+        keys.push("=");
+        break;
+      default:
+        keys.push(event.code);
+        break; // Enter, Escape, ArrowUp, ArrowRight, ...
+    }
+  }
+  console.debug(`Shortcut: ${keys.join("+")}`);
   return keys.join("+");
 }
 
-function executeActions(actions: CommandAction[]) {
-  actions.forEach((action) => action());
+function executeActions(command: Command, actions: CommandAction[]) {
+  actions.forEach((action) => action(command.name));
 }
 
 registerCommand(

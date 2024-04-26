@@ -18,6 +18,8 @@
         "blandit",
         "commandline",
         "cursus",
+        "Datasource",
+        "datasources",
         "duis",
         "eget",
         "elementum",
@@ -34,18 +36,21 @@
         "nulla",
         "nunc",
         "oneshot",
-        "SQUILL",
         "pellentesque",
         "penatibus",
         "porttitor",
         "reqwest",
         "sagittis",
+        "serde",
         "sociis",
+        "sqlx",
+        "SQUILL",
         "sysinfo",
         "tempdir",
         "tempfile",
         "ultrices",
         "unistd",
         "vestibulum"
-    ]
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false
 }
