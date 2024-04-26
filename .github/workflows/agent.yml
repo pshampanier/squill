@@ -1,40 +1,40 @@
 name: agent-unit-tests
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 jobs:
-  test:
-    name: coverage
-    runs-on: ubuntu-latest
-    container:
-      image: pshampanier/onesql-ci
-      options: --security-opt seccomp=unconfined
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    test:
+        name: coverage
+        runs-on: ubuntu-latest
+        container:
+            image: pshampanier/onesql-ci
+            options: --security-opt seccomp=unconfined
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-        # The test suite cannot be run as root because some of the tests such as utils::users::tests::test_create_user
-        # and utils::users::tests::test_delete_user would fail.
-      - name: Generate code coverage
-        working-directory: ./agent
-        run: |
-          chmod -R a+rw .
-          su ci --command="cargo tarpaulin --target-dir=build --timeout 120 --out xml"
+              # The test suite cannot be run as root because some of the tests such as utils::users::tests::test_create_user
+              # and utils::users::tests::test_delete_user would fail.
+            - name: Generate code coverage
+              working-directory: ./
+              run: |
+                  chmod -R a+rw .
+                  su ci --command="cargo tarpaulin --target-dir=build --timeout 120 --out xml"
 
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          directory: ./agent/build
-          verbose: false        
+            - name: Upload to codecov.io
+              uses: codecov/codecov-action@v3
+              with:
+                  token: ${{ secrets.CODECOV_TOKEN }}
+                  fail_ci_if_error: true
+                  directory: ./build
+                  verbose: false
 
-      - name: Security audit
-        if: always()
-        working-directory: ./agent
-        run: |
-          cargo audit
+            - name: Security audit
+              if: always()
+              working-directory: ./
+              run: |
+                  cargo audit

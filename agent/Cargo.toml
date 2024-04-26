@@ -1,8 +1,10 @@
 [package]
 name = "squill"
-version = "0.1.0"
 description = "Squill Agent"
-edition = "2021"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
 build = "src/build.rs"
 
 [[bin]]
@@ -12,7 +14,8 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.79"
+anyhow = { workspace = true }
+tokio = { workspace = true }
 axum = { version="0.7.5", features = ["macros", "tracing"] }
 clap = { version = "4.4.18", features = ["derive"] }
 hex = "0.4.3"
@@ -24,7 +27,6 @@ rust-ini = "0.20.0"
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
 sysinfo = "0.30.5"
-tokio = { version = "1.37.0", features = ["full"] }
 toml = "0.8.8"
 tower-http = { version = "0.5.1",  features = ["trace", "cors"] }
 tracing = "0.1.40"
@@ -32,6 +34,7 @@ tracing-subscriber = { version = "0.3.18", features=["std", "env-filter"] }
 tracing-appender = "0.2.3"
 uuid = { version = "1.7.0", features = ["v4"] }
 reqwest = "0.12.4"
+drivers = { path = "../drivers" }
 
 # The following dependencies are not directly used b the package but need to be forced to specific versions in order 
 # to prevent vulnerabilities.

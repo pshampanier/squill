@@ -1,0 +1,50 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "agent (debug)",
+      "cargo": {
+        "args": ["build", "--bin=agent", "--package=squill"],
+        "filter": {
+          "name": "agent",
+          "kind": "bin"
+        }
+      },
+      "args": ["--verbose", "start", "--port", "8080", "--api-key", "x-dev"],
+      "env": {
+        "SQUILL_LOG_LEVEL": "trace,axum::rejection=trace",
+        "SQUILL_APP_DIR": "build/app_dir"
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "agent (unit tests)",
+      "cargo": {
+        "args": ["test", "--no-run", "--bin=agent", "--package=squill"],
+        "filter": {
+          "name": "agent",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "drivers (unit tests)",
+      "cargo": {
+        "args": ["test", "--no-run", "--package=drivers"]
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
