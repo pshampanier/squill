@@ -21,6 +21,8 @@ jobs:
               # and utils::users::tests::test_delete_user would fail.
             - name: Generate code coverage
               working-directory: ./
+              env:
+                  CI_POSTGRES_CONNECTION_STRING: ${{ secrets.CI_POSTGRES_CONNECTION_STRING }}
               run: |
                   chmod -R a+rw .
                   su ci --command="cargo tarpaulin --target-dir=build --timeout 120 --out xml"
