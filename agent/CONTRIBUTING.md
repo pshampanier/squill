@@ -10,6 +10,12 @@
     | apple-darwin      | x86_64, aarch64 |
     | pc-windows-msvc   | x86_64, aarch64 |
 
+-   [`CI_POSTGRES_CONNECTION_STRING`](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING): a connection string used to run the unit tests for the PostgreSQL driver.
+
+    ```bash
+    CI_POSTGRES_CONNECTION_STRING='postgresql://postgres:password@localhost:5432'
+    ```
+
 ## Code coverage
 
 [![codecov](https://codecov.io/gh/pshampanier/squill/graph/badge.svg?token=DNCTZ1WPTF)](https://codecov.io/gh/pshampanier/squill)
