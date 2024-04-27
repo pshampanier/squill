@@ -1,6 +1,8 @@
 use std::{ borrow::BorrowMut, pin::Pin };
 use futures::{ future::BoxFuture, Stream };
 use anyhow::Result;
+use openssl::ssl::{ SslConnector, SslMethod };
+use postgres_openssl::MakeTlsConnector;
 use crate::{
     driver::{ Driver, DriverConnection, DriverExecutor, DriverStream },
     postgres::value::get_value,
@@ -26,7 +28,9 @@ impl PostgresDriver {
 impl DriverConnection for PostgresDriver {
     fn connect(&mut self) -> BoxFuture<'_, Result<()>> {
         Box::pin(async move {
-            let (client, connection) = tokio_postgres::connect(&self.connection_string, tokio_postgres::NoTls).await?;
+            let builder = SslConnector::builder(SslMethod::tls())?;
+            let connector = MakeTlsConnector::new(builder.build());
+            let (client, connection) = tokio_postgres::connect(&self.connection_string, connector).await?;
             tokio::spawn(connection);
             self.client = Some(client);
             Ok(())
@@ -101,26 +105,20 @@ mod tests {
     use super::*;
     use futures::stream::TryStreamExt;
 
-    const DEFAULT_HOST: &str = "localhost:5432";
-    const DEFAULT_CREDENTIALS: &str = "postgres:password";
-    const DEFAULT_DATABASE: &str = "postgres";
-
-    fn get_env(key: &str, default: String) -> String {
-        std::env::var(key).unwrap_or(default)
-    }
-
-    fn get_postgres_url(host: &str, credentials: &str, database: &str) -> String {
-        format!(
-            "postgres://{}@{}/{}",
-            get_env("CI_POSTGRES_CREDENTIALS", credentials.to_string()),
-            get_env("CI_POSTGRES_HOST", host.to_string()),
-            get_env("CI_POSTGRES_DB", database.to_string())
-        )
-    }
+    // The environment variable CI_POSTGRES_CONNECTION_STRING must be set to run the tests.
+    // It can be either a connection string or a connection URI.
+    // See https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING.
+    const ENV_CI_POSTGRES_CONNECTION_STRING: &str = "CI_POSTGRES_CONNECTION_STRING";
 
     macro_rules! create_postgres_driver {
         () => {
-            PostgresDriver::new(get_postgres_url(DEFAULT_HOST, DEFAULT_CREDENTIALS, DEFAULT_DATABASE))
+            PostgresDriver::new(
+                std::env
+                    ::var(ENV_CI_POSTGRES_CONNECTION_STRING)
+                    .unwrap_or_else(|_|
+                        panic!("The environment variable {} is not set.", ENV_CI_POSTGRES_CONNECTION_STRING)
+                    )
+            )
         };
     }
 
