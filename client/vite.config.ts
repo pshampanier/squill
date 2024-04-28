@@ -8,7 +8,7 @@ export default defineConfig({
   /** need to set the base, otherwise the breakpoint would not bind in vscode */
   base: "./",
   build: {
-    outDir: "build/webapp",
+    outDir: "../build/webapp/dist",
     sourcemap: true,
     rollupOptions: {
       input: {

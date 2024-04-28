@@ -1,11 +1,9 @@
 [package]
-name = "squill"
-version = "0.0.0"
-description = "A Data Workbench"
-authors = ["Philippe Shampanier"]
-license = ""
-repository = ""
-edition = "2021"
+name = "desktop-app"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

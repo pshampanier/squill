@@ -1,6 +1,14 @@
 {
   "printWidth": 120,
   "useTabs": false,
-  "tabWidth": 4,
-  "endOfLine": "lf"
+  "tabWidth": 2,
+  "endOfLine": "lf",
+  "overrides": [
+    {
+      "files": ["**/*.rs"],
+      "options": {
+        "tabWidth": 4
+      }
+    }
+  ]
 }

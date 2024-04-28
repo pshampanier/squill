@@ -45,6 +45,23 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "webapp",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:1420",
+      "webRoot": "${workspaceFolder}/client"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "desktop (debug)",
+      "cargo": {
+        "args": ["build", "--manifest-path=./client/src-tauri/Cargo.toml", "--no-default-features"]
+      },
+      // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
+      "preLaunchTask": "ui:dev"
     }
   ]
 }

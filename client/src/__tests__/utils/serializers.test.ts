@@ -283,7 +283,7 @@ describe("deserializeObject", () => {
 
   test("dependencies", () => {
     //
-    // A property (b) depends on another one (c), so its expected to be deserialized after its dependancy.
+    // A property (b) depends on another one (c), so its expected to be deserialized after its dependency.
     //
     let obj = {
       a: 0,

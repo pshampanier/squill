@@ -3,10 +3,12 @@ resolver = "2"
 members = [
     "agent",
     "drivers",
+    "client/src-tauri",
 ]
 
 [workspace.package]
 version = "0.1.0"
+description = "A Modern Data Management Console"
 edition = "2021"
 authors = ["pshampanier@gmail.com"]
 repository = "https://github.com/pshampanier/squill"

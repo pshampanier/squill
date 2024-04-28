@@ -20,11 +20,19 @@
     "react-refresh/only-export-components": ["warn", { "allowConstantExport": true }],
     "react/react-in-jsx-scope": "off",
     "react/jsx-uses-react": "off",
-    "import/no-unresolved": "error"
+    "import/no-unresolved": "off"
   },
   "settings": {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"]
+    },
     "import/resolver": {
-      "typescript": {} // this loads <rootdir>/tsconfig.json to eslint
+      "typescript": {
+        "project": ["tsconfig.json"] // this loads tsconfig.json to eslint
+      },
+      "node": {
+        "project": ["tsconfig.json"]
+      }
     },
     "react": {
       "version": "detect"
