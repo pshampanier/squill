@@ -3,17 +3,13 @@
 
 use tauri::App;
 
-/**
- * The default port used by the local agent.
- */
+/// The default port used by the local agent.
 #[cfg(debug_assertions)]
-const DEFAULT_LOCAL_AGENT_PORT: &'static str = "8080";
+const DEFAULT_LOCAL_AGENT_PORT: &str = "8080";
 #[cfg(not(debug_assertions))]
-const DEFAULT_LOCAL_AGENT_PORT: &'static str = "4173";
+const DEFAULT_LOCAL_AGENT_PORT: &str = "4173";
 
-/**
- * Show/Hide the developer tools
- */
+/// Show/Hide the developer tools
 #[tauri::command]
 fn toggle_devtools(_window: tauri::Window) {
     #[cfg(debug_assertions)]
@@ -26,10 +22,9 @@ fn toggle_devtools(_window: tauri::Window) {
 
 #[tauri::command]
 fn get_variable(name: &str) -> String {
-    if name == "LOCAL_AGENT_URL" {
-        return format!("http://localhost:{}", DEFAULT_LOCAL_AGENT_PORT);
-    } else {
-        return "".to_string();
+    match name {
+        "LOCAL_AGENT_URL" => format!("http://localhost:{}", DEFAULT_LOCAL_AGENT_PORT),
+        _ => "".to_string(),
     }
 }
 
@@ -37,7 +32,9 @@ fn setup(_app: &mut App) {
     #[cfg(debug_assertions)]
     {
         use tauri::Manager;
-        _app.get_window("main").unwrap().open_devtools();
+        if let Some(window) = _app.get_window("main") {
+            window.open_devtools();
+        }
     }
 }
 
