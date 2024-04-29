@@ -11,7 +11,7 @@ jobs:
     name: coverage
     runs-on: ubuntu-latest
     container:
-      image: pshampanier/onesql-ci
+      image: pshampanier/squill-ci
       options: --security-opt seccomp=unconfined
     steps:
       - name: Checkout repository
