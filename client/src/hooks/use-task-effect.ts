@@ -1,12 +1,20 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type TaskFunction = () => Promise<void>;
 export type TaskStatus = "pending" | "running" | "success" | "error";
 
 type TaskEffect = {
   taskStatus: TaskStatus;
-  message: Error | string;
   setTaskStatus: (status: TaskStatus) => void;
+  message: Error | string;
+  setMessage: (message: string) => void;
+
+  /**
+   * Set the async task function to be executed.
+   *
+   * The task function should return a promise.
+   * Setting a new task will automatically run task that changing the task status to "running".
+   */
   setTask(task: TaskFunction): void;
 };
 
@@ -17,11 +25,20 @@ export function useTaskEffect(
 ): TaskEffect {
   const [taskStatus, setTaskStatus] = useState<TaskStatus>(initialStatus);
   const [message, setMessage] = useState<Error | string>(initialMessage);
-  const [task, setTask] = useState<TaskFunction>(() => initialTask);
+
+  // The task function is stored in a ref so that it can be updated without causing a re-render.
+  const task = useRef<TaskFunction>(initialTask);
+
+  const setTask = (newTask: TaskFunction) => {
+    task.current = newTask;
+    setTaskStatus("running");
+  };
+
   useEffect(() => {
     if (taskStatus === "running") {
       setMessage(initialMessage);
-      task()
+      task
+        .current()
         .then(() => {
           setTaskStatus("success");
         })
@@ -34,8 +51,9 @@ export function useTaskEffect(
 
   return {
     taskStatus,
-    message,
     setTaskStatus,
+    message,
+    setMessage,
     setTask,
   };
 }
