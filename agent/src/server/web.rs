@@ -17,6 +17,7 @@ use rand::Rng;
 use tokio::signal;
 use tokio::net::TcpListener;
 use sysinfo::{ Pid, System };
+use tower_http::LatencyUnit;
 use tracing::{ debug, info, warn, Level };
 use tower_http::trace::{ self, TraceLayer };
 use tower_http::cors::{ CorsLayer, Any };
@@ -101,8 +102,11 @@ impl Server {
         // Get the router that will handle all the requests for the REST API.
         let api = Self::api(&state).layer(
             TraceLayer::new_for_http()
-                .make_span_with(trace::DefaultMakeSpan::new().level(Level::TRACE))
-                .on_response(trace::DefaultOnResponse::new().level(Level::TRACE))
+                .make_span_with(trace::DefaultMakeSpan::new().include_headers(false).level(Level::TRACE))
+                .on_request(trace::DefaultOnRequest::new().level(Level::TRACE))
+                .on_response(trace::DefaultOnResponse::new().level(Level::INFO).latency_unit(LatencyUnit::Micros))
+                .on_failure(trace::DefaultOnFailure::new().level(Level::ERROR))
+                .on_body_chunk(trace::DefaultOnBodyChunk::new())
         );
 
         // Add the CORS middleware
