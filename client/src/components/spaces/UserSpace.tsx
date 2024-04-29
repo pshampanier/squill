@@ -16,7 +16,7 @@ import WorkspacesIcon from "@/icons/workspaces.svg?react";
 import FolderPlus from "@/icons/folder-plus.svg?react";
 import Plus from "@/icons/plus.svg?react";
 
-import Button from "../core/Button";
+import Button from "@/components/core/Button";
 import { ColorsContext } from "@/stores/ColorsContext";
 
 export default function UserSpace(props: SpaceProps) {

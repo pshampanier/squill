@@ -17,9 +17,9 @@ import ParamForm from "@/components/forms/connections/ParametersForm";
 import Overlay from "@/components/Overlay";
 import { useTaskEffect } from "@/hooks/use-task-effect";
 import Connections from "@/resources/connections";
-import { Spinner } from "../core/Spinner";
-import Alert from "../core/Alert";
-import Button from "../core/Button";
+import { Spinner } from "@/components/core/Spinner";
+import Alert from "@/components/core/Alert";
+import Button from "@/components/core/Button";
 
 type NewConnectionDialogProps = {
   onClose?: (connection: Connection) => void;

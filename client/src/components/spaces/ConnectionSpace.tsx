@@ -1,5 +1,5 @@
 import Space, { SpaceProps } from "@/components/spaces/Space";
-import { Spinner } from "../core/Spinner";
+import { Spinner } from "@/components/core/Spinner";
 
 export default function ConnectionSpace(props: SpaceProps) {
   return (

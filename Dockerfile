@@ -1,5 +1,7 @@
 FROM rust:latest
 
+ENV PATH="/usr/local/cargo/bin:${PATH}"
+
 # Install the required dependencies for tauri
 # https://tauri.app/v1/guides/getting-started/prerequisites/#setting-up-linux
 RUN apt-get update && apt-get install -y \
@@ -12,8 +14,6 @@ RUN apt-get update && apt-get install -y \
   libgtk-3-dev \
   libayatana-appindicator3-dev \
   librsvg2-dev
-
-ENV PATH="/usr/local/cargo/bin:${PATH}"
 
 RUN cargo install cargo-tarpaulin
 RUN cargo install cargo-audit
