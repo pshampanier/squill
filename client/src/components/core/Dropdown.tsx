@@ -83,12 +83,6 @@ type DropdownProps = {
   size?: "sm" | "md" | "lg";
 };
 
-Dropdown.defaultProps = {
-  variant: "outline",
-  size: "md",
-  colors: primary,
-};
-
 /**
  * A dropdown that can be used to select an option from a list of options.
  *
@@ -113,10 +107,10 @@ Dropdown.defaultProps = {
 function Dropdown({
   className,
   children,
-  colors,
+  colors = primary,
   disabled,
-  variant,
-  size,
+  variant = "outline",
+  size = "md",
   values,
   defaultValue,
   onChange,

@@ -6,11 +6,7 @@ type SpinnerProps = {
   delay?: number;
 };
 
-Spinner.defaultProps = {
-  size: "md",
-};
-
-export function Spinner({ size, delay }: SpinnerProps) {
+export function Spinner({ size = "md", delay }: SpinnerProps) {
   const [show, setShow] = useState(false);
 
   if (delay) {

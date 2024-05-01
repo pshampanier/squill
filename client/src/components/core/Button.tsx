@@ -20,12 +20,8 @@ type ButtonProps = {
   tabIndex?: number;
 };
 
-Button.defaultProps = {
-  variant: "ghost",
-};
-
 export default function Button({
-  variant,
+  variant = "ghost",
   className,
   icon,
   text,

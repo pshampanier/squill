@@ -12,7 +12,7 @@ type MenuProps = {
   size?: "sm" | "md" | "lg" | "auto";
 };
 
-function Menu({ children, size, className, onClose }: MenuProps) {
+function Menu({ children, size = "auto", className, onClose }: MenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // TODO: Use a context to implement keyboard navigation
@@ -73,10 +73,6 @@ function Menu({ children, size, className, onClose }: MenuProps) {
     </div>
   );
 }
-
-Menu.defaultProps = {
-  size: "auto",
-};
 
 type MenuItemProps = {
   className?: string;

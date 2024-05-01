@@ -9,14 +9,7 @@ type Props = {
   children?: ReactNode;
 };
 
-const defaultProps: Props = {
-  position: "top",
-  align: "center",
-  theme: "tooltip",
-  text: "",
-};
-
-export default function Tooltip({ text, position, align, theme, children }: Props) {
+export default function Tooltip({ text, position = "top", align = "center", theme = "tooltip", children }: Props) {
   const classes = cx(
     "absolute pointer-events-none shadow z-50",
     "w-max rounded px-2 py-1 text-sm font-medium text-gray-50",
@@ -39,5 +32,3 @@ export default function Tooltip({ text, position, align, theme, children }: Prop
     </div>
   );
 }
-
-Tooltip.defaultProps = defaultProps;

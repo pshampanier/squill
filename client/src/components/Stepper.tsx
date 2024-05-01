@@ -21,10 +21,6 @@ type StepperProps = {
   children: React.ReactNode;
 };
 
-Stepper.defaultProps = {
-  doneButtonText: "Done",
-};
-
 const StepperContext = createContext(null);
 
 /**
@@ -55,7 +51,7 @@ const StepperContext = createContext(null);
  *                                           │ Step (1)    │ Step (2)    │ Step (3)
  * ```
  */
-function Stepper({ children, doneButtonText, onCancel, onCompleted }: StepperProps) {
+function Stepper({ children, doneButtonText = "Done", onCancel, onCompleted }: StepperProps) {
   // The last step that is completed
   const [completedStep, setCompletedStep] = React.useState(-1);
 
@@ -355,10 +351,6 @@ type StepProps = {
    * The content of the step.
    */
   children: React.ReactNode;
-};
-
-Step.defaultProps = {
-  visible: true,
 };
 
 function Step({ title, children, name, visible }: StepProps) {

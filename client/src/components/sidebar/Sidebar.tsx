@@ -35,16 +35,10 @@ type SidebarProps = {
   children: ReactNode;
 };
 
-Sidebar.defaultProps = {
-  width: DEFAULT_WIDTH,
-  minWidth: DEFAULT_MIN_WIDTH,
-  maxWidth: DEFAULT_MAX_WIDTH,
-};
-
 export default function Sidebar({
-  width,
-  minWidth,
-  maxWidth,
+  width = DEFAULT_WIDTH,
+  minWidth = DEFAULT_MIN_WIDTH,
+  maxWidth = DEFAULT_MAX_WIDTH,
   className,
   onResize,
   onVisibilityChange,

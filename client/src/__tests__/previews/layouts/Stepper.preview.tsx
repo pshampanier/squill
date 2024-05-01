@@ -16,16 +16,16 @@ export default function StepperPreview() {
         </Preview.Description>
         <PreviewBox className="flex text-sm text-gray-500 h-[500px]">
           <Stepper>
-            <Stepper.Step name="driver" icon={WrenchIcon} title="Choose Driver">
+            <Stepper.Step name="driver" icon={WrenchIcon} title="Choose Driver" visible>
               <p>Step 1 content</p>
             </Stepper.Step>
-            <Stepper.Step name="connection" icon={StarIcon} title="Connection">
+            <Stepper.Step name="connection" icon={StarIcon} title="Connection" visible>
               <p>Step 2 content</p>
             </Stepper.Step>
-            <Stepper.Step name="auth" icon={UserIcon} title="Authentication">
+            <Stepper.Step name="auth" icon={UserIcon} title="Authentication" visible>
               <p>Step 3 content</p>
             </Stepper.Step>
-            <Stepper.Step name="params" icon={UserIcon} title="Parameters">
+            <Stepper.Step name="params" icon={UserIcon} title="Parameters" visible>
               <p>Step 4 content</p>
             </Stepper.Step>
           </Stepper>

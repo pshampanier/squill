@@ -1,4 +1,3 @@
-import { ColorsFunction, primary } from "@/utils/colors";
 import cx from "classix";
 import React, { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
 
@@ -47,7 +46,6 @@ type InputProps = {
 
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (event: SyntheticEvent) => void;
-  colors?: ColorsFunction;
   disabled?: boolean;
   error?: boolean;
   tabIndex?: number;
@@ -58,11 +56,6 @@ type InputProps = {
   required?: boolean;
   min?: number;
   max?: number;
-};
-
-Input.defaultProps = {
-  size: "auto",
-  colors: primary,
 };
 
 function getHelperText(validityState: ValidityState): string {
@@ -89,7 +82,7 @@ function getHelperText(validityState: ValidityState): string {
 }
 
 export default function Input(props: InputProps) {
-  const { type, size, label, onBlur, prefix, suffix, className } = props;
+  const { type, size = "auto", label, onBlur, prefix, suffix, className } = props;
 
   // State for validation
   //

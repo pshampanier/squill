@@ -16,12 +16,8 @@ type RadioProps = {
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-Radio.defaultProps = {
-  colors: primary,
-};
-
 export default function Radio(props: RadioProps) {
-  const { label, colors, disabled, className } = props;
+  const { label, colors = primary, disabled, className } = props;
   const { inputProperties, validated } = useRadio(props);
 
   const classes = {

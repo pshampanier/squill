@@ -11,11 +11,7 @@ type LoadingOverlayProps = {
   className?: string;
 };
 
-LoadingOverlay.defaultProps = {
-  position: "fixed",
-};
-
-export default function LoadingOverlay({ delay, children, position, className }: LoadingOverlayProps) {
+export default function LoadingOverlay({ delay, children, position = "fixed", className }: LoadingOverlayProps) {
   // A state to keep track of the visibility of the overlay
   const [visible, setVisible] = useState<boolean>(!delay);
   const overlayRef = useRef<HTMLDivElement>(null);

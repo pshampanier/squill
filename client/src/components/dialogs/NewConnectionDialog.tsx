@@ -110,7 +110,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
     <Modal className="w-4/5 max-w-4xl h-[500px]" onCancel={onCancel}>
       <div className="relative w-full h-full">
         <Stepper key={stepperKey} onCompleted={handleClose} onCancel={onCancel}>
-          <Stepper.Step icon={WrenchIcon} name="driver" title="Choose a Driver" onSubmit={handleSubmitStep}>
+          <Stepper.Step icon={WrenchIcon} name="driver" title="Choose a Driver" onSubmit={handleSubmitStep} visible>
             <DriverForm
               ref={formsRef.driver}
               drivers={Agent.agent.drivers}
@@ -120,7 +120,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
               onChange={handleDriverChange}
             />
           </Stepper.Step>
-          <Stepper.Step icon={ConnectIcon} name="connect" title="Connection" onSubmit={handleSubmitStep}>
+          <Stepper.Step icon={ConnectIcon} name="connect" title="Connection" onSubmit={handleSubmitStep} visible>
             <ConnectForm
               ref={formsRef.connect}
               name="connect"
@@ -144,7 +144,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
               onChange={handleChange}
             />
           </Stepper.Step>
-          <Stepper.Step icon={OptionsIcon} title="Parameters" name="param" onSubmit={handleSubmitStep}>
+          <Stepper.Step icon={OptionsIcon} title="Parameters" name="param" onSubmit={handleSubmitStep} visible>
             <ParamForm
               ref={formsRef.param}
               name="param"
@@ -162,7 +162,11 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
         )}
         {taskStatus === "error" && (
           <Overlay position="absolute">
-            <ErrorMessage message={message} onClose={() => setTaskStatus("pending")} />
+            <ErrorMessage
+              message={message}
+              onClose={() => setTaskStatus("pending")}
+              className="w-3/4 backdrop-blur-xl"
+            />
           </Overlay>
         )}
       </div>
