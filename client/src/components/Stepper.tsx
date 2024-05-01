@@ -198,7 +198,6 @@ function Stepper({ children, doneButtonText, onCancel, onCompleted }: StepperPro
               <Button variant="outline" text="Cancel" onClick={handleCancel} />
               <Button
                 variant="solid"
-                disabled={completedStep === visibleChildren.length - 1}
                 text={activeStep === visibleChildren.length - 1 ? doneButtonText : "Next"}
                 onClick={handleNext}
               />

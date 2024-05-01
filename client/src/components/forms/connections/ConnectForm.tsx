@@ -1,6 +1,6 @@
 import cx from "classix";
 import { Connection, ConnectionMode } from "@/models/connections";
-import { DRIVER_PORT, Driver } from "@/models/drivers";
+import { DRIVER_CONNECTION_STRING, DRIVER_HOST, DRIVER_PORT, DRIVER_SOCKET, Driver } from "@/models/drivers";
 import { forwardRef } from "react";
 import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
@@ -46,6 +46,7 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
             name="host"
             label="Host"
             defaultValue={connection.host}
+            placeholder={driver.defaults[DRIVER_HOST]}
             className="grow"
             required
             onChange={(e) => onChange({ host: e.target.value })}
@@ -69,6 +70,7 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
           name="socket"
           label="Socket"
           defaultValue={connection.socket}
+          placeholder={driver.defaults[DRIVER_SOCKET]}
           className="grow"
           required
           onChange={(e) => onChange({ socket: e.target.value })}
@@ -80,6 +82,7 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
           name="connection_string"
           label="Connection String"
           defaultValue={connection.connectionString}
+          placeholder={driver.defaults[DRIVER_CONNECTION_STRING]}
           className="grow"
           required
           onChange={(e) => onChange({ connectionString: e.target.value })}

@@ -2,7 +2,16 @@ use std::collections::HashMap;
 
 use axum::{ extract::Json, routing::get, Router };
 use crate::models::agent::AgentSettings;
-use crate::models::drivers::{ Capability, Driver, DRIVER_PORT, DRIVER_USER };
+use crate::models::drivers::{
+    Capability,
+    Driver,
+    DRIVER_CONNECTION_STRING,
+    DRIVER_CONNECT_MODE,
+    DRIVER_HOST,
+    DRIVER_PORT,
+    DRIVER_SOCKET,
+    DRIVER_USER,
+};
 use crate::{ api::error::ServerResult, models::agent::Agent };
 use crate::server::state::ServerState;
 
@@ -27,7 +36,10 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
                     Capability::ConnectString,
                     Capability::ReadOnly
                 ],
-                ..Default::default()
+                defaults: HashMap::from([
+                    (DRIVER_CONNECT_MODE.to_string(), "file".to_string()),
+                    (DRIVER_CONNECTION_STRING.to_string(), "memory://".to_string()),
+                ]),
             },
             Driver {
                 name: "postgresql".to_string(),
@@ -42,8 +54,11 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
                     Capability::ConnectSocket
                 ],
                 defaults: HashMap::from([
+                    (DRIVER_CONNECT_MODE.to_string(), "host".to_string()),
+                    (DRIVER_HOST.to_string(), "localhost".to_string()),
                     (DRIVER_PORT.to_string(), "5432".to_string()),
                     (DRIVER_USER.to_string(), "postgres".to_string()),
+                    (DRIVER_SOCKET.to_string(), "/var/run/postgres/.s.PGSQL.5432".to_string()),
                 ]),
             },
             Driver {

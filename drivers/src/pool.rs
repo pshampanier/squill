@@ -41,7 +41,7 @@ impl ManageConnection for DriverPoolManager {
         where Self: 'async_trait, 'life0: 'async_trait
     {
         Box::pin(async move {
-            let mut driver = DriverFactory::create(&self.driver, self.connection_string.clone());
+            let mut driver = DriverFactory::create(&self.driver, self.connection_string.clone())?;
             driver.connect().await?;
             Ok(driver)
         })

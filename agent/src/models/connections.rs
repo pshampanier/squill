@@ -21,33 +21,41 @@ pub struct Connection {
     pub name: String,
     pub alias: String,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub description: String,
 
     pub mode: ConnectionMode,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub host: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub socket: String,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub file: String,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub connection_string: String,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub username: String,
 
-    #[serde(skip_serializing_if = "String::is_empty")]
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub password: String,
+
+    #[serde(default)]
     pub save_password: bool,
 
+    /// The default datasource to use.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub datasource: String,
+
+    /// Datasources available through this connection.
+    #[serde(default)]
     pub datasources: Vec<Datasource>,
 }
 
@@ -55,6 +63,7 @@ pub struct Connection {
 mod tests {
     use super::*;
 
+    // FIXME: this test should be removed, it's not testing anything, just helping to see the output
     #[test]
     fn test_connection() {
         let connection: Connection = Connection {
@@ -74,6 +83,8 @@ mod tests {
 
             username: "postgres".to_string(),
             password: "password".to_string(),
+
+            datasource: "template1".to_string(),
 
             datasources: vec![Datasource {
                 name: "template1".to_string(),

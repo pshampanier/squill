@@ -50,6 +50,15 @@ export class Connection {
   @serializable("boolean", { snakeCase: "property" })
   savePassword?: boolean;
 
+  /**
+   * The default datasource to use.
+   */
+  @serializable("string")
+  datasource?: string;
+
+  /**
+   * Datasources available through this connection.
+   */
   @serializable("array", { items: { type: "object", options: { factory: Datasources } } })
   datasources?: Datasources[];
 

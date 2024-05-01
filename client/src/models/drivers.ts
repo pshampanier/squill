@@ -1,5 +1,7 @@
 import { serializable } from "@/utils/serializable";
 
+export const DRIVER_CONNECTION_MODE = "CONNECTION_MODE";
+export const DRIVER_CONNECTION_STRING = "CONNECTION_STRING";
 export const DRIVER_PORT = "PORT";
 export const DRIVER_USER = "USER";
 export const DRIVER_HOST = "HOST";

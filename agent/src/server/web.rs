@@ -105,8 +105,6 @@ impl Server {
                 .make_span_with(trace::DefaultMakeSpan::new().include_headers(false).level(Level::TRACE))
                 .on_request(trace::DefaultOnRequest::new().level(Level::TRACE))
                 .on_response(trace::DefaultOnResponse::new().level(Level::INFO).latency_unit(LatencyUnit::Micros))
-                .on_failure(trace::DefaultOnFailure::new().level(Level::ERROR))
-                .on_body_chunk(trace::DefaultOnBodyChunk::new())
         );
 
         // Add the CORS middleware

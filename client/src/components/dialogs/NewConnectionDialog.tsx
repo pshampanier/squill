@@ -1,14 +1,13 @@
 import { produce } from "immer";
-import { Connection } from "@/models/connections";
+import { Connection, ConnectionMode } from "@/models/connections";
 import { SyntheticEvent, useRef, useState } from "react";
 import { Agent } from "@/resources/agent";
-import { DRIVER_PORT, DRIVER_USER } from "@/models/drivers";
+import { DRIVER_CONNECTION_MODE, DRIVER_HOST, DRIVER_PORT, DRIVER_SOCKET, DRIVER_USER } from "@/models/drivers";
 import Modal from "@/components/Modal";
 import Stepper from "@/components/Stepper";
 import DriverForm from "@/components/forms/connections/DriverForm";
 import ConnectForm from "@/components/forms/connections/ConnectForm";
 import AuthForm from "@/components/forms/connections/AuthForm";
-
 import WrenchIcon from "@/icons/wrench.svg?react";
 import ConnectIcon from "@/icons/plug.svg?react";
 import OptionsIcon from "@/icons/options.svg?react";
@@ -18,8 +17,7 @@ import Overlay from "@/components/Overlay";
 import { useTaskEffect } from "@/hooks/use-task-effect";
 import Connections from "@/resources/connections";
 import { Spinner } from "@/components/core/Spinner";
-import Alert from "@/components/core/Alert";
-import Button from "@/components/core/Button";
+import ErrorMessage from "@/components/core/ErrorMessage";
 
 type NewConnectionDialogProps = {
   onClose?: (connection: Connection) => void;
@@ -36,8 +34,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
     param: useRef<HTMLFormElement>(null),
   };
 
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const { taskStatus, message, setTaskStatus, setTask } = useTaskEffect(
+  const { taskStatus, setTaskStatus, message, setMessage, setTask } = useTaskEffect(
     "running",
     async () => {
       const connection = await Connections.create();
@@ -45,33 +42,33 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
     },
     "Creating a new connection..."
   );
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const selectedDriver = Agent.agent.drivers.find((driver) => driver.name === connection?.driver);
 
   const handleClose = () => {
-    onClose(connection);
+    setMessage("Testing the connection...");
+    const task = async () => {
+      await Connections.test(connection);
+      onClose(connection);
+    };
+    setTask(task);
   };
 
   // Selection of the driver.
   // All properties of the connection are set to their default values, except driver, id, name and label.
   const handleDriverChange = (driverName: string) => {
     const driver = Agent.agent.drivers.find((d) => d.name === driverName);
-    const connectionMode = (() => {
-      if (driver.capabilities.includes("connect_host")) return "host";
-      else if (driver.capabilities.includes("connect_socket")) return "socket";
-      else if (driver.capabilities.includes("connect_file")) return "file";
-      else if (driver.capabilities.includes("connect_string")) return "connection_string";
-    })();
     setConnection(
       new Connection({
         driver: driver.name,
         id: connection.id,
         name: connection.name,
         alias: connection.alias,
-        mode: connectionMode,
+        mode: driver.defaults[DRIVER_CONNECTION_MODE] as ConnectionMode, // FIXME: This MUST be a ConnectionMode
         username: driver.defaults[DRIVER_USER],
+        host: driver.defaults[DRIVER_HOST],
         port: parseInt(driver.defaults[DRIVER_PORT]),
+        socket: driver.defaults[DRIVER_SOCKET],
       })
     );
   };
@@ -86,6 +83,8 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
     setConnection(c);
   };
 
+  // When we submit a step, we check if the form is valid inside the current step is valid. If not, we prevent the move
+  // the next step.
   const handleSubmitStep = (event: SyntheticEvent, name: string) => {
     const form = formsRef[name as keyof typeof formsRef];
     if (form.current && !form.current.checkValidity()) {
@@ -163,10 +162,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
         )}
         {taskStatus === "error" && (
           <Overlay position="absolute">
-            <Alert title={true} icon={true} severity="danger" border className="w-3/4 backdrop-blur-xl">
-              <p>{message.toString()}</p>
-              <Button onClick={onCancel} className="mt-4 ml-auto" variant="solid" text="Close" />
-            </Alert>
+            <ErrorMessage message={message} onClose={() => setTaskStatus("pending")} />
           </Overlay>
         )}
       </div>

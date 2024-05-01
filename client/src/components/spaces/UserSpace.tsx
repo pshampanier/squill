@@ -56,7 +56,7 @@ export default function UserSpace(props: SpaceProps) {
               <div className="text-center text-gray-500 dark:text-gray-400">
                 <h1 className="text-xl font-bold">No selection</h1>
                 <PageLinks>
-                  <PageLinks.Link shortcut={["Meta+N", "Ctrl+N"]}>Create a new workspace</PageLinks.Link>
+                  <PageLinks.Link shortcut={"Ctrl+Alt+C"}>Create a new connection</PageLinks.Link>
                   <PageLinks.Link shortcut={["Meta+Shift+N", "Ctrl+Shift+N"]}>Create a new folder</PageLinks.Link>
                 </PageLinks>
               </div>

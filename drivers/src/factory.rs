@@ -36,11 +36,11 @@ impl DriverExecutor for AnyDriver {
 pub struct DriverFactory;
 
 impl DriverFactory {
-    pub fn create(driver: &str, connection_string: String) -> Box<dyn Driver> {
+    pub fn create(driver: &str, connection_string: String) -> Result<Box<dyn Driver>> {
         match driver {
-            "sqlite" => Box::new(SqliteDriver::new(connection_string)),
-            "postgres" => Box::new(PostgresDriver::new(connection_string)),
-            _ => panic!("Unsupported driver: {}", driver),
+            "sqlite" => Ok(Box::new(SqliteDriver::new(connection_string))),
+            "postgresql" => Ok(Box::new(PostgresDriver::new(connection_string))),
+            _ => Err(anyhow::format_err!("Unsupported driver: {}", driver)),
         }
     }
 }
@@ -53,7 +53,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sqlite_factory() {
-        let mut driver = AnyDriver::new(DriverFactory::create("sqlite", "sqlite::memory:".to_string()));
+        let mut driver = AnyDriver::new(DriverFactory::create("sqlite", "sqlite::memory:".to_string()).unwrap());
         assert!(driver.connect().await.is_ok());
 
         let mut stream = driver.query("SELECT 'Hello World'").await.unwrap();
