@@ -32,7 +32,7 @@ type DropdownProps = {
   /**
    * The variant of the dropdown (`solid`, `outline` or `ghost`).
    */
-  variant: DropdownVariant;
+  variant?: DropdownVariant;
 
   /**
    * The values to be displayed in the dropdown.
