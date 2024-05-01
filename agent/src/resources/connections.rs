@@ -70,7 +70,7 @@ impl Connection {
                 }
             }
             ConnectionMode::Socket => {
-                map.insert("socket".to_string(), self.socket.clone());
+                map.insert("host".to_string(), self.socket.clone());
             }
             ConnectionMode::File => {
                 return Err(anyhow::anyhow!("File mode is not supported by PostgreSQL"));
@@ -207,7 +207,7 @@ mod tests {
             })
                 .to_connection_string()
                 .unwrap(),
-            "socket=/var/run/postgres/.s.PGSQL.5432"
+            "host=/var/run/postgres/.s.PGSQL.5432"
         );
 
         // File mode (not supported)
