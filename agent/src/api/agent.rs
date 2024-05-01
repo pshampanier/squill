@@ -6,7 +6,7 @@ use crate::models::drivers::{
     Capability,
     Driver,
     DRIVER_CONNECTION_STRING,
-    DRIVER_CONNECT_MODE,
+    DRIVER_CONNECTION_MODE,
     DRIVER_HOST,
     DRIVER_PORT,
     DRIVER_SOCKET,
@@ -37,7 +37,7 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
                     Capability::ReadOnly
                 ],
                 defaults: HashMap::from([
-                    (DRIVER_CONNECT_MODE.to_string(), "file".to_string()),
+                    (DRIVER_CONNECTION_MODE.to_string(), "file".to_string()),
                     (DRIVER_CONNECTION_STRING.to_string(), "memory://".to_string()),
                 ]),
             },
@@ -54,7 +54,7 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
                     Capability::ConnectSocket
                 ],
                 defaults: HashMap::from([
-                    (DRIVER_CONNECT_MODE.to_string(), "host".to_string()),
+                    (DRIVER_CONNECTION_MODE.to_string(), "host".to_string()),
                     (DRIVER_HOST.to_string(), "localhost".to_string()),
                     (DRIVER_PORT.to_string(), "5432".to_string()),
                     (DRIVER_USER.to_string(), "postgres".to_string()),
@@ -74,6 +74,8 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
                     Capability::ConnectSocket
                 ],
                 defaults: HashMap::from([
+                    (DRIVER_CONNECTION_MODE.to_string(), "host".to_string()),
+                    (DRIVER_HOST.to_string(), "localhost".to_string()),
                     (DRIVER_PORT.to_string(), "3306".to_string()),
                     (DRIVER_USER.to_string(), "root".to_string()),
                 ]),
