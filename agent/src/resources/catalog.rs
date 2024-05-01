@@ -93,6 +93,13 @@ impl CatalogSection {
             _ => panic!("Invalid path: {}", path.as_str()),
         }
     }
+
+    /// Get the section as a sanitized path.
+    pub fn as_path(&self) -> CatalogPath {
+        // It's safe to use unwrap below because the value given to sanitize_catalog_path_component is a well-known
+        // constant that is guaranteed to be a valid path component.
+        crate::utils::validators::sanitize_catalog_path_component(self.as_str()).unwrap()
+    }
 }
 
 /// Create a file catalog entry to the filesystem.
