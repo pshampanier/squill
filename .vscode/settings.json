@@ -3,10 +3,14 @@
   "editor.formatOnSave": true,
   "editor.formatOnPaste": true,
   "editor.rulers": [120],
+  "editor.insertSpaces": true,
   "editor.tabSize": 2,
   "[rust]": {
     "editor.defaultFormatter": "jinxdash.prettier-rust",
     "editor.tabSize": 4
+  },
+  "[yaml]": {
+    "editor.tabSize": 2
   },
   "rust-analyzer.checkOnSave": true,
   "rust-analyzer.check.command": "clippy",

@@ -1,4 +1,3 @@
-import { secondary as secondaryColors } from "@/utils/colors";
 import { useUserStore } from "@/stores/UserStore";
 import UserCatalogSection from "@/components/sidebar/users/UserCatalogRoot";
 import PageLinks from "@/components/PageLinks";
@@ -9,15 +8,9 @@ import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
 import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
-
 import ServerIcon from "@/icons/server.svg?react";
 import StarIcon from "@/icons/star.svg?react";
 import WorkspacesIcon from "@/icons/workspaces.svg?react";
-import FolderPlus from "@/icons/folder-plus.svg?react";
-import Plus from "@/icons/plus.svg?react";
-
-import Button from "@/components/core/Button";
-import { ColorsContext } from "@/stores/ColorsContext";
 
 export default function UserSpace(props: SpaceProps) {
   console.debug("Rendering UserSpace");
@@ -36,13 +29,8 @@ export default function UserSpace(props: SpaceProps) {
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
           <SpaceSidebar>
-            <ColorsContext.Provider value={secondaryColors}>
-              <Toolbar>
-                <Button variant="ghost" icon={FolderPlus} />
-                <Button variant="ghost" icon={Plus} />
-              </Toolbar>
-            </ColorsContext.Provider>
             <SidebarSection label="User's Catalog">
+              <UserCatalogSection label="CONNECTIONS" path="connections" icon={ServerIcon}></UserCatalogSection>
               <UserCatalogSection label="ENVIRONMENTS" path="environments" icon={ServerIcon}></UserCatalogSection>
               <UserCatalogSection label="WORKSPACES" path="workspaces" icon={WorkspacesIcon}></UserCatalogSection>
               {showFavorites && (

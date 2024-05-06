@@ -17,8 +17,7 @@
       },
       "args": ["--verbose", "start", "--port", "8080", "--api-key", "x-dev"],
       "env": {
-        "SQUILL_LOG_LEVEL": "trace",
-        "SQUILL_APP_DIR": "build/app_dir"
+        "SQUILL_LOG_LEVEL": "trace"
       },
       "cwd": "${workspaceFolder}"
     },

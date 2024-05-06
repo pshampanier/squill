@@ -4,24 +4,40 @@ import { CatalogEntry } from "@/resources/users";
 import { produce } from "immer";
 import { create } from "zustand";
 
-export type CatalogRoot = "environments" | "workspaces" | "favorites";
+export type CatalogRoot = "connections" | "environments" | "workspaces" | "favorites";
 
-type State = {
+export type State = {
   settings: UserSettings | null;
 
-  environments: string[];
-  workspaces: string[];
-  favorites: string[];
-
-  catalog: Map<string, CatalogEntry>;
+  /**
+   * The ids of the connections located at the root of the catalog.
+   */
+  connections: string[];
 
   /**
-   * The id of the active catalog entry.
+   * The ids of the environments located at the root of the catalog.
    */
-  activeId: string | null;
+  environments: string[];
+
+  /**
+   * The ids of the workspaces located at the root of the catalog.
+   */
+  workspaces: string[];
+
+  /**
+   * The ids of the favorites located at the root of the catalog.
+   */
+  favorites: string[];
+
+  /**
+   * A map of catalog entries.
+   *
+   * The key is the id of the entry ad the value is the entry itself.
+   */
+  catalog: Map<string, CatalogEntry>;
 };
 
-type Actions = {
+export type Actions = {
   /**
    * Reset the store when a new user is logged in.
    */
@@ -46,31 +62,40 @@ type Actions = {
   renameCatalogEntry: (id: string, path: string, newName: string) => Promise<void>;
 
   /**
-   * Set the active catalog entry.
+   * Create a new catalog entry.
+   *
+   * The entry is first created on the server and then the store is updated if the server operation is successful,
+   * otherwise a exception is thrown.
+   *
+   * @param path The path of the catalog where the entry should be created (this is the parent of the entry to be created).
+   * @param id The id of the folder where the entry should be created (this is the parent of the entry to be created) or
+   *        `undefined` if the entry should be created at the root of the catalog.
+   * @param item The item to be created.
    */
-  setActiveId: (id: string | null) => void;
+  createCatalogEntry: (path: string, id: string | undefined, item: object) => Promise<void>;
 };
 
-export const useUserStore = create<State & Actions>((set) => {
+const initialState: State = {
+  settings: null,
+  connections: [],
+  environments: [],
+  workspaces: [],
+  favorites: [],
+  catalog: new Map<string, CatalogEntry>(),
+};
+
+export const useUserStore = create<State & Actions>((set, get) => {
   return {
-    settings: null,
-
-    environments: [],
-    workspaces: [],
-    favorites: [],
-
-    catalog: new Map<string, CatalogEntry>(),
-
-    activeId: null,
+    ...initialState,
 
     /**
      * Reset the store when a new user is logged in.
      */
     reset() {
       const user = Users.current;
-      set((state) => ({
-        ...state,
-        settings: produce(user.settings, () => {}),
+      set(() => ({
+        ...initialState,
+        settings: produce(user?.settings, () => {}),
       }));
     },
 
@@ -123,13 +148,36 @@ export const useUserStore = create<State & Actions>((set) => {
     },
 
     /**
-     * Set the active catalog entry.
+     * Create a new catalog entry.
      */
-    setActiveId(id: string | null) {
-      set((state) => ({
-        ...state,
-        activeId: id,
-      }));
+    async createCatalogEntry(path: string, id: string | undefined, item: object) {
+      const entry = await Users.createCatalogEntry(path, item);
+      if (id === undefined) {
+        // Adding the entry to the root of the catalog.
+        // TODO: The store should also take care of the state of the parent folder (open/close).
+        const rootPath = path as CatalogRoot;
+        const rootCollection = get()[rootPath];
+        if (rootCollection.length === 0) {
+          // Loading the catalog will take care of adding the newly created entry to the catalog.
+          await get().loadCatalog(rootPath);
+        } else {
+          set((state) => ({
+            ...state,
+            [path]: [...state[rootPath], entry.id],
+            catalog: mergeCatalog(state.catalog, [entry]),
+          }));
+        }
+      } else {
+        // Adding an entry to a folder in the catalog.
+        // We need to add the entry to the folder's children.
+        set((state) => ({
+          ...state,
+          catalog: mergeAndMutateCatalog(state.catalog, [entry], id, (folder) => ({
+            ...folder,
+            children: [...folder.children, entry],
+          })),
+        }));
+      }
     },
   };
 });
@@ -144,17 +192,24 @@ function mergeCatalog(catalog: Map<string, CatalogEntry>, entries: CatalogEntry[
 }
 
 function mutateCatalog(catalog: Map<string, CatalogEntry>, id: string, mutator: (entry: CatalogEntry) => CatalogEntry) {
-  const newCatalog = new Map<string, CatalogEntry>();
-  for (const [key, entry] of catalog) {
-    if (key === id) {
-      newCatalog.set(key, mutator(entry));
-    } else {
-      newCatalog.set(key, entry);
-    }
+  const newCatalog = new Map(catalog);
+  const entry = newCatalog.get(id);
+  if (entry) {
+    // replace the entry with id `id` with the mutated entry
+    newCatalog.set(id, mutator(entry));
   }
   return newCatalog;
 }
 
+/**
+ * Merge a catalog with a list of given entries and mutate the entry with id `id` using the given `mutator`.
+ *
+ * @param catalog The catalog to merge with the entries.
+ * @param entries The entries to be added/replaced in the catalog.
+ * @param id The id of the entry to be mutated.
+ * @param mutator A function that takes an entry and returns that entry after having applied a mutation on it.
+ * @returns The new catalog.
+ */
 function mergeAndMutateCatalog(
   catalog: Map<string, CatalogEntry>,
   entries: CatalogEntry[],
@@ -162,9 +217,14 @@ function mergeAndMutateCatalog(
   mutator: (entry: CatalogEntry) => CatalogEntry
 ) {
   const newCatalog = new Map(catalog);
+  // add/replace entries present in `entries`
   for (const entry of entries) {
-    newCatalog.set(entry.id, mutator(entry));
+    newCatalog.set(entry.id, entry);
   }
-  newCatalog.set(id, mutator(newCatalog.get(id)!));
+  // replace the entry with id `id` with the mutated entry
+  const entry = newCatalog.get(id);
+  if (entry) {
+    newCatalog.set(id, mutator(entry));
+  }
   return newCatalog;
 }

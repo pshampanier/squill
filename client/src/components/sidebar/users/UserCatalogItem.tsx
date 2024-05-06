@@ -3,7 +3,9 @@ import SidebarItem, { SidebarItemProps } from "@/components/sidebar/SidebarItem"
 import FolderIcon from "@/icons/folder.svg?react";
 import WorkspaceIcon from "@/icons/workspace.svg?react";
 import ServerIcon from "@/icons/server.svg?react";
+import ConnectIcon from "@/icons/plug.svg?react";
 import { useUserStore } from "@/stores/UserStore";
+import { useSpaceStore } from "@/stores/SpaceStore";
 
 type Props = {
   parentPath: string;
@@ -15,7 +17,7 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
   const entry = useUserStore((state) => state.catalog.get(id));
   const renameCatalogEntry = useUserStore((state) => state.renameCatalogEntry);
   const loadCatalog = useUserStore((state) => state.loadCatalog);
-  const selected = useUserStore((state) => state.activeId === id);
+  const selected = useSpaceStore((state) => state.activeId === id);
 
   // The path of the catalog entry.
   const path = `${parentPath}/${entry.name}`;
@@ -38,7 +40,7 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
   };
 
   const handleOnClick = () => {
-    useUserStore.setState({ activeId: id });
+    useSpaceStore.setState({ activeId: id });
     return false;
   };
 
@@ -64,6 +66,8 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
   };
 
   switch (entry.type) {
+    case "connection":
+      return <SidebarItem {...props} icon={ConnectIcon} editable />;
     case "environment":
       return <SidebarItem {...props} icon={ServerIcon} editable />;
     case "workspace":

@@ -13,7 +13,7 @@ pub enum WorkspaceCollectionItemType {
 }
 */
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CollectionItem<T> {
     pub id: String,
     pub name: String,

@@ -18,6 +18,7 @@ import { useTaskEffect } from "@/hooks/use-task-effect";
 import Connections from "@/resources/connections";
 import { Spinner } from "@/components/core/Spinner";
 import ErrorMessage from "@/components/core/ErrorMessage";
+import { CatalogRoot, useUserStore } from "@/stores/UserStore";
 
 type NewConnectionDialogProps = {
   onClose?: (connection: Connection) => void;
@@ -37,18 +38,24 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
   const { taskStatus, setTaskStatus, message, setMessage, setTask } = useTaskEffect(
     "running",
     async () => {
-      const connection = await Connections.create();
+      const connection = await Connections.defaults();
       setConnection(connection);
     },
     "Creating a new connection..."
   );
 
-  const selectedDriver = Agent.agent.drivers.find((driver) => driver.name === connection?.driver);
+  // The creation of the connection is performed by the UserStore which will reflect the changes in the UI.
+  const createCatalogEntry = useUserStore((state) => state.createCatalogEntry);
 
   const handleClose = () => {
     setMessage("Testing the connection...");
     const task = async () => {
+      // FIXME: The parent path & id should be taken from the store. As for now we are always creating a connection
+      // at the root of the connections catalog.
+      const parentPath: CatalogRoot = "connections";
+      const parentId: string = undefined;
       await Connections.test(connection);
+      await createCatalogEntry(parentPath, parentId, connection);
       onClose(connection);
     };
     setTask(task);
@@ -92,6 +99,8 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
       event.stopPropagation();
     }
   };
+
+  const selectedDriver = Agent.agent.drivers.find((driver) => driver.name === connection?.driver);
 
   const driver = Agent.agent.drivers.find((driver) => driver.name === connection?.driver);
 

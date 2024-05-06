@@ -16,6 +16,7 @@ pub enum Error {
     Forbidden,
     BadRequest(String),
     InternalServerError,
+    UnprocessableEntity(String),
     UserError(UserError),
 }
 
@@ -25,6 +26,8 @@ impl IntoResponse for Error {
             Error::Forbidden => (StatusCode::FORBIDDEN, "Forbidden").into_response(),
             Error::BadRequest(reason) => (StatusCode::BAD_REQUEST, format!("Bad Request: {}", reason)).into_response(),
             Error::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
+            Error::UnprocessableEntity(reason) =>
+                (StatusCode::UNPROCESSABLE_ENTITY, format!("Unprocessable Entity: {}", reason)).into_response(),
             Error::UserError(user_error) => user_error.into_response(),
         }
     }

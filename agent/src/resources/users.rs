@@ -15,6 +15,8 @@ use crate::resources::catalog::{ self };
 use crate::resources::catalog::CatalogSection;
 use crate::resources::Resource;
 
+use super::catalog::CatalogEntry;
+
 /// Create a new user.
 ///
 /// This function creates a new user directory and a user file in the following structure:
@@ -73,7 +75,7 @@ pub fn create_user(username: &Username) -> Result<User> {
     std::fs::create_dir(user_dir.join(USER_COLLECTIONS_DIRNAME))?;
     std::fs::create_dir(user_dir.join(USER_DATA_DIRNAME))?;
     for variant in CatalogSection::variants() {
-        std::fs::create_dir(user_dir.join(USER_CATALOG_DIRNAME).join(variant.as_str()))?;
+        catalog::create_dir(username, &variant.as_path())?;
     }
 
     // Create a default workspace for the user and save it to the filesystem.
@@ -127,7 +129,9 @@ pub fn save_user_settings(username: &Username, user_settings: UserSettings) -> R
 ///
 /// This function creates a new resource in the catalog and saves the resource itself to the filesystem
 /// under the collections directory.
-pub fn create_user_resource<T>(username: &Username, parent_path: &CatalogPath, resource: &T) -> Result<()>
+///
+/// If successful, the function returns the newly created catalog entry.
+pub fn create_user_resource<T>(username: &Username, parent_path: &CatalogPath, resource: &T) -> Result<CatalogEntry>
     where T: Resource
 {
     // Sanitize the resource name to make sure it will not pose security threats.
@@ -142,7 +146,7 @@ pub fn create_user_resource<T>(username: &Username, parent_path: &CatalogPath, r
     }
 
     // Create the resource in the catalog.
-    catalog::create_file(username, &catalog_path, resource.id())?;
+    let catalog_entry = catalog::create_file(username, &catalog_path, resource.id())?;
 
     // Save the resource to the filesystem.
     if let Err(e) = resource.save(username) {
@@ -151,7 +155,7 @@ pub fn create_user_resource<T>(username: &Username, parent_path: &CatalogPath, r
         return Err(e);
     }
 
-    Ok(())
+    Ok(catalog_entry)
 }
 
 pub fn get_collections_dir(username: &Username) -> PathBuf {

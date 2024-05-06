@@ -11,8 +11,6 @@ use crate::api::error::Error;
 use crate::models::users::User;
 use crate::server::state::ServerState;
 use anyhow::Context;
-use axum::http::StatusCode;
-use axum::response::IntoResponse;
 use axum::routing::post;
 use axum::routing::put;
 use axum::{ Json, Router, routing::get };
@@ -160,41 +158,41 @@ async fn save_user_settings(
 /// POST /users/:username/catalog?path=...
 ///
 /// Create a new resource in the user's catalog.
+/// FIXME: This function should return a StatusCode::CREATED rather than a 200 OK.
 async fn create_user_resource(
     context: ServerResult<RequestContext>,
     Path(username): Path<String>,
     Query(params): Query<CatalogQueryParameters>,
     resource: Json<Value>
-) -> impl IntoResponse {
-    // To ease the implementation of the function, a closure is used to handle the result of the function. This way
-    // we can use the `?` operator to propagate the error to the caller by leveraging the existing traits.
-    (|| -> ServerResult<StatusCode> {
-        let username = validators::sanitize_username(username.as_str())?;
-        let catalog_path = validators::sanitize_catalog_path(params.path.as_str())?;
+) -> ServerResult<Json<CatalogEntry>> {
+    let username = validators::sanitize_username(username.as_str())?;
+    let catalog_path = validators::sanitize_catalog_path(params.path.as_str())?;
 
-        // Make sure we are not trying to access a directory that we are not allowed to.
-        if username.ne(context?.get_username()) {
-            return Err(Error::Forbidden);
-        }
+    // Make sure we are not trying to access a directory that we are not allowed to.
+    if username.ne(context?.get_username()) {
+        return Err(Error::Forbidden);
+    }
 
-        match CatalogSection::from_path(&catalog_path) {
-            CatalogSection::Connections => {
-                let connection: Connection = serde_json::from_value(resource.0)?;
-                users::create_user_resource(&username, &catalog_path, &connection)?;
-            }
-            CatalogSection::Environments => {
-                todo!();
-            }
-            CatalogSection::Favorites => {
-                todo!();
-            }
-            CatalogSection::Workspaces => {
-                todo!("Create a workspace");
+    match CatalogSection::from_path(&catalog_path) {
+        CatalogSection::Connections => {
+            match serde_json::from_value::<Connection>(resource.0) {
+                Ok(connection) => {
+                    let catalog_entry = users::create_user_resource(&username, &catalog_path, &connection)?;
+                    Ok(Json(catalog_entry))
+                }
+                Err(reason) => Err(Error::UnprocessableEntity(reason.to_string())),
             }
         }
-
-        Ok(StatusCode::CREATED)
-    })()
+        CatalogSection::Environments => {
+            todo!();
+        }
+        CatalogSection::Favorites => {
+            todo!();
+        }
+        CatalogSection::Workspaces => {
+            todo!();
+        }
+    }
 }
 
 pub fn authenticated_routes(state: ServerState) -> Router {

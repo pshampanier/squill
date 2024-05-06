@@ -17,7 +17,7 @@ use tracing::{ error, warn };
 pub type CatalogEntry = CollectionItem<CatalogEntryType>;
 
 /// Types of items that can be owned by a user.
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum CatalogEntryType {
