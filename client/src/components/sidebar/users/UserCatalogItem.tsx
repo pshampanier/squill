@@ -1,11 +1,11 @@
 import { CatalogEntry } from "@/resources/users";
 import SidebarItem, { SidebarItemProps } from "@/components/sidebar/SidebarItem";
+import ConnectionSidebarItem from "@/components/sidebar/ConnectionSidebarItem";
 import FolderIcon from "@/icons/folder.svg?react";
 import WorkspaceIcon from "@/icons/workspace.svg?react";
 import ServerIcon from "@/icons/server.svg?react";
-import ConnectIcon from "@/icons/plug.svg?react";
 import { useUserStore } from "@/stores/UserStore";
-import { useSpaceStore } from "@/stores/SpaceStore";
+import { useAppStore } from "@/stores/AppStore";
 
 type Props = {
   parentPath: string;
@@ -17,12 +17,10 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
   const entry = useUserStore((state) => state.catalog.get(id));
   const renameCatalogEntry = useUserStore((state) => state.renameCatalogEntry);
   const loadCatalog = useUserStore((state) => state.loadCatalog);
-  const selected = useSpaceStore((state) => state.activeId === id);
+  const selected = useAppStore((state) => state.activeId === id);
 
   // The path of the catalog entry.
   const path = `${parentPath}/${entry.name}`;
-
-  console.log("UserCatalogItem", entry);
 
   /// Check if the new name for the catalog entry is valid while the user is editing it.
   ///
@@ -40,7 +38,7 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
   };
 
   const handleOnClick = () => {
-    useSpaceStore.setState({ activeId: id });
+    useAppStore.setState({ activeId: id });
     return false;
   };
 
@@ -67,7 +65,7 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
 
   switch (entry.type) {
     case "connection":
-      return <SidebarItem {...props} icon={ConnectIcon} editable />;
+      return <ConnectionSidebarItem {...props} id={id} parentPath={path} />;
     case "environment":
       return <SidebarItem {...props} icon={ServerIcon} editable />;
     case "workspace":

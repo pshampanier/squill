@@ -1,6 +1,5 @@
 import { useUserStore } from "@/stores/UserStore";
 import UserCatalogSection from "@/components/sidebar/users/UserCatalogRoot";
-import PageLinks from "@/components/PageLinks";
 import Titlebar from "@/components/titlebar/Titlebar";
 import Space, { SpaceProps } from "@/components/spaces/Space";
 import Main from "@/components/Main";
@@ -8,9 +7,12 @@ import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
 import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
+import PagesTabs from "@/components/titlebar/PagesTabs";
+import Editor from "@/components/Editor";
 import ServerIcon from "@/icons/server.svg?react";
 import StarIcon from "@/icons/star.svg?react";
 import WorkspacesIcon from "@/icons/workspaces.svg?react";
+import UserSpaceCommandManager from "@/components/spaces/UserSpaceCommandManager";
 
 export default function UserSpace(props: SpaceProps) {
   console.debug("Rendering UserSpace");
@@ -18,11 +20,13 @@ export default function UserSpace(props: SpaceProps) {
   const showRecentlyOpened = useUserStore((state) => state.settings?.showRecentlyOpened);
   return (
     <>
+      <UserSpaceCommandManager />
       <Space {...props}>
         <Titlebar>
           <Toolbar>
             <CommandButton command="sidebar.toggle" />
           </Toolbar>
+          <PagesTabs />
           <Toolbar>
             <CommandButton command="settings.open" />
           </Toolbar>
@@ -40,15 +44,7 @@ export default function UserSpace(props: SpaceProps) {
             {showRecentlyOpened && <SidebarSection label="Recently Opened" />}
           </SpaceSidebar>
           <Main>
-            <div className="flex items-center justify-center w-full h-full">
-              <div className="text-center text-gray-500 dark:text-gray-400">
-                <h1 className="text-xl font-bold">No selection</h1>
-                <PageLinks>
-                  <PageLinks.Link shortcut={"Ctrl+Alt+C"}>Create a new connection</PageLinks.Link>
-                  <PageLinks.Link shortcut={["Meta+Shift+N", "Ctrl+Shift+N"]}>Create a new folder</PageLinks.Link>
-                </PageLinks>
-              </div>
-            </div>
+            <Editor />
           </Main>
         </div>
       </Space>

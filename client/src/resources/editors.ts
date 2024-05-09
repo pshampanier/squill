@@ -17,7 +17,7 @@ export type Editor = {
   readonly icon: SVGIcon;
 
   /**
-   * The Readt component to be used for the editor.
+   * The React component to be used for the editor.
    */
   readonly component: React.FunctionComponent<{ pageId: string }>;
 };
@@ -30,8 +30,18 @@ export const editors = (function () {
       editors.push(editor);
     },
 
-    getEditor(filename: string): Editor | undefined {
-      return editors.find((e) => e.selector.test(filename));
+    /**
+     * Get the editor by its name.
+     */
+    getEditorByName(name: string): Editor | undefined {
+      return editors.find((e) => e.name === name);
+    },
+
+    /**
+     * Get the editor that can open the given file.
+     */
+    getEditorByFilename(filename: string): Editor | undefined {
+      return editors.find((e) => e.selector?.test(filename));
     },
   };
 })();

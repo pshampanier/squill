@@ -12,3 +12,7 @@ export const HTTP_HEADER_X_REQUEST_ID = "X-Request-ID";
 // List of media type
 export const MEDIA_TYPE_APPLICATION_JSON = "application/json";
 export const MEDIA_TYPE_PLAIN_TEXT = "plain/text";
+
+// List of editor names
+export const EDITOR_CONNECTION = "Connection";
+export const EDITOR_USER_BLANK = "UserBlank";

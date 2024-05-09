@@ -38,7 +38,7 @@ export default function SidebarWorkspaceCollectionItem({ itemId }: SidebarWorksp
         // Already opened, we just need to activate it
         setActivePage(page.id);
       } else {
-        const editor = editors.getEditor(item.name);
+        const editor = editors.getEditorByFilename(item.name);
         // Not opened, we can replace the active page if it's not modified, otherwise we need to create a new page
         if (activePage && !activePage.modified) {
           replaceActivePage(item.id, item.name, editor);
@@ -70,7 +70,7 @@ export default function SidebarWorkspaceCollectionItem({ itemId }: SidebarWorksp
   if (item.type === "folder") {
     return <SidebarItem {...itemProps} loaderfn={openFolder} icon={FolderIcon} collapsible></SidebarItem>;
   } else if (item.type === "file") {
-    const editor = editors.getEditor(item.name);
+    const editor = editors.getEditorByFilename(item.name);
     if (editor) {
       return <SidebarItem {...itemProps} icon={editor.icon} loaderfn={openFile} />;
     }

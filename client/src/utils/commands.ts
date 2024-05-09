@@ -70,7 +70,7 @@ export function getCommand(name: string | undefined): Command {
   }
 }
 
-export function registerAction(command: string, callback: CommandAction) {
+export function registerAction(command: string, callback: CommandAction): Command {
   const c = commands[command];
   if (!c) {
     raise(`Command '${command}' not registered`);
@@ -78,6 +78,7 @@ export function registerAction(command: string, callback: CommandAction) {
     raise(`The given action is already registered for the command '${command}'`);
   } else {
     c.actions.push(callback);
+    return c;
   }
 }
 
