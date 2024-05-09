@@ -6,7 +6,6 @@ import Editor from "@/components/Editor";
 import Titlebar from "@/components/titlebar/Titlebar";
 import Space, { SpaceProps } from "@/components/spaces/Space";
 import PagesTabs from "@/components/titlebar/PagesTabs";
-import PageLinks from "@/components/PageLinks";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
 import CommandButton from "@/components/core/CommandButton";
@@ -51,11 +50,6 @@ export default function WorkspaceSpace(props: SpaceProps) {
               <div className="flex items-center justify-center w-full h-full">
                 <div className="text-center text-gray-500 dark:text-gray-400">
                   <h1 className="text-xl font-bold">No selection</h1>
-                  <PageLinks>
-                    <PageLinks.Link shortcut={["Meta+Q", "Ctrl+Q"]}>Create a new query</PageLinks.Link>
-                    <PageLinks.Link shortcut={["Meta+D", "Ctrl+D"]}>Create a new dashboard</PageLinks.Link>
-                    <PageLinks.Link shortcut={["Meta+Shift+N", "Ctrl+Shift+N"]}>Create a new folder</PageLinks.Link>
-                  </PageLinks>
                 </div>
               </div>
             )}
