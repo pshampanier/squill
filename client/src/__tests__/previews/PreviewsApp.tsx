@@ -22,6 +22,7 @@ import InputsPreview from "./core/Inputs.preview";
 import RadioPreview from "./core/Radio.preview";
 import ModalPreview from "./layouts/Modal.preview";
 import AlertPreview from "./core/Alert.preview";
+import QueryPromptPreview from "./query/QueryPrompt.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -40,6 +41,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Buttons" />
           <PreviewSidebarItem view="Dropdown" />
+          <PreviewSidebarItem view="QueryPrompt" />
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
@@ -67,6 +69,7 @@ export function PreviewsApp() {
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Dropdown" && <DropdownPreview />}
+          {view === "QueryPrompt" && <QueryPromptPreview />}
           {view === "Input" && <InputsPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
