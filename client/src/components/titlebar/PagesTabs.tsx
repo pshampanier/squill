@@ -28,10 +28,7 @@ function PagesTabs() {
   };
 
   const classes = {
-    closeButton: cx(
-      "flex w-9 h-9 p-1 items-center align-middle rounded hover:bg-blue-600",
-      tertiary("background", "hover:background")
-    ),
+    addButton: cx("flex w-9 h-9 p-1 items-center align-middle rounded", tertiary("background", "hover:background")),
   };
 
   return (
@@ -48,8 +45,8 @@ function PagesTabs() {
         );
       })}
       {pages.length > 0 && (
-        <button className={classes.closeButton} onClick={handleAddBlankPage}>
-          <PlusIcon className={`w-8 h-8 px-1 rounded`} />
+        <button className={classes.addButton} onClick={handleAddBlankPage}>
+          <PlusIcon className={`w-7 h-7 px-1 rounded`} />
         </button>
       )}
       <div className="flex-grow" data-tauri-drag-region />
@@ -73,11 +70,14 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
   const classes = {
     tab: cx(
       "flex items-center h-9 px-4 rounded w-48",
-      "text-xs text-left whitespace-nowrap overflow-hidden overflow-ellipsis",
       selected && "shadow-sm shadow-blue-800 dark:shadow-blue-900",
-      selected ? "bg-blue-600 dark:bg-blue-900" : tertiary("background", "hover:background")
+      selected ? "bg-blue-400 dark:bg-blue-900" : tertiary("background", "hover:background")
     ),
-    closeButton: cx("flex ml-auto min-w-fit rounded", selected ? "hover:bg-blue-500" : "hover:bg-blue-700"),
+    title: "mx-2 text-xs font-medium text-left whitespace-nowrap overflow-hidden overflow-ellipsis",
+    closeButton: cx(
+      "flex ml-auto min-w-fit rounded",
+      selected ? "hover:bg-blue-500 dark:hover:bg-blue-800" : "hover:bg-blue-800 dark:hover:bg-blue-700"
+    ),
   };
 
   // Showing the file extension only if the setting is enabled
@@ -90,8 +90,8 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
         onSelect(page.id);
       }}
     >
-      <Icon className="w-5 h-5" />
-      <span className="mx-2 text-xs font-medium">{title}</span>
+      <Icon className="flex-shrink-0 w-5 h-5" />
+      <span className={classes.title}>{title}</span>
       <a href="#" className={classes.closeButton}>
         <CloseButtonIcon
           className={`w-6 h-6 px-1 bg-transparent`}
