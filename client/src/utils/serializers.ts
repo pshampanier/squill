@@ -120,6 +120,27 @@ export function deserializeBoolean(value: unknown, options?: DeserializeBooleanO
   }, options?.name);
 }
 
+export type DeserializeOptions = {
+  readonly name?: string;
+};
+
+/**
+ * Deserialize a value as a date
+ */
+export function deserializeDate(value: unknown, options?: DeserializeOptions): Date {
+  return safeDeserialization<Date>(() => {
+    if (value instanceof Date) {
+      return value;
+    } else if (typeof value === "string") {
+      const d = Date.parse(value);
+      if (!isNaN(d)) {
+        return new Date(d);
+      }
+    }
+    throw new SerializationError(`'${value || ""}' is not a valid date`);
+  }, options?.name);
+}
+
 export type DeserializeStringFormatFunction = (value: string) => string;
 
 export type DeserializeStringFormatOption = RegExp | "identifier" | "uuid" | DeserializeStringFormatFunction;

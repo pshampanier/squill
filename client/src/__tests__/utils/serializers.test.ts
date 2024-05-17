@@ -59,6 +59,24 @@ describe("deserializeString", () => {
   });
 });
 
+describe("deserializeDate", () => {
+  test("valid value", () => {
+    expect(s.deserializeDate("2021-01-01")).toEqual(new Date("2021-01-01"));
+    expect(s.deserializeDate("2021-01-01T00:00:00")).toEqual(new Date("2021-01-01T00:00:00"));
+    expect(s.deserializeDate("2022-01-01T00:00:00.000Z")).toEqual(new Date("2022-01-01T00:00:00.000Z"));
+  });
+  test("invalid value", () => {
+    expect(() => s.deserializeDate(undefined)).toThrowError(/is not a valid date/);
+    expect(() => s.deserializeDate(null)).toThrowError(/is not a valid date/);
+    expect(() => s.deserializeDate(12)).toThrowError(/is not a valid date/);
+    expect(() => s.deserializeDate("")).toThrowError(/is not a valid date/);
+    expect(() => s.deserializeDate("2021-13-01T00:00:00.000Z")).toThrowError(/is not a valid date/);
+    expect(() => s.deserializeDate("2021-13-01T00:00:00.000Z", { name: "test" })).toThrowError(
+      /'2021-13-01T00:00:00.000Z' is not a valid date for the property 'test'/
+    );
+  });
+});
+
 describe("deserializeObject", () => {
   test("valid value", () => {
     const expected = {

@@ -63,6 +63,23 @@ describe("deserialization", () => {
     });
   });
 
+  test("datetime", () => {
+    class Appointment {
+      @serializable("datetime")
+      date?: Date;
+    }
+    expect(
+      deserialize<Appointment>(
+        {
+          date: "2021-01-01T00:00:00Z",
+        },
+        Appointment
+      )
+    ).toEqual({
+      date: new Date("2021-01-01T00:00:00Z"),
+    });
+  });
+
   test("inheritance", () => {
     class User {
       @serializable("string", { required: true })
@@ -150,7 +167,7 @@ describe("deserialization", () => {
     expect(object_b.property).toBeInstanceOf(ObjectA);
   });
 
-  test("custom deserialiser", () => {
+  test("custom deserializer", () => {
     function customDeserializer(value: unknown, key: string | number): [string | number, unknown] {
       switch (key) {
         case "x":
@@ -311,12 +328,25 @@ describe("serialization", () => {
       age?: number;
 
       @serializable("boolean")
-      timeTraveller?: boolean;
+      timeTraveler?: boolean;
+
+      @serializable("datetime")
+      birthDate?: Date;
     }
-    expect(serialize<User>(Object.assign(new User(), { username: "marty", age: 17, timeTraveller: true }))).toEqual({
+    expect(
+      serialize<User>(
+        Object.assign(new User(), {
+          username: "marty",
+          age: 17,
+          timeTraveler: true,
+          birthDate: new Date("1968-06-12T00:00:00.000Z"),
+        })
+      )
+    ).toEqual({
       username: "marty",
       age: 17,
-      timeTraveller: true,
+      timeTraveler: true,
+      birthDate: "1968-06-12T00:00:00.000Z",
     });
   });
 

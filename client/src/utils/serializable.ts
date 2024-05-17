@@ -4,6 +4,7 @@ import { ObjectFactory, ObjectFactoryConstructor, ObjectFactoryFunction } from "
 import {
   deserializeArray,
   deserializeBoolean,
+  deserializeDate,
   deserializeInteger,
   deserializeObject,
   deserializeString,
@@ -132,7 +133,7 @@ function callFactory<T extends object>(factory: ObjectFactory<T>, ...args: unkno
  * Decorators
  */
 
-type SerializableType = "string" | "boolean" | "integer" | "object" | "identifier" | "array" | "any";
+type SerializableType = "string" | "boolean" | "integer" | "datetime" | "object" | "identifier" | "array" | "any";
 
 /**
  * Options used by the @serializable decoration.
@@ -237,6 +238,13 @@ function makeSerializer<T extends object>(type: SerializableType, options?: Seri
         ];
       };
     }
+    case "datetime": {
+      return (value: unknown, key: string | number) => {
+        if (value instanceof Date) {
+          return [fnTransformKey(key), value.toISOString()];
+        }
+      };
+    }
     case null: {
       return (_: unknown, key: string | number) => {
         return [fnTransformKey(key), null];
@@ -296,6 +304,11 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
     case "boolean": {
       return (value: unknown, key: string | number) => {
         return [fnTransformKey(key), deserializeBoolean(value, { ...options, name: safeKey(key) })];
+      };
+    }
+    case "datetime": {
+      return (value: unknown, key: string | number) => {
+        return [fnTransformKey(key), deserializeDate(value, { ...options, name: safeKey(key) })];
       };
     }
     case "object": {
