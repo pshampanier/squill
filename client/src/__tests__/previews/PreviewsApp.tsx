@@ -1,3 +1,5 @@
+import { usePreviewsStore } from "./previewsStore";
+
 import Page from "@/components/Page";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
@@ -7,7 +9,7 @@ import SpacePreview from "./layouts/Space.preview";
 import ColorsPreview from "./layouts/Colors.preview";
 import SidebarPreview from "./sidebar/Sidebar.preview";
 import TooltipPreview from "./core/Tooltip.preview";
-import { usePreviewsStore } from "./previewsStore";
+import QueryInputPreview from "./query/QueryInput.preview";
 import SwitchPreview from "./core/Switch.preview";
 import ButtonGroupPreview from "./core/ButtonGroup.preview";
 import ButtonsPreview from "./core/Buttons.preview";
@@ -22,7 +24,6 @@ import InputsPreview from "./core/Inputs.preview";
 import RadioPreview from "./core/Radio.preview";
 import ModalPreview from "./layouts/Modal.preview";
 import AlertPreview from "./core/Alert.preview";
-import QueryPromptPreview from "./query/QueryPrompt.preview";
 
 function applyColorScheme(colorScheme: "light" | "dark") {
   document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
@@ -41,7 +42,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Buttons" />
           <PreviewSidebarItem view="Dropdown" />
-          <PreviewSidebarItem view="QueryPrompt" />
+          <PreviewSidebarItem view="QueryInput" />
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
@@ -69,7 +70,7 @@ export function PreviewsApp() {
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Dropdown" && <DropdownPreview />}
-          {view === "QueryPrompt" && <QueryPromptPreview />}
+          {view === "QueryInput" && <QueryInputPreview />}
           {view === "Input" && <InputsPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}

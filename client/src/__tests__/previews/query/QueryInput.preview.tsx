@@ -1,4 +1,4 @@
-import QueryPrompt, { QuerySuggestionEvent } from "@/components/query/QueryPrompt";
+import QueryInput, { QuerySuggestionEvent } from "@/components/query/QueryInput";
 import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
 import { useQuerySuggestion } from "@/hooks/use-query-suggestion";
@@ -59,7 +59,7 @@ export default function QueryPromptPreview() {
 
   return (
     <PreviewBox className="items-center">
-      <QueryPrompt className="w-full" onValidate={handleValidate} rows={4} onSuggest={handleSuggestions} />
+      <QueryInput className="w-full" onValidate={handleValidate} rows={4} onSuggest={handleSuggestions} />
       <QuerySuggestionMenu suggestions={suggestions} />
     </PreviewBox>
   );
