@@ -31,7 +31,7 @@ function Key({ name }: { name: string }) {
 export default function Kbd({ shortcut, className }: KeyboardShortcutProps) {
   const s = getCurrentEnvironmentShortcut(shortcut);
   const classes = cx(
-    "flex whitespace-nowrap items-center h-6 gap-x-0.5 text-sm text-gray-400 dark:text-gray-300",
+    "inline-flex inline whitespace-nowrap items-center h-6 gap-x-0.5 text-sm text-gray-400 dark:text-gray-300",
     className
   );
   return (
