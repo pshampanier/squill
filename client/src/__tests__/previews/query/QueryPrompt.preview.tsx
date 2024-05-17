@@ -1,50 +1,66 @@
 import QueryPrompt, { QuerySuggestionEvent } from "@/components/query/QueryPrompt";
 import PreviewBox from "../PreviewBox";
-import { useState } from "react";
+import { QueryExecution } from "@/models/query-execution";
+import { useQuerySuggestion } from "@/hooks/use-query-suggestion";
+import QuerySuggestionMenu from "@/components/query/QuerySuggestionMenu";
+
+const NOW = new Date().getTime();
+const HISTORY = [
+  new QueryExecution({
+    id: "1",
+    query: "SELECT * FROM table",
+    executedAt: new Date(NOW - 86400 * 30),
+  }),
+  new QueryExecution({
+    id: "2",
+    query: "SELECT * FROM table WHERE id = 1",
+    executedAt: new Date(NOW - 86400 * 10),
+  }),
+  new QueryExecution({
+    id: "3",
+    query: "SELECT * FROM table WHERE id = 321",
+    executedAt: new Date(NOW - 86400),
+  }),
+  new QueryExecution({
+    id: "4",
+    query: "UPDATE table SET name = 'John' WHERE id = 1",
+    executedAt: new Date(NOW - 3600 * 6),
+  }),
+  new QueryExecution({
+    id: "5",
+    query: `UPDATE my_table SET name = 'John' WHERE id = 1\n  AND age = 21`,
+    executedAt: new Date(NOW - 86400),
+    affectedRows: 32300,
+  }),
+  new QueryExecution({
+    id: "6",
+    query:
+      "WITH RECURSIVE t(n) AS (\n    VALUES (1)\n  UNION ALL\n    SELECT n+1 FROM t WHERE n < 100\n)\nSELECT sum(n) FROM t",
+    executedAt: new Date(NOW),
+  }),
+];
 
 export default function QueryPromptPreview() {
-  const [history, setHistory] = useState<string[]>([
-    "SELECT * FROM table",
-    "SELECT * FROM table WHERE id = 1",
-    "SELECT * FROM table WHERE id = 321",
-    "UPDATE table SET name = 'John' WHERE id = 1",
-    `UPDATE my_table SET name = 'John' WHERE id = 1
-     AND age = 21`,
-    `WITH RECURSIVE t(n) AS (
-    VALUES (1)
-  UNION ALL
-    SELECT n+1 FROM t WHERE n < 100
-)
-SELECT sum(n) FROM t;`,
-  ]);
+  const { suggestions, addQueryToHistory, getSuggestion } = useQuerySuggestion(HISTORY);
 
   const handleValidate = (value: string) => {
-    setHistory((prev) => [...prev, value]);
+    addQueryToHistory(
+      new QueryExecution({
+        query: value,
+        executedAt: new Date(),
+      })
+    );
   };
 
   const handleSuggestions = (event: QuerySuggestionEvent) => {
-    const query = event.currentQuery;
-    const suggestion = history.find(
-      (suggestion) => suggestion.length > query.length && suggestion.toLowerCase().startsWith(query.toLowerCase())
-    );
-    event.setSuggestion(suggestion ? suggestion.slice(query.length) : null);
+    const suggestion = getSuggestion(event.currentQuery);
+    event.setSuggestion(suggestion);
   };
 
   return (
     <PreviewBox className="items-center">
       <QueryPrompt className="w-full" onValidate={handleValidate} rows={4} onSuggest={handleSuggestions} />
-      <div className="mt-4">
-        <h2 className="text-lg font-semibold">History</h2>
-        <ul className="mt-2">
-          {history.map((query, index) => (
-            <li key={index} className="text-sm">
-              <pre>
-                <code>{query}</code>
-              </pre>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <QuerySuggestionMenu suggestions={suggestions} />
     </PreviewBox>
   );
 }

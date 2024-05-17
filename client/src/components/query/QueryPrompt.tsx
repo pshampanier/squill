@@ -134,6 +134,11 @@ export default function QueryPrompt({ className, value, onValidate, onSuggest, r
         acceptSuggestions(editor, suggestionRef.current);
         suggestionRef.current = null;
       });
+      onSuggest?.(
+        makeSuggestionEvent({
+          currentQuery: getCurrentQuery(editor),
+        })
+      );
       e.preventDefault();
       e.stopPropagation();
     } else if (e.keyCode === monaco.KeyCode.Escape && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
@@ -195,7 +200,6 @@ export default function QueryPrompt({ className, value, onValidate, onSuggest, r
         );
         const currentQuery = getCurrentQuery(editor);
         if (endOfLine.trim().length === 0 && currentQuery.length > 0) {
-          console.log("onSuggest: ", currentQuery);
           onSuggest?.(
             makeSuggestionEvent({
               currentQuery,
@@ -334,9 +338,7 @@ function setSuggestion(editor: editor.IStandaloneCodeEditor, content: string): E
 }
 
 function clearSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits): null {
-  if (!suggestions) {
-    return null;
-  }
+  if (!suggestions) return;
   console.log("Clear suggestions");
   const model = editor.getModel();
   model.applyEdits(suggestions.undoEdits);
@@ -348,6 +350,7 @@ function clearSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: Edi
  * Accept the suggestions currently displayed in the editor.
  */
 function acceptSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits) {
+  if (!suggestions) return;
   console.log("Accept suggestions");
   // 1. Get the content of the suggestion (stored as decorations in the editor)
   const model = editor.getModel();
