@@ -1,18 +1,25 @@
-import { SVGIcon } from "@/utils/types";
+import { KeyboardShortcut, SVGIcon } from "@/utils/types";
 import cx from "classix";
 import Kbd from "@/components/core/Kbd";
 import { primary as colors } from "@/utils/colors";
 import { executeCommand, getCommand } from "@/utils/commands";
-import React, { SyntheticEvent, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 
 type MenuProps = {
   onClose?: (event: React.SyntheticEvent) => void;
   children: React.ReactNode;
   className?: string;
   size?: "sm" | "md" | "lg" | "auto";
+
+  /**
+   * The tab index of the menu (default to 0).
+   *
+   * Allow to make the menu focusable. If set to -1, the menu will not be focused.
+   */
+  tabIndex?: number;
 };
 
-function Menu({ children, size = "auto", className, onClose }: MenuProps) {
+function Menu({ children, size = "auto", className, onClose, tabIndex = 0 }: MenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   // TODO: Use a context to implement keyboard navigation
@@ -41,8 +48,10 @@ function Menu({ children, size = "auto", className, onClose }: MenuProps) {
   };
 
   useEffect(() => {
-    menuRef.current?.focus();
-  }, []);
+    if (tabIndex !== -1) {
+      menuRef.current?.focus();
+    }
+  }, [tabIndex]);
 
   const classes = cx(
     "font-medium select-none",
@@ -64,7 +73,7 @@ function Menu({ children, size = "auto", className, onClose }: MenuProps) {
       role="menu"
       aria-orientation="vertical"
       aria-labelledby="menu-button"
-      tabIndex={0}
+      tabIndex={tabIndex}
       onKeyDown={handleKeyDown}
       onBlur={handleBlur}
       onClick={handleClick}
@@ -82,12 +91,13 @@ type MenuItemProps = {
   disabled?: boolean /** the item is disabled  and cannot be selected */;
   selected?: boolean /** the item is the active/focused item */;
   command?: string;
+  shortcut?: KeyboardShortcut;
   id?: string;
   onClick?: (value: string, event: React.SyntheticEvent) => void;
   onSelect?: (value: string, event: React.SyntheticEvent) => void;
 };
 
-function MenuItem({ className, icon, label, children, disabled, onClick, command, id }: MenuItemProps) {
+function MenuItem({ className, icon, label, children, disabled, onClick, command, shortcut, id }: MenuItemProps) {
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     if (onClick) {
       onClick(command || id, event);
@@ -97,12 +107,12 @@ function MenuItem({ className, icon, label, children, disabled, onClick, command
     }
   };
 
-  const shortcut = getCommand(command)?.shortcut;
   const Icon = icon || getCommand(command)?.icon;
   label = label || getCommand(command)?.label;
+  shortcut = shortcut || getCommand(command)?.shortcut;
 
   const classes = cx(
-    "text-gray-700 block px-4 py-2 gap-x-2 h-9 mx-1 text-sm flex flex-row rounded",
+    "text-gray-700 block px-4 py-2 gap-x-2 min-h-9 mx-1 text-sm flex flex-row rounded",
     !disabled && colors("hover:ghost-background", "hover:ghost-text"),
     disabled && "opacity-50 pointer-events-none",
     !(onClick || command) && "pointer-events-none",
