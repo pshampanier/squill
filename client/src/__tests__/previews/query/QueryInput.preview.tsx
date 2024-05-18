@@ -3,6 +3,9 @@ import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
 import { useQuerySuggestion } from "@/hooks/use-query-suggestion";
 import QuerySuggestionMenu from "@/components/query/QuerySuggestionMenu";
+import Preview from "../Preview";
+import Kbd from "@/components/core/Kbd";
+import { usePreviewsStore } from "../previewsStore";
 
 const NOW = new Date().getTime();
 const HISTORY = [
@@ -41,6 +44,7 @@ const HISTORY = [
 ];
 
 export default function QueryPromptPreview() {
+  const colorScheme = usePreviewsStore((state) => state.colorScheme);
   const { suggestions, addQueryToHistory, getSuggestion } = useQuerySuggestion(HISTORY);
 
   const handleValidate = (value: string) => {
@@ -58,9 +62,46 @@ export default function QueryPromptPreview() {
   };
 
   return (
-    <PreviewBox className="items-center">
-      <QueryInput className="w-full" onValidate={handleValidate} rows={4} onSuggest={handleSuggestions} />
-      <QuerySuggestionMenu suggestions={suggestions} />
-    </PreviewBox>
+    <>
+      {/*
+       * Terminal
+       */}
+      <Preview>
+        <Preview.Title>Terminal</Preview.Title>
+        <Preview.Description>
+          With <code className="text-xs">mode=&quot;terminal&quot;</code> the input is in terminal mode, validation is
+          called when the user hits <Kbd shortcut={["Meta+[Enter]", "Ctrl+[Enter]"]} /> or just{" "}
+          <Kbd shortcut={"[Enter]"} /> when the input ends with a semicolon.
+        </Preview.Description>
+        <PreviewBox className="items-center h-60">
+          <QueryInput
+            className="w-full border border-gray-100 dark:border-gray-700"
+            mode="terminal"
+            colorScheme={colorScheme}
+            rows={4}
+            onValidate={handleValidate}
+            onSuggest={handleSuggestions}
+          />
+          <QuerySuggestionMenu suggestions={suggestions} />
+        </PreviewBox>
+      </Preview>
+      {/*
+       * Editor
+       */}
+      <Preview>
+        <Preview.Title>Editor</Preview.Title>
+        <Preview.Description>
+          With <code className="text-xs">mode=&quot;editor&quot;</code> the input is in editor mode.
+        </Preview.Description>
+        <PreviewBox className="items-center h-96">
+          <QueryInput
+            className="w-full h-full border border-gray-100 dark:border-gray-700"
+            mode="editor"
+            colorScheme={colorScheme}
+          />
+          <QuerySuggestionMenu suggestions={suggestions} />
+        </PreviewBox>
+      </Preview>
+    </>
   );
 }

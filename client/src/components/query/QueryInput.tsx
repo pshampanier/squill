@@ -1,7 +1,11 @@
 import * as monaco from "monaco-editor";
-import { type editor } from "monaco-editor";
+import { editor } from "monaco-editor";
 import { useEffect, useRef } from "react";
 
+/**
+ * The list of modifier keys.
+ * This is used to prevent triggering a suggestion when a modifier key is pressed.
+ */
 const MODIFIER_KEYS = [
   monaco.KeyCode.Shift,
   monaco.KeyCode.Ctrl,
@@ -9,6 +13,34 @@ const MODIFIER_KEYS = [
   monaco.KeyCode.Meta,
   monaco.KeyCode.CapsLock,
 ];
+
+const DEFAULT_MONACO_OPTIONS: { editor: monaco.editor.IEditorOptions; terminal: monaco.editor.IEditorOptions } = {
+  editor: {},
+  terminal: {
+    automaticLayout: false,
+    minimap: { enabled: false },
+    cursorStyle: "underline",
+    renderLineHighlight: "none",
+    wordWrap: "on",
+    contextmenu: false,
+    padding: { top: 0, bottom: 0 },
+    /** the following option are used to remove the left margin */
+    lineNumbers: "off",
+    glyphMargin: false,
+    folding: false,
+    lineDecorationsWidth: 0,
+    lineNumbersMinChars: 0,
+    /** the next 4 options hide the scrollbars */
+    scrollbar: { vertical: "hidden", horizontal: "hidden", useShadows: false, alwaysConsumeMouseWheel: false },
+    overviewRulerBorder: false,
+    hideCursorInOverviewRuler: true,
+    overviewRulerLanes: 0,
+    scrollBeyondLastLine: false,
+    quickSuggestions: false,
+  },
+};
+
+const MONACO_THEMES = { light: "app-light-theme", dark: "app-dark-theme" };
 
 export interface QuerySuggestionEvent {
   readonly keyboardEvent?: KeyboardEvent;
@@ -41,9 +73,28 @@ type QueryPromptProps = {
   onSuggest?: (event: QuerySuggestionEvent) => void;
 
   /**
-   * The maximum number of rows to display in the editor (default is 10).
+   * The mode of the editor (default is "editor").
+   *
+   * - "terminal": the input is in terminal mode, onValidate() is called when the user hits `⌘+[Enter]` or `Ctrl+[Enter]`
+   *   or just [Enter] if the input ends with a semicolon (';').
+   *   The input is cleared after the query is validated.
+   * - "editor": the input is in editor mode, onValidate() is never called.
+   */
+  mode?: "terminal" | "editor";
+
+  /**
+   * The maximum number of rows to display in the input (default is 10).
+   *
+   * The `row` property is used to set the height of the input in the "terminal" mode only and will adjust the height to
+   * fit the content up to the number of specified rows. Otherwise, in "editor" mode, the height of the input is
+   * adjusted to fit the parent HTML element.
    */
   rows?: number;
+
+  /**
+   * The color scheme of the editor (default is "light").
+   */
+  colorScheme: "light" | "dark";
 };
 
 /**
@@ -69,11 +120,31 @@ type EditorSuggestionsEdits = {
  * [Escape] => Remove the current suggestion.
  * [Tab] => Accept the current suggestion.
  */
-export default function QueryPrompt({ className, value, onValidate, onSuggest, rows = 10 }: QueryPromptProps) {
+export default function QueryPrompt({
+  className,
+  value,
+  onValidate,
+  onSuggest,
+  mode = "editor",
+  rows = 10,
+  colorScheme = "light",
+}: QueryPromptProps) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const suggestionRef = useRef<EditorSuggestionsEdits>(null);
   const preventSuggestion = useRef(false);
+
+  if (mode === "editor") {
+    // In editor mode, `rows` is not used and we force it to undefined to let the editor adjust its height to the parent
+    rows = undefined;
+  }
+
+  if (editorRef.current) {
+    // If the editor is already mounted, we update the properties that may have changed.
+    editorRef.current.updateOptions({
+      theme: MONACO_THEMES[colorScheme],
+    });
+  }
 
   /**
    * Execute a function without triggering a suggestion if the content of the model changes.
@@ -208,32 +279,13 @@ export default function QueryPrompt({ className, value, onValidate, onSuggest, r
         }
       });
     }
-    updateLayout(editor, rows);
+    updateLayout(editor, containerRef.current, rows);
   };
 
   useEffect(() => {
     const editor = monaco.editor.create(containerRef.current, {
-      theme: "vs-light",
-      automaticLayout: false,
-      minimap: { enabled: false },
-      cursorStyle: "underline",
-      renderLineHighlight: "none",
-      wordWrap: "on",
-      contextmenu: false,
-      padding: { top: 0, bottom: 0 },
-      /** the following option are used to remove the left margin */
-      lineNumbers: "off",
-      glyphMargin: false,
-      folding: false,
-      lineDecorationsWidth: 0,
-      lineNumbersMinChars: 0,
-      /** the next 4 options hide the scrollbars */
-      scrollbar: { vertical: "hidden", horizontal: "hidden", useShadows: false, alwaysConsumeMouseWheel: false },
-      overviewRulerBorder: false,
-      hideCursorInOverviewRuler: true,
-      overviewRulerLanes: 0,
-      scrollBeyondLastLine: false,
-      quickSuggestions: false,
+      theme: MONACO_THEMES[colorScheme],
+      ...DEFAULT_MONACO_OPTIONS[mode],
     });
     const model = monaco.editor.createModel(value, "sql");
     editor.setModel(model);
@@ -243,12 +295,12 @@ export default function QueryPrompt({ className, value, onValidate, onSuggest, r
     editor.focus();
 
     // Set the initial layout
-    updateLayout(editor, rows);
+    updateLayout(editor, containerRef.current, rows);
 
     // Register a resize observer to update the layout of the editor when the container size changes
     // We want to make sure that the editor is always the same width as its container.
     const resizeObserver = new ResizeObserver(() => {
-      updateLayout(editor, rows, containerRef.current?.clientWidth);
+      updateLayout(editor, containerRef.current, rows);
     });
     resizeObserver.observe(containerRef.current);
 
@@ -265,16 +317,19 @@ export default function QueryPrompt({ className, value, onValidate, onSuggest, r
 /**
  * Resize the editor.
  *
- * The editor is resized to display up tp the maximum number of rows specified and use the width of the container.
+ * The editor is resized to display up to the maximum number of rows specified or takes the full height and width of its
+ * parent HTML element.
  *
  * @param editor the monaco editor instance.
+ * @param parentElement the parent HTML element used as a container by the editor.
  * @param rows the maximum number of rows to display.
- * @param containerWidth (optional) the width of the container (default is the current width of the editor).
  */
-function updateLayout(editor: editor.IStandaloneCodeEditor, rows: number, containerWidth?: number) {
-  const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
-  const width = containerWidth === undefined ? editor.getLayoutInfo().width : containerWidth;
-  const height = Math.min(editor.getContentHeight(), rows * lineHeight);
+function updateLayout(editor: editor.IStandaloneCodeEditor, parentElement: HTMLDivElement, rows?: number) {
+  const width = parentElement.clientWidth;
+  let height = parentElement.clientHeight;
+  if (rows) {
+    height = Math.min(editor.getContentHeight(), rows * editor.getOption(monaco.editor.EditorOption.lineHeight));
+  }
   editor.layout({ width, height });
 }
 

@@ -25,14 +25,10 @@ import RadioPreview from "./core/Radio.preview";
 import ModalPreview from "./layouts/Modal.preview";
 import AlertPreview from "./core/Alert.preview";
 
-function applyColorScheme(colorScheme: "light" | "dark") {
-  document.documentElement.classList.remove(colorScheme === "dark" ? "light" : "dark");
-  document.documentElement.classList.add(colorScheme === "dark" ? "dark" : "light");
-}
-
 export function PreviewsApp() {
-  const defaultColorScheme = "light";
+  const colorScheme = usePreviewsStore((state) => state.colorScheme);
   const view = usePreviewsStore((state) => state.view);
+  const setColorScheme = usePreviewsStore((state) => state.setColorScheme);
 
   return (
     <>
@@ -60,7 +56,7 @@ export function PreviewsApp() {
       </Sidebar>
       <Page className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll">
         <header className="flex grid-flow-row w-full mb-4 justify-end">
-          <ButtonGroup defaultValue={defaultColorScheme} size="xs" onChange={applyColorScheme}>
+          <ButtonGroup defaultValue={colorScheme} size="xs" onChange={setColorScheme}>
             <ButtonGroup.Item name="light" icon={ThemeLightIcon} />
             <ButtonGroup.Item name="dark" icon={ThemeDarkIcon} />
           </ButtonGroup>
