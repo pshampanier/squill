@@ -94,11 +94,7 @@ export default function QueryPromptPreview() {
           With <code className="text-xs">mode=&quot;editor&quot;</code> the input is in editor mode.
         </Preview.Description>
         <PreviewBox className="items-center h-96">
-          <QueryInput
-            className="w-full h-full border border-gray-100 dark:border-gray-700"
-            mode="editor"
-            colorScheme={colorScheme}
-          />
+          <QueryInput className="w-full h-full" mode="editor" colorScheme={colorScheme} />
           <QuerySuggestionMenu suggestions={suggestions} />
         </PreviewBox>
       </Preview>

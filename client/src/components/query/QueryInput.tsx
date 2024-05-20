@@ -15,7 +15,9 @@ const MODIFIER_KEYS = [
 ];
 
 const DEFAULT_MONACO_OPTIONS: { editor: monaco.editor.IEditorOptions; terminal: monaco.editor.IEditorOptions } = {
-  editor: {},
+  editor: {
+    scrollBeyondLastLine: false,
+  },
   terminal: {
     automaticLayout: false,
     minimap: { enabled: false },
@@ -40,6 +42,11 @@ const DEFAULT_MONACO_OPTIONS: { editor: monaco.editor.IEditorOptions; terminal: 
   },
 };
 
+/**
+ * Themes used by the monaco editor.
+ *
+ * Those themes have been created in the monaco-workers.ts.
+ */
 const MONACO_THEMES = { light: "app-light-theme", dark: "app-dark-theme" };
 
 export interface QuerySuggestionEvent {
@@ -71,6 +78,8 @@ type QueryPromptProps = {
    * A callback function that is called when the editor is ready for a suggestion.
    */
   onSuggest?: (event: QuerySuggestionEvent) => void;
+
+  onChange?: (value: string) => void;
 
   /**
    * The mode of the editor (default is "editor").
@@ -125,6 +134,7 @@ export default function QueryPrompt({
   value,
   onValidate,
   onSuggest,
+  onChange,
   mode = "editor",
   rows = 10,
   colorScheme = "light",
@@ -279,6 +289,7 @@ export default function QueryPrompt({
         }
       });
     }
+    onChange?.(editor.getValue());
     updateLayout(editor, containerRef.current, rows);
   };
 
@@ -287,7 +298,7 @@ export default function QueryPrompt({
       theme: MONACO_THEMES[colorScheme],
       ...DEFAULT_MONACO_OPTIONS[mode],
     });
-    const model = monaco.editor.createModel(value, "sql");
+    const model = monaco.editor.createModel(value, "pgsql");
     editor.setModel(model);
     editor.onKeyDown(handleKeyDown);
     editor.onMouseDown(handleMouseDown);

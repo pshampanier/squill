@@ -1,8 +1,8 @@
 import * as monaco from "monaco-editor";
-import { PRIMARY_COLORS, rgbColor } from "./colors";
-
+import { editor } from "monaco-editor";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
+import { getSyntaxHighlightingTheme } from "@/utils/colors";
 import { EditorSettings } from "@/models/users";
 
 self.MonacoEnvironment = {
@@ -23,23 +23,24 @@ monaco.languages.typescript.typescriptDefaults.setEagerModelSync(true);
  * Define custom themes for Monaco editor that match the primary colors of the application.
  */
 
-monaco.editor.defineTheme("app-light-theme", {
-  base: "vs",
-  inherit: true,
-  rules: [],
-  colors: {
-    "editor.background": rgbColor(PRIMARY_COLORS, "background", "light"),
-  },
-});
+monaco.editor.defineTheme("app-light-theme", getMonacoTheme("light"));
+monaco.editor.defineTheme("app-dark-theme", getMonacoTheme("dark"));
 
-monaco.editor.defineTheme("app-dark-theme", {
-  base: "vs-dark",
-  inherit: true,
-  rules: [],
-  colors: {
-    "editor.background": rgbColor(PRIMARY_COLORS, "background", "dark"),
-  },
-});
+function getMonacoTheme(colorScheme: "light" | "dark"): editor.IStandaloneThemeData {
+  const syntaxHighlightingTheme = getSyntaxHighlightingTheme(colorScheme);
+  return {
+    base: colorScheme === "light" ? "vs" : "vs-dark",
+    inherit: true,
+    rules: Object.entries(syntaxHighlightingTheme.tokenColors).map((token) => ({
+      token: token[0],
+      foreground: token[1],
+    })),
+    colors: {
+      "editor.background": syntaxHighlightingTheme.background,
+      "editor.foreground": syntaxHighlightingTheme.foreground,
+    },
+  };
+}
 
 export function getMonacoOptions(settings: EditorSettings) {
   return {

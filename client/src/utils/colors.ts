@@ -2,7 +2,6 @@ import tailwindColors from "tailwindcss/colors";
 import { raise } from "@/utils/telemetry";
 import { env } from "@/utils//env";
 import { ColorScheme } from "@/models/users";
-
 /*
  * IMPORTANT: this application is partially using dynamic classnames, in order to force tailwinds to generate the
  * classes that are used by the ColorPreview component, for each text or border color, we need to add the counterpart
@@ -219,4 +218,170 @@ export const TERTIARY_COLORS: Record<Colors, string> = {
 
 export function tertiary(...names: Colors[]): string {
   return colors(TERTIARY_COLORS, ...names);
+}
+
+/**
+ * Syntax highlighting colors
+ *
+ * These colors are used for the syntax highlighting of the code editor (Monaco) and the syntax highlighting in the
+ * <Code> component.
+ *
+ * Color names are based on the Visual Studio Code syntax highlighting token types and default values are based on the
+ * default Visual Studio Code theme 'vs' and 'vs-dark'.
+ *
+ * @see https://code.visualstudio.com/api/references/theme-color#editor-colors
+ * @see https://github.com/microsoft/vscode/blob/main/src/vs/editor/standalone/common/themes.ts
+ */
+const SYNTAX_HIGHLIGHTING_COLORS = [
+  "variable",
+  "variable.parameter",
+  "constant",
+  "comment",
+  "number",
+  "regexp",
+  "annotation",
+  "type",
+  "delimiter",
+  "delimiter.html",
+  "tag",
+  "tag.id.jade",
+  "tag.class.jade",
+  "meta",
+  "meta.tag",
+  "metatag",
+  "metatag.content.html",
+  "metatag.html",
+  "metatag.xml",
+  "metatag.php",
+  "key",
+  "string.key",
+  "string.value",
+  "attribute.name",
+  "attribute.value",
+  "string",
+  "string.sql",
+  "keyword",
+  "keyword.flow",
+  "operator.sql",
+  "operator.swift",
+  "predefined.sql",
+];
+
+export type SyntaxHighlightingColor = (typeof SYNTAX_HIGHLIGHTING_COLORS)[number];
+
+/**
+ * Syntax highlighting theme.
+ *
+ * @see {@link SYNTAX_HIGHLIGHTING_COLORS}
+ */
+type SyntaxHighlightingTheme = {
+  background: string;
+  foreground: string;
+  tokenColors: Record<SyntaxHighlightingColor, string>;
+};
+
+/**
+ * Get the colors associated with the syntax highlighting of the given theme.
+ */
+export function getSyntaxHighlightingTheme(colorScheme: "light" | "dark"): SyntaxHighlightingTheme {
+  switch (colorScheme) {
+    case "light": {
+      return {
+        background: rgbColor(PRIMARY_COLORS, "background", "light"),
+        foreground: rgbColor(PRIMARY_COLORS, "text", "light"),
+        tokenColors: {
+          variable: "#001188",
+          "variable.predefined": "#4864aa",
+          constant: "#dd0000",
+          comment: "#008000",
+          number: "#09885a",
+          "number.hex": "#3030c0",
+          regexp: "#800000",
+          annotation: "#808080",
+          type: "#008080",
+          delimiter: "#000000",
+          "delimiter.html": "#383838",
+          "delimiter.xml": "#0000ff",
+          tag: "#800000",
+          "tag.id.jade": "#4f76ac",
+          "tag.class.jade": "#4f76ac",
+          "meta.scss": "#800000",
+          metatag: "#e00000",
+          "metatag.content.html": "#ff0000",
+          "metatag.html": "#808080",
+          "metatag.xml": "#808080",
+          key: "#863b00",
+          "string.key.json": "#a31515",
+          "string.value.json": "#0451a5",
+          "attribute.name": "#ff0000",
+          "attribute.value": "#0451a5",
+          "attribute.value.number": "#09885a",
+          "attribute.value.unit": "#09885a",
+          "attribute.value.html": "#0000ff",
+          "attribute.value.xml": "#0000ff",
+          string: "#a31515",
+          "string.html": "#0000ff",
+          "string.sql": "#ff0000",
+          "string.yaml": "#0451a5",
+          keyword: "#5b79e3",
+          "keyword.json": "#0451a5",
+          "keyword.flow": "#af00db",
+          "keyword.flow.scss": "#0000ff",
+          "operator.scss": "#666666",
+          "operator.sql": "#778899",
+          "operator.swift": "#666666",
+          "predefined.sql": "#aa759f",
+        },
+      };
+    }
+
+    case "dark": {
+      return {
+        background: rgbColor(PRIMARY_COLORS, "background", "dark"),
+        foreground: rgbColor(PRIMARY_COLORS, "text", "dark"),
+        tokenColors: {
+          variable: "#74b0df",
+          "variable.predefined": "#4864aa",
+          "variable.parameter": "#9cdcfe",
+          constant: "#aa759f",
+          comment: "#608b4e",
+          number: "#b5cea8",
+          "number.hex": "#5bb498",
+          regexp: "#b46695",
+          annotation: "#cc6666",
+          type: "#3dc9b0",
+          delimiter: "#dcdcdc",
+          "delimiter.html": "#808080",
+          "delimiter.xml": "#808080",
+          tag: "#569cd6",
+          "tag.id.jade": "#4f76ac",
+          "tag.class.jade": "#4f76ac",
+          "meta.scss": "#a79873",
+          "meta.tag": "#ce9178",
+          metatag: "#dd6a6f",
+          "metatag.content.html": "#9cdcfe",
+          "metatag.html": "#569cd6",
+          "metatag.xml": "#569cd6",
+          key: "#9cdcfe",
+          "string.key.json": "#9cdcfe",
+          "string.value.json": "#ce9178",
+          "attribute.name": "#9cdcfe",
+          "attribute.value": "#ce9178",
+          "attribute.value.number.css": "#b5cea8",
+          "attribute.value.unit.css": "#b5cea8",
+          "attribute.value.hex.css": "#d4d4d4",
+          string: "#a31515",
+          "string.sql": "#a5d6ff",
+          keyword: "#569cd6",
+          "keyword.flow": "#c586c0",
+          "keyword.json": "#ce9178",
+          "keyword.flow.scss": "#569cd6",
+          "operator.scss": "#909090",
+          "operator.sql": "#778899",
+          "operator.swift": "#909090",
+          "predefined.sql": "#aa759f",
+        },
+      };
+    }
+  }
 }

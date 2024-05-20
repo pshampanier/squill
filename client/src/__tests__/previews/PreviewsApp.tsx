@@ -24,6 +24,9 @@ import InputsPreview from "./core/Inputs.preview";
 import RadioPreview from "./core/Radio.preview";
 import ModalPreview from "./layouts/Modal.preview";
 import AlertPreview from "./core/Alert.preview";
+import QueryOutputPreview from "./query/QueryOutput.preview";
+import SyntaxHighlightingPreview from "./layouts/SyntaxHighlighting.preview";
+import CodePreview from "./core/Code.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -37,8 +40,10 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Alert" />
           <PreviewSidebarItem view="ButtonGroup" />
           <PreviewSidebarItem view="Buttons" />
+          <PreviewSidebarItem view="Code" />
           <PreviewSidebarItem view="Dropdown" />
           <PreviewSidebarItem view="QueryInput" />
+          <PreviewSidebarItem view="QueryOutput" />
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
@@ -52,6 +57,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Modal" />
           <PreviewSidebarItem view="Space" />
           <PreviewSidebarItem view="Stepper" />
+          <PreviewSidebarItem view="Syntax Highlighting" />
         </SidebarSection>
       </Sidebar>
       <Page className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll">
@@ -65,8 +71,10 @@ export function PreviewsApp() {
           {view === "Alert" && <AlertPreview />}
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
+          {view === "Code" && <CodePreview />}
           {view === "Dropdown" && <DropdownPreview />}
           {view === "QueryInput" && <QueryInputPreview />}
+          {view === "QueryOutput" && <QueryOutputPreview />}
           {view === "Input" && <InputsPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
@@ -76,6 +84,7 @@ export function PreviewsApp() {
           {view === "Sidebar" && <SidebarPreview />}
           {view === "Space" && <SpacePreview />}
           {view === "Stepper" && <StepperPreview />}
+          {view === "Syntax Highlighting" && <SyntaxHighlightingPreview />}
           {view === "Switch" && <SwitchPreview />}
           {view === "Tooltip" && <TooltipPreview />}
         </div>

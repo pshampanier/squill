@@ -1,5 +1,8 @@
-import { serializable } from "@/utils/serializable";
+import { formatRegExp, serializable } from "@/utils/serializable";
 import { immerable } from "immer";
+
+const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "success", "error", "cancelled"] as const;
+export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number];
 
 export class QueryExecution {
   [immerable] = true;
@@ -17,10 +20,22 @@ export class QueryExecution {
   executedAt?: Date;
 
   @serializable("integer")
-  duration?: number;
+  executionTime?: number;
 
   @serializable("integer")
   affectedRows?: number;
+
+  @serializable("string")
+  errorMessage?: string;
+
+  @serializable("integer")
+  errorLine?: number;
+
+  @serializable("integer")
+  errorColumn?: number;
+
+  @serializable("string", { snakeCase: "property", format: formatRegExp(QUERY_EXECUTION_STATUS_VALUES) })
+  status: QueryExecutionStatus;
 
   constructor(object?: Partial<QueryExecution>) {
     Object.assign(this, object);
