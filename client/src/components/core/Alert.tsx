@@ -66,7 +66,7 @@ function Alert({ severity, className, children, title, icon, onDismiss, colors, 
 
   return (
     <div className={classes.component} role="alert">
-      {icon && <Icon className="flex grow-0 w-5 h-5" />}
+      {icon && <Icon className="flex flex-shrink-0 grow-0 w-5 h-5" />}
       <div className="flex flex-col flex-grow">
         {title && <h1 className="font-bold mb-2">{title}</h1>}
         <div>{children}</div>
