@@ -61,6 +61,13 @@
       },
       // task for the `beforeDevCommand` if used, must be configured in `.vscode/tasks.json`
       "preLaunchTask": "ui:dev"
+    },
+    {
+      "name": "previews",
+      "request": "launch",
+      "type": "chrome",
+      "url": "http://localhost:1420/src/__tests__/previews/previews.html",
+      "webRoot": "${workspaceFolder}/client"
     }
   ]
 }
