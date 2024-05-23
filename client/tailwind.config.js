@@ -16,7 +16,11 @@ export default {
     "dark:bg-gray-800",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontSize: {
+        "2xs": ".65rem",
+      },
+    },
   },
   plugins: [
     function ({ addUtilities }) {

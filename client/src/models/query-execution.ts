@@ -19,6 +19,11 @@ export class QueryExecution {
   @serializable("datetime")
   executedAt?: Date;
 
+  /**
+   * The execution time in microseconds (µs).
+   *
+   * This is the time it took to execute the query if the query was successful, otherwise this value is `undefined`.
+   */
   @serializable("integer")
   executionTime?: number;
 
