@@ -1,12 +1,13 @@
-import { QueryExecution } from "@/models/query-execution";
-import Alert from "@/components/core/Alert";
-import Code from "@/components/core/Code";
-import { addTime, formatDuration, formatRelativeDate, truncDate } from "@/utils/time";
-import React, { useEffect, useState } from "react";
-import { Spinner } from "../core/Spinner";
-import Button from "../core/Button";
 import cx from "classix";
 import { primary as colors } from "@/utils/colors";
+import { addTime, formatDuration, formatRelativeDate, truncDate } from "@/utils/time";
+import { QueryExecution } from "@/models/query-execution";
+import React, { useEffect, useState } from "react";
+import Alert from "@/components/core/Alert";
+import Code from "@/components/core/Code";
+import Spinner from "@/components/core/Spinner";
+import Button from "@/components/core/Button";
+import StopWatchIcon from "@/icons/stopwatch.svg?react";
 
 type QueryOutputProps = {
   className?: string;
@@ -15,22 +16,28 @@ type QueryOutputProps = {
 
 export default function QueryOutput({ className, queryExecution }: QueryOutputProps) {
   const { executedAt, status, errorMessage, executionTime, query } = queryExecution;
+  const classes = {
+    container: cx(className, "relative"),
+    toolbar: cx(
+      "absolute top-0 right-0 flex flex-row flex-shrink-1 text-2xs ml-auto space-x-1 select-none px-2 py-1 rounded",
+      colors("background"),
+      "backdrop-filter backdrop-blur-sm bg-opacity-60 dark:bg-opacity-60"
+    ),
+  };
   return (
-    <div className={className}>
-      <div className="flex flex-row">
-        <Divider className="text-2xs ml-auto space-x-1 select-none">
-          {false && <Button className="h-3 text-2xs inline-flex" text="Cancel" variant="ghost"></Button>}
-          {(status === "pending" || status === "cancelled") && <StatusIndicator status={status} />}
-          {status === "success" && <ExecutionTime microseconds={executionTime} />}
-          {status !== "running" && <ExecutedAt date={executedAt} />}
-          {status === "running" && (
-            <div className="flex flex-row space-x-2 items-center">
-              <ExecutedAt date={executedAt} />
-              <Spinner size="xs" />
-            </div>
-          )}
-        </Divider>
-      </div>
+    <div className={classes.container}>
+      <Divider className={classes.toolbar}>
+        {false && <Button className="h-3 text-2xs inline-flex" text="Cancel" variant="ghost"></Button>}
+        {(status === "pending" || status === "cancelled") && <StatusIndicator status={status} />}
+        {status === "success" && <ExecutionTime microseconds={executionTime} />}
+        {status !== "running" && <ExecutedAt date={executedAt} />}
+        {status === "running" && (
+          <div className="flex flex-row space-x-0.5 items-center">
+            <Spinner size="xs" />
+            <ExecutedAt date={executedAt} />
+          </div>
+        )}
+      </Divider>
       <div className="inline-block min-w-full">
         <Code className="w-full" language="sql" showLineNumbers={status === "error"}>
           {query}
@@ -90,11 +97,16 @@ function ExecutedAt({ date, fnGetDate = () => new Date() }: { date: Date; fnGetD
  */
 function ExecutionTime({ microseconds }: { microseconds: number }) {
   const [text] = formatDuration(microseconds);
-  return <span>{text}</span>;
+  return (
+    <div className="flex flex-row items-center">
+      <StopWatchIcon />
+      <span>{text}</span>
+    </div>
+  );
 }
 
 /**
- * Displays a 'Cancelled' indicator.
+ * Displays a 'Cancelled' or 'Pending' indicator.
  */
 function StatusIndicator({ status }: { status: QueryExecution["status"] }) {
   const classes = cx(

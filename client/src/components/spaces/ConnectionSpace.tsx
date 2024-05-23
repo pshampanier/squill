@@ -1,5 +1,5 @@
 import Space, { SpaceProps } from "@/components/spaces/Space";
-import { Spinner } from "@/components/core/Spinner";
+import Spinner from "@/components/core/Spinner";
 
 /**
  * This is the space that is displayed while the application is connecting to the agent.

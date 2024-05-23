@@ -16,7 +16,7 @@ import ParamForm from "@/components/forms/connections/ParametersForm";
 import Overlay from "@/components/Overlay";
 import { useTaskEffect } from "@/hooks/use-task-effect";
 import Connections from "@/resources/connections";
-import { Spinner } from "@/components/core/Spinner";
+import Spinner from "@/components/core/Spinner";
 import ErrorMessage from "@/components/core/ErrorMessage";
 import { CatalogRoot, useUserStore } from "@/stores/UserStore";
 

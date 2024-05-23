@@ -94,5 +94,9 @@
     "windicss",
     "xvalue",
     "zustand"
-  ]
+  ],
+  "[svg]": {
+    "editor.defaultFormatter": "jock.svg"
+  },
+  "svg.preview.background": "transparent"
 }

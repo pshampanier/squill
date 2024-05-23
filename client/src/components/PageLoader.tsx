@@ -1,5 +1,5 @@
 import Page from "@/components/Page";
-import { Spinner } from "@/components/core/Spinner";
+import Spinner from "@/components/core/Spinner";
 
 export default function PageLoader() {
   return (

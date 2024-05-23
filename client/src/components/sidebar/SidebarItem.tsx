@@ -2,7 +2,7 @@ import { cx } from "classix";
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { useFloating, offset, autoUpdate, FloatingPortal } from "@floating-ui/react";
 
-import { Spinner } from "@/components/core/Spinner";
+import Spinner from "@/components/core/Spinner";
 import Tooltip from "@/components/core/Tooltip";
 
 import ChevronIcon from "@/icons/chevron-right.svg?react";
