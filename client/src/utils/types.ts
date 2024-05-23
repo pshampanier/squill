@@ -5,6 +5,13 @@ export type ObjectFactory<T extends object> = ObjectFactoryConstructor<T> | Obje
 export type SVGIcon = React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
 
 /**
+ * A type that represent a locale.
+ *
+ * As for now, only the "en-US" locale is supported but later on, more locales will be added such as "fr-FR", "es-ES",...
+ */
+export type Locale = "en-US";
+
+/**
  * A keyboard shortcut is a string that represents a key combination.
  *
  * The string is a list of keys separated by a `+` sign.
