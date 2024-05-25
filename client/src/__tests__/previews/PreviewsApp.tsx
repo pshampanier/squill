@@ -27,6 +27,7 @@ import AlertPreview from "./core/Alert.preview";
 import QueryOutputPreview from "./query/QueryOutput.preview";
 import SyntaxHighlightingPreview from "./layouts/SyntaxHighlighting.preview";
 import CodePreview from "./core/Code.preview";
+import TableViewPreview from "./dataset/table-view.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -50,6 +51,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Menu" />
           <PreviewSidebarItem view="Radio" />
           <PreviewSidebarItem view="Sidebar" />
+          <PreviewSidebarItem view="TableView" />
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
         <SidebarSection label="layouts">
@@ -86,6 +88,7 @@ export function PreviewsApp() {
           {view === "Stepper" && <StepperPreview />}
           {view === "Syntax Highlighting" && <SyntaxHighlightingPreview />}
           {view === "Switch" && <SwitchPreview />}
+          {view === "TableView" && <TableViewPreview />}
           {view === "Tooltip" && <TooltipPreview />}
         </div>
       </Page>

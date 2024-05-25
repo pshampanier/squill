@@ -4,28 +4,6 @@ import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
 import { MICROSECONDS_IN_A_SECOND, addTime } from "@/utils/time";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _RESULT_EXAMPLE = [
-  ["The Grand Hotel", "123 Main St, New York, USA", "+12345678901", "grandhotel@mca.com", 100.0, "2022-12-01"],
-  ["Ocean View Resort", "456 Market St, Miami, USA", "+12345678902", "ocean-view@miami-hotel.com", 150.0, "2022-12-02"],
-  [
-    "Mountain Peak Inn",
-    "789 Broadway St, Denver, USA",
-    "+12345678903",
-    "mountainpeak@example.com",
-    200.0,
-    "2022-12-03",
-  ],
-  [
-    "City Lights Boutique",
-    "123 Main St, San Francisco, USA",
-    "+12345678950",
-    "citylights@example.com",
-    550.0,
-    "2023-01-19",
-  ],
-];
-
 const QUERY_ERROR = new QueryExecution({
   query: `SELECT 
     hotels.name, 
