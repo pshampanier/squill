@@ -3,6 +3,10 @@ import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
 import { MICROSECONDS_IN_A_SECOND, addTime } from "@/utils/time";
+import { DatasetSchema } from "@/models/dataset-schema";
+import { DatasetAttribute } from "@/models/dataset-attribute";
+import { MemoryDataset } from "@/utils/dataset";
+import TableView from "@/components/dataset/table-view";
 
 const QUERY_ERROR = new QueryExecution({
   query: `SELECT 
@@ -30,20 +34,51 @@ const QUERY_CANCELLED = new QueryExecution({
 });
 
 const QUERY_SUCCESS = new QueryExecution({
-  query: `SELECT 
-    hotels.name, 
-    hotels.address, 
-    hotels.telephone_number, 
-    hotels.email, 
-    hotels.standard_room_price, 
-    (SELECT MIN(availability_date) FROM hotel_availabilities 
-     WHERE hotel_availabilities.hotel_id = hotels.id 
-     AND availability_date > NOW()) AS next_availability
-FROM 
-    hotels;`,
+  query: `SELECT productid, name, productnumber, makeflag, finishedgoodsflag, color, listprice, weight, weightunitmeasurecode
+  FROM production.product
+ WHERE listprice > 0 AND weight IS NOT NULL
+ LIMIT 10;`,
   executedAt: addTime(new Date(), -5, "minute"),
   status: "success",
   executionTime: 32.365002 * MICROSECONDS_IN_A_SECOND,
+});
+
+const QUERY_SUCCESS_RESULT = `
+  "680","HL Road Frame - Black, 58","FR-R92B-58","True","True","Black","1431.50","2.24","LB "
+  "706","HL Road Frame - Green, 58","FR-R92G-58","True","True","Green","1431.50","2.24","LB "
+  "717","HL Road Frame - Red, 62","FR-R92R-62","True","True","Red","1431.50","2.30","LB "
+  "718","HL Road Frame - Red, 44","FR-R92R-44","True","True","Red","1431.50","2.12","LB "
+  "719","HL Road Frame - Red, 48","FR-R92R-48","True","True","Red","1431.50","2.16","LB "
+  "720","HL Road Frame - Red, 52","FR-R92R-52","True","True","Red","1431.50","2.20","LB "
+  "721","HL Road Frame - Red, 56","FR-R92R-56","True","True","Red","1431.50","2.24","LB "
+  "722","LL Road Frame - Black, 58","FR-R38B-58","True","True","Black","337.22","2.46","LB "
+  "723","LL Road Frame - Black, 60","FR-R38B-60","True","True","Black","337.22","2.48","LB "
+  "724","LL Road Frame - Black, 62","FR-R38B-62","True","True","Black","337.22","2.50","LB "`
+  .split("\n")
+  .filter((line) => line.trim() !== "")
+  .map((line) =>
+    JSON.parse(
+      `[${line
+        .replace(/,"True",/g, ',"true",')
+        .replace(/,"False",/g, ',"false",')
+        .replace(/"NULL"/g, "null")}]`
+    )
+  );
+
+const QUERY_SUCCESS_DATASET_SCHEMA = new DatasetSchema({
+  name: "query",
+  type: "array",
+  items: [
+    new DatasetAttribute({ name: "productid", type: "text", format: { name: "text" } }),
+    new DatasetAttribute({ name: "name", type: "text", format: { name: "text" } }),
+    new DatasetAttribute({ name: "productnumber", type: "text", format: { name: "text" } }),
+    new DatasetAttribute({ name: "makeflag", type: "boolean", format: { name: "boolean" } }),
+    new DatasetAttribute({ name: "finishedgoodsflag", type: "boolean", format: { name: "boolean" } }),
+    new DatasetAttribute({ name: "color", type: "text", format: { name: "color" } }),
+    new DatasetAttribute({ name: "listprice", type: "float32", format: { name: "money" } }),
+    new DatasetAttribute({ name: "weight", type: "float32", format: { name: "float" } }),
+    new DatasetAttribute({ name: "weightunitmeasurecode", type: "text", format: { name: "text" } }),
+  ],
 });
 
 const QUERY_RUNNING = new QueryExecution({
@@ -59,6 +94,7 @@ const QUERY_PENDING = new QueryExecution({
 });
 
 export default function QueryOutputPreview() {
+  const successDataset = new MemoryDataset(QUERY_SUCCESS_DATASET_SCHEMA, QUERY_SUCCESS_RESULT);
   return (
     <>
       {/*
@@ -96,6 +132,7 @@ export default function QueryOutputPreview() {
         </Preview.Description>
         <PreviewBox className="items-center">
           <QueryOutput className="w-full" queryExecution={QUERY_SUCCESS} />
+          <TableView className="h-56" dataset={successDataset} />
         </PreviewBox>
       </Preview>
       {/*

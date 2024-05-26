@@ -1,22 +1,23 @@
 import { serializable } from "@/utils/serializable";
-import { AttributeFormat } from "@/models/attribute-format";
+import { DatasetAttributeFormat } from "@/models/dataset-attribute-format";
 import { immerable } from "immer";
 
 export type AttributeType = (typeof ATTRIBUTE_TYPE)[number];
 const ATTRIBUTE_TYPE = [
   "null",
-  "bool",
+  "boolean",
   "int16",
   "int32",
   "int64",
   "float32",
   "float64",
   "text",
-  "datetime",
+  "date-time",
   "date",
   "time",
   "bytes",
   "array",
+  "object",
 ] as const;
 
 /**
@@ -25,7 +26,7 @@ const ATTRIBUTE_TYPE = [
  * Attributes are the columns/properties of a dataset, they have a name, a type, and a format that defines how the
  * values should be displayed.
  */
-export class Attribute {
+export class DatasetAttribute {
   [immerable] = true;
 
   /**
@@ -40,12 +41,19 @@ export class Attribute {
   type!: AttributeType;
 
   /**
-   * The display format of the attribute.
+   * A list of attributes describing each value of the array if the attribute an array.
    */
-  format?: AttributeFormat;
+  items?: DatasetAttribute[];
 
   /**
-   * The estimated maximum size of the formatted values (in number of characters)
+   * The display format of the attribute.
+   */
+  format?: DatasetAttributeFormat;
+
+  /**
+   * An estimated maximum size of the formatted values (in number of characters)
+   *
+   * Only applies if `format` is defined.
    */
   lengthHint?: number;
 
@@ -56,8 +64,8 @@ export class Attribute {
    */
   statistics?: unknown;
 
-  constructor(object?: Partial<Attribute>) {
+  constructor(object?: Partial<DatasetAttribute>) {
     Object.assign(this, object);
-    this.format = new AttributeFormat(this.format);
+    this.format = new DatasetAttributeFormat(this.format);
   }
 }

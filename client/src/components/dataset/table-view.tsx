@@ -1,21 +1,17 @@
 import cx from "classix";
-import { Attribute } from "@/models/attribute";
+import { DatasetAttribute } from "@/models/dataset-attribute";
 import { Collection, Dataset } from "@/utils/dataset";
 import { primary as colors, secondary as headerColors, secondary } from "@/utils/colors";
 import { useEffect, useRef, useState } from "react";
 import TrueIcon from "@/icons/true.svg?react";
 import FalseIcon from "@/icons/false.svg?react";
+import { raise } from "@/utils/telemetry";
 
 type TableViewProps = {
   /**
    * Additional classes to apply to the top element rendered by the component.
    */
   className?: string;
-
-  /**
-   * The properties of the columns in the table.
-   */
-  columns: Attribute[];
 
   /**
    * The dataset to display in the table.
@@ -32,12 +28,19 @@ type TableViewProps = {
  * The table will load the rows as needed and display a placeholder at the end of the table until all the rows have been
  * loaded.
  */
-export default function TableView({ className, columns, dataset }: TableViewProps) {
+export default function TableView({ className, dataset }: TableViewProps) {
   // The rows to display in the table.
   const [rows, setRows] = useState<Collection<string[]>>([]);
 
   // The table is ready when all the rows have been loaded.
   const [ready, setReady] = useState(false);
+
+  // Get the schema of the dataset to determine the columns.
+  const schema = dataset.getSchema();
+  if (schema.type !== "array" || dataset.getSchema().items === undefined) {
+    raise("The table view only supports datasets with an array schema.");
+  }
+  const columns = dataset.getSchema().items;
 
   // Load the next batch of rows when the placeholder placed at the bottom of the list becomes visible.
   // @see RowPlaceholder
@@ -53,13 +56,16 @@ export default function TableView({ className, columns, dataset }: TableViewProp
 
   // Instead of trying to find the right component for each cell, we create a list of components to be used for each
   // column. This way we avoid the overhead of finding the right component for each cell.
-  const columnComponents: React.FunctionComponent<CellProps>[] = columns.map((attr: Attribute) => {
+  const columnComponents: React.FunctionComponent<CellProps>[] = columns.map((attr: DatasetAttribute) => {
     switch (attr.format?.name) {
-      case "bool":
+      case "boolean":
         return BooleanCell;
       case "int":
       case "float":
+      case "money":
         return RightAlignCell;
+      case "color":
+        return ColorCell;
       default:
         return DefaultCell;
     }
@@ -99,7 +105,7 @@ export default function TableView({ className, columns, dataset }: TableViewProp
 /**
  * The table header rendered at the top of the table with column names.
  */
-function TableHeader({ attributes }: { attributes: Attribute[] }) {
+function TableHeader({ attributes }: { attributes: DatasetAttribute[] }) {
   return (
     <tr>
       {attributes.map((attribute, index) => (
@@ -119,7 +125,7 @@ function TableCell({ className, children }: { className?: string; children: Reac
 }
 
 type RowPlaceholderProps = {
-  attributes: Attribute[];
+  attributes: DatasetAttribute[];
   offset: number;
   onVisible: (offset: number) => void;
 };
@@ -156,12 +162,12 @@ function RowPlaceholder({ attributes, offset, onVisible }: RowPlaceholderProps) 
     <tr ref={rowRef}>
       {attributes.map((attribute, index) => {
         const classes = {
-          td: cx("px-6 py-4 whitespace-nowrap", attribute.type === "bool" && "flex justify-center items-center"),
+          td: cx("px-6 py-4 whitespace-nowrap", attribute.type === "boolean" && "flex justify-center items-center"),
           div: cx(
             "animate-pulse h-4",
             secondary("background"),
-            attribute.type === "bool" && "w-4 rounded-full justify-center",
-            attribute.type !== "bool" && "w-15 rounded"
+            attribute.type === "boolean" && "w-4 rounded-full justify-center",
+            attribute.type !== "boolean" && "w-15 rounded"
           ),
         };
         return (
@@ -178,7 +184,7 @@ type CellProps = {
   /**
    * The description of the column.
    */
-  attr: Attribute;
+  attr: DatasetAttribute;
 
   /**
    * The value to display in the cell.
@@ -205,6 +211,17 @@ function BooleanCell({ value }: CellProps) {
   return (
     <TableCell>
       <div className="flex justify-center">{value === "true" ? <TrueIcon /> : <FalseIcon />}</div>
+    </TableCell>
+  );
+}
+
+function ColorCell({ value }: CellProps) {
+  return (
+    <TableCell>
+      <div className="flex items-center space-x-1">
+        <div className="w-4 h-4 rounded" style={{ backgroundColor: value }}></div>
+        <div>{value}</div>
+      </div>
     </TableCell>
   );
 }

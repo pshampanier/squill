@@ -20,7 +20,7 @@
   "lldb.showDisassembly": "auto",
   "lldb.dereferencePointers": true,
   "lldb.consoleMode": "commands",
-  "cSpell.ignorePaths": ["**/node_modules/**", "**/target/**", "**/table-view.preview.tsx", ".vscode/**"],
+  "cSpell.ignorePaths": ["**/node_modules/**", "**/target/**", "**/*.preview.tsx", ".vscode/**"],
   "cSpell.words": [
     "aliquam",
     "APPDATA",

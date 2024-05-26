@@ -1,16 +1,11 @@
 import { serializable } from "@/utils/serializable";
 
-export type AttributeFormatName = (typeof ATTRIBUTE_FORMAT)[number];
-const ATTRIBUTE_FORMAT = [
-  /**
-   * Apply the default format for the attribute type.
-   */
-  "default",
-
+export type DatasetAttributeFormatName = (typeof DATASET_ATTRIBUTE_FORMAT)[number];
+const DATASET_ATTRIBUTE_FORMAT = [
   /**
    * Format the attribute as a boolean (true/false).
    */
-  "bool",
+  "boolean",
 
   /**
    * Format the attribute as a signed integer.
@@ -30,7 +25,7 @@ const ATTRIBUTE_FORMAT = [
   /**
    * Format the attribute as a date and time.
    */
-  "datetime",
+  "date-time",
 
   /**
    * Format the attribute as a date (more the time if necessary).
@@ -43,14 +38,19 @@ const ATTRIBUTE_FORMAT = [
   "time",
 
   /**
+   * Format the attribute as a duration.
+   */
+  "duration",
+
+  /**
    * Format the attribute as a byte array.
    */
   "bytes",
 
   /**
-   * Format the attribute a currency value.
+   * Format the attribute as currency amount.
    */
-  "currency",
+  "money",
 
   /**
    * Format the attribute as a percentage value.
@@ -71,6 +71,13 @@ const ATTRIBUTE_FORMAT = [
    * Format the attribute as a measure, the type of the measure must be specified (e.g. digitalStorage, duration, etc.)
    */
   "measure",
+
+  /**
+   * Format the attribute as a color (the value must be either a hex code, color name, or RGB value)
+   *
+   * @see https://www.w3.org/TR/css-color-3/#svg-color
+   */
+  "color",
 ] as const;
 
 /**
@@ -78,14 +85,14 @@ const ATTRIBUTE_FORMAT = [
  *
  * The format defines how the values of the attribute should be displayed.
  */
-export class AttributeFormat {
+export class DatasetAttributeFormat {
   /**
    * The name of the format.
    */
   @serializable("string", { required: true })
-  name: AttributeFormatName = "default";
+  name!: DatasetAttributeFormatName;
 
-  constructor(object?: Partial<AttributeFormat>) {
+  constructor(object?: Partial<DatasetAttributeFormat>) {
     Object.assign(this, object);
   }
 }

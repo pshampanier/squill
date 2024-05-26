@@ -1,6 +1,20 @@
+import { DatasetSchema } from "@/models/dataset-schema";
+
 export type Collection<E> = Array<E>;
 
 export interface Dataset<E> {
+  /**
+   * Get the schema of the elements (E) stored in the dataset.
+   */
+  getSchema(): DatasetSchema;
+
+  /**
+   * Get an estimate of the number of elements in the dataset.
+   *
+   * @returns undefined if the size is unknown.
+   */
+  getSizeHint(): number;
+
   /**
    * Get a fragment of the dataset.
    *
@@ -15,11 +29,24 @@ export interface Dataset<E> {
   getFragment(offset: number, limit: number): Promise<[Collection<E>, boolean]>;
 }
 
+/**
+ * A dataset that has all data given at construction time.
+ */
 export class MemoryDataset<E> implements Dataset<E> {
-  private data: Collection<E>;
+  private schema!: DatasetSchema;
+  private data!: Collection<E>;
 
-  constructor(data: Collection<E>) {
+  constructor(schema: DatasetSchema, data: Collection<E>) {
+    this.schema = schema;
     this.data = data;
+  }
+
+  getSchema(): DatasetSchema {
+    return this.schema;
+  }
+
+  getSizeHint(): number {
+    return this.data.length;
   }
 
   async getFragment(offset: number, limit: number): Promise<[Collection<E>, boolean]> {

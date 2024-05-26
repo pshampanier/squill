@@ -1,27 +1,32 @@
 import TableView from "@/components/dataset/table-view";
 import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
-import { MemoryDataset } from "@/utils/dataset";
-import { Attribute } from "@/models/attribute";
+import { Collection, MemoryDataset } from "@/utils/dataset";
+import { DatasetAttribute as Attribute } from "@/models/dataset-attribute";
+import { DatasetSchema } from "@/models/dataset-schema";
 
-const COLUMNS: Attribute[] = [
-  new Attribute({ name: "title", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "firstname", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "lastname", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "gender", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "active", type: "bool", format: { name: "bool" } }),
-  new Attribute({ name: "birthdate", type: "date", format: { name: "date" } }),
-  new Attribute({ name: "vacationhours", type: "int32", format: { name: "int" } }),
-  new Attribute({ name: "addressline1", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "addressline2", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "city", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "postalcode", type: "text", format: { name: "text" } }),
-  new Attribute({ name: "country", type: "text", format: { name: "text" } }),
-];
+const SCHEMA = new DatasetSchema({
+  name: "query",
+  type: "array",
+  items: [
+    new Attribute({ name: "title", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "firstname", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "lastname", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "gender", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "active", type: "boolean", format: { name: "boolean" } }),
+    new Attribute({ name: "birthdate", type: "date", format: { name: "date" } }),
+    new Attribute({ name: "vacationhours", type: "int32", format: { name: "int" } }),
+    new Attribute({ name: "addressline1", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "addressline2", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "city", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "postalcode", type: "text", format: { name: "text" } }),
+    new Attribute({ name: "country", type: "text", format: { name: "text" } }),
+  ],
+});
 
 // github.com/Microsoft/sql-server-samples/releases/download/adventureworks/AdventureWorks-oltp-install-script.zip
 // Data from https://github.com/lorint/AdventureWorks-for-Postgres/
-const ROWS = new MemoryDataset<Array<string>>(
+const ROWS: Collection<Array<string>> =
   `"NULL","Lynn","Tsoflias","F",False,"1977-02-14","36","34 Waterloo Road","NULL","Melbourne","3000","AU Australia"
 "NULL","Garrett","Vargas","M",True,"1975-02-04","33","10203 Acorn Avenue","NULL","Calgary","T2P 2G8","CA Canada"
 "NULL","José","Saraiva","M",False,"1963-12-11","31","9100 Sheppard Avenue North","NULL","Ottawa","K4B 1T7","CA Canada"
@@ -320,10 +325,10 @@ const ROWS = new MemoryDataset<Array<string>>(
           .replace(/,False,/g, ',"false",')
           .replace(/"NULL"/g, "null")}]`
       )
-    )
-);
+    );
 
 export default function TableViewPreview() {
+  const dataset = new MemoryDataset<string[]>(SCHEMA, ROWS);
   return (
     <>
       {/*
@@ -337,7 +342,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full h-96">
-            <TableView columns={COLUMNS} dataset={ROWS} />
+            <TableView dataset={dataset} />
           </div>
         </PreviewBox>
       </Preview>
