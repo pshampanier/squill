@@ -19,7 +19,7 @@ export default function ApplySystemPreferences(): null {
 
   useEffect(() => {
     const currentColorScheme = applyColorScheme(colorSchemeSetting);
-    if (colorSchemeSetting === "auto") {
+    if (colorSchemeSetting === "auto" || colorSchemeSetting === undefined) {
       // The current color scheme is based on the user's system preferences, so we need to listen for changes
       // to the user's system preferences and update the color scheme accordingly.
       const mql = window.matchMedia(`(prefers-color-scheme: ${currentColorScheme})`);

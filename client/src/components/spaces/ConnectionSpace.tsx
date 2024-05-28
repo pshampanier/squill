@@ -68,7 +68,7 @@ export default function ConnectionSpace(props: SpaceProps) {
           <div className={classes.loading}>
             <Spinner size="xl" delay={200} />
             <div className="flex text-xs h-8 w-full items-center justify-center">
-              <span className={cx("transition-opacity duration-500", failureCount <= 2 ? "opacity-0" : "opacity-100")}>
+              <span className={cx("transition-opacity duration-500", failureCount <= 1 ? "opacity-0" : "opacity-100")}>
                 Trying to connect...
               </span>
             </div>
@@ -76,8 +76,8 @@ export default function ConnectionSpace(props: SpaceProps) {
         )}
         <div className={classes.error}>
           <CrashedImage className="w-40 h-40 opacity-20" />
-          <div className="flex flex-col text-sm font-semibold w-full items-center space-y-2">
-            <div>Connection to the Agent failed...</div>
+          <div className="flex flex-col text-sm font-semibold w-full items-center space-y-3">
+            <div>Oops, the connection to the Agent failed...</div>
             <Button onClick={() => refetch()} variant="outline" text="Retry" className="flex px-8 justify-center" />
           </div>
         </div>

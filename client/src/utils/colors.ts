@@ -65,7 +65,7 @@ export function rgbColor<T extends string>(colors: Record<T, string>, name: T, c
  * @returns the given color scheme if it is not "auto", otherwise the system preference.
  */
 export function calculateColorScheme(colorScheme: ColorScheme): "light" | "dark" {
-  if (colorScheme === "auto") {
+  if (colorScheme === "auto" || colorScheme === undefined) {
     return env.colorScheme;
   }
   return colorScheme;
