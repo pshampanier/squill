@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 type SpinnerProps = {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   delay?: number;
+  className?: string;
 };
 
-export default function Spinner({ size = "md", delay }: SpinnerProps) {
+export default function Spinner({ size = "md", delay, className }: SpinnerProps) {
   const [show, setShow] = useState(false);
 
   if (delay) {
@@ -27,7 +28,8 @@ export default function Spinner({ size = "md", delay }: SpinnerProps) {
     size === "xl" && "w-16 h-16",
     delay && `transition-opacity duration-${delay}`,
     delay && show && "opacity-100",
-    delay && !show && "opacity-0"
+    delay && !show && "opacity-0",
+    className
   );
   return (
     <svg
