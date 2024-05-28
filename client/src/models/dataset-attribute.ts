@@ -1,5 +1,6 @@
 import { serializable } from "@/utils/serializable";
 import { DatasetAttributeFormat } from "@/models/dataset-attribute-format";
+import { DatasetAttributeStatistics } from "@/models/dataset-attribute-statistics";
 import { immerable } from "immer";
 
 export type AttributeType = (typeof ATTRIBUTE_TYPE)[number];
@@ -51,18 +52,11 @@ export class DatasetAttribute {
   format?: DatasetAttributeFormat;
 
   /**
-   * An estimated maximum size of the formatted values (in number of characters)
-   *
-   * Only applies if `format` is defined.
-   */
-  lengthHint?: number;
-
-  /**
    * Various statistics about the attribute.
    *
-   * TBD: (ex: min, max, avg, distinct values, precision (decimals), etc.)
+   * TBD: (ex: min, max, avg, distinct values, etc.)
    */
-  statistics?: unknown;
+  statistics?: DatasetAttributeStatistics;
 
   constructor(object?: Partial<DatasetAttribute>) {
     Object.assign(this, object);

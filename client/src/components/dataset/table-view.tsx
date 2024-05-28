@@ -1,4 +1,5 @@
 import cx from "classix";
+import React, { memo } from "react";
 import { DatasetAttribute } from "@/models/dataset-attribute";
 import { Collection, Dataset } from "@/utils/dataset";
 import { primary as colors, secondary as headerColors, secondary } from "@/utils/colors";
@@ -19,6 +20,11 @@ type TableViewProps = {
    * The dataset does not need to be loaded, the table will load the rows as needed.
    */
   dataset: Dataset<string[]>;
+
+  /**
+   * The number of rows to fetch at a time (default 1000).
+   */
+  fetchSize?: number;
 };
 
 /**
@@ -28,7 +34,7 @@ type TableViewProps = {
  * The table will load the rows as needed and display a placeholder at the end of the table until all the rows have been
  * loaded.
  */
-export default function TableView({ className, dataset }: TableViewProps) {
+export default function TableView({ className, dataset, fetchSize = 1000 }: TableViewProps) {
   // The rows to display in the table.
   const [rows, setRows] = useState<Collection<string[]>>([]);
 
@@ -46,7 +52,7 @@ export default function TableView({ className, dataset }: TableViewProps) {
   // @see RowPlaceholder
   const handleOnRowPlaceHolderVisible = (offset: number) => {
     console.log("Loading more rows from offset", offset);
-    dataset.getFragment(offset, 100).then(([data, done]) => {
+    dataset.getFragment(offset, fetchSize).then(([data, done]) => {
       setRows([...rows, ...data]);
       if (done) {
         setReady(true);
@@ -71,22 +77,30 @@ export default function TableView({ className, dataset }: TableViewProps) {
     }
   });
 
+  const Row: React.FunctionComponent<{ rowNumber: number }> = ({ rowNumber }) => {
+    return (
+      <tr>
+        {rows[rowNumber].map((cell, cellIndex) => {
+          const Cell = columnComponents[cellIndex];
+          return <Cell key={cellIndex} attr={columns[cellIndex]} value={cell} index={cellIndex} />;
+        })}
+      </tr>
+    );
+  };
+  Row.displayName = "Row";
+
+  const MemoRow = memo(Row);
+  const MemoTableHeader = memo(TableHeader);
+
   return (
     <div className={cx("w-full overflow-auto rounded", className)}>
       <table className={cx("w-full text-sm text-left select-none", colors("background", "text"))}>
         <thead className={cx("text-xs uppercase sticky top-0", headerColors("background", "text"))}>
-          <TableHeader attributes={columns} />
+          <MemoTableHeader attributes={columns} />
         </thead>
         <tbody className={cx("divide-y", colors("divide"))}>
           {rows.map((row, rowIndex) => {
-            return (
-              <tr key={rowIndex} className="">
-                {row.map((cell, cellIndex) => {
-                  const Cell = columnComponents[cellIndex];
-                  return <Cell key={cellIndex} attr={columns[cellIndex]} value={cell} index={cellIndex} />;
-                })}
-              </tr>
-            );
+            return <MemoRow key={rowIndex} rowNumber={rowIndex} />;
           })}
           {!ready && (
             <RowPlaceholder
