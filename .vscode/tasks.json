@@ -20,6 +20,15 @@
       "options": {
         "cwd": "${workspaceFolder}/client"
       }
+    },
+    {
+      "label": "ui:build",
+      "type": "shell",
+      "command": "npm",
+      "args": ["build"],
+      "options": {
+        "cwd": "${workspaceFolder}/client"
+      }
     }
   ]
 }

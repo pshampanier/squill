@@ -63,6 +63,16 @@
       "preLaunchTask": "ui:dev"
     },
     {
+      "type": "lldb",
+      "request": "launch",
+      "name": "desktop (release)",
+      "cargo": {
+        "args": ["build", "--release", "--manifest-path=./client/src-tauri/Cargo.toml"]
+      },
+      // task for the `beforeBuildCommand` if used, must be configured in `.vscode/tasks.json`
+      "preLaunchTask": "build"
+    },
+    {
       "name": "previews",
       "request": "launch",
       "type": "chrome",
