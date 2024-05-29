@@ -1,8 +1,0 @@
-{
-  "colorScheme": "dark",
-  "telemetry": true,
-  "showRecentlyOpened": true,
-  "showFavorites": true,
-  "showFileExtensions": true,
-  "editor": { "minimap": "hide", "renderWhitespace": "none" }
-}
