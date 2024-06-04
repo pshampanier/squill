@@ -1,3 +1,11 @@
+## Building
+
+### Release
+
+```bash
+cargo tauri build --config client/src-tauri/tauri.release.conf.json
+```
+
 ## Debugging with VS Code
 
 ### Desktop app

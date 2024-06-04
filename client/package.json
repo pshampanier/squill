@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx tsc && vite build --emptyOutDir && cargo build --bin agent --release",
+    "build": "npx tsc && vite build --emptyOutDir",
     "coverage": "vitest run --coverage",
     "lint": "eslint --ext .js,.ts,.tsx src --report-unused-disable-directives --max-warnings 0",
     "test": "vitest",
