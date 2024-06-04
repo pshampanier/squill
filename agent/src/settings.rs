@@ -1,5 +1,5 @@
 use crate::commandline;
-use crate::utils::constants::{ ENV_VAR_APP_DIR, USERS_DIRNAME };
+use crate::utils::constants::USERS_DIRNAME;
 use crate::models::agent::{ AgentSettings, LogLevel };
 use crate::settings_getters;
 use std::fmt;
@@ -11,9 +11,6 @@ use anyhow::{ anyhow, Context, Result };
 #[cfg(not(test))]
 use ::{ lazy_static::lazy_static, tracing::error, rand::Rng, hex };
 
-#[cfg(test)]
-use std::cell::RefCell;
-
 const AGENT_CONF: &str = "agent.conf";
 
 /// Default address used to serve the API.
@@ -23,66 +20,9 @@ const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1";
 /// The default port is 0 which means that the OS will choose a free port.
 const DEFAULT_PORT: u16 = 0;
 
-#[cfg(not(test))]
-lazy_static! {
-    /// Application directory location.
-    ///
-    /// The app directory (app_dir) is used to store files used internally by the agent  (e.g. agent.conf, .agent.pid, ...).
-    /// This location can only be override by an environment variable, otherwise it's always located in a directory
-    /// specific to the OS where the agent can access without requiring elevated privileges.
-    static ref APP_DIR: PathBuf = {
-        let mut root_dir = PathBuf::new();
-        if let Ok(app_dir) = std::env::var(ENV_VAR_APP_DIR) {
-            root_dir.push(app_dir);
-        } else {
-            #[cfg(target_os = "macos")]
-            {
-                root_dir.push(std::env::var("HOME").unwrap());
-                root_dir.push(format!("Library/Application Support/{}", env!("CARGO_PKG_NAME")));
-            }
-            #[cfg(target_os = "linux")]
-            {
-                root_dir.push(std::env::var("HOME").unwrap());
-                root_dir.push(format!(".{}", env!("CARGO_PKG_NAME")));
-            }
-            #[cfg(target_os = "windows")]
-            {
-                root_dir.push(std::env::var("APPDATA").unwrap());
-                root_dir.push(env!("CARGO_PKG_NAME"));
-            }
-        }
-        if root_dir.is_relative() {
-            root_dir = std::env::current_dir().unwrap().join(root_dir);
-        }
-        root_dir
-    };
-}
-
-#[cfg(test)]
-thread_local! {
-    pub static APP_DIR: RefCell<PathBuf> = RefCell::new(
-        PathBuf::from(std::env::var(ENV_VAR_APP_DIR).unwrap_or(".".to_string()))
-    );
-}
-
-/// Get the app directory for the agent.
-///
-/// The app directory (app_dir) is used to store files used internally by the agent  (e.g. agent.conf, .agent.pid,
-/// log files, ...).
-/// It's also used as the default location for the base directory (base_dir) used to store the user files
-/// (e.g. workspace, shared environment, ...).
-/// While the base directory can be overridden in agent.conf or the command line, the app directory cannot be overridden.
-///
-/// - Windows: %APPDATA%\squill\
-/// - macOS:   $HOME/Library/Application\ Support/squill/
-/// - Linux:   $HOME/.squill/
+/// Get the directory used by the application to store any additional data.
 pub fn get_app_dir() -> PathBuf {
-    #[cfg(test)]
-    {
-        APP_DIR.with(|app_dir| { app_dir.borrow().clone() })
-    }
-    #[cfg(not(test))]
-    APP_DIR.clone()
+    common::get_app_dir()
 }
 
 settings_getters! {
@@ -208,7 +148,22 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
         settings.log_level = LogLevel::Debug;
     }
 
-    if let commandline::Commands::Start { listen_address, port, api_key } = &args.command {
+    if let commandline::Commands::Start { listen_address, port, api_key, .. } = &args.command {
+        #[cfg(debug_assertions)]
+        if let commandline::Commands::Start { dev, .. } = &args.command {
+            // If the development flag is set, use the environment variables to set the address, port, and API key.
+            // Those variables are expected to be set in the environment and be the same as the one defined in the
+            // file `client/.env.local` used by vite to expose environment variables to the web client.
+            // Please note that the development flag is only available in debug builds and should only be used when
+            // using the webapp since the desktop client is capable of setting the address, port, and API key from the
+            // pid file.
+            if *dev {
+                settings.log_level = LogLevel::Debug;
+                settings.listen_address = env!("VITE_AGENT_ADDRESS").to_string();
+                settings.port = env!("VITE_AGENT_PORT").parse().unwrap();
+                settings.api_key = env!("VITE_AGENT_API_KEY").to_string();
+            }
+        }
         if listen_address.is_some() {
             settings.listen_address = (*listen_address).unwrap().to_string();
         }

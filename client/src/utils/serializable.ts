@@ -50,7 +50,9 @@ type Deserializer = (value: unknown, key: string | number) => [string | number, 
 type Serializer = (value: unknown, key: string | number) => [string | number, unknown];
 
 export function deserialize<T extends object>(value: unknown, factory: ObjectFactory<T>, name?: string): T {
-  if (Array.isArray(value)) {
+  if (value === null || value === undefined) {
+    return value as T;
+  } else if (Array.isArray(value)) {
     return deserializeArray(value, (item) => {
       return deserialize(item, factory);
     }) as object as T;
@@ -73,7 +75,7 @@ export function deserialize<T extends object>(value: unknown, factory: ObjectFac
         name: name,
         required: Reflect.getMetadata(METADATA_REQUIRED, target),
         dependencies: Reflect.getMetadata(METADATA_DEPENDENCIES, target),
-      }
+      },
     );
     return target;
   }
@@ -339,7 +341,7 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
               const [, itemValue] = itemDeserializer(item, index);
               return itemValue;
             },
-            { ...options, name: safeKey(key) }
+            { ...options, name: safeKey(key) },
           ),
         ];
       };

@@ -51,7 +51,7 @@ pub mod settings {
         };
     }
 
-    // For convinience, generate getters & setters for the settings used in tests.
+    // For convenience, generate getters & setters for the settings used in tests.
     // This allows to get/set the settings in tests modules as follows:
     //
     //    use crate::utils::tests::settings;
@@ -71,12 +71,10 @@ pub mod settings {
     settings_setters!(set_log_collector, log_collector: bool);
 
     pub fn set_app_dir(new_app_dir: &Path) {
-        crate::settings::APP_DIR.with(|app_dir| {
-            *app_dir.borrow_mut() = new_app_dir.to_path_buf();
-        });
+        common::set_app_dir(new_app_dir);
     }
 
-    // For convinience, generate getters for the settings used in tests.
+    // For convenience, generate getters for the settings used in tests.
     // This allows to get the settings in tests modules as follows:
     //
     //    use crate::utils::tests::settings;

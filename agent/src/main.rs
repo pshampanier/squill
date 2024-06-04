@@ -7,10 +7,12 @@ mod server;
 mod utils;
 
 use std::path::PathBuf;
+use common::pid_file::AgentStatus;
+use tracing::level_filters::LevelFilter;
 use tracing_appender::rolling;
 use tracing::{ error, Subscriber };
 use tracing_subscriber::{ self, filter::EnvFilter };
-use tracing_subscriber::{ Registry, prelude::* };
+use tracing_subscriber::{ prelude::*, Registry };
 use anyhow::{ Result, Context };
 use utils::constants::ENV_VAR_LOG_LEVEL;
 use utils::validators::sanitize_username;
@@ -33,10 +35,18 @@ async fn main() {
     }
 }
 
+fn get_tracing_filter(args: Option<&commandline::Args>) -> EnvFilter {
+    let default_level: LevelFilter = match args {
+        Some(args) => if args.verbose { LevelFilter::DEBUG } else { LevelFilter::INFO }
+        None => LevelFilter::INFO,
+    };
+    EnvFilter::builder().with_default_directive(default_level.into()).with_env_var(ENV_VAR_LOG_LEVEL).from_env_lossy()
+}
+
 /// Initialize the tracing system.
 ///
 /// All logs are written to the standard output and to log files if the logging collector is enabled.
-fn get_tracing_subscriber() -> Result<Box<dyn Subscriber + Send + Sync>> {
+fn get_tracing_subscriber(args: Option<&commandline::Args>) -> Result<Box<dyn Subscriber + Send + Sync>> {
     // logs are always written to the standard output.
     let stdout_log = tracing_subscriber::fmt
         ::layer()
@@ -47,7 +57,7 @@ fn get_tracing_subscriber() -> Result<Box<dyn Subscriber + Send + Sync>> {
         .with_ansi(true)
         .with_file(false)
         .with_target(true)
-        .with_filter(EnvFilter::from_env(ENV_VAR_LOG_LEVEL));
+        .with_filter(get_tracing_filter(args));
 
     let file_log = if settings::get_log_collector() {
         // the logging collector is enabled, we must be initiate the creation of log files.
@@ -64,7 +74,7 @@ fn get_tracing_subscriber() -> Result<Box<dyn Subscriber + Send + Sync>> {
                 .with_ansi(false)
                 .with_thread_ids(true)
                 .with_writer(file_appender.with_max_level(settings::get_log_level()))
-                .with_filter(EnvFilter::from_env(ENV_VAR_LOG_LEVEL))
+                .with_filter(get_tracing_filter(args))
         )
     } else {
         None
@@ -83,12 +93,27 @@ async fn run(args: &commandline::Args) -> Result<()> {
             .with_context(|| { format!("Unable to create the application directory: {}", app_dir.to_str().unwrap()) })?;
     }
     // now that the command line has been parsed, the app_directory exists we can initialize the tracing system.
-    tracing::subscriber::set_global_default(get_tracing_subscriber()?)?;
+    tracing::subscriber::set_global_default(get_tracing_subscriber(Some(args))?)?;
 
     match &args.command {
         commandline::Commands::Start { .. } => {
             // start the web server
             return Server::start().await;
+        }
+        commandline::Commands::Status => {
+            // get the status of the agent
+            match Server::status().await {
+                AgentStatus::Running(pid) => {
+                    println!("The agent is running (pid={}).", pid);
+                }
+                AgentStatus::NotRunning => {
+                    println!("The agent is not running.");
+                }
+                AgentStatus::NotResponding(pid, reason) => {
+                    println!("The agent is not responding (pid={}).", pid);
+                    error!("{}", reason);
+                }
+            }
         }
         commandline::Commands::UserAdd { username } => {
             resources::users::create_user(&sanitize_username(username)?)?;
@@ -117,13 +142,13 @@ mod tests {
         // 1) disable the log collector, the log directory should not be created.
         settings::set_log_collector(false);
         settings::set_log_dir(log_dir.parent().unwrap().to_str().unwrap().to_string());
-        get_tracing_subscriber().unwrap();
+        get_tracing_subscriber(None).unwrap();
         assert!(!log_dir.exists());
 
         // 2) enable the log collector, the log directory should be created and logs written in that directory.
         settings::set_log_collector(true);
         settings::set_log_dir(log_dir.to_str().unwrap().to_string());
-        let subscriber = get_tracing_subscriber().unwrap();
+        let subscriber = get_tracing_subscriber(None).unwrap();
         tracing::subscriber::with_default(subscriber, || {
             tracing::info!("test");
         });

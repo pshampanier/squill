@@ -1,19 +1,33 @@
 [package]
-name = "desktop-app"
+name = "squill"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
 repository.workspace = true
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [build-dependencies]
 tauri-build = { version = "1.5", features = [] }
 
+# FIXME: "devtools" & "macos-private-api" will prevent to publish on the Apple App Store
 [dependencies]
-tauri = { version = "1.5", features = [ "window-start-dragging", "macos-private-api", "shell-open"] }
-serde = { version = "1.0", features = ["derive"] }
+serde = { workspace = true, features = ["derive"] }
+lazy_static = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+futures = { workspace = true }
+common = { path = "../../common" }
+tauri = { version = "1.5", features = [ "shell-sidecar",
+    "window-start-dragging",
+    "macos-private-api",
+    "shell-open",
+    "devtools",
+    "process-command-api",
+] }
 serde_json = "1.0"
+notify = "6.1.1"
+
+[dev-dependencies]
+common = { path = "../../common", features = ["test-hooks"] }
 
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem

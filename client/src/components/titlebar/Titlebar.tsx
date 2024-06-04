@@ -8,9 +8,10 @@ import { UnlistenFn } from "@tauri-apps/api/event";
 
 type TitlebarProps = {
   children?: React.ReactNode;
+  className?: string;
 };
 
-export default function Titlebar({ children }: TitlebarProps) {
+export default function Titlebar({ children, className }: TitlebarProps) {
   // On macOS desktop app, we need to add a padding to the left of the titlebar for the default buttons
   // (open/close/maximize). This padding is removed when the window is in fullscreen mode because the buttons are then
   // hidden. We need to listen to the resize event to detect when the window is in fullscreen mode and because Tauri
@@ -39,7 +40,8 @@ export default function Titlebar({ children }: TitlebarProps) {
     "flex space-x-2 h-11 p-1 justify-between text-white w-full",
     colors("background"),
     // On macOs, add a padding to the left of the titlebar for the default buttons (open/close/maximize)
-    env.applicationType === "desktop" && env.platform === "macos" && !fullscreen && "pl-[64px]"
+    env.applicationType === "desktop" && env.platform === "macos" && !fullscreen && "pl-[64px]",
+    className,
   );
   return (
     <ColorsContext.Provider value={colors}>

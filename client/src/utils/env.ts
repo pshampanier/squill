@@ -1,17 +1,34 @@
 /// <reference types="vite/client" />
-import { invoke } from "@tauri-apps/api/tauri";
+import { UserError } from "@/utils/errors";
+import { AgentEndpoint } from "@/models/agent";
+import { Tauri } from "@/utils/tauri";
 
 type Platform = "windows" | "macos" | "linux" | "unknown";
 type ApplicationType = "desktop" | "web";
 type BuildType = "debug" | "release";
 
-export type AgentConnectionParameters = {
-  url: string;
-  apiKey: string;
-};
-
 export class Env {
   readonly platform: Platform = this.detectPlatform();
+  agentEndpoint: AgentEndpoint | null = null;
+
+  async init() {
+    // When running the desktop app, the RUST code will send the agent connection parameters to the client.
+    // every time the agent is started or stopped. When stopped, the payload of the event will be null, otherwise
+    // it will contain the agent connection parameters.
+    if (this.applicationType === "desktop") {
+      this.agentEndpoint = await Tauri.getAgentEndpoint();
+      await Tauri.listenAgentEndpoint((agentEndpoint: AgentEndpoint) => {
+        console.log("Received the agent connection parameters: ", agentEndpoint);
+        this.agentEndpoint = agentEndpoint;
+      });
+    } else {
+      // When running in a web browser, we are using the Vite environment variables to get the agent connection parameters.
+      this.agentEndpoint = new AgentEndpoint({
+        url: `http://${import.meta.env["VITE_AGENT_ADDRESS"]}:${import.meta.env["VITE_AGENT_PORT"]}`,
+        apiKey: import.meta.env["VITE_AGENT_API_KEY"],
+      });
+    }
+  }
 
   get colorScheme(): "light" | "dark" {
     return this.detectColorScheme();
@@ -25,28 +42,9 @@ export class Env {
     return import.meta.env.DEV ? "debug" : "release";
   }
 
-  // Get the value of a variable from the environment.
-  //
-  // - When running in a Tauri application, the variable is fetched from the using the command get_variable implemented
-  //   in Rust.
-  // - When running in a web browser in dev mode, the variable is fetched from the environment using the Vite
-  //   environment variables defined in .env files (see https://vitejs.dev/guide/env-and-mode.html).
-  async getVariable(name: string): Promise<string | undefined> {
-    if (import.meta.env.DEV && import.meta.env["VITE_" + name]) {
-      // Because vite only expose variable prefixed with VITE_ we need to prefix the variable name with VITE_.
-      return import.meta.env["VITE_" + name];
-    }
-    if (window.__TAURI__) {
-      return invoke("get_variable", { name });
-    }
-    return undefined;
-  }
-
-  async getAgentConnectionParameters(): Promise<AgentConnectionParameters> {
-    return {
-      url: await this.getVariable("LOCAL_AGENT_URL"),
-      apiKey: await this.getVariable("LOCAL_AGENT_API_KEY"),
-    };
+  getAgentEndpoint(): AgentEndpoint {
+    if (!this.agentEndpoint) throw new UserError("The agent is not currently running.");
+    return this.agentEndpoint;
   }
 
   /**

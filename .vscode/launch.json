@@ -9,16 +9,9 @@
       "request": "launch",
       "name": "agent (debug)",
       "cargo": {
-        "args": ["build", "--bin=agent", "--package=squill"],
-        "filter": {
-          "name": "agent",
-          "kind": "bin"
-        }
+        "args": ["build", "--package=agent"]
       },
-      "args": ["--verbose", "start", "--port", "8080", "--api-key", "x-dev"],
-      "env": {
-        "SQUILL_LOG_LEVEL": "trace"
-      },
+      "args": ["start", "--dev"],
       "cwd": "${workspaceFolder}"
     },
     {
@@ -26,11 +19,7 @@
       "request": "launch",
       "name": "agent (unit tests)",
       "cargo": {
-        "args": ["test", "--no-run", "--bin=agent", "--package=squill"],
-        "filter": {
-          "name": "agent",
-          "kind": "bin"
-        }
+        "args": ["test", "--no-run", "--package=agent"]
       },
       "args": [],
       "cwd": "${workspaceFolder}"

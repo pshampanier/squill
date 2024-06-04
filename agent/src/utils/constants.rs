@@ -10,10 +10,6 @@ pub const USER_DATA_DIRNAME: &str = "data";
 /// File extension of the catalog entries & workspaces.
 pub const CATALOG_ENTRY_FILE_EXTENSION: &str = "json";
 
-// HTTP Headers
-pub const X_API_KEY_HEADER: &str = "X-Api-Key";
-pub const X_REQUEST_ID_HEADER: &str = "X-Request-ID";
-
 /// Username used for unauthenticated requests.
 pub const USERNAME_ANONYMOUS: &str = "anonymous";
 
@@ -30,9 +26,6 @@ pub const WORKSPACE_SETTINGS_FILENAME: &str = ".workspace.json";
 //
 // Environment variables
 //
-
-/// Name of the environment variable used to specify the app directory.
-pub const ENV_VAR_APP_DIR: &str = "SQUILL_APP_DIR";
 
 /// Name of the environment variable used to specify the log level.
 pub const ENV_VAR_LOG_LEVEL: &str = "SQUILL_LOG_LEVEL";

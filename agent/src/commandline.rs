@@ -13,17 +13,13 @@ pub struct Args {
     #[clap(long, short)]
     pub verbose: bool,
 
-    /// Print the final configuration.
-    #[arg(long, default_value_t = false)]
-    pub show_config: bool,
-
     #[command(subcommand)]
     pub command: Commands,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Start the server.
+    /// Start the agent.
     Start {
         /// The TCP/IP address to listen to.
         #[arg(long)]
@@ -36,12 +32,22 @@ pub enum Commands {
         /// The TCP/IP port to listen to.
         #[arg(short, long)]
         port: Option<u16>,
+
+        /// Run the agent in development mode.
+        #[cfg(debug_assertions)]
+        #[arg(long)]
+        dev: bool,
     },
+
+    /// Get the status of the agent.
+    Status,
+
     /// Create a new user account.
     UserAdd {
         /// The username of the user to add.
         username: String,
     },
+
     /// Delete a user account and all associated data.
     UserDel {
         /// The username of the user to delete.
@@ -61,11 +67,12 @@ pub fn get_args() -> &'static Args {
         &(Args {
             base_dir: None,
             verbose: false,
-            show_config: false,
             command: Commands::Start {
                 listen_address: None,
                 api_key: None,
                 port: None,
+                #[cfg(debug_assertions)]
+                dev: false,
             },
         })
     } else {

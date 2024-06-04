@@ -4,8 +4,8 @@ use crate::{ settings, api };
 use crate::api::error::{ Error, ServerResult };
 use crate::server::state::ServerState;
 use crate::server::context::RequestContext;
-use crate::server::pid_file::{ save_pid_file, delete_pid_file, load_pid_file, PID_FILENAME };
-use crate::utils::constants::{ X_API_KEY_HEADER, X_REQUEST_ID_HEADER };
+use common::constants::{ X_API_KEY_HEADER, X_REQUEST_ID_HEADER };
+use common::pid_file::{ delete_pid_file, get_agent_status, load_pid_file, save_pid_file, AgentStatus, PID_FILENAME };
 use std::str::FromStr;
 use std::time::{ SystemTime, UNIX_EPOCH };
 use axum::extract::State;
@@ -16,7 +16,6 @@ use anyhow::{ Result, Context };
 use rand::Rng;
 use tokio::signal;
 use tokio::net::TcpListener;
-use sysinfo::{ Pid, System };
 use tower_http::LatencyUnit;
 use tracing::{ debug, info, warn, Level };
 use tower_http::trace::{ self, TraceLayer };
@@ -130,35 +129,32 @@ impl Server {
         };
 
         warn!("The server may already be running (pid={})", pid_file.pid);
-
-        // Check an alternative that works on the Apple Store
-        let running_proc = System::new_all();
-        if running_proc.process(Pid::from_u32(pid_file.pid)).is_none() {
-            // The process is no longer running
-            info!("No process with pid={} found, continue...", pid_file.pid);
-            return Ok(());
-        }
-
-        // Check of the server is responding to an API request
-        let http_client = reqwest::Client::new();
-        match
-            http_client
-                .get(format!("http://localhost:{}/api/v1/agent", pid_file.port))
-                .header(X_API_KEY_HEADER, pid_file.api_key)
-                .send().await
-        {
-            Ok(response) => {
-                if response.status().is_success() {
-                    Err(anyhow::anyhow!("The server is already running (pid={})", pid_file.pid))
-                } else {
-                    info!("The server is running but not responding to an API request, continue...");
-                    Ok(())
-                }
+        match get_agent_status(&pid_file).await {
+            AgentStatus::Running(pid) => {
+                // The server is already running
+                Err(anyhow::anyhow!("The agent is already running (agent pid={})", pid))
             }
-            Err(_) => {
-                info!("The server is not responding to an API request, continue...");
+            AgentStatus::NotRunning => {
+                // The process is no longer running
+                info!("No agent with pid={} found, continue...", pid_file.pid);
                 Ok(())
             }
+            AgentStatus::NotResponding(pid, reason) => {
+                // The server is running but not responding to an API request
+                warn!("{}", reason);
+                info!("The agent is running but not responding to an API request, continue... (agent pid={})", pid);
+                Ok(())
+            }
+        }
+    }
+
+    /// Get the status of the agent.
+    pub async fn status() -> AgentStatus {
+        let app_dir = settings::get_app_dir();
+        if let Some(pid_file) = load_pid_file(&app_dir) {
+            get_agent_status(&pid_file).await
+        } else {
+            AgentStatus::NotRunning
         }
     }
 }
@@ -303,9 +299,10 @@ async fn shutdown_signal() {
 #[cfg(test)]
 mod tests {
     use axum::{ body::Body, http::header::AUTHORIZATION };
+    use common::pid_file::PidFile;
     use tempfile::tempdir;
     use std::io::Write;
-    use crate::{ resources::users::create_user, server::pid_file::PidFile, utils::tests::settings };
+    use crate::{ resources::users::create_user, utils::tests::settings };
     use super::*;
     use tower::ServiceExt; // for `call`, `oneshot`, and `ready`
     use tokio::io::AsyncWriteExt;
@@ -321,6 +318,7 @@ mod tests {
         let mut pid_file = PidFile {
             pid: 0,
             port: 1234,
+            address: "127.0.0.1".to_string(),
             api_key: "cf55f65...".to_string(),
         };
         std::fs::File
@@ -343,7 +341,7 @@ mod tests {
         assert!(Server::check_if_running().await.is_ok());
 
         // 4. The server is already running
-        let listener = tokio::net::TcpListener::bind(format!("localhost:{}", pid_file.port)).await.unwrap();
+        let listener = tokio::net::TcpListener::bind(format!("{}:{}", pid_file.address, pid_file.port)).await.unwrap();
         let handle = tokio::spawn(async move {
             let (mut tcp_stream, _) = listener.accept().await.unwrap();
             tcp_stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").await.unwrap();
