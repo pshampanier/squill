@@ -27,11 +27,16 @@ pub struct Server {}
 impl Server {
     pub async fn start() -> Result<()> {
         info!(
-            "{} {}.{} {} (pid={})",
+            "{} {}.{} {} ({}pid={})",
             env!("CARGO_PKG_DESCRIPTION"),
             env!("CARGO_PKG_VERSION"),
             super::super::built_info::GIT_COMMIT_HASH_SHORT.unwrap_or("ci"),
             super::super::built_info::TARGET,
+            if super::super::built_info::PROFILE == "debug" {
+                "debug, "
+            } else {
+                ""
+            },
             std::process::id()
         );
 
