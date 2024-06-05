@@ -23,6 +23,9 @@ jobs:
         working-directory: ./
         env:
           CI_POSTGRES_CONNECTION_STRING: ${{ secrets.CI_POSTGRES_CONNECTION_STRING }}
+          VITE_AGENT_ADDRESS: 127.0.0.1
+          VITE_AGENT_PORT: 8080
+          VITE_AGENT_API_KEY: x-dev-api-key
         run: |
           chmod -R a+rw .
           su ci --command="cargo tarpaulin --target-dir=build --timeout 120 --out xml"
