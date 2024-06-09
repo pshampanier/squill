@@ -227,51 +227,26 @@ export default function TableView({
     return (
       <div ref={containerRef} className={classes.container}>
         <table className={classes.table.self}>
-          <thead className={classes.table.thead.self}>
-            <tr className={classes.table.thead.tr}>
-              {displayRowNumber && (
-                <th scope="col" className={classes.table.thead.rowNum.self}>
-                  <div className={classes.table.thead.rowNum.div}>{isFetching && <Spinner size="sm" />}</div>
-                </th>
-              )}
-              {columns.map((column, i) => (
-                <th
-                  key={i}
-                  scope="col"
-                  style={{ width: column.width + "px" }}
-                  className={cx(classes.table.thead.th, column.format.name === "boolean" && "justify-center")}
-                >
-                  <div className="truncate">{column.title}</div>
-                </th>
-              ))}
-            </tr>
-          </thead>
+          <TableViewHeader
+            columns={columns}
+            displayRowNumber={displayRowNumber}
+            isFetching={isFetching}
+            classes={classes.table.thead}
+          />
           <tbody className={classes.table.tbody.self} style={{ height: `${estimatedTotalHeight}px` }}>
             {getVirtualItems().map((virtualRow) => {
               const rowNum = virtualRow.index + 1;
               const rowData = getRowData(data, virtualRow.index, fetchSize);
               return (
-                <tr
-                  className="z-0"
+                <TableViewRow
                   key={virtualRow.index}
-                  style={{
-                    display: "flex",
-                    position: "absolute",
-                    transform: `translateY(${virtualRow.start}px)`, // must be a `style` as it changes on scroll
-                    width: "100%",
-                  }}
-                >
-                  {displayRowNumber && (
-                    <td scope="col" className={classes.table.tbody.rowNum.self}>
-                      <div className={classes.table.tbody.rowNum.div}>{rowNum}</div>
-                    </td>
-                  )}
-                  {rowData ? (
-                    <DataRow columns={columns} data={rowData} rowNum={rowNum} />
-                  ) : (
-                    <SkeletonRow columns={columns} />
-                  )}
-                </tr>
+                  rowNum={rowNum}
+                  columns={columns}
+                  data={rowData}
+                  top={virtualRow.start}
+                  displayRowNumber={displayRowNumber}
+                  rowNumberClasses={classes.table.tbody.rowNum}
+                />
               );
             })}
           </tbody>
@@ -281,62 +256,143 @@ export default function TableView({
   }
 }
 
-const SkeletonRow = memo(
-  ({ columns }: { columns: Column[] }) => {
+const TableViewHeader = memo(
+  ({
+    columns,
+    displayRowNumber,
+    isFetching,
+    classes,
+  }: {
+    columns: Column[];
+    displayRowNumber: boolean;
+    isFetching: boolean;
+    classes: { self: string; tr: string; th: string; rowNum: { self: string; div: string } };
+  }) => {
+    console.debug("rendering header", isFetching);
     return (
-      <>
-        {columns.map((column, i) => {
-          const classes = {
-            ...column.cellClasses,
-            div: cx(
-              column.cellClasses.div,
-              secondary("background"),
-              column.format.name === "boolean" ? "w-4 rounded-full" : "rounded w-3/4",
-            ),
-          };
-          return (
-            <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
-              <div className={classes.div}></div>
-            </td>
-          );
-        })}
-      </>
+      <thead className={classes.self}>
+        <tr className={classes.tr}>
+          {displayRowNumber && (
+            <th scope="col" className={classes.rowNum.self}>
+              <div className={classes.rowNum.div}>{isFetching && <Spinner size="sm" />}</div>
+            </th>
+          )}
+          {columns.map((column, i) => (
+            <th
+              key={i}
+              scope="col"
+              style={{ width: column.width + "px" }}
+              className={cx(classes.th, column.format.name === "boolean" && "justify-center")}
+            >
+              <div className="truncate">{column.title}</div>
+            </th>
+          ))}
+        </tr>
+      </thead>
     );
   },
-  () => true,
+  (prevProps, nextProps) => prevProps.isFetching === nextProps.isFetching,
 );
 
-SkeletonRow.displayName = "SkeletonRow";
+TableViewHeader.displayName = "TableViewHeader";
 
-const DataRow = memo(
-  ({ columns, data, rowNum }: { columns: Column[]; data: Row; rowNum: number }) => {
+const TableViewRow = memo(
+  ({
+    rowNum,
+    columns,
+    data,
+    top,
+    displayRowNumber,
+    rowNumberClasses,
+  }: {
+    rowNum: number;
+    columns: Column[];
+    data: Row;
+    top: number;
+    displayRowNumber: boolean;
+    rowNumberClasses: {
+      self: string;
+      div: string;
+    };
+  }) => {
     console.debug("rendering row ", rowNum);
     return (
-      <>
-        {columns.map((column, i) => {
-          const classes = {
-            ...column.cellClasses,
-            div: cx(column.cellClasses.div),
-          };
-          let children: string | React.ReactNode = data[i];
-          switch (column.format.name) {
-            case "boolean":
-              children = data[i] === "true" ? <TrueIcon /> : <FalseIcon />;
-              break;
-          }
-          return (
-            <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
-              <div className={classes.div}>{children}</div>
-            </td>
-          );
-        })}
-      </>
+      <tr
+        className="z-0"
+        key={rowNum}
+        style={{
+          display: "flex",
+          position: "absolute",
+          transform: `translateY(${top}px)`, // must be a `style` as it changes on scroll
+          width: "100%",
+        }}
+      >
+        {displayRowNumber && (
+          <td scope="col" className={rowNumberClasses.self}>
+            <div className={rowNumberClasses.div}>{rowNum}</div>
+          </td>
+        )}
+        {data ? <DataCells columns={columns} data={data} /> : <SkeletonCells columns={columns} />}
+      </tr>
     );
   },
-  () => true,
+  (prevProps, nextProps) => {
+    if (prevProps.data === null && nextProps.data !== null) {
+      // The row data were loading but now they are available
+      return false;
+    } else {
+      return true;
+    }
+  },
 );
 
-DataRow.displayName = "DataRow";
+TableViewRow.displayName = "TableViewRow";
+
+function SkeletonCells({ columns }: { columns: Column[] }) {
+  return (
+    <>
+      {columns.map((column, i) => {
+        const classes = {
+          ...column.cellClasses,
+          div: cx(
+            column.cellClasses.div,
+            secondary("background"),
+            column.format.name === "boolean" ? "w-4 rounded-full" : "rounded w-3/4",
+          ),
+        };
+        return (
+          <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
+            <div className={classes.div}></div>
+          </td>
+        );
+      })}
+    </>
+  );
+}
+
+function DataCells({ columns, data }: { columns: Column[]; data: Row }) {
+  return (
+    <>
+      {columns.map((column, i) => {
+        const classes = {
+          ...column.cellClasses,
+          div: cx(column.cellClasses.div),
+        };
+        let children: string | React.ReactNode = data[i];
+        switch (column.format.name) {
+          case "boolean":
+            children = data[i] === "true" ? <TrueIcon /> : <FalseIcon />;
+            break;
+        }
+        return (
+          <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
+            <div className={classes.div}>{children}</div>
+          </td>
+        );
+      })}
+    </>
+  );
+}
 
 /**
  * An helper function to apply sticky column classes to the given.
