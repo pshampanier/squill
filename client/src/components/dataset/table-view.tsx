@@ -11,12 +11,10 @@ import FalseIcon from "@/icons/false.svg?react";
 import Spinner from "@/components/core/Spinner";
 import ResizePanel from "@/components/core/ResizePanel";
 
-export type ResizeObserver = (columnIndex: number, width: number) => void;
-
 /**
  * A row of data to be displayed by the component.
  *
- * The row is an array of strings where each string represents the value to be displayed in the table cells.
+ * The row is an array of strings where each string represents a value to be displayed in a table cell.
  * This component does not perform any formatting of the data, it is up to the caller to format the data as needed.
  */
 type Row = string[];
@@ -210,10 +208,12 @@ export default function TableView({
   }
 
   const handleResize = useCallback((columnIndex: number, width: number) => {
+    // TODO: update the width of the column in the state
     console.debug(`resizing column ${columnIndex} to ${width}px`);
   }, []);
 
   const handleResizeEnd = useCallback((columnIndex: number, width: number) => {
+    // TODO: update the column definition and call the column observer
     console.debug(`resizing column ${columnIndex} to ${width}px completed`);
   }, []);
 
@@ -274,6 +274,16 @@ export default function TableView({
   }
 }
 
+/**
+ * A callback to be called when a column is resized.
+ */
+type ResizeObserver = (columnIndex: number, width: number) => void;
+
+/**
+ * A component that display the table table header.
+ *
+ * This component is memoized to avoid re-rendering whenever possible.
+ */
 const TableViewHeader = memo(
   ({
     columns,
@@ -325,6 +335,11 @@ const TableViewHeader = memo(
 
 TableViewHeader.displayName = "TableViewHeader";
 
+/**
+ * A component that display a row in the table.
+ *
+ * This component is memoized to avoid re-rendering whenever possible.
+ */
 const TableViewRow = memo(
   ({
     rowNum,
@@ -377,6 +392,11 @@ const TableViewRow = memo(
 
 TableViewRow.displayName = "TableViewRow";
 
+/**
+ * A component that display the cells of a row when the data is not available.
+ *
+ * Note: This component does not render the first cell of the row (the row number).
+ */
 function SkeletonCells({ columns }: { columns: Column[] }) {
   return (
     <>
@@ -399,6 +419,9 @@ function SkeletonCells({ columns }: { columns: Column[] }) {
   );
 }
 
+/**
+ * A component that display the cells of a row when the data is available.
+ */
 function DataCells({ columns, data }: { columns: Column[]; data: Row }) {
   return (
     <>
