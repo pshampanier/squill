@@ -9,6 +9,9 @@ import { Duration } from "@/utils/duration";
 import TrueIcon from "@/icons/true.svg?react";
 import FalseIcon from "@/icons/false.svg?react";
 import Spinner from "@/components/core/Spinner";
+import ResizePanel from "@/components/core/ResizePanel";
+
+export type ResizeObserver = (columnIndex: number, width: number) => void;
 
 /**
  * A row of data to be displayed by the component.
@@ -50,6 +53,11 @@ type TableViewProps = {
    * Whether to display the row number in the first column.
    */
   displayRowNumber?: boolean;
+
+  /**
+   * A callback to be called once a column has been resized.
+   */
+  onResize?: ResizeObserver;
 };
 
 type Column = {
@@ -201,6 +209,14 @@ export default function TableView({
     handleRangeChange(range);
   }
 
+  const handleResize = useCallback((columnIndex: number, width: number) => {
+    console.debug(`resizing column ${columnIndex} to ${width}px`);
+  }, []);
+
+  const handleResizeEnd = useCallback((columnIndex: number, width: number) => {
+    console.debug(`resizing column ${columnIndex} to ${width}px completed`);
+  }, []);
+
   console.debug(`rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)})`);
   if (!columns) {
     return null;
@@ -232,6 +248,8 @@ export default function TableView({
             displayRowNumber={displayRowNumber}
             isFetching={isFetching}
             classes={classes.table.thead}
+            onResize={handleResize}
+            onResizeEnd={handleResizeEnd}
           />
           <tbody className={classes.table.tbody.self} style={{ height: `${estimatedTotalHeight}px` }}>
             {getVirtualItems().map((virtualRow) => {
@@ -262,11 +280,15 @@ const TableViewHeader = memo(
     displayRowNumber,
     isFetching,
     classes,
+    onResize,
+    onResizeEnd,
   }: {
     columns: Column[];
     displayRowNumber: boolean;
     isFetching: boolean;
     classes: { self: string; tr: string; th: string; rowNum: { self: string; div: string } };
+    onResize: ResizeObserver;
+    onResizeEnd: ResizeObserver;
   }) => {
     console.debug("rendering header", isFetching);
     return (
@@ -285,6 +307,13 @@ const TableViewHeader = memo(
               className={cx(classes.th, column.format.name === "boolean" && "justify-center")}
             >
               <div className="truncate">{column.title}</div>
+              <ResizePanel
+                className="ml-auto"
+                width={column.width}
+                minWidth={column.width}
+                onResize={(width) => onResize(i, width)}
+                onResizeEnd={(width) => onResizeEnd(i, width)}
+              />
             </th>
           ))}
         </tr>
