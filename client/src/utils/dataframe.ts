@@ -1,12 +1,15 @@
-import { DatasetSchema } from "@/models/dataset-schema";
+import { DataFrameSchema } from "@/models/dataframe-schema";
 
-export type Collection<E> = Array<E>;
+export interface DataFrame<E> {
+  /**
+   * Get a unique identifier for the dataset.
+   */
+  getId(): string;
 
-export interface Dataset<E> {
   /**
    * Get the schema of the elements (E) stored in the dataset.
    */
-  getSchema(): DatasetSchema;
+  getSchema(): DataFrameSchema;
 
   /**
    * Get an estimate of the number of elements in the dataset.
@@ -26,22 +29,43 @@ export interface Dataset<E> {
    * elements available. The boolean can be used to determine if the fragment is the last one in the dataset, `true`
    * means the fragment is the last one, `false` means there are more elements available.
    */
-  getFragment(offset: number, limit: number): Promise<[Collection<E>, boolean]>;
+  getSlice(offset: number, limit: number): Promise<DataFrameSlice<E>>;
 }
+
+/**
+ * A slice of the dataframe.
+ */
+export type DataFrameSlice<E> = {
+  /**
+   * The elements in the slice.
+   */
+  data: Array<E>;
+
+  /**
+   * The offset of the first element in the slide, i.e. where the slice starts in the whole dataframe.
+   */
+  offset: number;
+};
 
 /**
  * A dataset that has all data given at construction time.
  */
-export class MemoryDataset<E> implements Dataset<E> {
-  private schema!: DatasetSchema;
-  private data!: Collection<E>;
+export class MemoryDataFrame<E> implements DataFrame<E> {
+  private id!: string;
+  private schema!: DataFrameSchema;
+  private data!: Array<E>;
 
-  constructor(schema: DatasetSchema, data: Collection<E>) {
+  constructor(id: string, schema: DataFrameSchema, data: Array<E>) {
+    this.id = id;
     this.schema = schema;
     this.data = data;
   }
 
-  getSchema(): DatasetSchema {
+  getId(): string {
+    return this.id;
+  }
+
+  getSchema(): DataFrameSchema {
     return this.schema;
   }
 
@@ -49,7 +73,11 @@ export class MemoryDataset<E> implements Dataset<E> {
     return this.data.length;
   }
 
-  async getFragment(offset: number, limit: number): Promise<[Collection<E>, boolean]> {
-    return [this.data.slice(offset, offset + limit), offset + limit >= this.data.length];
+  async getSlice(offset: number, limit: number): Promise<DataFrameSlice<E>> {
+    console.debug("MemoryDataFrame.getSlice", offset, limit);
+    return {
+      data: this.data.slice(offset, offset + limit),
+      offset: offset,
+    };
   }
 }

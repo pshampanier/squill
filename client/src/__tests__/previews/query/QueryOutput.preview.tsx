@@ -3,9 +3,9 @@ import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
 import { MICROSECONDS_IN_A_SECOND, addTime } from "@/utils/time";
-import { DatasetSchema } from "@/models/dataset-schema";
+import { DataFrameSchema } from "@/models/dataframe-schema";
 import { DatasetAttribute } from "@/models/dataset-attribute";
-import { MemoryDataset } from "@/utils/dataset";
+import { MemoryDataFrame } from "@/utils/dataframe";
 import TableView from "@/components/dataset/table-view";
 
 const QUERY_ERROR = new QueryExecution({
@@ -61,11 +61,11 @@ const QUERY_SUCCESS_RESULT = `
       `[${line
         .replace(/,"True",/g, ',"true",')
         .replace(/,"False",/g, ',"false",')
-        .replace(/"NULL"/g, "null")}]`
-    )
+        .replace(/"NULL"/g, "null")}]`,
+    ),
   );
 
-const QUERY_SUCCESS_DATASET_SCHEMA = new DatasetSchema({
+const QUERY_SUCCESS_DATASET_SCHEMA = new DataFrameSchema({
   name: "query",
   type: "array",
   items: [
@@ -94,7 +94,7 @@ const QUERY_PENDING = new QueryExecution({
 });
 
 export default function QueryOutputPreview() {
-  const successDataset = new MemoryDataset(QUERY_SUCCESS_DATASET_SCHEMA, QUERY_SUCCESS_RESULT);
+  const successDataFrame = new MemoryDataFrame("products", QUERY_SUCCESS_DATASET_SCHEMA, QUERY_SUCCESS_RESULT);
   return (
     <>
       {/*
@@ -132,7 +132,7 @@ export default function QueryOutputPreview() {
         </Preview.Description>
         <PreviewBox className="items-center">
           <QueryOutput className="w-full" queryExecution={QUERY_SUCCESS} />
-          <TableView className="h-56" dataset={successDataset} />
+          <TableView className="h-56" dataframe={successDataFrame} />
         </PreviewBox>
       </Preview>
       {/*

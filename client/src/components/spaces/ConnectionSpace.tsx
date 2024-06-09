@@ -4,7 +4,6 @@ import Users from "@/resources/users";
 import { env } from "@/utils/env";
 import { AuthRequest } from "@/models/auth";
 import { calculateColorScheme } from "@/utils/colors";
-import { useQuery } from "react-query";
 import { useAppStore } from "@/stores/AppStore";
 import Space, { SpaceProps } from "@/components/spaces/Space";
 import Spinner from "@/components/core/Spinner";
@@ -15,6 +14,7 @@ import AppLogoIcon from "@/icons/app-logo.svg?react";
 import { useUserStore } from "@/stores/UserStore";
 import CrashedImage from "@/assets/images/crashed.svg?react";
 import cx from "classix";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * This is the space that is displayed while the application is connecting to the agent.
@@ -24,9 +24,9 @@ export default function ConnectionSpace(props: SpaceProps) {
   const setColorScheme = useAppStore((state) => state.setColorScheme);
   const reset = useUserStore((state) => state.reset);
 
-  const { status, failureCount, refetch, error } = useQuery<void, Error>(
-    "agent-connect",
-    async () => {
+  const { status, failureCount, refetch, error } = useQuery<void, Error>({
+    queryKey: ["agent-connect"],
+    queryFn: async () => {
       // Get the agent connection parameters which are stored in the environment
       const endpoint = env.getAgentEndpoint();
 
@@ -49,15 +49,13 @@ export default function ConnectionSpace(props: SpaceProps) {
       setActiveSpace("user");
       setColorScheme(calculateColorScheme(user.settings.colorScheme));
     },
-    {
-      retry: 5,
-      retryDelay: 2000,
-      refetchOnWindowFocus: false,
-    },
-  );
+    retry: 5,
+    retryDelay: 2000,
+    refetchOnWindowFocus: false,
+  });
 
   const classes = {
-    loading: cx("flex flex-col bg-transparent w-full items-center", status !== "loading" && "hidden"),
+    loading: cx("flex flex-col bg-transparent w-full items-center", status !== "pending" && "hidden"),
     error: cx(
       "absolute -top-24 flex flex-col bg-transparent w-full items-center",
       status === "error" ? "transition-opacity duration-1000 opacity-100" : "opacity-0",
@@ -77,7 +75,7 @@ export default function ConnectionSpace(props: SpaceProps) {
       )}
       <div className="flex flex-row h-[calc(100%-2.75rem)] w-full items-center">
         <div className="relative bg-transparent w-full">
-          {status === "loading" && (
+          {status === "pending" && (
             <div className={classes.loading}>
               <Spinner size="xl" delay={200} />
               <div className="flex text-xs h-8 w-full items-center justify-center">

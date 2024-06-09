@@ -1,10 +1,10 @@
 import ReactDOM from "react-dom/client";
 import { App } from "@/components/App";
 import { env } from "@/utils/env";
-import { QueryClient, QueryClientProvider } from "react-query";
 
 import "@/utils/monaco-workers";
 import "@/assets/styles/main.less";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // Initialize the environment (required for the desktop app)
 env.init().then(() => {

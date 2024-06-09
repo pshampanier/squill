@@ -1,12 +1,22 @@
 import cx from "classix";
-import React, { memo } from "react";
-import { DatasetAttribute } from "@/models/dataset-attribute";
-import { Collection, Dataset } from "@/utils/dataset";
+import { DatasetAttributeFormat } from "@/models/dataset-attribute-format";
 import { primary as colors, secondary as headerColors, secondary } from "@/utils/colors";
-import { useEffect, useRef, useState } from "react";
+import { DataFrame, DataFrameSlice } from "@/utils/dataframe";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { UseQueryResult, keepPreviousData, useQueries } from "@tanstack/react-query";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Duration } from "@/utils/duration";
 import TrueIcon from "@/icons/true.svg?react";
 import FalseIcon from "@/icons/false.svg?react";
-import { raise } from "@/utils/telemetry";
+import Spinner from "@/components/core/Spinner";
+
+/**
+ * A row of data to be displayed by the component.
+ *
+ * The row is an array of strings where each string represents the value to be displayed in the table cells.
+ * This component does not perform any formatting of the data, it is up to the caller to format the data as needed.
+ */
+type Row = string[];
 
 type TableViewProps = {
   /**
@@ -19,13 +29,72 @@ type TableViewProps = {
    *
    * The dataset does not need to be loaded, the table will load the rows as needed.
    */
-  dataset: Dataset<string[]>;
+  dataframe: DataFrame<Row>;
 
   /**
    * The number of rows to fetch at a time (default 1000).
    */
   fetchSize?: number;
+
+  /**
+   * The number of rows to render outside the viewport.
+   */
+  overscan?: number;
+
+  /**
+   * The visual density of the table.
+   */
+  density?: "compact" | "normal";
+
+  /**
+   * Whether to display the row number in the first column.
+   */
+  displayRowNumber?: boolean;
 };
+
+type Column = {
+  title: string;
+
+  /**
+   * The format of the column
+   */
+  format: DatasetAttributeFormat;
+
+  /**
+   * The width of the column (in pixels)
+   */
+  width: number;
+
+  /**
+   * Whether the column should be sticky
+   */
+  sticky: boolean;
+
+  /**
+   * The classes to apply to the cells displaying the column
+   */
+  cellClasses: ColumnClasses;
+};
+
+type ColumnClasses = {
+  self: string;
+  div: string;
+};
+
+type QueryResult = {
+  data: Array<DataFrameSlice<Row>>;
+  isFetching: boolean;
+};
+
+function combineUseQueryResult(results: UseQueryResult<DataFrameSlice<Row>, Error>[]) {
+  // Combine the results of the queries into a single object
+  // We are keeping only the data that are available and the fetching state
+  console.debug("combining results", results);
+  return {
+    data: results.filter((r) => r.data).map((r) => r.data),
+    isFetching: results.some((r) => r.isFetching),
+  };
+}
 
 /**
  * A table view component that displays a dataset in a table.
@@ -33,216 +102,314 @@ type TableViewProps = {
  * The cells in the table are rendered based on the format of the column.
  * The table will load the rows as needed and display a placeholder at the end of the table until all the rows have been
  * loaded.
+ *
+ * Inspired by https://tanstack.com/table/latest
  */
-export default function TableView({ className, dataset, fetchSize = 1000 }: TableViewProps) {
-  // The rows to display in the table.
-  const [rows, setRows] = useState<Collection<string[]>>([]);
+export default function TableView({
+  className = "text-xs",
+  density = "normal",
+  dataframe,
+  fetchSize = 1000,
+  overscan = 50,
+  displayRowNumber = true,
+}: TableViewProps) {
+  // The height in pixels of a row in the table
+  const estimatedRowHeight = getEstimatedRowHeight({ density });
 
-  // The table is ready when all the rows have been loaded.
-  const [ready, setReady] = useState(false);
+  // The height in pixels of the entire table
+  const estimatedTotalHeight = estimatedRowHeight * dataframe.getSizeHint();
 
-  // Get the schema of the dataset to determine the columns.
-  const schema = dataset.getSchema();
-  if (schema.type !== "array" || dataset.getSchema().items === undefined) {
-    raise("The table view only supports datasets with an array schema.");
-  }
-  const columns = dataset.getSchema().items;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [columns, setColumns] = useState<Column[]>(null);
 
-  // Load the next batch of rows when the placeholder placed at the bottom of the list becomes visible.
-  // @see RowPlaceholder
-  const handleOnRowPlaceHolderVisible = (offset: number) => {
-    console.log("Loading more rows from offset", offset);
-    dataset.getFragment(offset, fetchSize).then(([data, done]) => {
-      setRows([...rows, ...data]);
-      if (done) {
-        setReady(true);
-      }
-    });
-  };
+  /**
+   * The offsets of the slices that are currently needed to render the table, this is based on the range of rows that
+   * are currently visible in the table (including the overscan rows).
+   * This will be trigger useQueries() to fetch the data needed.
+   */
+  const [slicesOffsets, setSlicesOffsets] = useState<Array<number>>([]);
 
-  // Instead of trying to find the right component for each cell, we create a list of components to be used for each
-  // column. This way we avoid the overhead of finding the right component for each cell.
-  const columnComponents: React.FunctionComponent<CellProps>[] = columns.map((attr: DatasetAttribute) => {
-    switch (attr.format?.name) {
-      case "boolean":
-        return BooleanCell;
-      case "int":
-      case "float":
-      case "money":
-        return RightAlignCell;
-      case "color":
-        return ColorCell;
-      default:
-        return DefaultCell;
-    }
+  const virtualizerConfig = useMemo(
+    () => ({
+      count: dataframe.getSizeHint(),
+      estimateSize: () => estimatedRowHeight, // for accurate scrollbar dragging
+      getScrollElement: () => containerRef.current,
+      gap: 1,
+      overscan,
+    }),
+    [],
+  );
+
+  const { getVirtualItems, calculateRange } = useVirtualizer(virtualizerConfig);
+
+  const makeQueryConfig = useCallback(
+    (offset: number) => ({
+      queryKey: ["dataframe", dataframe.getId(), offset, fetchSize],
+      queryFn: () => dataframe.getSlice(offset, fetchSize),
+      placeholderData: keepPreviousData,
+      staleTime: new Duration(1, "minute").toMilliseconds(),
+    }),
+    [],
+  );
+
+  const { data, isFetching } = useQueries<Array<DataFrameSlice<Row>>, QueryResult>({
+    queries: slicesOffsets.map(makeQueryConfig),
+    combine: combineUseQueryResult,
   });
 
-  const Row: React.FunctionComponent<{ rowNumber: number }> = ({ rowNumber }) => {
-    return (
-      <tr>
-        {rows[rowNumber].map((cell, cellIndex) => {
-          const Cell = columnComponents[cellIndex];
-          return <Cell key={cellIndex} attr={columns[cellIndex]} value={cell} index={cellIndex} />;
-        })}
-      </tr>
-    );
-  };
-  Row.displayName = "Row";
-
-  const MemoRow = memo(Row);
-  const MemoTableHeader = memo(TableHeader);
-
-  return (
-    <div className={cx("w-full overflow-auto rounded", className)}>
-      <table className={cx("w-full text-sm text-left select-none", colors("background", "text"))}>
-        <thead className={cx("text-xs uppercase sticky top-0", headerColors("background", "text"))}>
-          <MemoTableHeader attributes={columns} />
-        </thead>
-        <tbody className={cx("divide-y", colors("divide"))}>
-          {rows.map((row, rowIndex) => {
-            return <MemoRow key={rowIndex} rowNumber={rowIndex} />;
-          })}
-          {!ready && (
-            <RowPlaceholder
-              key={rows.length}
-              attributes={columns}
-              offset={rows.length}
-              onVisible={handleOnRowPlaceHolderVisible}
-            />
-          )}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-/**
- * The table header rendered at the top of the table with column names.
- */
-function TableHeader({ attributes }: { attributes: DatasetAttribute[] }) {
-  return (
-    <tr>
-      {attributes.map((attribute, index) => (
-        <th key={index} scope="col" className="px-6 py-3">
-          {attribute.name}
-        </th>
-      ))}
-    </tr>
-  );
-}
-
-/**
- * An individual cell in the table.
- */
-function TableCell({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <td className={cx("px-6 py-4 whitespace-nowrap select-text", className)}>{children}</td>;
-}
-
-type RowPlaceholderProps = {
-  attributes: DatasetAttribute[];
-  offset: number;
-  onVisible: (offset: number) => void;
-};
-
-/**
- * A placeholder row that is displayed at the end of the table.
- *
- * Until the table has loaded all the rows, a placeholder is displayed at the end of the table and when it becomes
- * visible trigger the load more rows.
- */
-function RowPlaceholder({ attributes, offset, onVisible }: RowPlaceholderProps) {
-  const rowRef = useRef<HTMLTableRowElement>(null);
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          onVisible(offset);
-        }
-      },
-      { threshold: 0.1 } // Adjust this value to when you want the callback to fire
-    );
-
-    if (rowRef.current) {
-      observer.observe(rowRef.current);
-    }
-
-    return () => {
-      if (rowRef.current) {
-        observer.unobserve(rowRef.current);
-      }
-    };
-  }, []);
-  return (
-    <tr ref={rowRef}>
-      {attributes.map((attribute, index) => {
-        const classes = {
-          td: cx("px-6 py-4 whitespace-nowrap", attribute.type === "boolean" && "flex justify-center items-center"),
-          div: cx(
-            "animate-pulse h-4",
-            secondary("background"),
-            attribute.type === "boolean" && "w-4 rounded-full justify-center",
-            attribute.type !== "boolean" && "w-15 rounded"
-          ),
+    // Get the schema of the dataset to determine the columns.
+    const columns = dataframe
+      .getSchema()
+      .items.map((attr): Partial<Column> => {
+        return {
+          title: attr.name,
+          format: attr.format,
+          width: 120,
+          sticky: false,
         };
-        return (
-          <td key={index} className={classes.td}>
-            <div className={classes.div}></div>
-          </td>
-        );
-      })}
-    </tr>
+      })
+      .map((column: Partial<Column>, index: number, columns: Partial<Column>[]): Column => {
+        // A second pass is needed to apply the CSS classes (because they depend on the other columns)
+        return {
+          ...column,
+          cellClasses: buildColumnClasses(column, index, columns, false, { density }),
+        } as Column;
+      });
+    setColumns(columns);
+  }, [density]);
+
+  /**
+   * Update the slices offsets when the range of visible rows changes.
+   *
+   * This will trigger the fetching of the data needed to render the rows in the range.
+   */
+
+  const handleRangeChange = useCallback(
+    (range: { startIndex: number; endIndex: number }) => {
+      const offsets = getSlicesOffsetsFromRange(range, overscan, dataframe.getSizeHint(), fetchSize);
+      // As long as the offsets already present in the state `slicesOffsets`, we don't need to update the state.
+      if (!offsets.every((offset) => slicesOffsets.includes(offset))) {
+        setSlicesOffsets(offsets);
+      }
+    },
+    [slicesOffsets],
   );
-}
 
-type CellProps = {
-  /**
-   * The description of the column.
-   */
-  attr: DatasetAttribute;
+  const range = calculateRange();
+  if (range !== null) {
+    handleRangeChange(range);
+  }
 
-  /**
-   * The value to display in the cell.
-   */
-  value: string;
-
-  /**
-   * The index of the cell in the row.
-   */
-  index: number;
-};
-
-/**
- * The default cell component.
- */
-function DefaultCell({ value }: CellProps) {
-  return <TableCell>{value}</TableCell>;
-}
-
-/**
- * A table cell that displays a boolean value as an icon.
- */
-function BooleanCell({ value }: CellProps) {
-  return (
-    <TableCell>
-      <div className="flex justify-center">{value === "true" ? <TrueIcon /> : <FalseIcon />}</div>
-    </TableCell>
-  );
-}
-
-function ColorCell({ value }: CellProps) {
-  return (
-    <TableCell>
-      <div className="flex items-center space-x-1">
-        <div className="w-4 h-4 rounded" style={{ backgroundColor: value }}></div>
-        <div>{value}</div>
+  console.debug(`rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)})`);
+  if (!columns) {
+    return null;
+  } else {
+    const classes = {
+      container: cx("relative w-full h-full overflow-auto", className, colors("text", "background")),
+      table: {
+        self: cx("grid w-full text-left select-none border-collapse"),
+        thead: {
+          self: cx(
+            "grid sticky top-0 z-50 text-xs uppercase font-semibold items-center",
+            headerColors("text", "background"),
+          ),
+          tr: "flex w-full",
+          th: cx("flex grow", density === "compact" && "p-1", density === "normal" && "px-6 py-3"),
+          rowNum: buildColumnClasses(null, -1, columns, true, { density }),
+        },
+        tbody: {
+          self: cx("relative grid w-full divide-y z-0", colors("divide")),
+          rowNum: buildColumnClasses(null, -1, columns, false, { density }),
+        },
+      },
+    };
+    return (
+      <div ref={containerRef} className={classes.container}>
+        <table className={classes.table.self}>
+          <thead className={classes.table.thead.self}>
+            <tr className={classes.table.thead.tr}>
+              {displayRowNumber && (
+                <th scope="col" className={classes.table.thead.rowNum.self}>
+                  <div className={classes.table.thead.rowNum.div}>{isFetching && <Spinner size="sm" />}</div>
+                </th>
+              )}
+              {columns.map((column, i) => (
+                <th
+                  key={i}
+                  scope="col"
+                  style={{ width: column.width + "px" }}
+                  className={cx(classes.table.thead.th, column.format.name === "boolean" && "justify-center")}
+                >
+                  <div className="truncate">{column.title}</div>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className={classes.table.tbody.self} style={{ height: `${estimatedTotalHeight}px` }}>
+            {getVirtualItems().map((virtualRow) => {
+              const rowNum = virtualRow.index + 1;
+              const rowData = getRowData(data, virtualRow.index, fetchSize);
+              return (
+                <tr
+                  className="z-0"
+                  key={virtualRow.index}
+                  style={{
+                    display: "flex",
+                    position: "absolute",
+                    transform: `translateY(${virtualRow.start}px)`, // must be a `style` as it changes on scroll
+                    width: "100%",
+                  }}
+                >
+                  {displayRowNumber && (
+                    <td scope="col" className={classes.table.tbody.rowNum.self}>
+                      <div className={classes.table.tbody.rowNum.div}>{rowNum}</div>
+                    </td>
+                  )}
+                  {rowData ? (
+                    <DataRow columns={columns} data={rowData} rowNum={rowNum} />
+                  ) : (
+                    <SkeletonRow columns={columns} />
+                  )}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </TableCell>
-  );
+    );
+  }
+}
+
+const SkeletonRow = memo(
+  ({ columns }: { columns: Column[] }) => {
+    return (
+      <>
+        {columns.map((column, i) => {
+          const classes = {
+            ...column.cellClasses,
+            div: cx(
+              column.cellClasses.div,
+              secondary("background"),
+              column.format.name === "boolean" ? "w-4 rounded-full" : "rounded w-3/4",
+            ),
+          };
+          return (
+            <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
+              <div className={classes.div}></div>
+            </td>
+          );
+        })}
+      </>
+    );
+  },
+  () => true,
+);
+
+SkeletonRow.displayName = "SkeletonRow";
+
+const DataRow = memo(
+  ({ columns, data, rowNum }: { columns: Column[]; data: Row; rowNum: number }) => {
+    console.debug("rendering row ", rowNum);
+    return (
+      <>
+        {columns.map((column, i) => {
+          const classes = {
+            ...column.cellClasses,
+            div: cx(column.cellClasses.div),
+          };
+          let children: string | React.ReactNode = data[i];
+          switch (column.format.name) {
+            case "boolean":
+              children = data[i] === "true" ? <TrueIcon /> : <FalseIcon />;
+              break;
+          }
+          return (
+            <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
+              <div className={classes.div}>{children}</div>
+            </td>
+          );
+        })}
+      </>
+    );
+  },
+  () => true,
+);
+
+DataRow.displayName = "DataRow";
+
+/**
+ * An helper function to apply sticky column classes to the given.
+ */
+function buildColumnClasses(
+  column: Partial<Column> | null,
+  index: number,
+  columns: Partial<Column>[],
+  header: boolean,
+  tableProps: Partial<TableViewProps>,
+): ColumnClasses {
+  if (index === -1) {
+    // Row number column
+    return {
+      self: cx(
+        "flex w-10 justify-end items-center font-light sticky left-0 z-40 opacity-100 font-mono pr-2",
+        header ? headerColors("background") : colors("background"),
+      ),
+      div: "",
+    };
+  } else {
+    return {
+      self: cx(
+        "flex",
+        tableProps.density === "compact" && "p-1",
+        tableProps.density === "normal" && "px-6 py-3",
+        column.sticky ? "" /** TODO: add support for sticky columns */ : "grow",
+        column.format.name === "boolean" && "justify-center",
+        column.format.name === "int" && "justify-end",
+        column.format.name === "float" && "justify-end",
+        column.format.name === "money" && "justify-end",
+      ),
+      div: cx("truncate h-4"),
+    };
+  }
 }
 
 /**
- * A table cell that is right-aligned.
+ * Get an estimation of the height of a row in the table.
  */
-function RightAlignCell({ value }: CellProps) {
-  return <TableCell className="text-right">{value}</TableCell>;
+function getEstimatedRowHeight({ density }: Partial<TableViewProps>): number {
+  if (density === "compact") {
+    return 16 /* h-4 */ + 4 * 2 /* p-1 */ + 1 /* divide-y */;
+  } else {
+    return 16 /* h-4 */ + 12 * 2 /* py-3 */ + 1 /* divide-y */;
+  }
+}
+
+function getSlicesOffsetsFromRange(
+  range: { startIndex: number; endIndex: number },
+  overscan: number,
+  dataframeSize: number,
+  fetchSize: number,
+): Array<number> {
+  const offsets = Array<number>();
+  if (range !== null) {
+    const startIndex = Math.max(0, range.startIndex - overscan);
+    const endIndex = Math.min(Math.max(0, dataframeSize - 1), range.endIndex + overscan);
+    let offset = startIndex - (startIndex % fetchSize);
+    do {
+      offsets.push(offset);
+      offset += fetchSize;
+    } while (offset < endIndex);
+  }
+  return offsets;
+}
+
+function getRowData(data: Array<DataFrameSlice<Row>>, rowOffset: number, fetchSize: number): Row | null {
+  const sliceOffset = rowOffset - (rowOffset % fetchSize);
+  const slice = data.find((slice) => slice.offset === sliceOffset);
+  if (slice) {
+    return slice.data[rowOffset - sliceOffset];
+  } else {
+    return null;
+  }
 }
