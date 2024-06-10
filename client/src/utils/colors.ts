@@ -90,6 +90,7 @@ export const COLOR_NAMES = [
   "hover:ghost-text",
   "selected:ghost-background",
   "divide",
+  "divide-background",
   "message:background",
   "info:background",
   "success:background",
@@ -124,6 +125,7 @@ export const PRIMARY_COLORS: Record<Colors, string> = {
   "hover:ghost-text": "text-gray-600 dark:text-gray-100",
   "selected:ghost-background": undefined, // FIXME: this is not yet used
   divide: "divide-gray-200 dark:divide-gray-700",
+  "divide-background": "bg-gray-200 dark:bg-gray-700",
   "message:background": "bg-gray-50 dark:bg-white/[.05]",
   "info:background": "bg-blue-100 dark:bg-blue-800/10",
   "success:background": "bg-teal-100 dark:bg-teal-800/10",
@@ -146,6 +148,7 @@ export function primary(...names: Colors[]): string {
 }
 
 export const SECONDARY_COLORS: Record<Colors, string> = {
+  ...PRIMARY_COLORS,
   background: "bg-gray-50 dark:bg-gray-700",
   "hover:background": primary("hover:background"),
   "selected:background": primary("selected:background"),
@@ -159,21 +162,7 @@ export const SECONDARY_COLORS: Record<Colors, string> = {
   "hover:ghost-text": "text-gray-600 dark:text-gray-300",
   "selected:ghost-background": "bg-gray-100 dark:bg-gray-800",
   divide: "divide-gray-300 dark:divide-gray-600",
-  "message:background": primary("message:background"),
-  "info:background": primary("info:background"),
-  "success:background": primary("success:background"),
-  "warning:background": primary("warning:background"),
-  "danger:background": primary("danger:background"),
-  "message:border": primary("message:border"),
-  "info:border": primary("info:border"),
-  "success:border": primary("success:border"),
-  "warning:border": primary("warning:border"),
-  "danger:border": primary("danger:border"),
-  "message:text": primary("message:text"),
-  "info:text": primary("info:text"),
-  "success:text": primary("success:text"),
-  "warning:text": primary("warning:text"),
-  "danger:text": primary("danger:text"),
+  "divide-background": "bg-gray-300 dark:bg-gray-600",
 };
 
 export function secondary(...names: Colors[]): string {
@@ -186,34 +175,16 @@ export function secondary(...names: Colors[]): string {
  * Used by the titlebar.
  */
 export const TERTIARY_COLORS: Record<Colors, string> = {
+  ...PRIMARY_COLORS,
   background: "bg-blue-500 dark:bg-blue-800",
-  "hover:background": primary("hover:background"),
-  "selected:background": primary("selected:background"),
   text: "text-white dark:text-white",
-  "hover:text": primary("hover:text"),
   "selected:text": "text-white dark:text-gray-200",
   border: "border-blue-600 dark:border-blue-500",
-  "hover:border": primary("hover:border"),
-  "heading-text": primary("heading-text"),
   "hover:ghost-background": "hover:bg-blue-700 dark:hover:bg-blue-700",
   "hover:ghost-text": "text-white dark:text-white",
   "selected:ghost-background": undefined, // FIXME: this is not yet used
   divide: "divide-blue-600 dark:divide-blue-500",
-  "message:background": primary("message:background"),
-  "info:background": primary("info:background"),
-  "success:background": primary("success:background"),
-  "warning:background": primary("warning:background"),
-  "danger:background": primary("danger:background"),
-  "message:border": primary("message:border"),
-  "info:border": primary("info:border"),
-  "success:border": primary("success:border"),
-  "warning:border": primary("warning:border"),
-  "danger:border": primary("danger:border"),
-  "message:text": primary("message:text"),
-  "info:text": primary("info:text"),
-  "success:text": primary("success:text"),
-  "warning:text": primary("warning:text"),
-  "danger:text": primary("danger:text"),
+  "divide-background": "bg-blue-600 dark:bg-blue-500",
 };
 
 export function tertiary(...names: Colors[]): string {

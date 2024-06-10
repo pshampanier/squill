@@ -1,6 +1,6 @@
 import cx from "classix";
 import { DatasetAttributeFormat } from "@/models/dataset-attribute-format";
-import { primary as colors, secondary as headerColors, secondary } from "@/utils/colors";
+import { primary as colors, secondary } from "@/utils/colors";
 import { DataFrame, DataFrameSlice } from "@/utils/dataframe";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { UseQueryResult, keepPreviousData, useQueries } from "@tanstack/react-query";
@@ -8,7 +8,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Duration } from "@/utils/duration";
 import TrueIcon from "@/icons/true.svg?react";
 import FalseIcon from "@/icons/false.svg?react";
-import Spinner from "@/components/core/Spinner";
 import ResizePanel from "@/components/core/ResizePanel";
 
 /**
@@ -224,12 +223,9 @@ export default function TableView({
     const classes = {
       container: cx("relative w-full h-full overflow-auto", className, colors("text", "background")),
       table: {
-        self: cx("grid w-full text-left select-none border-collapse"),
+        self: cx("table-view grid w-full text-left select-none border-collapse", isFetching && "fetching"),
         thead: {
-          self: cx(
-            "grid sticky top-0 z-50 text-xs uppercase font-semibold items-center",
-            headerColors("text", "background"),
-          ),
+          self: cx("grid sticky top-0 z-50 text-xs uppercase font-semibold items-center", colors("background")),
           tr: "flex w-full",
           th: cx("flex grow", density === "compact" && "p-1", density === "normal" && "px-6 py-3"),
           rowNum: buildColumnClasses(null, -1, columns, true, { density }),
@@ -246,7 +242,6 @@ export default function TableView({
           <TableViewHeader
             columns={columns}
             displayRowNumber={displayRowNumber}
-            isFetching={isFetching}
             classes={classes.table.thead}
             onResize={handleResize}
             onResizeEnd={handleResizeEnd}
@@ -288,25 +283,23 @@ const TableViewHeader = memo(
   ({
     columns,
     displayRowNumber,
-    isFetching,
     classes,
     onResize,
     onResizeEnd,
   }: {
     columns: Column[];
     displayRowNumber: boolean;
-    isFetching: boolean;
     classes: { self: string; tr: string; th: string; rowNum: { self: string; div: string } };
     onResize: ResizeObserver;
     onResizeEnd: ResizeObserver;
   }) => {
-    console.debug("rendering header", isFetching);
+    console.debug("rendering header");
     return (
       <thead className={classes.self}>
         <tr className={classes.tr}>
           {displayRowNumber && (
             <th scope="col" className={classes.rowNum.self}>
-              <div className={classes.rowNum.div}>{isFetching && <Spinner size="sm" />}</div>
+              <div className={classes.rowNum.div}></div>
             </th>
           )}
           {columns.map((column, i) => (
@@ -327,10 +320,20 @@ const TableViewHeader = memo(
             </th>
           ))}
         </tr>
+        <tr>
+          <th
+            className={cx("relative flex w-full h-0.5 overflow-hidden", colors("divide-background"))}
+            colSpan={columns.length + (displayRowNumber ? 1 : 0)}
+          >
+            <div className="rail absolute top-0 left-0 w-full h-full">
+              <div className={cx("w-5 h-full", colors("selected:background"))}></div>
+            </div>
+          </th>
+        </tr>
       </thead>
     );
   },
-  (prevProps, nextProps) => prevProps.isFetching === nextProps.isFetching,
+  () => true,
 );
 
 TableViewHeader.displayName = "TableViewHeader";
@@ -461,7 +464,7 @@ function buildColumnClasses(
     return {
       self: cx(
         "flex w-10 justify-end items-center font-light sticky left-0 z-40 opacity-100 font-mono pr-2",
-        header ? headerColors("background") : colors("background"),
+        colors("background"),
       ),
       div: "",
     };

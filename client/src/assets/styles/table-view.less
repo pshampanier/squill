@@ -1,0 +1,23 @@
+.rail {
+  display: none;
+}
+
+&.fetching {
+  .rail {
+    display: block;
+    transform: translateX(-calc(100% - 20px)); /* Start position (off-screen to the left) */
+    animation: slide 5s infinite; /* Animation duration and repetition */
+  }
+}
+/* Define the animation keyframes */
+@keyframes slide {
+  0% {
+    transform: translateX(-calc(100% - 20px)); /* Start off-screen to the left */
+  }
+  50% {
+    transform: translateX(calc(100% - 20px)); /* Move to off-screen to the right */
+  }
+  100% {
+    transform: translateX(-calc(100% - 20px)); /* Return to start position */
+  }
+}
