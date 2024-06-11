@@ -1,6 +1,6 @@
 import { cx } from "classix";
 import { secondary as colors } from "@/utils/colors";
-import { useState } from "react";
+import { useRef } from "react";
 
 type ResizePanelProps = {
   width: number;
@@ -12,21 +12,22 @@ type ResizePanelProps = {
 };
 
 export default function ResizePanel({ width, minWidth, maxWidth, className, onResize, onResizeEnd }: ResizePanelProps) {
-  const [dragging, setDragging] = useState(false);
-  const [dragStartAt, setDragStartAt] = useState(0);
+  const dragging = useRef<boolean>(false);
+  const dragStartAt = useRef<number>(0);
 
   const calculateWidth = (event: React.PointerEvent<HTMLDivElement>) => {
-    return width + event.clientX - dragStartAt;
+    return width + event.clientX - dragStartAt.current;
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(true);
-    setDragStartAt(event.clientX);
+    dragging.current = true;
+    dragStartAt.current = event.clientX;
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging || !onResize) return;
+    console.log("handlePointerMove", dragging.current, dragStartAt.current);
+    if (!dragging.current || !onResize) return;
     const width = calculateWidth(event);
     if (minWidth && width < minWidth) {
       event.currentTarget.style.cursor = "e-resize";
@@ -37,12 +38,12 @@ export default function ResizePanel({ width, minWidth, maxWidth, className, onRe
     } else {
       event.currentTarget.style.cursor = "col-resize";
       onResize(width);
-      setDragStartAt(event.clientX); // reset drag start for the next move
+      dragStartAt.current = event.clientX; // reset drag start for the next move
     }
   };
 
   const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    setDragging(false);
+    dragging.current = false;
     event.currentTarget.releasePointerCapture(event.pointerId);
     if (onResizeEnd) {
       onResizeEnd(Math.max(minWidth, Math.min(maxWidth, calculateWidth(event))));
