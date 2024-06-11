@@ -335,7 +335,8 @@ const TableViewHeader = memo(
               <ResizePanel
                 className="absolute right-0 h-4"
                 width={column.width}
-                minWidth={column.width}
+                minWidth={100}
+                maxWidth={1000}
                 onResize={(width) => onResize(i, width)}
                 onResizeEnd={(width) => onResizeEnd(i, width)}
               />

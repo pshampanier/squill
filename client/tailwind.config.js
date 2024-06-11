@@ -20,6 +20,14 @@ export default {
       fontSize: {
         "2xs": ".65rem",
       },
+      fontFamily: {
+        comfortaa: ["Comfortaa"],
+      },
+      fontWeight: {
+        thin: 100,
+        regular: 400,
+        bold: 700,
+      },
     },
   },
   plugins: [

@@ -58,10 +58,15 @@ export default function Titlebar({ children, className }: TitlebarProps) {
  */
 function AppName({ className }: { className?: string }) {
   return (
-    <div className={cx("ml-2 space-x-1 flex flex-row text-xl h-full items-center pointer-events-none ", className)}>
-      <AppLogoIcon className="w-6 h-6 flex-none" />
-      <span className="flex-none">squill</span>
-      <span className="flex-none font-thin">desktop</span>
+    <div
+      className={cx(
+        "pr-2 space-x-1 flex flex-row text-base h-full items-center pointer-events-none font-comfortaa select-none",
+        className,
+      )}
+    >
+      <AppLogoIcon className="w-5 h-5 flex-none hidden" />
+      <span className="flex-none font-bold">squill</span>
+      <span className="flex-none font-light">{env.applicationType === "desktop" ? "desktop" : "cloud"}</span>
     </div>
   );
 }

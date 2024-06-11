@@ -26,6 +26,7 @@ export default function UserSpace(props: SpaceProps) {
           <Toolbar>
             <CommandButton command="sidebar.toggle" />
           </Toolbar>
+          <Titlebar.AppName />
           <PagesTabs />
           <Toolbar>
             <CommandButton command="settings.open" />
