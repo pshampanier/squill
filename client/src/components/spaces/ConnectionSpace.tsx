@@ -10,7 +10,6 @@ import Spinner from "@/components/core/Spinner";
 import Button from "@/components/core/Button";
 import UserErrorMessage from "@/components/core/UserErrorMessage";
 import Titlebar from "@/components/titlebar/Titlebar";
-import AppLogoIcon from "@/icons/app-logo.svg?react";
 import { useUserStore } from "@/stores/UserStore";
 import CrashedImage from "@/assets/images/crashed.svg?react";
 import cx from "classix";
@@ -66,11 +65,7 @@ export default function ConnectionSpace(props: SpaceProps) {
     <Space {...props} className="items-center justify-center">
       {env.applicationType === "desktop" && (
         <Titlebar>
-          <div className="ml-2 space-x-1 flex text-xl h-full items-center pointer-events-none">
-            <AppLogoIcon className="w-6 h-6 flex-1" />
-            <span className="flex-1">squill</span>
-            <span className="flex-1 font-thin">desktop</span>
-          </div>
+          <Titlebar.AppName />
         </Titlebar>
       )}
       <div className="flex flex-row h-[calc(100%-2.75rem)] w-full items-center">

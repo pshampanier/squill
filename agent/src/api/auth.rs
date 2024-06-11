@@ -3,7 +3,9 @@ use rand::Rng;
 use axum::{ Router, routing::post };
 use axum::extract::{ Json, State };
 use axum::http::header::{ HeaderMap, AUTHORIZATION };
+use tracing::error;
 use crate::resources::users;
+use crate::utils::user_error::UserError;
 use crate::utils::validators::{ parse_authorization_header, sanitize_username };
 use crate::settings;
 use crate::server::state::ServerState;
@@ -45,13 +47,24 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
                 return Err(Error::BadRequest("Password must be empty".to_string()));
             }
 
-            let Ok(user) = users::get_user(&username) else {
-                // The user does not exists.
-                return Err(Error::Forbidden);
-            };
-
-            let token = state.add_user_session(&username, &user.user_id);
-            Ok(Json((*token).clone()))
+            match users::get_user(&username) {
+                Ok(user) => {
+                    let token = state.add_user_session(&username, &user.user_id);
+                    Ok(Json((*token).clone()))
+                }
+                Err(err) => {
+                    match err.downcast_ref::<UserError>() {
+                        Some(UserError::NotFound(_)) => {
+                            error!("{}", err);
+                            Err(Error::Forbidden)
+                        }
+                        _ => {
+                            error!("Logon error for user `{}`: {}", &username, err);
+                            Err(Error::InternalServerError)
+                        }
+                    }
+                }
+            }
         }
     }
 }

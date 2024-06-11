@@ -1,6 +1,6 @@
 use crate::models::users::{ User, UserSettings };
 use crate::resources::workspaces::create_workspace;
-use crate::{ err_conflict, settings };
+use crate::{ err_conflict, err_not_found, settings };
 use crate::utils::constants::{
     DEFAULT_WORKSPACE_NAME,
     USER_CATALOG_DIRNAME,
@@ -103,7 +103,8 @@ pub fn delete_user(username: &Username) -> Result<()> {
 pub fn get_user(username: &Username) -> Result<User> {
     let user_dir = settings::get_user_dir(username.as_str());
     if !user_dir.exists() {
-        return Err(anyhow!("The user {} does not exist.", &username));
+        return Err(err_not_found!("The user {} does not exist.", username));
+        // return Err(anyhow!("The user {} does not exist.", &username));
     }
     let user_file = user_dir.join(USER_FILENAME);
     let user = std::fs::read_to_string(user_file.as_path())?;

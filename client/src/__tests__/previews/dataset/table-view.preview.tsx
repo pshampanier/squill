@@ -5,6 +5,7 @@ import { MemoryDataFrame } from "@/utils/dataframe";
 import { DatasetAttribute as Attribute } from "@/models/dataset-attribute";
 import { DataFrameSchema } from "@/models/dataframe-schema";
 import previewDataset from "../../assets/datasets/table-view.preview.json";
+import { TableSettings } from "@/models/users";
 
 const ROWS: Array<Array<string>> = previewDataset.data;
 const SCHEMA = new DataFrameSchema({
@@ -42,7 +43,17 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full h-96 overflow-hidden">
-            <TableView dataframe={dataframe} fetchSize={10} density="compact" />
+            <TableView
+              dataframe={dataframe}
+              fetchSize={10}
+              settings={
+                new TableSettings({
+                  density: "compact",
+                  dividers: "grid",
+                  showRowNumbers: true,
+                })
+              }
+            />
           </div>
         </PreviewBox>
       </Preview>

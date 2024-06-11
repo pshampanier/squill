@@ -24,6 +24,29 @@ export class EditorSettings {
   }
 }
 
+const DENSITY = ["comfortable", "compact"] as const;
+const DIVIDERS = ["none", "rows", "grid"] as const;
+
+export type Density = (typeof DENSITY)[number];
+export type Dividers = (typeof DIVIDERS)[number];
+
+export class TableSettings {
+  [immerable] = true;
+
+  @serializable("boolean", { snakeCase: "property" })
+  showRowNumbers: boolean = true;
+
+  @serializable("string", { snakeCase: "property", format: formatRegExp(DENSITY), trim: true })
+  density: Density = "comfortable";
+
+  @serializable("string", { snakeCase: "property", format: formatRegExp(DIVIDERS), trim: true })
+  dividers: Dividers = "rows";
+
+  constructor(object?: Partial<TableSettings>) {
+    Object.assign(this, object ?? {});
+  }
+}
+
 export class UserSettings {
   [immerable] = true;
 
@@ -44,6 +67,9 @@ export class UserSettings {
 
   @serializable("object", { snakeCase: "property", factory: EditorSettings })
   editorSettings: EditorSettings = new EditorSettings();
+
+  @serializable("object", { snakeCase: "property", factory: TableSettings })
+  tableSettings: TableSettings = new TableSettings();
 
   constructor(object?: Partial<UserSettings>) {
     Object.assign(this, object);

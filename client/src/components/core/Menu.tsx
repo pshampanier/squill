@@ -64,7 +64,7 @@ function Menu({ children, size = "auto", className, onClose, tabIndex = 0 }: Men
     colors("background", "text", "border", "divide"),
     "rounded-md shadow-lg",
     "border focus:outline-none",
-    className
+    className,
   );
   return (
     <div
@@ -116,7 +116,7 @@ function MenuItem({ className, icon, label, children, disabled, onClick, command
     !disabled && colors("hover:ghost-background", "hover:ghost-text"),
     disabled && "opacity-50 pointer-events-none",
     !(onClick || command) && "pointer-events-none",
-    className
+    className,
   );
   return (
     <a href="#" className={classes} role="menuitem" tabIndex={-1} onClick={handleClick} draggable="false">

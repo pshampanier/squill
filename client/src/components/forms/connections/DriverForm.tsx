@@ -24,7 +24,7 @@ const DriverForm = forwardRef<HTMLFormElement, DriverFormProps>((props, ref) => 
     "overflow-hidden",
     colors("background", "text", "border", "divide"),
     "rounded-md",
-    "focus:outline-none"
+    "focus:outline-none",
   );
 
   const handleOnChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -66,7 +66,7 @@ function DriverRadio({ driver, onChange, defaultChecked }: DriverRadioProps) {
         <label htmlFor={id} className="flex flex-row space-x-4 grow">
           <div className="flex w-16 h-16 p-3 flex-shrink-0 rounded-full bg-gray-50 dark:bg-gray-700 items-center">
             <img
-              src={`/public/icons/drivers/${driver.icon}`}
+              src={`/icons/drivers/${driver.icon}`}
               alt={driver.name}
               className="aspect-square w-10 h-10 object-cover"
             />

@@ -5,6 +5,7 @@ import { ColorsContext } from "@/stores/ColorsContext";
 import { env } from "@/utils/env";
 import { appWindow } from "@tauri-apps/api/window";
 import { UnlistenFn } from "@tauri-apps/api/event";
+import AppLogoIcon from "@/icons/app-logo.svg?react";
 
 type TitlebarProps = {
   children?: React.ReactNode;
@@ -51,3 +52,18 @@ export default function Titlebar({ children, className }: TitlebarProps) {
     </ColorsContext.Provider>
   );
 }
+
+/**
+ * Display the application name in the titlebar.
+ */
+function AppName({ className }: { className?: string }) {
+  return (
+    <div className={cx("ml-2 space-x-1 flex flex-row text-xl h-full items-center pointer-events-none ", className)}>
+      <AppLogoIcon className="w-6 h-6 flex-none" />
+      <span className="flex-none">squill</span>
+      <span className="flex-none font-thin">desktop</span>
+    </div>
+  );
+}
+
+Titlebar.AppName = AppName;

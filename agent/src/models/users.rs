@@ -6,6 +6,7 @@ use uuid::Uuid;
 json_enum!(ColorScheme, Dark, Light, Auto);
 
 #[derive(Serialize, Deserialize)]
+#[serde(default)]
 pub struct UserSettings {
     pub color_scheme: ColorScheme,
     pub telemetry: bool,
@@ -13,7 +14,25 @@ pub struct UserSettings {
     pub show_favorites: bool,
     pub show_file_extensions: bool,
     pub editor_settings: EditorSettings,
+    pub table_settings: TableSettings,
 }
+
+impl Default for UserSettings {
+    fn default() -> Self {
+        Self {
+            color_scheme: ColorScheme::Auto,
+            telemetry: true,
+            show_recently_opened: true,
+            show_favorites: true,
+            show_file_extensions: true,
+            editor_settings: EditorSettings::default(),
+            table_settings: TableSettings::default(),
+        }
+    }
+}
+
+json_enum!(Minimap, Show, Hide, Auto);
+json_enum!(RenderWhitespace, None, Boundary, Selection, All, Trailing);
 
 #[derive(Serialize, Deserialize)]
 pub struct EditorSettings {
@@ -21,8 +40,34 @@ pub struct EditorSettings {
     pub render_whitespace: RenderWhitespace,
 }
 
-json_enum!(Minimap, Show, Hide, Auto);
-json_enum!(RenderWhitespace, None, Boundary, Selection, All, Trailing);
+impl Default for EditorSettings {
+    fn default() -> Self {
+        Self {
+            minimap: Minimap::Hide,
+            render_whitespace: RenderWhitespace::None,
+        }
+    }
+}
+
+json_enum!(Density, Comfortable, Compact);
+json_enum!(Dividers, None, Rows, Grid);
+
+#[derive(Serialize, Deserialize)]
+pub struct TableSettings {
+    pub show_row_numbers: bool,
+    pub density: Density,
+    pub dividers: Dividers,
+}
+
+impl Default for TableSettings {
+    fn default() -> Self {
+        Self {
+            show_row_numbers: true,
+            density: Density::Comfortable,
+            dividers: Dividers::Rows,
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
@@ -38,17 +83,7 @@ impl Default for User {
             username: String::new(),
             user_id: Uuid::new_v4().to_string(),
             variables: Vec::new(),
-            settings: UserSettings {
-                color_scheme: ColorScheme::Auto,
-                telemetry: true,
-                show_recently_opened: false,
-                show_favorites: true,
-                show_file_extensions: false,
-                editor_settings: EditorSettings {
-                    minimap: Minimap::Hide,
-                    render_whitespace: RenderWhitespace::None,
-                },
-            },
+            settings: UserSettings::default(),
         }
     }
 }

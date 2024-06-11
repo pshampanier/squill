@@ -1,4 +1,5 @@
 import { DataFrameSchema } from "@/models/dataframe-schema";
+import { DatasetAttribute } from "@/models/dataset-attribute";
 
 export interface DataFrame<E> {
   /**
@@ -79,5 +80,54 @@ export class MemoryDataFrame<E> implements DataFrame<E> {
       data: this.data.slice(offset, offset + limit),
       offset: offset,
     };
+  }
+}
+
+export type TableDataFrame = MemoryDataFrame<string[]>;
+
+/**
+ * Factory for creating table dataframes.
+ *
+ * The table dataframes are created by fetching CSV files from the server. This code is not expected to be performant
+ * of reliable, it is only used for displaying datasets that well known and tested at development time.
+ */
+export class TableDataFrameFactory {
+  /**
+   * Fetch a table dataframe from a CSV file.
+   *
+   * @param url The URL of the CSV file to fetch.
+   * @returns A promise that resolves to a table dataframe.
+   */
+  static async fetch(url: string): Promise<TableDataFrame> {
+    return fetch(url).then((response) => {
+      if (!response.ok) {
+        throw new Error(`Failed to load data (url=${url}, status=${response.status})`);
+      }
+      return response.text().then((text) => {
+        const lines = text.split("\n");
+        const schema = new DataFrameSchema({
+          id: url,
+          type: "array",
+          items: lines[0].split(",").map((column) => {
+            return new DatasetAttribute({
+              name: column,
+              type: "text",
+            });
+          }),
+        });
+        const data = lines
+          .slice(1)
+          .filter((line) => line.length)
+          .map((line) => {
+            return line.match(/(".*?"|[^",\s]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g).map((value) => {
+              if (value.startsWith('"') && value.endsWith('"')) {
+                return value.slice(1, -1); // Remove surrounding quotes
+              }
+              return value;
+            });
+          });
+        return new MemoryDataFrame(url, schema, data);
+      });
+    });
   }
 }

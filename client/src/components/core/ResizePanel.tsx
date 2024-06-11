@@ -54,7 +54,7 @@ export default function ResizePanel({ width, minWidth, maxWidth, className, onRe
     colors("border"),
     "hover:bg-blue-500 hover:border-blue-500 hover:cursor-col-resize hover:transition-colors hover:delay-100 transition-all",
     "dark:hover:bg-blue-800 dark:hover:border-blue-800",
-    className
+    className,
   );
 
   return (

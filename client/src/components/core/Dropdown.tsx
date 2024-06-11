@@ -199,7 +199,7 @@ function Dropdown({
     "flex w-4 h-4 ml-auto shrink-0",
     "transition-transform",
     !open && "rotate-90",
-    open && "-rotate-90"
+    open && "-rotate-90",
   );
 
   return (
@@ -217,7 +217,7 @@ function Dropdown({
       </Button>
       {open && (
         <FloatingPortal>
-          <div ref={refs.setFloating} style={floatingStyles}>
+          <div ref={refs.setFloating} style={{ ...floatingStyles, zIndex: 9999 }}>
             <Menu onClose={handleClose} size={size}>
               <Menu.Group>{children}</Menu.Group>
             </Menu>

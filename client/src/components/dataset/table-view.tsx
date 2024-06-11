@@ -9,6 +9,7 @@ import { Duration } from "@/utils/duration";
 import TrueIcon from "@/icons/true.svg?react";
 import FalseIcon from "@/icons/false.svg?react";
 import ResizePanel from "@/components/core/ResizePanel";
+import { TableSettings } from "@/models/users";
 
 /**
  * A row of data to be displayed by the component.
@@ -41,15 +42,7 @@ type TableViewProps = {
    */
   overscan?: number;
 
-  /**
-   * The visual density of the table.
-   */
-  density?: "compact" | "normal";
-
-  /**
-   * Whether to display the row number in the first column.
-   */
-  displayRowNumber?: boolean;
+  settings?: TableSettings;
 
   /**
    * A callback to be called once a column has been resized.
@@ -112,20 +105,29 @@ function combineUseQueryResult(results: UseQueryResult<DataFrameSlice<Row>, Erro
  */
 export default function TableView({
   className = "text-xs",
-  density = "normal",
   dataframe,
   fetchSize = 1000,
   overscan = 50,
-  displayRowNumber = true,
+  settings = new TableSettings({
+    showRowNumbers: true,
+    density: "comfortable",
+    dividers: "rows",
+  }),
 }: TableViewProps) {
   // The height in pixels of a row in the table
-  const estimatedRowHeight = getEstimatedRowHeight({ density });
+  const estimatedRowHeight = getEstimatedRowHeight(settings);
 
   // The height in pixels of the entire table
   const estimatedTotalHeight = estimatedRowHeight * dataframe.getSizeHint();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState<Column[]>(null);
+
+  // A state to force the update of the component
+  // Because the component is heavily memoized, it will not re-render when the state or property are changing. In order
+  // to avoid to duplicate the logic to update the component, we use this state to force the update when needed.
+  // It also speeds up the memoization test function since it does not need to compare all the properties.
+  const [refreshRevision, setRefreshRevision] = useState<number>(0);
 
   /**
    * The offsets of the slices that are currently needed to render the table, this is based on the range of rows that
@@ -142,10 +144,10 @@ export default function TableView({
       gap: 1,
       overscan,
     }),
-    [],
+    [estimatedRowHeight],
   );
 
-  const { getVirtualItems, calculateRange } = useVirtualizer(virtualizerConfig);
+  const { getVirtualItems, calculateRange, measure } = useVirtualizer(virtualizerConfig);
 
   const makeQueryConfig = useCallback(
     (offset: number) => ({
@@ -178,11 +180,15 @@ export default function TableView({
         // A second pass is needed to apply the CSS classes (because they depend on the other columns)
         return {
           ...column,
-          cellClasses: buildColumnClasses(column, index, columns, false, { density }),
+          cellClasses: buildColumnClasses(column, index, columns, false, { settings }),
         } as Column;
       });
     setColumns(columns);
-  }, [density]);
+
+    // When the density changes, we need the virtualizer to re-measure the rows and trigger a refresh of the table.
+    measure();
+    setRefreshRevision((prev) => prev + 1);
+  }, [settings.density, settings.dividers, settings.showRowNumbers]);
 
   /**
    * Update the slices offsets when the range of visible rows changes.
@@ -216,7 +222,9 @@ export default function TableView({
     console.debug(`resizing column ${columnIndex} to ${width}px completed`);
   }, []);
 
-  console.debug(`rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)})`);
+  console.debug(
+    `rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)}, settings=${JSON.stringify(settings)}, revision=${refreshRevision})`,
+  );
   if (!columns) {
     return null;
   } else {
@@ -225,14 +233,25 @@ export default function TableView({
       table: {
         self: cx("table-view grid w-full text-left select-none border-collapse", isFetching && "fetching"),
         thead: {
-          self: cx("grid sticky top-0 z-50 text-xs uppercase font-semibold items-center", colors("background")),
+          self: cx("grid sticky top-0 z-10 text-xs uppercase font-semibold items-center", colors("background")),
           tr: "flex w-full",
-          th: cx("flex grow", density === "compact" && "p-1", density === "normal" && "px-6 py-3"),
-          rowNum: buildColumnClasses(null, -1, columns, true, { density }),
+          th: cx(
+            "flex grow",
+            settings.density === "compact" && "p-1",
+            settings.density === "comfortable" && "px-6 py-3",
+          ),
+          rowNum: buildColumnClasses(null, -1, columns, true, { settings }),
         },
         tbody: {
-          self: cx("relative grid w-full divide-y z-0", colors("divide")),
-          rowNum: buildColumnClasses(null, -1, columns, false, { density }),
+          self: cx(
+            "relative grid w-full z-0",
+            settings.dividers !== "none" && "divide-y",
+            settings.dividers !== "none" && colors("divide"),
+          ),
+          tr: {
+            self: cx("z-0", settings.dividers === "grid" && cx("divide-x", colors("divide"))),
+            rowNum: buildColumnClasses(null, -1, columns, false, { settings }),
+          },
         },
       },
     };
@@ -240,8 +259,9 @@ export default function TableView({
       <div ref={containerRef} className={classes.container}>
         <table className={classes.table.self}>
           <TableViewHeader
+            refreshRevision={refreshRevision}
             columns={columns}
-            displayRowNumber={displayRowNumber}
+            settings={settings}
             classes={classes.table.thead}
             onResize={handleResize}
             onResizeEnd={handleResizeEnd}
@@ -257,8 +277,9 @@ export default function TableView({
                   columns={columns}
                   data={rowData}
                   top={virtualRow.start}
-                  displayRowNumber={displayRowNumber}
-                  rowNumberClasses={classes.table.tbody.rowNum}
+                  settings={settings}
+                  refreshRevision={refreshRevision}
+                  classes={classes.table.tbody}
                 />
               );
             })}
@@ -282,13 +303,14 @@ type ResizeObserver = (columnIndex: number, width: number) => void;
 const TableViewHeader = memo(
   ({
     columns,
-    displayRowNumber,
+    settings,
     classes,
     onResize,
     onResizeEnd,
   }: {
+    refreshRevision: number;
     columns: Column[];
-    displayRowNumber: boolean;
+    settings: TableSettings;
     classes: { self: string; tr: string; th: string; rowNum: { self: string; div: string } };
     onResize: ResizeObserver;
     onResizeEnd: ResizeObserver;
@@ -297,7 +319,7 @@ const TableViewHeader = memo(
     return (
       <thead className={classes.self}>
         <tr className={classes.tr}>
-          {displayRowNumber && (
+          {settings.showRowNumbers && (
             <th scope="col" className={classes.rowNum.self}>
               <div className={classes.rowNum.div}></div>
             </th>
@@ -307,11 +329,11 @@ const TableViewHeader = memo(
               key={i}
               scope="col"
               style={{ width: column.width + "px" }}
-              className={cx(classes.th, column.format.name === "boolean" && "justify-center")}
+              className={cx("relative", classes.th, column.format.name === "boolean" && "justify-center")}
             >
               <div className="truncate">{column.title}</div>
               <ResizePanel
-                className="ml-auto"
+                className="absolute right-0 h-4"
                 width={column.width}
                 minWidth={column.width}
                 onResize={(width) => onResize(i, width)}
@@ -323,7 +345,7 @@ const TableViewHeader = memo(
         <tr>
           <th
             className={cx("relative flex w-full h-0.5 overflow-hidden", colors("divide-background"))}
-            colSpan={columns.length + (displayRowNumber ? 1 : 0)}
+            colSpan={columns.length + (settings.showRowNumbers ? 1 : 0)}
           >
             <div className="rail absolute top-0 left-0 w-full h-full">
               <div className={cx("w-5 h-full", colors("selected:background"))}></div>
@@ -333,7 +355,7 @@ const TableViewHeader = memo(
       </thead>
     );
   },
-  () => true,
+  (prev, next) => prev.refreshRevision === next.refreshRevision,
 );
 
 TableViewHeader.displayName = "TableViewHeader";
@@ -349,23 +371,29 @@ const TableViewRow = memo(
     columns,
     data,
     top,
-    displayRowNumber,
-    rowNumberClasses,
+    settings,
+    classes,
   }: {
+    refreshRevision: number;
     rowNum: number;
     columns: Column[];
     data: Row;
     top: number;
-    displayRowNumber: boolean;
-    rowNumberClasses: {
-      self: string;
-      div: string;
+    settings: TableSettings;
+    classes: {
+      tr: {
+        self: string;
+        rowNum: {
+          self: string;
+          div: string;
+        };
+      };
     };
   }) => {
     console.debug("rendering row ", rowNum);
     return (
       <tr
-        className="z-0"
+        className={classes.tr.self}
         key={rowNum}
         style={{
           display: "flex",
@@ -374,21 +402,21 @@ const TableViewRow = memo(
           width: "100%",
         }}
       >
-        {displayRowNumber && (
-          <td scope="col" className={rowNumberClasses.self}>
-            <div className={rowNumberClasses.div}>{rowNum}</div>
+        {settings.showRowNumbers && (
+          <td scope="col" className={classes.tr.rowNum.self}>
+            <div className={classes.tr.rowNum.div}>{rowNum}</div>
           </td>
         )}
         {data ? <DataCells columns={columns} data={data} /> : <SkeletonCells columns={columns} />}
       </tr>
     );
   },
-  (prevProps, nextProps) => {
-    if (prevProps.data === null && nextProps.data !== null) {
+  (prev, next) => {
+    if (prev.data === null && next.data !== null) {
       // The row data were loading but now they are available
       return false;
     } else {
-      return true;
+      return prev.refreshRevision === next.refreshRevision;
     }
   },
 );
@@ -463,7 +491,7 @@ function buildColumnClasses(
     // Row number column
     return {
       self: cx(
-        "flex w-10 justify-end items-center font-light sticky left-0 z-40 opacity-100 font-mono pr-2",
+        "flex w-10 justify-end items-center font-light sticky left-0 z-1 opacity-100 font-mono pr-2",
         colors("background"),
       ),
       div: "",
@@ -472,8 +500,8 @@ function buildColumnClasses(
     return {
       self: cx(
         "flex",
-        tableProps.density === "compact" && "p-1",
-        tableProps.density === "normal" && "px-6 py-3",
+        tableProps.settings.density === "compact" && "p-1",
+        tableProps.settings.density === "comfortable" && "px-6 py-3",
         column.sticky ? "" /** TODO: add support for sticky columns */ : "grow",
         column.format.name === "boolean" && "justify-center",
         column.format.name === "int" && "justify-end",
@@ -488,12 +516,20 @@ function buildColumnClasses(
 /**
  * Get an estimation of the height of a row in the table.
  */
-function getEstimatedRowHeight({ density }: Partial<TableViewProps>): number {
+function getEstimatedRowHeight({ density, dividers }: TableSettings): number {
+  let height = 16; /* h-4 */
   if (density === "compact") {
-    return 16 /* h-4 */ + 4 * 2 /* p-1 */ + 1 /* divide-y */;
+    height += 4 * 2 /* p-1 */;
   } else {
-    return 16 /* h-4 */ + 12 * 2 /* py-3 */ + 1 /* divide-y */;
+    height += 12 * 2 /* py-3 */;
   }
+
+  // FIXME: seems like divider should be taken into account but the dividers="grid" is having 1 pixel space between rows
+  // if adding that pixel to the estimated height.
+  if (false && dividers !== "none" /* eslint-disable-line no-constant-condition */) {
+    height += 1 /* divide-y */;
+  }
+  return height;
 }
 
 function getSlicesOffsetsFromRange(
