@@ -38,7 +38,7 @@ export default function Titlebar({ children, className }: TitlebarProps) {
   }
 
   const classes = cx(
-    "flex space-x-2 h-11 p-1 justify-between text-white w-full",
+    "flex flex-none space-x-2 h-11 px-1 justify-between text-white w-full items-center",
     colors("background"),
     // On macOs, add a padding to the left of the titlebar for the default buttons (open/close/maximize)
     env.applicationType === "desktop" && env.platform === "macos" && !fullscreen && "pl-[64px]",
@@ -66,7 +66,7 @@ function AppName({ className }: { className?: string }) {
     >
       <AppLogoIcon className="w-5 h-5 flex-none hidden" />
       <span className="flex-none font-bold">squill</span>
-      <span className="flex-none font-light">{env.applicationType === "desktop" ? "desktop" : "cloud"}</span>
+      <span className="flex-none opacity-70">{env.applicationType === "desktop" ? "desktop" : "cloud"}</span>
     </div>
   );
 }

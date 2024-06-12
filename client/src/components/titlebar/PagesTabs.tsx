@@ -5,6 +5,7 @@ import { Page, useAppStore } from "@/stores/AppStore";
 import PlusIcon from "@/icons/plus.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
 import CloseCircleIcon from "@/icons/close-circle.svg?react";
+import { useEffect, useRef } from "react";
 
 function PagesTabs() {
   const pages = useAppStore((state) => state.pages);
@@ -32,25 +33,30 @@ function PagesTabs() {
   };
 
   return (
-    <div className="flex flex-row w-full space-x-1">
-      {pages.map((page) => {
-        return (
-          <Tab
-            key={`tab-${page.id}`}
-            page={page}
-            selected={page.id === activePageId}
-            onSelect={handleSelectPage}
-            onClose={handleClosePage}
-          />
-        );
-      })}
+    <>
+      <div className="flex flex-row space-x-1 no-scrollbar overflow-x-auto overflow-y-visible h-10 items-center">
+        {pages.map((page) => {
+          return (
+            <Tab
+              key={`tab-${page.id}`}
+              page={page}
+              selected={page.id === activePageId}
+              onSelect={handleSelectPage}
+              onClose={handleClosePage}
+            />
+          );
+        })}
+      </div>
       {pages.length > 0 && (
         <button className={classes.addButton} onClick={handleAddBlankPage}>
           <PlusIcon className={`w-7 h-7 px-1 rounded`} />
         </button>
       )}
-      <div className="flex-grow" data-tauri-drag-region />
-    </div>
+      {/*
+       * Add a flex grow to push the tabs to the left
+       */}
+      <div className="flex grow"></div>
+    </>
   );
 }
 
@@ -62,6 +68,7 @@ type TabProps = {
 };
 
 function Tab({ page, selected, onSelect, onClose }: TabProps) {
+  const refButton = useRef<HTMLButtonElement>(null);
   const showFileExtensions = useUserStore((state) => state.settings.showFileExtensions);
 
   const Icon = page.editor.icon;
@@ -71,20 +78,32 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
     tab: cx(
       "flex items-center h-9 px-4 rounded w-48",
       selected && "shadow-sm shadow-blue-800 dark:shadow-blue-900",
-      selected ? "bg-blue-400 dark:bg-blue-900" : tertiary("background", "hover:background")
+      selected ? "bg-blue-400 dark:bg-blue-900" : tertiary("background", "hover:background"),
     ),
     title: "mx-2 text-xs font-medium text-left whitespace-nowrap overflow-hidden overflow-ellipsis",
     closeButton: cx(
       "flex ml-auto min-w-fit rounded",
-      selected ? "hover:bg-blue-500 dark:hover:bg-blue-800" : "hover:bg-blue-800 dark:hover:bg-blue-700"
+      selected ? "hover:bg-blue-500 dark:hover:bg-blue-800" : "hover:bg-blue-800 dark:hover:bg-blue-700",
     ),
   };
+
+  useEffect(() => {
+    // Scroll the tab into view if it is selected
+    if (selected && refButton.current) {
+      refButton.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  }, [selected]);
 
   // Showing the file extension only if the setting is enabled
   const title = showFileExtensions ? page.title : page.title.replace(/\.[^/.]+$/, "");
 
   return (
     <button
+      ref={refButton}
       className={classes.tab}
       onClick={() => {
         onSelect(page.id);
