@@ -20,7 +20,7 @@ export default function Spinner({ size = "md", delay, className }: SpinnerProps)
   }
 
   const classes = cx(
-    "me-2 text-gray-200 animate-spin dark:text-gray-500 fill-blue-600 dark:fill-blue-400",
+    "text-gray-200 animate-spin dark:text-gray-500 fill-blue-600 dark:fill-blue-400",
     size === "xs" && "w-3 h-3",
     size === "sm" && "w-4 h-4",
     size === "md" && "w-6 h-6",
@@ -29,7 +29,7 @@ export default function Spinner({ size = "md", delay, className }: SpinnerProps)
     delay && `transition-opacity duration-${delay}`,
     delay && show && "opacity-100",
     delay && !show && "opacity-0",
-    className
+    className,
   );
   return (
     <svg

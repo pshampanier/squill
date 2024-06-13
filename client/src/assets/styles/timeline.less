@@ -1,0 +1,41 @@
+.timeline {
+  .status {
+    @apply flex z-10 h-6 items-center transition-all duration-300 ease-in-out rounded-full select-none;
+    @apply ring-4 ring-gray-50 dark:ring-white/[.05];
+  }
+
+  .status-icon {
+    @apply h-6 w-6 flex items-center justify-center;
+  }
+
+  .status-text {
+    @apply text-xs font-semibold ml-0 opacity-0 whitespace-nowrap transition-all duration-300 ease-in-out;
+    max-width: 0;
+  }
+
+  .status:hover {
+    @apply rounded-full pr-4;
+  }
+
+  .status:hover .status-text {
+    @apply ml-3 opacity-100;
+    max-width: 300px;
+  }
+
+  .group {
+    @apply relative;
+    .group-header {
+      @apply sticky top-0 z-20;
+    }
+
+    .group-body {
+      @apply relative;
+      &::before {
+        content: "";
+        @apply absolute w-1 h-full bg-gray-50 dark:bg-white/[.05] z-0 left-3.5;
+      }
+      /* Padding is needed to display the ring around the status */
+      @apply px-1;
+    }
+  }
+}

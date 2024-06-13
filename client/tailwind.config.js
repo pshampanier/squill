@@ -39,6 +39,11 @@ export default {
         ".non-draggable": {
           "-webkit-app-region": "no-drag",
         },
+        ".text-divider:not(:first-child)::before": {
+          content: '" | "',
+          "padding-left": "0.25rem",
+          "padding-right": "0.25rem",
+        },
       };
       addUtilities(newUtilities);
     },

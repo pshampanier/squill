@@ -9,7 +9,7 @@ type PreviewBoxProps = {
 
 export default function PreviewBox({ className, children }: PreviewBoxProps) {
   const [mode] = useState<"preview" | "code">("preview");
-  const classes = cx("overflow-x-scroll border rounded w-full mt-2 flex flex-col", colors("border"), className);
+  const classes = cx("overflow-hidden border rounded w-full mt-2 flex flex-col", colors("border"), className);
 
   children = mode === "preview" ? children : <>{children}</>;
 
