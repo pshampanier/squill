@@ -1,6 +1,15 @@
 import * as monaco from "monaco-editor";
-import { editor } from "monaco-editor";
-import { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
+import ReactDOM from "react-dom/client";
+
+type IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
+type IEditorOptions = monaco.editor.IEditorOptions;
+type IValidEditOperation = monaco.editor.IValidEditOperation;
+type IOverlayWidget = monaco.editor.IOverlayWidget;
+type IModelContentChangedEvent = monaco.editor.IModelContentChangedEvent;
+type IEditorMouseEvent = monaco.editor.IEditorMouseEvent;
+type IModelDeltaDecoration = monaco.editor.IModelDeltaDecoration;
+type IIdentifiedSingleEditOperation = monaco.editor.IIdentifiedSingleEditOperation;
 
 /**
  * The list of modifier keys.
@@ -14,7 +23,7 @@ const MODIFIER_KEYS = [
   monaco.KeyCode.CapsLock,
 ];
 
-const DEFAULT_MONACO_OPTIONS: { editor: monaco.editor.IEditorOptions; terminal: monaco.editor.IEditorOptions } = {
+const DEFAULT_MONACO_OPTIONS: { editor: IEditorOptions; terminal: IEditorOptions } = {
   editor: {
     scrollBeyondLastLine: false,
   },
@@ -56,7 +65,7 @@ export interface QuerySuggestionEvent {
   preventDefault(): void;
 }
 
-type QueryPromptProps = {
+type QueryInputProps = {
   /**
    * The initial value of the editor.
    */
@@ -104,6 +113,14 @@ type QueryPromptProps = {
    * The color scheme of the editor (default is "light").
    */
   colorScheme: "light" | "dark";
+
+  /**
+   * The placeholder to display when the editor is empty.
+   *
+   * If the placeholder height is greater than the editor height, the style min-height of the editor should be set to
+   * accommodate the placeholder height (using className="min-h-[height]").
+   */
+  placeholder?: React.ReactNode;
 };
 
 /**
@@ -111,7 +128,7 @@ type QueryPromptProps = {
  */
 type EditorSuggestionsEdits = {
   decorationIds: string[];
-  undoEdits: editor.IValidEditOperation[];
+  undoEdits: IValidEditOperation[];
 };
 
 /**
@@ -129,7 +146,7 @@ type EditorSuggestionsEdits = {
  * [Escape] => Remove the current suggestion.
  * [Tab] => Accept the current suggestion.
  */
-export default function QueryPrompt({
+export default function QueryInput({
   className,
   value,
   onValidate,
@@ -138,11 +155,16 @@ export default function QueryPrompt({
   mode = "editor",
   rows = 10,
   colorScheme = "light",
-}: QueryPromptProps) {
-  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  placeholder,
+}: QueryInputProps) {
+  const editorRef = useRef<IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const suggestionRef = useRef<EditorSuggestionsEdits>(null);
   const preventSuggestion = useRef(false);
+
+  // The placeholder is an overlay widget that is displayed in the editor when the editor is empty.
+  // It's created once during the useEffect and is shown/hidden when the editor content changes.
+  const placeholderRef = useRef<IOverlayWidget>(null);
 
   if (mode === "editor") {
     // In editor mode, `rows` is not used and we force it to undefined to let the editor adjust its height to the parent
@@ -155,6 +177,41 @@ export default function QueryPrompt({
       theme: MONACO_THEMES[colorScheme],
     });
   }
+
+  /**
+   * Resize the editor.
+   *
+   * The editor is resized to display up to the maximum number of rows specified or takes the full height and width of
+   * its parent HTML element.
+   */
+  const updateLayout = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    const parentElement = containerRef.current;
+    const width = parentElement.clientWidth;
+    let height = parentElement.clientHeight;
+    if (rows) {
+      const minHeight = parseInt(window.getComputedStyle(parentElement).minHeight);
+      height = Math.min(editor.getContentHeight(), rows * editor.getOption(monaco.editor.EditorOption.lineHeight));
+      if (!Number.isNaN(minHeight) && height < minHeight) {
+        height = minHeight;
+      }
+    }
+    editor.layout({ width, height });
+  }, [rows]);
+
+  /**
+   * Show/hide the placeholder in the editor.
+   */
+  const showPlaceholder = useCallback((show: boolean) => {
+    if (placeholderRef.current) {
+      if (show) {
+        editorRef.current.addOverlayWidget(placeholderRef.current);
+      } else {
+        editorRef.current.removeOverlayWidget(placeholderRef.current);
+      }
+    }
+  }, []);
 
   /**
    * Execute a function without triggering a suggestion if the content of the model changes.
@@ -218,7 +275,7 @@ export default function QueryPrompt({
       onSuggest?.(
         makeSuggestionEvent({
           currentQuery: getCurrentQuery(editor),
-        })
+        }),
       );
       e.preventDefault();
       e.stopPropagation();
@@ -255,7 +312,7 @@ export default function QueryPrompt({
   /**
    * A click anywhere in the editor will remove the suggestion.
    */
-  const handleMouseDown = (_e: monaco.editor.IEditorMouseEvent) => {
+  const handleMouseDown = (_e: IEditorMouseEvent) => {
     applyWithoutTriggeringSuggestion(() => {
       suggestionRef.current = clearSuggestions(editorRef.current, suggestionRef.current);
     });
@@ -264,7 +321,7 @@ export default function QueryPrompt({
   /**
    * Handle the event emitted when the content of the current model has changed.
    */
-  const handleDidChangeModelContent = (_e: monaco.editor.IModelContentChangedEvent) => {
+  const handleDidChangeModelContent = (_e: IModelContentChangedEvent) => {
     const editor = editorRef.current;
     if (!preventSuggestion.current) {
       // Trigger the suggest event if the cursor is at the end of the line
@@ -276,21 +333,30 @@ export default function QueryPrompt({
             cursor.lineNumber,
             cursor.column,
             cursor.lineNumber,
-            model?.getLineMaxColumn(cursor.lineNumber)
-          )
+            model?.getLineMaxColumn(cursor.lineNumber),
+          ),
         );
         const currentQuery = getCurrentQuery(editor);
         if (endOfLine.trim().length === 0 && currentQuery.length > 0) {
           onSuggest?.(
             makeSuggestionEvent({
               currentQuery,
-            })
+            }),
           );
         }
       });
     }
-    onChange?.(editor.getValue());
-    updateLayout(editor, containerRef.current, rows);
+
+    const value = editor.getValue();
+
+    // Show or hide the placeholder
+    showPlaceholder(value.length === 0);
+
+    // Notify the parent component that the value has changed
+    onChange?.(value);
+
+    // Update the layout of the editor
+    updateLayout();
   };
 
   useEffect(() => {
@@ -304,18 +370,34 @@ export default function QueryPrompt({
     editor.onMouseDown(handleMouseDown);
     editor.onDidChangeModelContent(handleDidChangeModelContent);
     editor.focus();
+    editorRef.current = editor;
+
+    if (placeholder) {
+      const root = document.createElement("div");
+      root.className = "flex text-xs items-center select-none opacity-50 pointer-events-none";
+      ReactDOM.createRoot(root).render(placeholder);
+      placeholderRef.current = {
+        getId: () => "widget.placeholder",
+        getDomNode: () => root,
+        getPosition() {
+          return {
+            preference: null,
+          };
+        },
+      };
+      showPlaceholder(model.getValue().length === 0);
+    }
 
     // Set the initial layout
-    updateLayout(editor, containerRef.current, rows);
+    updateLayout();
 
     // Register a resize observer to update the layout of the editor when the container size changes
     // We want to make sure that the editor is always the same width as its container.
     const resizeObserver = new ResizeObserver(() => {
-      updateLayout(editor, containerRef.current, rows);
+      updateLayout();
     });
     resizeObserver.observe(containerRef.current);
 
-    editorRef.current = editor;
     return () => {
       resizeObserver.disconnect();
       editor.dispose();
@@ -326,25 +408,6 @@ export default function QueryPrompt({
 }
 
 /**
- * Resize the editor.
- *
- * The editor is resized to display up to the maximum number of rows specified or takes the full height and width of its
- * parent HTML element.
- *
- * @param editor the monaco editor instance.
- * @param parentElement the parent HTML element used as a container by the editor.
- * @param rows the maximum number of rows to display.
- */
-function updateLayout(editor: editor.IStandaloneCodeEditor, parentElement: HTMLDivElement, rows?: number) {
-  const width = parentElement.clientWidth;
-  let height = parentElement.clientHeight;
-  if (rows) {
-    height = Math.min(editor.getContentHeight(), rows * editor.getOption(monaco.editor.EditorOption.lineHeight));
-  }
-  editor.layout({ width, height });
-}
-
-/**
  * Set the suggestion in the editor.
  *
  * @param editor the monaco editor instance.
@@ -352,12 +415,12 @@ function updateLayout(editor: editor.IStandaloneCodeEditor, parentElement: HTMLD
  * @param content the content of the suggestion.
  * @returns the list of new suggestions ids.
  */
-function setSuggestion(editor: editor.IStandaloneCodeEditor, content: string): EditorSuggestionsEdits {
+function setSuggestion(editor: IStandaloneCodeEditor, content: string): EditorSuggestionsEdits {
   console.log("Set suggestion: ", content);
   const cursor = editor.getPosition();
   const model = editor.getModel();
-  const decorations: editor.IModelDeltaDecoration[] = [];
-  const edits: editor.IIdentifiedSingleEditOperation[] = [];
+  const decorations: IModelDeltaDecoration[] = [];
+  const edits: IIdentifiedSingleEditOperation[] = [];
   const lines = content.split("\n");
   let text = "";
   lines.forEach((line, index) => {
@@ -403,7 +466,7 @@ function setSuggestion(editor: editor.IStandaloneCodeEditor, content: string): E
   return suggestionEdits;
 }
 
-function clearSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits): null {
+function clearSuggestions(editor: IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits): null {
   if (!suggestions) return;
   console.log("Clear suggestions");
   const model = editor.getModel();
@@ -415,7 +478,7 @@ function clearSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: Edi
 /**
  * Accept the suggestions currently displayed in the editor.
  */
-function acceptSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits) {
+function acceptSuggestions(editor: IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits) {
   if (!suggestions) return;
   console.log("Accept suggestions");
   // 1. Get the content of the suggestion (stored as decorations in the editor)
@@ -439,7 +502,7 @@ function acceptSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: Ed
         forceMoveMarkers: true,
       },
     ],
-    () => null
+    () => null,
   );
 
   // 4. Move the cursor to the end of the suggestion
@@ -449,7 +512,10 @@ function acceptSuggestions(editor: editor.IStandaloneCodeEditor, suggestions: Ed
 /**
  * Get the query currently edited.
  */
-function getCurrentQuery(editor: editor.IStandaloneCodeEditor): string {
+function getCurrentQuery(editor: IStandaloneCodeEditor): string {
   const cursor = editor.getPosition();
-  return editor.getModel().getValueInRange(new monaco.Range(1, 1, cursor.lineNumber, cursor.column)).trimStart();
+  return editor
+    .getModel()
+    .getValueInRange(new monaco.Range(1, 1, cursor.lineNumber, cursor.column))
+    .trimStart();
 }

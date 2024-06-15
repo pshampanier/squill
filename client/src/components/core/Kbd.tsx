@@ -31,8 +31,8 @@ function Key({ name }: { name: string }) {
 export default function Kbd({ shortcut, className }: KeyboardShortcutProps) {
   const s = getCurrentEnvironmentShortcut(shortcut);
   const classes = cx(
-    "inline-flex inline whitespace-nowrap items-center h-6 gap-x-0.5 text-sm text-gray-400 dark:text-gray-300",
-    className
+    "inline-flex inline whitespace-nowrap items-center h-6 text-sm text-gray-400 dark:text-gray-300",
+    className,
   );
   return (
     <span className={classes}>
@@ -40,7 +40,7 @@ export default function Kbd({ shortcut, className }: KeyboardShortcutProps) {
         return (
           <kbd
             key={index}
-            className="inline-flex justify-center items-center font-mono text-xs min-w-5 h-5 rounded bg-gray-100 dark:bg-gray-700"
+            className="inline-flex justify-center items-center font-mono text-xs min-w-5 h-5 rounded bg-gray-100 dark:bg-gray-700 mx-0.5"
           >
             <Key name={key} />
           </kbd>

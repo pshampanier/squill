@@ -52,7 +52,7 @@ export default function QueryPromptPreview() {
       new QueryExecution({
         query: value,
         executedAt: new Date(),
-      })
+      }),
     );
   };
 
@@ -60,6 +60,12 @@ export default function QueryPromptPreview() {
     const suggestion = getSuggestion(event.currentQuery);
     event.setSuggestion(suggestion);
   };
+
+  const placeHolder = (
+    <>
+      Press <Kbd shortcut={["Meta+[Enter]", "Ctrl+[Enter]"]} /> or just <Kbd shortcut={"[Enter]"} /> after a semicolon
+    </>
+  );
 
   return (
     <>
@@ -75,12 +81,13 @@ export default function QueryPromptPreview() {
         </Preview.Description>
         <PreviewBox className="items-center h-60">
           <QueryInput
-            className="w-full border border-gray-100 dark:border-gray-700"
+            className="w-full border border-gray-100 dark:border-gray-700 min-h-6"
             mode="terminal"
             colorScheme={colorScheme}
             rows={4}
             onValidate={handleValidate}
             onSuggest={handleSuggestions}
+            placeholder={placeHolder}
           />
           <QuerySuggestionMenu suggestions={suggestions} />
         </PreviewBox>

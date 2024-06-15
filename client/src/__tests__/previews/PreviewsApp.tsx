@@ -29,6 +29,8 @@ import SyntaxHighlightingPreview from "./layouts/SyntaxHighlighting.preview";
 import CodePreview from "./core/Code.preview";
 import TableViewPreview from "./dataset/table-view.preview";
 import TimelinePreview from "./core/Timeline.preview";
+import QueryTerminalPreview from "./query/QueryTerminal.preview";
+import QueryPromptPreview from "./query/QueryPrompt.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -46,6 +48,8 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Dropdown" />
           <PreviewSidebarItem view="QueryInput" />
           <PreviewSidebarItem view="QueryOutput" />
+          <PreviewSidebarItem view="QueryPrompt" />
+          <PreviewSidebarItem view="QueryTerminal" />
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
@@ -79,6 +83,8 @@ export function PreviewsApp() {
           {view === "Dropdown" && <DropdownPreview />}
           {view === "QueryInput" && <QueryInputPreview />}
           {view === "QueryOutput" && <QueryOutputPreview />}
+          {view === "QueryPrompt" && <QueryPromptPreview />}
+          {view === "QueryTerminal" && <QueryTerminalPreview />}
           {view === "Input" && <InputsPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
