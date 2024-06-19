@@ -16,6 +16,7 @@
   "author": "Philippe Shampanier",
   "license": "MIT",
   "devDependencies": {
+    "@faker-js/faker": "^8.4.1",
     "@tauri-apps/cli": "^1.5.14",
     "@types/deep-equal": "^1.0.4",
     "@types/lodash": "^4.14.202",
@@ -38,7 +39,6 @@
     "happy-dom": "^13.0.0",
     "less": "^4.2.0",
     "postcss": "^8.4.32",
-    "react-lorem-ipsum": "^1.4.10",
     "rollup-plugin-visualizer": "^5.12.0",
     "tailwindcss": "^3.3.6",
     "typescript": "^5.1.6",

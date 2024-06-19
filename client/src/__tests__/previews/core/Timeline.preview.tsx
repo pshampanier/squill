@@ -6,7 +6,7 @@ import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
 import Spinner from "@/components/core/Spinner";
-import { LoremIpsum } from "react-lorem-ipsum";
+import { faker } from "@faker-js/faker";
 
 export default function InputsPreview() {
   return (
@@ -27,9 +27,7 @@ export default function InputsPreview() {
                 label={"in progress"}
                 title={<Title time="12:23 PM" duration="1m 57s" />}
               >
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
               <Timeline.Item
                 icon={<PauseIcon />}
@@ -37,16 +35,12 @@ export default function InputsPreview() {
                 severity="info"
                 title={<Title time="12:57 PM" duration="32s" />}
               >
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
             </Timeline.Group>
             <Timeline.Group title={"Yesterday"}>
               <Timeline.Item icon={<ErrorIcon />} label={"error"} severity="danger" title={<Title time="8:37 AM" />}>
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
             </Timeline.Group>
             <Timeline.Group title={"Today"}>
@@ -57,9 +51,7 @@ export default function InputsPreview() {
                 className=""
                 title={<Title time="10:12 AM" duration="527ms" />}
               >
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
               <Timeline.Item
                 icon={<SuccessIcon />}
@@ -67,9 +59,7 @@ export default function InputsPreview() {
                 severity="success"
                 title={<Title time="10:12 AM" duration="527ms" />}
               >
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
               <Timeline.Item
                 icon={<SuccessIcon />}
@@ -77,9 +67,7 @@ export default function InputsPreview() {
                 severity="success"
                 title={<Title time="10:12 AM" duration="527ms" />}
               >
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
               <Timeline.Item
                 icon={<SuccessIcon />}
@@ -87,9 +75,7 @@ export default function InputsPreview() {
                 severity="success"
                 title={<Title time="10:12 AM" duration="527ms" />}
               >
-                <div className="flex-col space-y-2">
-                  <LoremIpsum p={Math.random() * 10} />
-                </div>
+                <div className="flex-col space-y-2">{faker.lorem.lines({ min: 1, max: 20 })}</div>
               </Timeline.Item>
             </Timeline.Group>
           </Timeline>

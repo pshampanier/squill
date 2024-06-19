@@ -1,7 +1,29 @@
 import QueryInput from "@/components/query/QueryInput";
+import QueryHistoryTimeline from "@/components/query/QueryHistoryTimeline";
 import { primary as colors } from "@/utils/colors";
 import cx from "classix";
 import Kbd from "@/components/core/Kbd";
+import { registerCommand } from "@/utils/commands";
+import CommandLinks from "@/components/CommandLinks";
+import { QueryExecution } from "@/models/query-execution";
+
+registerCommand(
+  {
+    name: "terminal.clear",
+    description: "Clear Terminal",
+    shortcut: "Ctrl+L",
+  },
+  {
+    name: "terminal.history.clear",
+    description: "Clear History",
+    shortcut: ["Meta+K", "Ctrl+K"],
+  },
+  {
+    name: "terminal.history.search",
+    description: "Search History",
+    shortcut: "Ctrl+R",
+  },
+);
 
 type QueryTerminalProps = {
   /**
@@ -23,6 +45,8 @@ type QueryTerminalProps = {
    */
   prompt: React.ReactNode;
 
+  history: Array<QueryExecution>;
+
   className?: string;
 };
 
@@ -33,19 +57,32 @@ const PLACEHOLDER = (
   </>
 );
 
-export default function QueryTerminal({ colorScheme, onValidate, prompt, className }: QueryTerminalProps) {
+export default function QueryTerminal({ colorScheme, onValidate, prompt, className, history }: QueryTerminalProps) {
   const classes = {
-    self: cx(
-      "flex flex-col overflow-hidden whitespace-nowrap w-full h-full divide-y space-y-2",
-      colors("divide"),
-      className,
-    ),
+    self: cx("flex flex-col w-full h-full divide-y space-y-2", colors("divide"), className),
   };
 
   return (
     <div className={classes.self}>
-      <div className="flex grow"></div>
-      <div className="flex flex-col py-2">
+      {/**
+       * The history of the terminal
+       **/}
+      <div className="flex flex-col flex-grow w-full overflow-auto">
+        {!!history.length && <QueryHistoryTimeline history={history} />}
+        {!history.length && (
+          <div className="flex w-full h-full items-center justify-center opacity-70">
+            <CommandLinks>
+              <CommandLinks.Link command="terminal.clear" />
+              <CommandLinks.Link command="terminal.history.clear" />
+              <CommandLinks.Link command="terminal.history.search" />
+            </CommandLinks>
+          </div>
+        )}
+      </div>
+      {/**
+       * The query input
+       **/}
+      <div className="flex flex-col py-2 min-h-fit">
         {prompt}
         <QueryInput
           mode="terminal"

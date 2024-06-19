@@ -9,8 +9,7 @@
   }
 
   .status-text {
-    @apply text-xs font-semibold ml-0 opacity-0 whitespace-nowrap transition-all duration-300 ease-in-out;
-    max-width: 0;
+    @apply text-xs font-semibold ml-0 opacity-0 whitespace-nowrap transition-all duration-300 ease-in-out max-w-0;
   }
 
   .status:hover {
@@ -18,11 +17,10 @@
   }
 
   .status:hover .status-text {
-    @apply ml-3 opacity-100;
-    max-width: 300px;
+    @apply ml-3 opacity-100 max-w-96;
   }
 
-  .group {
+  .timeline-group {
     @apply relative;
     .group-header {
       @apply sticky top-0 z-20;

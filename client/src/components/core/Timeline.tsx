@@ -1,5 +1,5 @@
 import cx from "classix";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
 import { primary as colors } from "@/utils/colors";
 
@@ -9,8 +9,19 @@ type TimelineProps = {
 };
 
 function Timeline({ children, className }: TimelineProps) {
-  const classes = cx("timeline flex flex-col w-full overflow-auto", className);
-  return <div className={classes}>{children}</div>;
+  const timelineRef = React.useRef<HTMLDivElement>(null);
+  const classes = cx("timeline flex flex-col w-full overflow-y-auto overflow-x-hidden", className);
+  useEffect(() => {
+    // Automatic move to the bottom of the timeline
+    if (timelineRef.current) {
+      timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
+    }
+  }, []);
+  return (
+    <div ref={timelineRef} className={classes}>
+      {children}
+    </div>
+  );
 }
 
 type TimelineGroupProps = {
@@ -28,7 +39,7 @@ function TimelineGroup({ title, children, className, defaultOpen = true }: Timel
   }, [open]);
 
   const classes = {
-    self: cx("group flex flex-col w-full", className),
+    self: cx("timeline-group flex flex-col w-full", className),
     chevron: cx("flex flex-none w-4 h-4 mr-2 transition-transform", !open && "rotate-90", open && "-rotate-90"),
     header: cx(
       "group-header flex flex-row items-center justify-start w-full h-8 text-sm font-semibold",
@@ -39,11 +50,11 @@ function TimelineGroup({ title, children, className, defaultOpen = true }: Timel
     <section className={classes.self}>
       <div className={cx(classes.header)}>
         <button className="flex flex-row space-x-2 h-full items-center" onClick={handleToggleOpen}>
-          <div className="flex select-none">{title}</div>
+          <div className="flex select-none capitalize">{title}</div>
           <ChevronIcon className={classes.chevron} />
         </button>
       </div>
-      {open && <div className="group-body">{children}</div>}
+      {open && <div className="group-body w-full">{children}</div>}
     </section>
   );
 }
@@ -59,7 +70,7 @@ type TimelineItemProps = {
 
 function TimelineItem({ children, className, icon, label, title, severity = "message" }: TimelineItemProps) {
   const classes = {
-    self: cx("item flex flex-col items-start space-x-3 pt-4", className),
+    self: cx("item flex flex-col items-start space-x-3 pt-4 w-full", className),
     status: {
       self: cx("status", colors(`${severity}:background`, `${severity}:text`)),
       icon: "status-icon",
@@ -75,7 +86,12 @@ function TimelineItem({ children, className, icon, label, title, severity = "mes
         </div>
         <div className="flex flex-row h-full pl-2">{title}</div>
       </div>
-      <div className="content flex pl-8 pt-2">{children}</div>
+      <div
+        className="content flex pl-8 pt-2"
+        style={{ width: "calc(100% - 2rem)" /* 2rem is equivalent pl-8 (32px) */ }}
+      >
+        {children}
+      </div>
     </div>
   );
 }
