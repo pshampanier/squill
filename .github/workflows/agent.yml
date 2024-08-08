@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: squill-app/squill-drivers
-          path: squill/squill-drivers
+          path: squill-drivers
 
         # The test suite cannot be run as root because some of the tests such as utils::users::tests::test_create_user
         # and utils::users::tests::test_delete_user would fail.
