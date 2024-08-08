@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 use anyhow::Result;
+use squill_drivers::sqlite::{ IN_MEMORY_SPECIAL_FILENAME, IN_MEMORY_URI };
+use crate::err_param;
 use crate::models::connections::{ Connection, ConnectionMode };
 use crate::resources::Resource;
 
@@ -24,16 +26,16 @@ impl Connection {
         }
     }
 
-    pub fn to_connection_string(&self) -> Result<String> {
+    pub fn to_uri(&self) -> Result<String> {
         match self.driver.as_str() {
-            "postgresql" => self.to_postgres_connection_string(),
-            "sqlite" => self.to_sqlite_connection_string(),
+            "postgresql" => self.to_postgres_uri(),
+            "sqlite" => self.to_sqlite_uri(),
             _ => Err(anyhow::anyhow!("Unsupported driver: {}", self.driver)),
         }
     }
 
     /// Convert the connection to a PostgreSQL connection string
-    fn to_postgres_connection_string(&self) -> Result<String> {
+    fn to_postgres_uri(&self) -> Result<String> {
         // Escape a value for use in a PostgreSQL connection string.
         //
         // To write an empty value, or a value containing spaces, surround it with single quotes, for example 'a value'.
@@ -127,8 +129,29 @@ impl Connection {
     }
 
     // TODO: Implement this method
-    fn to_sqlite_connection_string(&self) -> Result<String> {
-        todo!("Implement Connection::to_sqlite_connection_string")
+    fn to_sqlite_uri(&self) -> Result<String> {
+        match self.mode {
+            ConnectionMode::File => {
+                // SQLite uses a file path as connection string
+                Ok(self.file.clone())
+            }
+            ConnectionMode::ConnectionString => {
+                // The connection string is expected to be a URI (https://www.sqlite.org/uri.html)
+                let uri = self.connection_string.trim();
+                if uri == IN_MEMORY_SPECIAL_FILENAME {
+                    Ok(IN_MEMORY_URI.to_owned())
+                } else if uri.starts_with("file:") {
+                    // we need to replace the file scheme by the sqlite scheme
+                    Ok(uri.replacen("file:", "sqlite:", 1))
+                } else {
+                    Err(err_param!("Invalid connection string: '{}'", self.connection_string))
+                }
+            }
+            _ => {
+                // SQLite does not support host mode
+                Err(anyhow::anyhow!("Connection mode is not supported by SQLite"))
+            }
+        }
     }
 }
 
@@ -137,7 +160,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_to_postgres_connection_string() {
+    fn test_to_postgres_uri() {
         // Host mode
         assert_eq!(
             (Connection {
@@ -149,7 +172,7 @@ mod tests {
                 password: "pass".to_string(),
                 ..Default::default()
             })
-                .to_connection_string()
+                .to_uri()
                 .unwrap(),
             "host=localhost password=pass port=5432 user=postgres"
         );
@@ -164,7 +187,7 @@ mod tests {
                 password: "pass?".to_string(),
                 ..Default::default()
             })
-                .to_connection_string()
+                .to_uri()
                 .unwrap(),
             "postgresql://localhost:5432?password=pass%3F&user=postgres"
         );
@@ -177,7 +200,7 @@ mod tests {
                 username: "postgres".to_string(),
                 ..Default::default()
             })
-                .to_connection_string()
+                .to_uri()
                 .unwrap(),
             "postgresql://localhost?sslmode=require&user=postgres"
         );
@@ -192,7 +215,7 @@ mod tests {
                 password: "pa'ss".to_string(),
                 ..Default::default()
             })
-                .to_connection_string()
+                .to_uri()
                 .unwrap(),
             "host=localhost port=5432 dbname=db connect_timeout=10 password=pa\\'ss user=postgres"
         );
@@ -205,7 +228,7 @@ mod tests {
                 socket: "/var/run/postgres/.s.PGSQL.5432".to_string(),
                 ..Default::default()
             })
-                .to_connection_string()
+                .to_uri()
                 .unwrap(),
             "host=/var/run/postgres/.s.PGSQL.5432"
         );
@@ -218,7 +241,7 @@ mod tests {
                 file: "/tmp/file".to_string(),
                 ..Default::default()
             })
-                .to_connection_string()
+                .to_uri()
                 .is_err()
         );
     }

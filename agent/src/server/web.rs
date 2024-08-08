@@ -43,6 +43,9 @@ impl Server {
         // If the server is already running, return an error.
         Self::check_if_running().await?;
 
+        // Register all the drivers
+        squill_drivers::register_drivers();
+
         // Server initialization
         let mut server = Server {};
         let listener = server.bind().await?;

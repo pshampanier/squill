@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["agent", "drivers", "common", "client/src-tauri"]
+members = ["agent", "common", "client/src-tauri"]
 
 [workspace.package]
 version = "0.1.0"

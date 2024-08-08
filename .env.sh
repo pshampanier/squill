@@ -39,5 +39,5 @@ for vite_env in $(cat ./client/.env.local | grep VITE_); do
   export $(echo $vite_env | cut -f1 -d=)=$(echo $vite_env | cut -f2 -d=)
 done
 
-alias agent-dev="build agent && agent --verbose start --port 8080 --api-key x-dev"
+alias agent-dev="build agent && agent --verbose start --dev"
 alias package="cargo tauri build"

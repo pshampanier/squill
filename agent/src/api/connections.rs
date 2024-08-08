@@ -2,8 +2,7 @@ use crate::{ models::connections::Connection, utils::user_error::UserError };
 use crate::api::error::ServerResult;
 use crate::server::state::ServerState;
 use axum::{ routing::{ get, post }, Json, Router };
-use drivers::factory::{ AnyDriver, DriverFactory };
-use drivers::driver::DriverConnection;
+use squill_drivers::futures::Connection as DriverConnection;
 
 /// GET /connections/defaults
 ///
@@ -16,9 +15,8 @@ async fn get_connection_defaults() -> ServerResult<Json<Connection>> {
 ///
 /// Test if the connection is valid (can connect to the datasource).
 async fn test_connection(Json(conn): Json<Connection>) -> ServerResult<()> {
-    let connection_string = conn.to_connection_string()?;
-    let mut driver = AnyDriver::new(DriverFactory::create(&conn.driver, connection_string)?);
-    match driver.connect().await {
+    let uri = conn.to_uri()?;
+    match DriverConnection::open(uri).await {
         Ok(_) => Ok(()),
         Err(e) => Err(UserError::InvalidParameter(e.to_string()).into()),
     }

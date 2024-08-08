@@ -26,7 +26,7 @@ tracing-subscriber = { version = "0.3.18", features=["std", "env-filter"] }
 tracing-appender = "0.2.3"
 uuid = { version = "1.7.0", features = ["v4"] }
 urlencoding = "2.1.3"
-drivers = { path = "../drivers" }
+squill-drivers = { path = "../../squill-drivers", features = ["async"] }
 common = { path = "../common" }
 
 # The following dependencies are not directly used b the package but need to be forced to specific versions in order 

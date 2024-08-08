@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-
 use axum::{ extract::Json, routing::get, Router };
+use squill_drivers::sqlite::IN_MEMORY_SPECIAL_FILENAME;
 use crate::models::agent::AgentSettings;
 use crate::models::drivers::{
     Capability,
@@ -30,6 +30,22 @@ async fn get_agent() -> ServerResult<Json<Agent>> {
                 label: "SQLite".to_string(),
                 icon: "sqlite.svg".to_string(),
                 description: "SQLite is a C-language library that implements a small, fast, self-contained, high-reliability, full-featured, SQL database engine.".to_string(),
+                capabilities: vec![
+                    Capability::Sql,
+                    Capability::ConnectFile,
+                    Capability::ConnectString,
+                    Capability::ReadOnly
+                ],
+                defaults: HashMap::from([
+                    (DRIVER_CONNECTION_MODE.to_string(), "file".to_string()),
+                    (DRIVER_CONNECTION_STRING.to_string(), IN_MEMORY_SPECIAL_FILENAME.to_string()),
+                ]),
+            },
+            Driver {
+                name: "duckdb".to_string(),
+                label: "DuckDB".to_string(),
+                icon: "duckdb.svg".to_string(),
+                description: "DuckDB is a high-performance analytical database system. It is designed to be fast, reliable, portable, and easy to use.".to_string(),
                 capabilities: vec![
                     Capability::Sql,
                     Capability::ConnectFile,
