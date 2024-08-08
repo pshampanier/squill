@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["agent", "common", "client/src-tauri"]
+exclude = ["squill-drivers"]
 
 [workspace.package]
 version = "0.1.0"
