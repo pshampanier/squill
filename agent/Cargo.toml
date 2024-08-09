@@ -43,5 +43,4 @@ nix = { version = "0.27.1", features = ["signal", "process"] }
 common = { path = "../common", features = ["test-hooks"] }
 
 [build-dependencies]
-git2 = "0.18.2" # dependency of built added manually to prevent a vulnerability present in the version used by built
-built = { version = "0.7.1", features = ["git2"] }
+built = { version = "0.7.4", features = ["git2"] }
