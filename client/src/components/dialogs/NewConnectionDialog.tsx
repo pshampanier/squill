@@ -2,7 +2,14 @@ import { produce } from "immer";
 import { Connection, ConnectionMode } from "@/models/connections";
 import { SyntheticEvent, useRef, useState } from "react";
 import { Agent } from "@/resources/agent";
-import { DRIVER_CONNECTION_MODE, DRIVER_HOST, DRIVER_PORT, DRIVER_SOCKET, DRIVER_USER } from "@/models/drivers";
+import {
+  DRIVER_CONNECTION_MODE,
+  DRIVER_CONNECTION_STRING,
+  DRIVER_HOST,
+  DRIVER_PORT,
+  DRIVER_SOCKET,
+  DRIVER_USER,
+} from "@/models/drivers";
 import Modal from "@/components/Modal";
 import Stepper from "@/components/Stepper";
 import DriverForm from "@/components/forms/connections/DriverForm";
@@ -41,7 +48,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
       const connection = await Connections.defaults();
       setConnection(connection);
     },
-    "Creating a new connection..."
+    "Creating a new connection...",
   );
 
   // The creation of the connection is performed by the UserStore which will reflect the changes in the UI.
@@ -76,7 +83,8 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
         host: driver.defaults[DRIVER_HOST],
         port: parseInt(driver.defaults[DRIVER_PORT]),
         socket: driver.defaults[DRIVER_SOCKET],
-      })
+        connectionString: driver.defaults[DRIVER_CONNECTION_STRING],
+      }),
     );
   };
 
@@ -85,7 +93,7 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
     const c = new Connection(
       produce(connection, (draft) => {
         return { ...draft, ...value };
-      })
+      }),
     );
     setConnection(c);
   };
