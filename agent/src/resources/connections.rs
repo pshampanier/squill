@@ -8,8 +8,8 @@ use std::collections::BTreeMap;
 use uuid::Uuid;
 
 impl Resource for Connection {
-    fn id(&self) -> &Uuid {
-        &self.id
+    fn id(&self) -> Uuid {
+        self.id
     }
     fn name(&self) -> &str {
         &self.name
@@ -17,8 +17,8 @@ impl Resource for Connection {
     fn parent_id(&self) -> Option<Uuid> {
         Some(self.parent_id)
     }
-    fn owner_user_id(&self) -> &Uuid {
-        &self.owner_user_id
+    fn owner_user_id(&self) -> Uuid {
+        self.owner_user_id
     }
     fn resource_type(&self) -> ResourceType {
         ResourceType::Connection

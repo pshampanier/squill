@@ -77,9 +77,9 @@ pub async fn create(conn: &Connection, username: &Username) -> Result<User> {
 
     // 3. Create the default root folders for the `local` user.
     let default_folders = vec![
-        Folder::new(None, "Connections", &user.user_id, ContentType::Connections),
-        Folder::new(None, "Environments", &user.user_id, ContentType::Environments),
-        Folder::new(None, "Favorites", &user.user_id, ContentType::Favorites),
+        Folder::new(None, "Connections", user.user_id, ContentType::Connections),
+        Folder::new(None, "Environments", user.user_id, ContentType::Environments),
+        Folder::new(None, "Favorites", user.user_id, ContentType::Favorites),
     ];
     for folder in default_folders {
         catalog::add(conn, &folder).await?;
@@ -123,11 +123,11 @@ pub async fn get_by_username(conn: &Connection, username: &Username) -> Result<U
     }
 }
 
-pub async fn get_by_user_id(conn: &Connection, user_id: &Uuid) -> Result<User> {
+pub async fn get_by_user_id(conn: &Connection, user_id: Uuid) -> Result<User> {
     match conn
         .query_map_row("SELECT username, settings FROM users WHERE user_id = ?", params!(user_id), |row| {
             Ok(User {
-                user_id: *user_id,
+                user_id,
                 username: row.try_get("username")?,
                 settings: serde_json::from_str(row.get::<_, String>("settings").as_str())?,
                 variables: Default::default(),

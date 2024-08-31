@@ -11,17 +11,17 @@ impl Folder {
     pub fn new<T: Into<String>>(
         parent_id: Option<Uuid>,
         name: T,
-        owner_user_id: &Uuid,
+        owner_user_id: Uuid,
         content_type: ContentType,
     ) -> Self {
-        Self { folder_id: Uuid::new_v4(), parent_id, name: name.into(), owner_user_id: *owner_user_id, content_type }
+        Self { folder_id: Uuid::new_v4(), parent_id, name: name.into(), owner_user_id, content_type }
     }
 }
 
 /// Implement the `Resource` trait for `Folder`.
 impl Resource for Folder {
-    fn id(&self) -> &Uuid {
-        &self.folder_id
+    fn id(&self) -> Uuid {
+        self.folder_id
     }
 
     fn parent_id(&self) -> Option<Uuid> {
@@ -32,8 +32,8 @@ impl Resource for Folder {
         self.name.as_str()
     }
 
-    fn owner_user_id(&self) -> &Uuid {
-        &self.owner_user_id
+    fn owner_user_id(&self) -> Uuid {
+        self.owner_user_id
     }
 
     fn resource_type(&self) -> ResourceType {

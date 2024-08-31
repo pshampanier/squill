@@ -79,7 +79,7 @@ pub async fn get<T: Resource>(conn: &Connection, catalog_id: Uuid) -> Result<T> 
     // err.with_context(|| format!("Failed to get the catalog element (catalog_id: {}).", catalog_id))
 }
 
-pub async fn rename(conn: &Connection, user_id: &Uuid, catalog_id: &Uuid, new_name: &CatalogName) -> Result<()> {
+pub async fn rename(conn: &Connection, user_id: Uuid, catalog_id: Uuid, new_name: &CatalogName) -> Result<()> {
     match execute!(
         conn,
         "UPDATE catalog SET name=? WHERE catalog_id=? AND owner_user_id=?",
@@ -104,7 +104,7 @@ pub async fn rename(conn: &Connection, user_id: &Uuid, catalog_id: &Uuid, new_na
     }
 }
 
-pub async fn list(conn: &Connection, user_id: &Uuid, parent_catalog_id: Option<&Uuid>) -> Result<Vec<ResourceRef>> {
+pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Option<Uuid>) -> Result<Vec<ResourceRef>> {
     let mut statement = match parent_catalog_id {
         Some(parent_id) => {
             let mut statement = conn
@@ -141,8 +141,8 @@ pub async fn list(conn: &Connection, user_id: &Uuid, parent_catalog_id: Option<&
         let catalog_id: Uuid = row.try_get("catalog_id")?;
         let catalog_resource = ResourceRef {
             id: catalog_id,
-            parent_id: parent_catalog_id.cloned(),
-            owner_user_id: *user_id,
+            parent_id: parent_catalog_id,
+            owner_user_id: user_id,
             resource_type: ResourceType::from_str(row.try_get::<_, String>("type")?.as_str())?,
             name: row.try_get("name")?,
             metadata: row
@@ -176,15 +176,15 @@ mod tests {
         let conn = agent_db::get_connection().await.unwrap();
         let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
         // create a root catalog entries
-        let root_folder = Folder::new(None, "New Folder", &local_user.user_id, ContentType::Connections);
+        let root_folder = Folder::new(None, "New Folder", local_user.user_id, ContentType::Connections);
         let folder_dup_id = Folder { name: "another_name".to_string(), ..root_folder.clone() };
         assert_ok!(catalog::add(&conn, &root_folder).await);
         assert_err!(catalog::add(&conn, &folder_dup_id).await);
 
         let sub_folder =
-            Folder::new(Some(*root_folder.id()), "New Folder", &local_user.user_id, ContentType::Connections);
+            Folder::new(Some(root_folder.id()), "New Folder", local_user.user_id, ContentType::Connections);
         let sub_folder_dup_name =
-            Folder::new(sub_folder.parent_id(), &sub_folder.name, &local_user.user_id, ContentType::Connections);
+            Folder::new(sub_folder.parent_id(), &sub_folder.name, local_user.user_id, ContentType::Connections);
         assert_ok!(catalog::add(&conn, &sub_folder).await);
         assert_err!(catalog::add(&conn, &sub_folder_dup_name).await);
     }
@@ -197,12 +197,12 @@ mod tests {
 
         // We are listing the root catalog entries for the user, which should only contain the default folders.
         // Then we are adding a new folder at the root level and listing the root catalog entries again.
-        let default_catalog = assert_ok!(catalog::list(&conn, &local_user.user_id, None).await);
+        let default_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, None).await);
         let new_folder = assert_ok!(
-            catalog::add(&conn, &Folder::new(None, "Another folder", &local_user.user_id, ContentType::Connections))
+            catalog::add(&conn, &Folder::new(None, "Another folder", local_user.user_id, ContentType::Connections))
                 .await
         );
-        assert_eq!(assert_ok!(catalog::list(&conn, &local_user.user_id, None).await).len(), default_catalog.len() + 1);
+        assert_eq!(assert_ok!(catalog::list(&conn, local_user.user_id, None).await).len(), default_catalog.len() + 1);
 
         // Now adding a sub-folder to the newly created folder.
         let sub_folder = assert_ok!(
@@ -211,13 +211,13 @@ mod tests {
                 &Folder::new(
                     Some(new_folder.id),
                     &"Sub-folder".to_string(),
-                    &local_user.user_id,
+                    local_user.user_id,
                     ContentType::Connections
                 )
             )
             .await
         );
-        let new_folder_catalog = assert_ok!(catalog::list(&conn, &local_user.user_id, Some(&new_folder.id)).await);
+        let new_folder_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, Some(new_folder.id)).await);
         assert_eq!(new_folder_catalog.len(), 1);
         assert_eq!(new_folder_catalog[0].name, sub_folder.name);
         assert_eq!(new_folder_catalog[0].parent_id, Some(new_folder.id));

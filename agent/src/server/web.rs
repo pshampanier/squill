@@ -478,7 +478,7 @@ mod tests {
         let state = ServerState::new();
         let conn = state.get_agentdb_connection().await.unwrap();
         let user = users::get_by_username(&conn, users::local_username()).await.unwrap();
-        let security_token = state.add_user_session(&local_username.into(), &user.user_id);
+        let security_token = state.add_user_session(&local_username.into(), user.user_id);
 
         // 1. Invalid security token
         let response = super::Server::api(&state)

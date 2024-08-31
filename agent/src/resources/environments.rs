@@ -5,16 +5,16 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 impl Resource for Environment {
-    fn id(&self) -> &Uuid {
-        &self.id
+    fn id(&self) -> Uuid {
+        self.id
     }
 
     fn parent_id(&self) -> Option<Uuid> {
         Some(self.parent_id)
     }
 
-    fn owner_user_id(&self) -> &Uuid {
-        &self.owner_user_id
+    fn owner_user_id(&self) -> Uuid {
+        self.owner_user_id
     }
 
     fn name(&self) -> &str {

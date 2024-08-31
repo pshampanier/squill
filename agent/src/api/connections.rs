@@ -19,7 +19,7 @@ use uuid::Uuid;
 /// Create an new instance of a connection.
 async fn get_connection_defaults(context: ServerResult<RequestContext>) -> ServerResult<Json<Connection>> {
     let user_session = context?.get_user_session()?;
-    Ok(Json(Connection::new(*user_session.get_user_id(), "New Connection".to_string())))
+    Ok(Json(Connection::new(user_session.get_user_id(), "New Connection".to_string())))
 }
 
 /// GET /connections/:id
@@ -33,7 +33,7 @@ async fn get_connection(
     let user_session = context?.get_user_session()?;
     let conn = state.get_agentdb_connection().await?;
     let connection: models::Connection = catalog::get(&conn, id).await?;
-    if &connection.owner_user_id != user_session.get_user_id() {
+    if connection.owner_user_id != user_session.get_user_id() {
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
     Ok(Json(connection))

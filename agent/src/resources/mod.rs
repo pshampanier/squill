@@ -43,13 +43,13 @@ where
     Self: Serialize,
 {
     /// Unique identifier of the resource.
-    fn id(&self) -> &Uuid;
+    fn id(&self) -> Uuid;
 
     /// Unique identifier of the parent resource.
     fn parent_id(&self) -> Option<Uuid>;
 
     /// The user that owns the resource.
-    fn owner_user_id(&self) -> &Uuid;
+    fn owner_user_id(&self) -> Uuid;
 
     /// Name of the resource.
     fn name(&self) -> &str;
@@ -78,9 +78,9 @@ where
 {
     fn from(resource: &T) -> Self {
         ResourceRef {
-            id: *resource.id(),
+            id: resource.id(),
             parent_id: resource.parent_id(),
-            owner_user_id: *resource.owner_user_id(),
+            owner_user_id: resource.owner_user_id(),
             resource_type: resource.resource_type(),
             name: resource.name().to_string(),
             metadata: resource.metadata(),

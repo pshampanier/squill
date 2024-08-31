@@ -49,7 +49,7 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
             let conn = state.get_agentdb_connection().await?;
             match users::get_by_username(&conn, &username).await {
                 Ok(user) => {
-                    let token = state.add_user_session(&username, &user.user_id);
+                    let token = state.add_user_session(&username, user.user_id);
                     info!("User `{}` logged in.", &username);
                     Ok(Json((*token).clone()))
                 }
@@ -195,7 +195,7 @@ mod test {
     async fn test_refresh_token() {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
-        let security_token = state.add_user_session(&"local".into(), &Uuid::new_v4());
+        let security_token = state.add_user_session(&"local".into(), Uuid::new_v4());
 
         // 1) invalid refresh token
         assert!(matches!(
@@ -217,7 +217,7 @@ mod test {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
         let mut headers = HeaderMap::new();
-        let security_token = state.add_user_session(&"local".into(), &Uuid::new_v4());
+        let security_token = state.add_user_session(&"local".into(), Uuid::new_v4());
 
         // 1) missing Authorization header
         assert!(matches!(logout(state.clone(), headers.clone()).await, Err(Error::BadRequest(_))));

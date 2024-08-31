@@ -60,7 +60,7 @@ async fn read_user_catalog(
     // First we need to sanitize the username and path to make sure they will not pose security threats.
     let user_session = context.get_user_session_with_username(&username)?;
     let conn = state.get_agentdb_connection().await?;
-    let catalog_resources = catalog::list(&conn, user_session.get_user_id(), catalog_id.as_ref()).await?;
+    let catalog_resources = catalog::list(&conn, user_session.get_user_id(), catalog_id).await?;
     Ok(Json(catalog_resources))
 }
 
@@ -93,7 +93,7 @@ async fn rename_user_catalog_resource(
     let user_session = context.get_user_session_with_username(&username)?;
     let new_name = validators::sanitize_catalog_name(args.new_name.as_str())?;
     let conn = state.get_agentdb_connection().await?;
-    catalog::rename(&conn, user_session.get_user_id(), &catalog_id, &new_name).await.map_err(|e| e.into())
+    catalog::rename(&conn, user_session.get_user_id(), catalog_id, &new_name).await.map_err(|e| e.into())
 }
 
 /// POST /users/:username/catalog
@@ -111,7 +111,7 @@ async fn create_user_catalog_resource(
 ) -> ServerResult<Json<ResourceRef>> {
     async fn inner_create_user_catalog_resource<T: Resource>(
         conn: &Connection,
-        user_id: &Uuid,
+        user_id: Uuid,
         resource: T,
     ) -> Result<ResourceRef> {
         // We need to check if the user has the right to create the resource.
@@ -220,7 +220,7 @@ mod tests {
         let username: Username = "marty.mcfly".into();
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
         let state = ServerState::new();
-        let security_token = state.add_user_session(&username, &marty_mcfly.user_id);
+        let security_token = state.add_user_session(&username, marty_mcfly.user_id);
 
         // 1) valid user
         let mut context = RequestContext::new(Uuid::nil());
@@ -256,8 +256,8 @@ mod tests {
         let username: Username = "marty.mcfly".into();
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
         let state = ServerState::new();
-        let security_token = state.add_user_session(&username, &marty_mcfly.user_id);
-        let root_folders = catalog::list(&conn, &marty_mcfly.user_id, None).await.unwrap();
+        let security_token = state.add_user_session(&username, marty_mcfly.user_id);
+        let root_folders = catalog::list(&conn, marty_mcfly.user_id, None).await.unwrap();
         let environments_folder = root_folders
             .iter()
             .find(|f| f.get_metadata(METADATA_CONTENT_TYPE) == Some(ContentType::Environments.as_ref()))
