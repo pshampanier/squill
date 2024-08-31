@@ -8,12 +8,7 @@ use uuid::Uuid;
 pub const METADATA_CONTENT_TYPE: &str = "content_type";
 
 impl Folder {
-    pub fn new<T: Into<String>>(
-        parent_id: Option<Uuid>,
-        name: T,
-        owner_user_id: Uuid,
-        content_type: ContentType,
-    ) -> Self {
+    pub fn new<T: Into<String>>(parent_id: Uuid, name: T, owner_user_id: Uuid, content_type: ContentType) -> Self {
         Self { folder_id: Uuid::new_v4(), parent_id, name: name.into(), owner_user_id, content_type }
     }
 }
@@ -24,7 +19,7 @@ impl Resource for Folder {
         self.folder_id
     }
 
-    fn parent_id(&self) -> Option<Uuid> {
+    fn parent_id(&self) -> Uuid {
         self.parent_id
     }
 
@@ -46,7 +41,7 @@ impl Resource for Folder {
         Some(metadata)
     }
 
-    fn from_storage(parent_id: Option<Uuid>, name: String, resource: serde_json::Value) -> anyhow::Result<Self>
+    fn from_storage(parent_id: Uuid, name: String, resource: serde_json::Value) -> anyhow::Result<Self>
     where
         Self: Sized,
     {

@@ -25,8 +25,8 @@ pub struct Folder {
     pub folder_id: Uuid,
 
     /// The unique identifier of the parent resource in the catalog.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parent_id: Option<Uuid>,
+    #[serde(default = "Uuid::nil", skip_serializing_if = "Uuid::is_nil")]
+    pub parent_id: Uuid,
 
     /// The unique identifier of the user that owns the folder.
     pub owner_user_id: Uuid,

@@ -1,7 +1,7 @@
+use crate::err_param;
 use crate::models::connections::{Connection, ConnectionMode};
 use crate::models::ResourceType;
 use crate::resources::Resource;
-use crate::{err_internal, err_param};
 use anyhow::Result;
 use squill_drivers::sqlite::{IN_MEMORY_SPECIAL_FILENAME, IN_MEMORY_URI};
 use std::collections::BTreeMap;
@@ -14,8 +14,8 @@ impl Resource for Connection {
     fn name(&self) -> &str {
         &self.name
     }
-    fn parent_id(&self) -> Option<Uuid> {
-        Some(self.parent_id)
+    fn parent_id(&self) -> Uuid {
+        self.parent_id
     }
     fn owner_user_id(&self) -> Uuid {
         self.owner_user_id
@@ -27,18 +27,15 @@ impl Resource for Connection {
         None
     }
 
-    fn from_storage(parent_id: Option<Uuid>, name: String, resource: serde_json::Value) -> Result<Self>
+    fn from_storage(parent_id: Uuid, name: String, resource: serde_json::Value) -> Result<Self>
     where
         Self: Sized,
     {
         let connection: Connection = serde_json::from_value(resource)?;
-        if Some(connection.parent_id) == parent_id && connection.name == name {
+        if connection.parent_id == parent_id && connection.name == name {
             Ok(connection)
         } else {
-            match parent_id {
-                Some(parent_id) => Ok(Connection { parent_id, name, ..connection }),
-                None => Err(err_internal!("Unable to load the connection from the storage")),
-            }
+            Ok(Connection { parent_id, name, ..connection })
         }
     }
 }

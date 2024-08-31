@@ -9,8 +9,8 @@ impl Resource for Environment {
         self.id
     }
 
-    fn parent_id(&self) -> Option<Uuid> {
-        Some(self.parent_id)
+    fn parent_id(&self) -> Uuid {
+        self.parent_id
     }
 
     fn owner_user_id(&self) -> Uuid {
@@ -29,18 +29,15 @@ impl Resource for Environment {
         None
     }
 
-    fn from_storage(parent_id: Option<Uuid>, name: String, resource: serde_json::Value) -> anyhow::Result<Self>
+    fn from_storage(parent_id: Uuid, name: String, resource: serde_json::Value) -> anyhow::Result<Self>
     where
         Self: Sized,
     {
         let environment: Environment = serde_json::from_value(resource)?;
-        if Some(environment.parent_id) == parent_id && environment.name == name {
+        if environment.parent_id == parent_id && environment.name == name {
             Ok(environment)
         } else {
-            match parent_id {
-                Some(parent_id) => Ok(Environment { parent_id, name, ..environment }),
-                None => Err(anyhow::anyhow!("Unable to load the environment from the storage")),
-            }
+            Ok(Environment { parent_id, name, ..environment })
         }
     }
 }

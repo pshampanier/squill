@@ -18,8 +18,8 @@ pub struct ResourceRef {
     pub id: Uuid,
 
     /// Unique identifier of the parent resource.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parent_id: Option<Uuid>,
+    #[serde(default = "Uuid::nil", skip_serializing_if = "Uuid::is_nil")]
+    pub parent_id: Uuid,
 
     /// The user that owns the resource.
     pub owner_user_id: Uuid,

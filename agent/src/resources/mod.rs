@@ -46,7 +46,7 @@ where
     fn id(&self) -> Uuid;
 
     /// Unique identifier of the parent resource.
-    fn parent_id(&self) -> Option<Uuid>;
+    fn parent_id(&self) -> Uuid;
 
     /// The user that owns the resource.
     fn owner_user_id(&self) -> Uuid;
@@ -67,7 +67,7 @@ where
     /// parameters are provided to ensure that the resource is correctly deserialized. This may be necessary when the
     /// resource has been renamed or moved (in those cases, for performance reason, there is no guaranty that the
     /// `resource` parameter contains the latest values for those fields).
-    fn from_storage(parent_id: Option<Uuid>, name: String, resource: Value) -> Result<Self>
+    fn from_storage(parent_id: Uuid, name: String, resource: Value) -> Result<Self>
     where
         Self: Sized;
 }

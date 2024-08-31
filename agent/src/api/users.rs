@@ -55,7 +55,7 @@ async fn get_user(
 async fn read_user_catalog(
     State(state): State<ServerState>,
     context: RequestContext,
-    Path((username, catalog_id)): Path<(String, Option<Uuid>)>,
+    Path((username, catalog_id)): Path<(String, Uuid)>,
 ) -> ServerResult<Json<Vec<ResourceRef>>> {
     // First we need to sanitize the username and path to make sure they will not pose security threats.
     let user_session = context.get_user_session_with_username(&username)?;
@@ -69,7 +69,7 @@ async fn read_user_catalog_root(
     context: RequestContext,
     Path(username): Path<String>,
 ) -> ServerResult<Json<Vec<ResourceRef>>> {
-    read_user_catalog(State(state), context, Path((username, None))).await
+    read_user_catalog(State(state), context, Path((username, Uuid::nil()))).await
 }
 
 #[derive(serde::Deserialize)]
@@ -118,7 +118,7 @@ async fn create_user_catalog_resource(
         // - users are only allowed to create resources for themselves, not for other users.
         // - the parent resource must exist (cannot crate a resource at the root of the catalog).
         // - the resource name must be valid (no special characters, no directory traversal, etc).
-        if user_id != resource.owner_user_id() || resource.parent_id().is_none() {
+        if user_id != resource.owner_user_id() || resource.parent_id().is_nil() {
             return Err(err_forbidden!("You are not allowed to create this resource."));
         }
         sanitize_catalog_name(resource.name())?;
@@ -257,7 +257,7 @@ mod tests {
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
         let state = ServerState::new();
         let security_token = state.add_user_session(&username, marty_mcfly.user_id);
-        let root_folders = catalog::list(&conn, marty_mcfly.user_id, None).await.unwrap();
+        let root_folders = catalog::list(&conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
         let environments_folder = root_folders
             .iter()
             .find(|f| f.get_metadata(METADATA_CONTENT_TYPE) == Some(ContentType::Environments.as_ref()))
@@ -302,7 +302,7 @@ mod tests {
                         folder_id: Uuid::new_v4(),
                         name: "New folder".to_string(),
                         owner_user_id: marty_mcfly.user_id,
-                        parent_id: Some(environments_folder.id),
+                        parent_id: environments_folder.id,
                         content_type: ContentType::Favorites,
                     })
                     .unwrap()
@@ -323,7 +323,7 @@ mod tests {
                         folder_id: Uuid::new_v4(),
                         name: "New / folder".to_string(),
                         owner_user_id: marty_mcfly.user_id,
-                        parent_id: Some(environments_folder.id),
+                        parent_id: environments_folder.id,
                         content_type: ContentType::Favorites,
                     })
                     .unwrap()
@@ -333,7 +333,7 @@ mod tests {
             Err(Error::UserError(UserError::InvalidParameter(_)))
         ));
 
-        // 3) invalid parent_id
+        // 3) cannot create root folder (parent_id is nil) via the REST API
         assert!(matches!(
             create_user_catalog_resource(
                 State(state.clone()),
@@ -345,7 +345,7 @@ mod tests {
                         folder_id: Uuid::new_v4(),
                         name: "New folder (2)".to_string(),
                         owner_user_id: marty_mcfly.user_id,
-                        parent_id: None,
+                        parent_id: Uuid::nil(),
                         content_type: ContentType::Favorites,
                     })
                     .unwrap()

@@ -77,9 +77,9 @@ pub async fn create(conn: &Connection, username: &Username) -> Result<User> {
 
     // 3. Create the default root folders for the `local` user.
     let default_folders = vec![
-        Folder::new(None, "Connections", user.user_id, ContentType::Connections),
-        Folder::new(None, "Environments", user.user_id, ContentType::Environments),
-        Folder::new(None, "Favorites", user.user_id, ContentType::Favorites),
+        Folder::new(Uuid::nil(), "Connections", user.user_id, ContentType::Connections),
+        Folder::new(Uuid::nil(), "Environments", user.user_id, ContentType::Environments),
+        Folder::new(Uuid::nil(), "Favorites", user.user_id, ContentType::Favorites),
     ];
     for folder in default_folders {
         catalog::add(conn, &folder).await?;

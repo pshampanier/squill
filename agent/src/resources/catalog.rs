@@ -71,7 +71,7 @@ pub async fn get<T: Resource>(conn: &Connection, catalog_id: Uuid) -> Result<T> 
             let name: String = row.try_get("name")?;
             let parent_catalog_id: Option<Uuid> = row.try_get_nullable("parent_catalog_id")?;
             let data: Value = serde_json::from_str(&row.try_get::<_, String>("data")?)?;
-            T::from_storage(parent_catalog_id, name, data)
+            T::from_storage(parent_catalog_id.unwrap_or(Uuid::nil()), name, data)
         }
         Ok(None) => Err(err_not_found!("The element no longer exists.")),
         Err(err) => Err(err.into()),
@@ -104,9 +104,9 @@ pub async fn rename(conn: &Connection, user_id: Uuid, catalog_id: Uuid, new_name
     }
 }
 
-pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Option<Uuid>) -> Result<Vec<ResourceRef>> {
-    let mut statement = match parent_catalog_id {
-        Some(parent_id) => {
+pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> Result<Vec<ResourceRef>> {
+    let mut statement = match parent_catalog_id.is_nil() {
+        false => {
             let mut statement = conn
                 .prepare(
                     r#"SELECT catalog_id, type, name, metadata
@@ -116,10 +116,10 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Option<Uu
                                   ORDER BY name"#,
                 )
                 .await?;
-            statement.bind(params!(user_id, parent_id)).await?;
+            statement.bind(params!(user_id, parent_catalog_id)).await?;
             statement
         }
-        None => {
+        true => {
             let mut statement = conn
                 .prepare(
                     r#"SELECT catalog_id, type, name, metadata
@@ -169,6 +169,7 @@ mod tests {
     use crate::resources::users::{self, local_username};
     use crate::utils::tests;
     use tokio_test::{assert_err, assert_ok};
+    use uuid::Uuid;
 
     #[tokio::test]
     async fn test_catalog_add() {
@@ -176,13 +177,12 @@ mod tests {
         let conn = agent_db::get_connection().await.unwrap();
         let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
         // create a root catalog entries
-        let root_folder = Folder::new(None, "New Folder", local_user.user_id, ContentType::Connections);
+        let root_folder = Folder::new(Uuid::nil(), "New Folder", local_user.user_id, ContentType::Connections);
         let folder_dup_id = Folder { name: "another_name".to_string(), ..root_folder.clone() };
         assert_ok!(catalog::add(&conn, &root_folder).await);
         assert_err!(catalog::add(&conn, &folder_dup_id).await);
 
-        let sub_folder =
-            Folder::new(Some(root_folder.id()), "New Folder", local_user.user_id, ContentType::Connections);
+        let sub_folder = Folder::new(root_folder.id(), "New Folder", local_user.user_id, ContentType::Connections);
         let sub_folder_dup_name =
             Folder::new(sub_folder.parent_id(), &sub_folder.name, local_user.user_id, ContentType::Connections);
         assert_ok!(catalog::add(&conn, &sub_folder).await);
@@ -197,30 +197,31 @@ mod tests {
 
         // We are listing the root catalog entries for the user, which should only contain the default folders.
         // Then we are adding a new folder at the root level and listing the root catalog entries again.
-        let default_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, None).await);
+        let default_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, Uuid::nil()).await);
         let new_folder = assert_ok!(
-            catalog::add(&conn, &Folder::new(None, "Another folder", local_user.user_id, ContentType::Connections))
-                .await
+            catalog::add(
+                &conn,
+                &Folder::new(Uuid::nil(), "Another folder", local_user.user_id, ContentType::Connections)
+            )
+            .await
         );
-        assert_eq!(assert_ok!(catalog::list(&conn, local_user.user_id, None).await).len(), default_catalog.len() + 1);
+        assert_eq!(
+            assert_ok!(catalog::list(&conn, local_user.user_id, Uuid::nil()).await).len(),
+            default_catalog.len() + 1
+        );
 
         // Now adding a sub-folder to the newly created folder.
         let sub_folder = assert_ok!(
             catalog::add(
                 &conn,
-                &Folder::new(
-                    Some(new_folder.id),
-                    &"Sub-folder".to_string(),
-                    local_user.user_id,
-                    ContentType::Connections
-                )
+                &Folder::new(new_folder.id, &"Sub-folder".to_string(), local_user.user_id, ContentType::Connections)
             )
             .await
         );
-        let new_folder_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, Some(new_folder.id)).await);
+        let new_folder_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, new_folder.id).await);
         assert_eq!(new_folder_catalog.len(), 1);
         assert_eq!(new_folder_catalog[0].name, sub_folder.name);
-        assert_eq!(new_folder_catalog[0].parent_id, Some(new_folder.id));
+        assert_eq!(new_folder_catalog[0].parent_id, new_folder.id);
         assert_eq!(new_folder_catalog[0].owner_user_id, local_user.user_id);
         assert_eq!(new_folder_catalog[0].resource_type, sub_folder.resource_type);
     }
