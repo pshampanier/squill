@@ -1,15 +1,15 @@
 use crate::commandline;
-use crate::utils::constants::USERS_DIRNAME;
-use crate::models::agent::{ AgentSettings, LogLevel };
+use crate::models::agent::{AgentSettings, LogLevel};
 use crate::settings_getters;
+use crate::utils::constants::USERS_DIRNAME;
+use anyhow::{anyhow, Context, Result};
+use ini::Ini;
 use std::fmt;
 use std::net::Ipv4Addr;
-use std::path::{ PathBuf, Path };
-use ini::Ini;
-use anyhow::{ anyhow, Context, Result };
+use std::path::{Path, PathBuf};
 
 #[cfg(not(test))]
-use ::{ lazy_static::lazy_static, tracing::error, rand::Rng, hex };
+use ::{hex, lazy_static::lazy_static, rand::Rng, tracing::error};
 
 const AGENT_CONF: &str = "agent.conf";
 
@@ -43,7 +43,7 @@ pub fn get_log_level() -> tracing::Level {
     #[cfg(not(test))]
     let log_level = &SETTINGS.log_level;
     #[cfg(test)]
-    let log_level = crate::utils::tests::settings::SETTINGS.with(|settings| { settings.borrow().log_level.clone() });
+    let log_level = crate::utils::tests::settings::SETTINGS.with(|settings| settings.borrow().log_level.clone());
     match log_level {
         LogLevel::Error => tracing::Level::ERROR,
         LogLevel::Warning => tracing::Level::WARN,
@@ -79,11 +79,11 @@ impl AgentSettings {
         for (key, value) in section.iter() {
             match key {
                 "listen_address" => {
-                    let address: Ipv4Addr = value.parse().with_context(|| { format!("{key}={value}") })?;
+                    let address: Ipv4Addr = value.parse().with_context(|| format!("{key}={value}"))?;
                     self.listen_address = address.to_string();
                 }
                 "port" => {
-                    self.port = value.parse::<u16>().with_context(|| { format!("{key}={value}") })?;
+                    self.port = value.parse::<u16>().with_context(|| format!("{key}={value}"))?;
                 }
                 "base_dir" => {
                     self.base_dir = value.to_string();
@@ -103,12 +103,10 @@ impl AgentSettings {
 impl fmt::Display for AgentSettings {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut buffer = Vec::new();
-        match
-            get_config(self).write_to_opt(&mut buffer, ini::WriteOption {
-                line_separator: ini::LineSeparator::CR,
-                ..Default::default()
-            })
-        {
+        match get_config(self).write_to_opt(
+            &mut buffer,
+            ini::WriteOption { line_separator: ini::LineSeparator::CR, ..Default::default() },
+        ) {
             Ok(_) => write!(f, "{}", String::from_utf8(buffer).unwrap()),
             Err(_) => Err(fmt::Error),
         }
@@ -182,7 +180,7 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
 lazy_static! {
     static ref SETTINGS: AgentSettings = {
         match make_settings(commandline::get_args()) {
-            Ok(settings) => { settings }
+            Ok(settings) => settings,
             Err(err) => {
                 error!("{}", err);
                 std::process::exit(1);
@@ -192,8 +190,8 @@ lazy_static! {
 }
 
 /// Get the directory used to store the files for the specified user.
-pub fn get_user_dir(username: &str) -> PathBuf {
-    PathBuf::from(get_base_dir()).join(USERS_DIRNAME).join(username)
+pub fn get_user_dir<S: AsRef<str>>(username: S) -> PathBuf {
+    PathBuf::from(get_base_dir()).join(USERS_DIRNAME).join(username.as_ref())
 }
 
 pub fn show_config() {
@@ -218,28 +216,25 @@ fn generate_api_key() -> String {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::commandline::Args;
     use crate::utils::tests::settings;
     use clap::Parser;
-    use tempfile::tempdir;
     use std::fs;
-    use super::*;
+    use tempfile::tempdir;
 
     #[test]
     #[ignore]
     fn test_fmt_display_trait() {
-        let settings = AgentSettings {
-            base_dir: "/tmp".to_string(),
-            ..Default::default()
-        };
+        let settings = AgentSettings { base_dir: "/tmp".to_string(), ..Default::default() };
         assert_eq!(
             r"listen_address=127.0.0.1
             port=0
             base_dir=/tmp
             api_key=cf55f65...
             "
-                .to_string()
-                .replace(' ', ""),
+            .to_string()
+            .replace(' ', ""),
             format!("{}", settings)
         );
     }
@@ -256,9 +251,8 @@ mod tests {
         // 2) override with command line
         {
             let expected = AgentSettings { port: 1234, base_dir: "/test".to_string(), ..Default::default() };
-            let actual = make_settings(
-                &Args::parse_from(["agent", "--base-dir", "/test", "start", "--port", "1234"])
-            ).unwrap();
+            let actual =
+                make_settings(&Args::parse_from(["agent", "--base-dir", "/test", "start", "--port", "1234"])).unwrap();
             assert_eq!(expected, actual);
         }
 
@@ -273,17 +267,16 @@ mod tests {
                 api_key: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx".to_string(),
                 ..Default::default()
             };
-            std::fs
-                ::write(
-                    app_dir.path().join(AGENT_CONF),
-                    r#"
+            std::fs::write(
+                app_dir.path().join(AGENT_CONF),
+                r#"
                 port="1234"
                 base_dir="/test"
                 listen_address="0.0.0.0"
                 api_key="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-            "#
-                )
-                .unwrap();
+            "#,
+            )
+            .unwrap();
             let actual = make_settings(&Args::parse_from(["agent", "start"])).unwrap();
             assert_eq!(expected, actual);
             fs::remove_dir_all(app_dir).unwrap();
@@ -302,18 +295,17 @@ mod tests {
                 ..Default::default()
             };
             std::fs::write(app_dir.path().join(AGENT_CONF), "port=1234").unwrap();
-            let actual = make_settings(
-                &Args::parse_from([
-                    "agent",
-                    "start",
-                    "--port",
-                    "5678",
-                    "--listen-address",
-                    "0.0.0.0",
-                    "--api-key",
-                    "xxx",
-                ])
-            ).unwrap();
+            let actual = make_settings(&Args::parse_from([
+                "agent",
+                "start",
+                "--port",
+                "5678",
+                "--listen-address",
+                "0.0.0.0",
+                "--api-key",
+                "xxx",
+            ]))
+            .unwrap();
             assert_eq!(expected, actual);
             fs::remove_dir_all(app_dir).unwrap();
         }

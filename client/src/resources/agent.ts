@@ -2,7 +2,7 @@ import { Resource } from "@/resources/resource";
 import { serializable, serialize } from "@/utils/serializable";
 import { AuthenticationMethod, AUTHENTICATION_METHOD, AuthRequest, AuthRefresh } from "@/models/auth";
 import { SecurityToken } from "@/models/auth";
-import { UserError } from "@/utils/errors";
+import { AuthenticationError, HttpRequestError, UserError } from "@/utils/errors";
 import {
   HTTP_HEADER_CONTENT_TYPE,
   HTTP_HEADER_X_REQUEST_ID,
@@ -79,7 +79,7 @@ export class Agent {
       if (response.status === 401 /* Unauthorized */) {
         throw new AuthenticationError();
       } else {
-        throw new Error(response.statusText);
+        throw new HttpRequestError(response.status, response.statusText, await response.text());
       }
     }
   }
@@ -127,7 +127,7 @@ export class Agent {
       } else if (response.status === 401 /* Unauthorized */) {
         throw new AuthenticationError();
       } else {
-        throw new Error(response.statusText);
+        throw new HttpRequestError(response.status, response.statusText, await response.text());
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -169,11 +169,4 @@ export function agent(): Agent {
     throw new Error("Agent not connected");
   }
   return Agent.agent;
-}
-
-export class AuthenticationError extends Error {
-  constructor(message?: string) {
-    super(message);
-    this.name = "AuthenticationError";
-  }
 }

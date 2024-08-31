@@ -1,26 +1,13 @@
 import { ObjectFactory } from "@/utils/types";
 import { deserialize } from "@/utils/serializable";
-import { ResourceRef } from "@/resources/resource-ref";
 
 export class Resource<T extends object> {
   private readonly contentType: string;
   private readonly value?: T | string;
-  private _ref?: ResourceRef;
 
   constructor(contentType: string, value?: T | string) {
     this.contentType = contentType;
     this.value = value;
-  }
-
-  set ref(ref: ResourceRef) {
-    this._ref = ref;
-  }
-
-  get ref(): ResourceRef {
-    if (!this._ref) {
-      throw new Error("No ref available");
-    }
-    return this._ref;
   }
 
   as(factory: ObjectFactory<T>): T {

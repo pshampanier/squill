@@ -1,9 +1,9 @@
 use crate::models::errors::ResponseError;
-use axum::http::header::InvalidHeaderValue;
-use axum::response::{ IntoResponse, Response };
-use axum::http::StatusCode;
-use axum::body::Body;
 use anyhow::Error as AnyhowError;
+use axum::body::Body;
+use axum::http::header::InvalidHeaderValue;
+use axum::http::StatusCode;
+use axum::response::{IntoResponse, Response};
 use tracing::error;
 
 use crate::utils::user_error::UserError;
@@ -16,7 +16,6 @@ pub enum Error {
     Forbidden,
     BadRequest(String),
     InternalServerError,
-    UnprocessableEntity(String),
     UserError(UserError),
 }
 
@@ -26,8 +25,6 @@ impl IntoResponse for Error {
             Error::Forbidden => (StatusCode::FORBIDDEN, "Forbidden").into_response(),
             Error::BadRequest(reason) => (StatusCode::BAD_REQUEST, format!("Bad Request: {}", reason)).into_response(),
             Error::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
-            Error::UnprocessableEntity(reason) =>
-                (StatusCode::UNPROCESSABLE_ENTITY, format!("Unprocessable Entity: {}", reason)).into_response(),
             Error::UserError(user_error) => user_error.into_response(),
         }
     }
@@ -65,41 +62,41 @@ impl From<UserError> for Error {
 impl IntoResponse for UserError {
     fn into_response(self) -> Response<Body> {
         let (response_error, status) = match self {
-            UserError::InvalidParameter(message) =>
-                (
-                    ResponseError {
-                        status: StatusCode::BAD_REQUEST.as_u16(),
-                        code: "invalid_parameter".to_string(),
-                        message,
-                    },
-                    StatusCode::BAD_REQUEST,
-                ),
-            UserError::Conflict(message) =>
-                (
-                    ResponseError {
-                        status: StatusCode::CONFLICT.as_u16(),
-                        code: "conflict".to_string(),
-                        message,
-                    },
-                    StatusCode::CONFLICT,
-                ),
-            UserError::NotFound(message) =>
-                (
-                    ResponseError {
-                        status: StatusCode::NOT_FOUND.as_u16(),
-                        code: "not_found".to_string(),
-                        message,
-                    },
-                    StatusCode::NOT_FOUND,
-                ),
+            UserError::InvalidParameter(message) => (
+                ResponseError {
+                    status: StatusCode::BAD_REQUEST.as_u16(),
+                    code: "invalid_parameter".to_string(),
+                    message,
+                },
+                StatusCode::BAD_REQUEST,
+            ),
+            UserError::Conflict(message) => (
+                ResponseError { status: StatusCode::CONFLICT.as_u16(), code: "conflict".to_string(), message },
+                StatusCode::CONFLICT,
+            ),
+            UserError::NotFound(message) => (
+                ResponseError { status: StatusCode::NOT_FOUND.as_u16(), code: "not_found".to_string(), message },
+                StatusCode::NOT_FOUND,
+            ),
+            UserError::Forbidden(message) => (
+                ResponseError { status: StatusCode::FORBIDDEN.as_u16(), code: "forbidden".to_string(), message },
+                StatusCode::FORBIDDEN,
+            ),
+            UserError::InternalError(message) => (
+                ResponseError {
+                    status: StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+                    code: "internal_error".to_string(),
+                    message,
+                },
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
         };
         match serde_json::to_string(&response_error) {
-            Ok(body) =>
-                Response::builder()
-                    .status(status)
-                    .header("Content-Type", "application/json")
-                    .body(Body::from(body))
-                    .unwrap(),
+            Ok(body) => Response::builder()
+                .status(status)
+                .header("Content-Type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
             Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
         }
     }

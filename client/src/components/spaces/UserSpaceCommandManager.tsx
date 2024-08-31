@@ -2,9 +2,11 @@ import { registerAction, unregisterAction } from "@/utils/commands";
 import { useEffect, useState } from "react";
 import NewConnectionDialog from "@/components/dialogs/NewConnectionDialog";
 import { Connection } from "@/models/connections";
+import { useUserStore } from "@/stores/UserStore";
 
 export default function UserSpaceCommandManager() {
   const [Dialog, setDialog] = useState<React.ReactNode>(null);
+  const getDefaultResourceFolder = useUserStore((state) => state.getDefaultResourceFolder);
 
   const handleCancel = () => {
     setDialog(null);
@@ -18,7 +20,9 @@ export default function UserSpaceCommandManager() {
           setDialog(null);
         };
 
-        setDialog(<NewConnectionDialog onCancel={handleCancel} onClose={handleClose} />);
+        // FIXME: This should be the current active item in the sidebar if compatible with the resource type.
+        const parentId = getDefaultResourceFolder("connections")?.id;
+        setDialog(<NewConnectionDialog parentId={parentId} onCancel={handleCancel} onClose={handleClose} />);
         break;
       }
     }

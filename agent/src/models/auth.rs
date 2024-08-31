@@ -1,5 +1,6 @@
 use crate::json_enum;
-use serde::{ Serialize, Deserialize };
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 json_enum!(AuthenticationMethod, UserPassword);
 json_enum!(TokenType, Bearer);
@@ -38,7 +39,7 @@ pub struct SecurityToken {
     pub expires_in: u32,
 
     /// The user id associated with the token.
-    pub user_id: String,
+    pub user_id: Uuid,
 }
 
 /// The request body of the POST /auth/refresh-token endpoint.

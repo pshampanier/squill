@@ -1,27 +1,21 @@
-use serde::{ Deserialize, Serialize };
-use crate::models::connections::Connection;
 use crate::models::variables::Variable;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Environment {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    #[serde(rename = "ref")]
-    pub reference: String,
-    pub connections: Vec<Connection>,
-    pub variables: Vec<Variable>,
-}
+    pub id: Uuid,
 
-impl Default for Environment {
-    fn default() -> Self {
-        Self {
-            id: uuid::Uuid::new_v4().to_string(),
-            name: String::new(),
-            description: String::new(),
-            reference: String::new(),
-            connections: Vec::new(),
-            variables: Vec::new(),
-        }
-    }
+    pub parent_id: Uuid,
+
+    pub owner_user_id: Uuid,
+
+    pub name: String,
+
+    #[serde(skip_serializing_if = "String::is_empty")]
+    pub description: String,
+
+    #[serde(rename = "ref")]
+    pub connections: Vec<Uuid>,
+    pub variables: Vec<Variable>,
 }

@@ -2,7 +2,6 @@ import "@/components/editors/index.tsx";
 import { useEffect, useRef, useState } from "react";
 import { registerAction, unregisterAction } from "@/utils/commands";
 import UserSpace from "@/components/spaces/UserSpace";
-import WorkspaceSpace from "@/components/spaces/WorkspaceSpace";
 import SettingsSpace from "@/components/spaces/settings/SettingsSpace";
 import ApplySystemPreferences from "@/components/ApplySystemPreferences";
 import ConnectionSpace from "@/components/spaces/ConnectionSpace";
@@ -39,7 +38,6 @@ export function App() {
       {settingsOpen && <SettingsSpace />}
       {activeSpace === "connection" && <ConnectionSpace />}
       {activeSpace === "user" && <UserSpace className={settingsOpen && "hidden"} />}
-      {activeSpace === "workspace" && <WorkspaceSpace className={settingsOpen && "hidden"} />}
     </>
   );
 }

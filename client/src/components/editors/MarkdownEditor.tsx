@@ -1,35 +1,27 @@
 import { editor as monacoEditor } from "monaco-editor";
 import { cx } from "classix";
-
 import { editors } from "@/resources/editors";
-import { useWorkspaceStore } from "@/stores/WorkspaceStore";
-
 import React, { useState, useRef } from "react";
-
 import MonacoEditor from "react-monaco-editor";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-
 import PageLoader from "@/components/PageLoader";
-
 import MarkdownIcon from "@/icons/markdown-file.svg?react";
 import EditCommandIcon from "@/icons/edit.svg?react";
 import PreviewCommandIcon from "@/icons/preview.svg?react";
 import Button from "@/components/core/Button";
-import { useAppStore } from "@/stores/AppStore";
 import { useUserStore } from "@/stores/UserStore";
 import { getMonacoOptions } from "@/utils/monaco-workers";
+import { useAppStore } from "@/stores/AppStore";
 
-const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId }) => {
+const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId: _pageId }) => {
   const [mode, setMode] = useState<"loading" | "preview" | "editor">("loading");
   const [content, setContent] = useState<string>("");
-  const setModified = useWorkspaceStore((state) => state.setModified);
-  const page = useWorkspaceStore((state) => state.pages.find((page) => page.id === pageId));
-  const colorScheme = useAppStore((state) => state.colorScheme);
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
   const initialContent = useRef<string>();
   const modified = useRef<boolean>(false);
   const monacoOptions = useUserStore((state) => getMonacoOptions(state.settings.editorSettings));
+  const colorScheme = useAppStore((state) => state.colorScheme);
 
   // Options for the Monaco editor
   const options = {
@@ -52,10 +44,10 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId })
   // In order to limit re-renders, we only update the modified state when the modified state changes
   const handleOnChange = (value: string) => {
     if (value !== initialContent.current && !modified.current) {
-      setModified(page.id, true);
+      // setModified(page.id, true);
       modified.current = true;
     } else if (value === initialContent.current && modified.current) {
-      setModified(page.id, false);
+      // setModified(page.id, false);
       modified.current = false;
     }
   };
@@ -83,7 +75,7 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId })
           className={cx(
             "w-full h-full relative p-2",
             "overflow-y-scroll markdown-body bg-transparent",
-            mode === "preview" ? "block" : "hidden"
+            mode === "preview" ? "block" : "hidden",
           )}
         >
           <Button

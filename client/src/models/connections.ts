@@ -11,6 +11,12 @@ export class Connection {
   @serializable("string", { required: true, format: "uuid" })
   id!: string;
 
+  @serializable("string", { required: true, format: "uuid", snakeCase: "property" })
+  parentId!: string;
+
+  @serializable("string", { required: true, format: "uuid", snakeCase: "property" })
+  ownerUserId!: string;
+
   @serializable("string", { format: "identifier" })
   driver!: string;
 
@@ -62,7 +68,7 @@ export class Connection {
   @serializable("array", { items: { type: "object", options: { factory: Datasources } } })
   datasources?: Datasources[];
 
-  @serializable("object")
+  @serializable("record", { items: { type: "string" } })
   options?: Record<string, string>;
 
   constructor(object: Partial<Connection>) {

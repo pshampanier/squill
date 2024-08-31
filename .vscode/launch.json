@@ -11,7 +11,7 @@
       "cargo": {
         "args": ["build", "--package=agent"]
       },
-      "args": ["start", "--dev"],
+      "args": ["--verbose", "start", "--dev"],
       "cwd": "${workspaceFolder}"
     },
     {

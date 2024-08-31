@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use serde::{ Deserialize, Serialize };
 
 pub const DRIVER_PORT: &str = "PORT";
 pub const DRIVER_USER: &str = "USER";
@@ -58,31 +58,4 @@ pub struct Driver {
 
     /// The default connection settings of the driver
     pub defaults: HashMap<String, String>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_driver() {
-        let driver: Driver = Driver {
-            name: "postgresql".to_string(),
-            label: "PostgreSQL".to_string(),
-            icon: "postgresql.svg".to_string(),
-            description: "PostgreSQL is...".to_string(),
-            capabilities: vec![
-                Capability::Sql,
-                Capability::AuthUserPassword,
-                Capability::ConnectString,
-                Capability::ConnectHost,
-                Capability::ConnectSocket
-            ],
-            defaults: HashMap::from([
-                (DRIVER_PORT.to_string(), "5432".to_string()),
-                (DRIVER_USER.to_string(), "postgres".to_string()),
-            ]),
-        };
-        println!("{}", serde_json::to_string_pretty(&driver).unwrap());
-    }
 }

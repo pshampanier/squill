@@ -7,9 +7,25 @@ export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number
 export class QueryExecution {
   [immerable] = true;
 
+  /**
+   * The ID of the query execution.
+   *
+   * This ID can be used to fetch the query results from the server.
+   */
   @serializable("string", { required: true, format: "uuid" })
   id!: string;
 
+  /**
+   * The ID of the batch that this query execution belongs to.
+   *
+   * If the query was not part of a batch, this value is `undefined`.
+   */
+  @serializable("string", { format: "uuid" })
+  batchId!: string;
+
+  /**
+   * The query statement.
+   */
   @serializable("string", { required: true })
   query!: string;
 

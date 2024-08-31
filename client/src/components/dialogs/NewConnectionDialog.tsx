@@ -25,14 +25,16 @@ import { useTaskEffect } from "@/hooks/use-task-effect";
 import Connections from "@/resources/connections";
 import Spinner from "@/components/core/Spinner";
 import ErrorMessage from "@/components/core/ErrorMessage";
-import { CatalogRoot, useUserStore } from "@/stores/UserStore";
+import { useUserStore } from "@/stores/UserStore";
 
 type NewConnectionDialogProps = {
+  /// The identifier of the parent resource (could be a generic folder, a connection or an environment).
+  parentId: string;
   onClose?: (connection: Connection) => void;
   onCancel?: () => void;
 };
 
-export default function NewConnectionDialog({ onClose, onCancel }: NewConnectionDialogProps) {
+export default function NewConnectionDialog({ parentId, onClose, onCancel }: NewConnectionDialogProps) {
   const [connection, setConnection] = useState<Connection>(null);
 
   const formsRef = {
@@ -45,24 +47,21 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
   const { taskStatus, setTaskStatus, message, setMessage, setTask } = useTaskEffect(
     "running",
     async () => {
-      const connection = await Connections.defaults();
+      const defaults = await Connections.defaults();
+      const connection = new Connection({ ...defaults, parentId });
       setConnection(connection);
     },
     "Creating a new connection...",
   );
 
   // The creation of the connection is performed by the UserStore which will reflect the changes in the UI.
-  const createCatalogEntry = useUserStore((state) => state.createCatalogEntry);
+  const createResource = useUserStore((state) => state.createResource);
 
   const handleClose = () => {
     setMessage("Testing the connection...");
     const task = async () => {
-      // FIXME: The parent path & id should be taken from the store. As for now we are always creating a connection
-      // at the root of the connections catalog.
-      const parentPath: CatalogRoot = "connections";
-      const parentId: string = undefined;
       await Connections.test(connection);
-      await createCatalogEntry(parentPath, parentId, connection);
+      await createResource("connection", connection);
       onClose(connection);
     };
     setTask(task);
@@ -74,10 +73,8 @@ export default function NewConnectionDialog({ onClose, onCancel }: NewConnection
     const driver = Agent.agent.drivers.find((d) => d.name === driverName);
     setConnection(
       new Connection({
+        ...connection,
         driver: driver.name,
-        id: connection.id,
-        name: connection.name,
-        alias: connection.alias,
         mode: driver.defaults[DRIVER_CONNECTION_MODE] as ConnectionMode, // FIXME: This MUST be a ConnectionMode
         username: driver.defaults[DRIVER_USER],
         host: driver.defaults[DRIVER_HOST],

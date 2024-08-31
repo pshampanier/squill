@@ -1,6 +1,6 @@
 use crate::json_enum;
 use crate::models::variables::Variable;
-use serde::{ Serialize, Deserialize };
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 json_enum!(ColorScheme, Dark, Light, Auto);
@@ -42,10 +42,7 @@ pub struct EditorSettings {
 
 impl Default for EditorSettings {
     fn default() -> Self {
-        Self {
-            minimap: Minimap::Hide,
-            render_whitespace: RenderWhitespace::None,
-        }
+        Self { minimap: Minimap::Hide, render_whitespace: RenderWhitespace::None }
     }
 }
 
@@ -61,18 +58,14 @@ pub struct TableSettings {
 
 impl Default for TableSettings {
     fn default() -> Self {
-        Self {
-            show_row_numbers: true,
-            density: Density::Comfortable,
-            dividers: Dividers::Rows,
-        }
+        Self { show_row_numbers: true, density: Density::Comfortable, dividers: Dividers::Rows }
     }
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct User {
     pub username: String,
-    pub user_id: String,
+    pub user_id: Uuid,
     pub settings: UserSettings,
     pub variables: Vec<Variable>,
 }
@@ -81,7 +74,7 @@ impl Default for User {
     fn default() -> Self {
         Self {
             username: String::new(),
-            user_id: Uuid::new_v4().to_string(),
+            user_id: Uuid::new_v4(),
             variables: Vec::new(),
             settings: UserSettings::default(),
         }

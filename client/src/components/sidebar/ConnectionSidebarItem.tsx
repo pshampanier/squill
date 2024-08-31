@@ -5,7 +5,6 @@ import ConnectIcon from "@/icons/plug.svg?react";
 import { EDITOR_CONNECTION } from "@/utils/constants";
 
 type ConnectionSidebarItemProps = {
-  parentPath: string;
   id: string;
 } & SidebarItemProps;
 

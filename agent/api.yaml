@@ -1,8 +1,8 @@
 openapi: "3.0.0"
 info:
-  version: "1.0.0"
-  title: "Sample API"
-  description: Buy or rent spacecrafts
+  version: "0.1.0"
+  title: "Squill Agent REST API"
+  description: The REST API used by the Squill Client to interact with the Agent.
 
 paths:
   /agent:
@@ -86,7 +86,7 @@ paths:
 
   /connections/defaults:
     get:
-      summary: Get a connection with the defaults values.
+      summary: Get a connection defaults values.
       security:
         - ApiKeyAuth: []
       responses:
@@ -99,6 +99,31 @@ paths:
 
         "401":
           description: Unauthorized
+
+  /connections/{id}:
+    get:
+      summary: Get a connection from its identifier.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+
+        "401":
+          description: Unauthorized
+
+        "404":
+          description: Connection not found
 
   /connections/test:
     post:
@@ -117,9 +142,9 @@ paths:
         "401":
           description: Unauthorized
 
-  /users/{username}/catalog:
+  /users/{username}/catalog/{catalog_id}/list:
     get:
-      summary: List all catalog entries for the specified `username` and `path`.
+      summary: List all catalog entries for the specified `username` and `catalog_id`.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -128,8 +153,8 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Username"
-        - name: path
-          in: query
+        - name: catalog_id
+          in: path
           required: true
           schema:
             type: string
@@ -139,14 +164,17 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResourceRef"
         "404":
-          description: Path not found
+          description: Catalog ID not found
         "401":
           description: Unauthorized
 
-    post:
-      summary: Add an item to the user's catalog.
+  /users/{username}/catalog/list:
+    get:
+      summary: List all root catalog entries for the specified `username`.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -155,29 +183,51 @@ paths:
           required: true
           schema:
             $ref: "#/components/schemas/Username"
-        - name: path
-          description: |
-            The parent path to the item to add. This is not the full path and should not include the item
-            name which itself will be provided in the request body.
-          in: query
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ResourceRef"
+        "401":
+          description: Unauthorized
+
+  /users/{username}/catalog:
+    post:
+      summary: Create a new resource in the catalog.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: x-resource-type
+          in: header
           required: true
           schema:
-            type: string
+            enum:
+              - connection
+              - environment
+              - folder
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              "oneOf": [{ $ref: "#/components/schemas/Connection" }]
+              oneOf:
+                - $ref: "#/components/schemas/User"
+                - $ref: "#/components/schemas/Connection"
       responses:
         "201":
-          description: Successful operation
-        "404":
-          description: Path not found
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceRef"
         "401":
           description: Unauthorized
 
-  /users/{username}/catalog/rename:
+  /users/{username}/catalog/{catalog_id}/rename:
     post:
       summary: Rename a catalog entry for the specified `username` and `path`.
       security:
@@ -187,9 +237,9 @@ paths:
           in: path
           required: true
           schema:
-            $ref: "#/components/schemas/Rename"
-        - name: path
-          in: query
+            $ref: "#/components/schemas/Username"
+        - name: catalog_id
+          in: path
           required: true
           schema:
             type: string
@@ -199,11 +249,23 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/ResourceRef"
+        "400":
+          description: Invalid Request
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
         "404":
-          description: Path not found
-        "401":
-          description: Unauthorized
+          description: Catalog entry not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Unprocessable Entity
 
   /users/{username}/settings:
     post:
@@ -215,7 +277,7 @@ paths:
           in: path
           required: true
           schema:
-            $ref: "#/components/schemas/Rename"
+            $ref: "#/components/schemas/Username"
       responses:
         "200":
           description: Successful operation
@@ -242,7 +304,7 @@ paths:
           content:
             application/json:
               schema:
-                type: string
+                $ref: "#/components/schemas/User"
         "404":
           description: User not found
         "401":
@@ -282,6 +344,15 @@ components:
             - username
             - password
 
+    User:
+      description: A user that can logon to the system.
+      type: object
+      required:
+        - username
+      properties:
+        username:
+          type: string
+
     Connection:
       description: A connection to a datasource.
       type: object
@@ -294,8 +365,16 @@ components:
     Error:
       type: object
       required:
+        - status
+        - code
         - message
       properties:
+        status:
+          description: The HTTP status code
+          type: number
+        code:
+          description: A machine readable error code such as `invalid_parameter`.
+          type: string
         message:
           description: A human readable error message
           type: string
@@ -318,6 +397,37 @@ components:
           type: string
       required:
         - new_name
+
+    ResourceRef:
+      description: A reference to a resource.
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parent_id:
+          type: string
+          format: uuid
+        owner_user_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        resource_type:
+          type: string
+          enum:
+            - connection
+            - environment
+            - folder
+            - user
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+      required:
+        - id
+        - owner_user_id
+        - name
 
     SecurityToken:
       description: A security token used for authentication.

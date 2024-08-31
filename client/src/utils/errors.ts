@@ -12,3 +12,22 @@ export class UserError extends Error {
     }
   }
 }
+
+export class AuthenticationError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
+export class HttpRequestError extends Error {
+  status: number;
+  body?: string;
+
+  constructor(status: number, message: string, body?: string) {
+    super(message);
+    this.name = "HttpRequestError";
+    this.status = status;
+    this.body = body;
+  }
+}

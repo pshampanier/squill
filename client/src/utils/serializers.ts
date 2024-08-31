@@ -170,7 +170,7 @@ export function deserializeString(value: unknown, options?: DeserializeStringOpt
           case "uuid": {
             !options.trim && (s = s.trim());
             s = s.trim();
-            regExp = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+            regExp = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
             break;
           }
           default: {
@@ -216,7 +216,7 @@ export type DeserializeObjectOptions = {
 type deserializeObjectCallbackfn = (
   property: [key: string, value: unknown],
   index: number,
-  array: [key: string, value: unknown][]
+  array: [key: string, value: unknown][],
 ) => unknown;
 
 /**
@@ -238,7 +238,7 @@ type deserializeObjectCallbackfn = (
 export function deserializeObject(
   value: unknown,
   callbackfn: deserializeObjectCallbackfn,
-  options?: DeserializeObjectOptions
+  options?: DeserializeObjectOptions,
 ): void {
   safeDeserialization<object>(() => {
     let o: object | undefined;
@@ -311,7 +311,7 @@ type DeserializeArrayOptions = {
 export function deserializeArray<T>(
   value: unknown,
   callbackfn: (item: unknown, index: number, array: unknown) => T,
-  options?: DeserializeArrayOptions
+  options?: DeserializeArrayOptions,
 ): T[] {
   return safeDeserialization<Array<T>>(() => {
     if (!Array.isArray(value)) {
@@ -334,4 +334,18 @@ export function deserializeArray<T>(
     }, options?.thisArg);
     return r;
   }, options?.name);
+}
+
+// TODO: Add support of SafeDeserialization to allow to display the faulty property in the error message.
+export function deserializeRecord(value: unknown, callbackfn: deserializeObjectCallbackfn): Record<string, unknown> {
+  return safeDeserialization<Record<string, unknown>>(() => {
+    const record: Record<string, unknown> = {};
+    const entries = Object.entries(value);
+    entries.forEach(([k, v], index, array) => {
+      // const r = callbackfn.call(options?.thisArg, [k, v], index, array);
+      const r = callbackfn.call(null, [k, v], index, array);
+      record[r[0]] = r[1];
+    });
+    return record;
+  });
 }

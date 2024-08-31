@@ -31,6 +31,7 @@ import TableViewPreview from "./dataset/table-view.preview";
 import TimelinePreview from "./core/Timeline.preview";
 import QueryTerminalPreview from "./query/QueryTerminal.preview";
 import QueryPromptPreview from "./query/QueryPrompt.preview";
+import LoadingContainerPreview from "./core/LoadingContainer.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -53,6 +54,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
+          <PreviewSidebarItem view="LoadingContainer" />
           <PreviewSidebarItem view="Menu" />
           <PreviewSidebarItem view="Radio" />
           <PreviewSidebarItem view="Sidebar" />
@@ -88,6 +90,7 @@ export function PreviewsApp() {
           {view === "Input" && <InputsPreview />}
           {view === "Colors" && <ColorsPreview />}
           {view === "Kbd" && <KbdPreview />}
+          {view === "LoadingContainer" && <LoadingContainerPreview />}
           {view === "Menu" && <MenuPreview />}
           {view === "Modal" && <ModalPreview />}
           {view === "Radio" && <RadioPreview />}

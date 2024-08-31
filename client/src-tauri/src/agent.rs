@@ -1,14 +1,14 @@
-use std::sync::Mutex;
-use lazy_static::lazy_static;
-use anyhow::Result;
-use notify::{ Config, Event, RecommendedWatcher, RecursiveMode, Watcher };
-use futures::channel::mpsc::channel;
-use tauri::Window;
-use tracing::{ error, info, warn };
-use common::get_app_dir;
-use common::pid_file::{ get_agent_status, get_pid_file_path, load_pid_file, AgentStatus, PidFile };
-use futures::{ StreamExt, SinkExt };
 use crate::models::agent::AgentEndpoint;
+use anyhow::Result;
+use common::get_app_dir;
+use common::pid_file::{get_agent_status, get_pid_file_path, load_pid_file, AgentStatus, PidFile};
+use futures::channel::mpsc::channel;
+use futures::{SinkExt, StreamExt};
+use lazy_static::lazy_static;
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use std::sync::Mutex;
+use tauri::Window;
+use tracing::{error, info, warn};
 
 /*
  * The latest content of the agent.pid file.
@@ -31,9 +31,7 @@ pub struct AgentWatcher {
 
 impl AgentWatcher {
     pub fn new() -> Self {
-        Self {
-            fs_watcher: None,
-        }
+        Self { fs_watcher: None }
     }
 
     /**
@@ -58,11 +56,14 @@ impl AgentWatcher {
         // File system watcher: monitoring the agent.pid file.
         //
         let (mut tx, mut rx) = channel::<Result<Event, notify::Error>>(1);
-        let mut watcher = RecommendedWatcher::new(move |res| {
-            futures::executor::block_on(async {
-                tx.send(res).await.unwrap();
-            })
-        }, Config::default())?;
+        let mut watcher = RecommendedWatcher::new(
+            move |res| {
+                futures::executor::block_on(async {
+                    tx.send(res).await.unwrap();
+                })
+            },
+            Config::default(),
+        )?;
 
         // We are watching the app directory for changes.
         // We cannot only watch the file agent.pid because the call watch would fail if the file does not exists yet.
@@ -88,7 +89,7 @@ impl AgentWatcher {
                             }
                         }
                     }
-                    Err(e) => println!("watch error: {:?}", e),
+                    Err(e) => error!("watch error: {:?}", e),
                 }
             }
         });

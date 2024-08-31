@@ -9,15 +9,11 @@ import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import PagesTabs from "@/components/titlebar/PagesTabs";
 import Editor from "@/components/Editor";
-import ServerIcon from "@/icons/server.svg?react";
-import StarIcon from "@/icons/star.svg?react";
-import WorkspacesIcon from "@/icons/workspaces.svg?react";
 import UserSpaceCommandManager from "@/components/spaces/UserSpaceCommandManager";
 
 export default function UserSpace(props: SpaceProps) {
   console.debug("Rendering UserSpace");
-  const showFavorites = useUserStore((state) => state.settings?.showFavorites);
-  const showRecentlyOpened = useUserStore((state) => state.settings?.showRecentlyOpened);
+  const catalogSections = useUserStore((state) => state.catalogSections);
   return (
     <>
       <UserSpaceCommandManager />
@@ -35,14 +31,10 @@ export default function UserSpace(props: SpaceProps) {
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
           <SpaceSidebar>
             <SidebarSection label="User's Catalog">
-              <UserCatalogSection label="CONNECTIONS" path="connections" icon={ServerIcon}></UserCatalogSection>
-              <UserCatalogSection label="ENVIRONMENTS" path="environments" icon={ServerIcon}></UserCatalogSection>
-              <UserCatalogSection label="WORKSPACES" path="workspaces" icon={WorkspacesIcon}></UserCatalogSection>
-              {showFavorites && (
-                <UserCatalogSection label="FAVORITES" path="favorites" icon={StarIcon}></UserCatalogSection>
-              )}
+              {catalogSections.map((id) => (
+                <UserCatalogSection key={id} catalogId={id} />
+              ))}
             </SidebarSection>
-            {showRecentlyOpened && <SidebarSection label="Recently Opened" />}
           </SpaceSidebar>
           <Main>
             <Editor />

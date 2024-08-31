@@ -1,30 +1,40 @@
-import { CatalogRoot, useUserStore } from "@/stores/UserStore";
+import { useUserStore } from "@/stores/UserStore";
 import SidebarItem from "@/components/sidebar/SidebarItem";
 import UserCatalogItem from "@/components/sidebar/users/UserCatalogItem";
 import { SVGIcon } from "@/utils/types";
+import ServerIcon from "@/icons/server.svg?react";
+import StarIcon from "@/icons/star.svg?react";
+import { METADATA_CONTENT_TYPE } from "@/utils/constants";
 
-type Props = {
-  label: string;
-  icon: SVGIcon;
-  path: CatalogRoot;
+const FOLDER_ICONS: Record<string, SVGIcon> = {
+  connections: ServerIcon,
+  favorites: StarIcon,
+  environments: ServerIcon,
 };
 
-export default function UserCatalogRoot({ label, icon, path }: Props) {
-  const catalogSection = useUserStore((state) => state[path]);
+type Props = {
+  catalogId: string;
+};
+
+export default function UserCatalogRoot({ catalogId }: Props) {
+  const resourceRef = useUserStore((state) => state.catalog.get(catalogId));
   const loadCatalog = useUserStore((state) => state.loadCatalog);
 
+  const label = resourceRef.name;
+  const icon: SVGIcon = FOLDER_ICONS[resourceRef.metadata?.[METADATA_CONTENT_TYPE]];
+
   const handleClick = () => {
-    return catalogSection.length > 0;
+    return resourceRef?.children?.length > 0;
   };
 
   const handleLoad = async () => {
-    return loadCatalog(path);
+    return loadCatalog(catalogId);
   };
 
   return (
     <SidebarItem label={label} icon={icon} collapsible loaderfn={handleLoad} onClick={handleClick}>
-      {catalogSection?.map((entryId) => {
-        return <UserCatalogItem key={entryId} id={entryId} parentPath={path} />;
+      {resourceRef.children?.map((child) => {
+        return <UserCatalogItem key={child.id} id={child.id} />;
       })}
     </SidebarItem>
   );

@@ -1,6 +1,6 @@
-use serde::{ Deserialize, Serialize };
+use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum VariableValue {
     Text(String),
@@ -12,7 +12,7 @@ pub enum VariableValue {
     Secret(String),
 }
 
-#[derive(Serialize, Deserialize, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub struct Variable {
     /// The name of the variable
     pub name: String,

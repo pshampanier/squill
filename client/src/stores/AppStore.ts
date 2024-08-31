@@ -101,6 +101,11 @@ type Actions = {
    * When closing the last remaining page, a new default page is created.
    */
   closePage: (pageId: string) => void;
+
+  /**
+   * Change the title all pages opened for the item with the given id.
+   */
+  renamePages: (pageId: string, title: string) => void;
 };
 
 /**
@@ -235,6 +240,16 @@ export const useAppStore = create<State & Actions>((set, get) => {
       this.addPage({
         editor: getDefaultEditor(get().activeSpace),
       });
+    },
+
+    /**
+     * Change the title all pages opened for the item with the given id.
+     */
+    renamePages(itemId: string, title: string) {
+      set((state) => ({
+        ...state,
+        pages: state.pages.map((page) => (page.itemId === itemId ? { ...page, title } : page)),
+      }));
     },
 
     /**

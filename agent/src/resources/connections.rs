@@ -1,24 +1,52 @@
-use std::collections::BTreeMap;
-use anyhow::Result;
-use squill_drivers::sqlite::{ IN_MEMORY_SPECIAL_FILENAME, IN_MEMORY_URI };
-use crate::err_param;
-use crate::models::connections::{ Connection, ConnectionMode };
+use crate::models::connections::{Connection, ConnectionMode};
+use crate::models::ResourceType;
 use crate::resources::Resource;
+use crate::{err_internal, err_param};
+use anyhow::Result;
+use squill_drivers::sqlite::{IN_MEMORY_SPECIAL_FILENAME, IN_MEMORY_URI};
+use std::collections::BTreeMap;
+use uuid::Uuid;
 
 impl Resource for Connection {
-    fn id(&self) -> &str {
-        self.id.as_str()
+    fn id(&self) -> &Uuid {
+        &self.id
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn parent_id(&self) -> Option<Uuid> {
+        Some(self.parent_id)
+    }
+    fn owner_user_id(&self) -> &Uuid {
+        &self.owner_user_id
+    }
+    fn resource_type(&self) -> ResourceType {
+        ResourceType::Connection
+    }
+    fn metadata(&self) -> Option<std::collections::HashMap<String, String>> {
+        None
     }
 
-    fn name(&self) -> &str {
-        self.name.as_str()
+    fn from_storage(parent_id: Option<Uuid>, name: String, resource: serde_json::Value) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let connection: Connection = serde_json::from_value(resource)?;
+        if Some(connection.parent_id) == parent_id && connection.name == name {
+            Ok(connection)
+        } else {
+            match parent_id {
+                Some(parent_id) => Ok(Connection { parent_id, name, ..connection }),
+                None => Err(err_internal!("Unable to load the connection from the storage")),
+            }
+        }
     }
 }
-
 impl Connection {
-    pub fn new(name: String) -> Connection {
+    pub fn new(owner_user_id: Uuid, name: String) -> Connection {
         Connection {
-            id: uuid::Uuid::new_v4().to_string(),
+            id: uuid::Uuid::new_v4(),
+            owner_user_id,
             alias: "conn".to_string(),
             name,
             save_password: false,
@@ -78,9 +106,8 @@ impl Connection {
                 return Err(anyhow::anyhow!("File mode is not supported by PostgreSQL"));
             }
             ConnectionMode::ConnectionString => {
-                if
-                    self.connection_string.starts_with("postgresql://") ||
-                    self.connection_string.starts_with("postgres://")
+                if self.connection_string.starts_with("postgresql://")
+                    || self.connection_string.starts_with("postgres://")
                 {
                     // This is a connection URI, all key/values collected so far can be added as query parameters
                     // See: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING-URIS
@@ -92,11 +119,10 @@ impl Connection {
                             uri.push('?');
                         }
                         uri.push_str(
-                            &map
-                                .into_iter()
+                            &map.into_iter()
                                 .map(|(key, value)| format!("{}={}", key, urlencoding::encode(&value)))
                                 .collect::<Vec<_>>()
-                                .join("&")
+                                .join("&"),
                         );
                     }
                     return Ok(uri);
@@ -106,11 +132,10 @@ impl Connection {
                     if !map.is_empty() {
                         connection_string.push(' ');
                         connection_string.push_str(
-                            &map
-                                .into_iter()
+                            &map.into_iter()
                                 .map(|(key, value)| format!("{}={}", key, escape(&value)))
                                 .collect::<Vec<_>>()
-                                .join(" ")
+                                .join(" "),
                         );
                     }
                     return Ok(connection_string);
@@ -119,11 +144,8 @@ impl Connection {
         }
 
         // Build the connection string
-        let connection_string: String = map
-            .into_iter()
-            .map(|(key, value)| format!("{}={}", key, escape(&value)))
-            .collect::<Vec<_>>()
-            .join(" ");
+        let connection_string: String =
+            map.into_iter().map(|(key, value)| format!("{}={}", key, escape(&value))).collect::<Vec<_>>().join(" ");
 
         Ok(connection_string)
     }
@@ -172,8 +194,8 @@ mod tests {
                 password: "pass".to_string(),
                 ..Default::default()
             })
-                .to_uri()
-                .unwrap(),
+            .to_uri()
+            .unwrap(),
             "host=localhost password=pass port=5432 user=postgres"
         );
 
@@ -187,8 +209,8 @@ mod tests {
                 password: "pass?".to_string(),
                 ..Default::default()
             })
-                .to_uri()
-                .unwrap(),
+            .to_uri()
+            .unwrap(),
             "postgresql://localhost:5432?password=pass%3F&user=postgres"
         );
 
@@ -200,8 +222,8 @@ mod tests {
                 username: "postgres".to_string(),
                 ..Default::default()
             })
-                .to_uri()
-                .unwrap(),
+            .to_uri()
+            .unwrap(),
             "postgresql://localhost?sslmode=require&user=postgres"
         );
 
@@ -215,8 +237,8 @@ mod tests {
                 password: "pa'ss".to_string(),
                 ..Default::default()
             })
-                .to_uri()
-                .unwrap(),
+            .to_uri()
+            .unwrap(),
             "host=localhost port=5432 dbname=db connect_timeout=10 password=pa\\'ss user=postgres"
         );
 
@@ -228,21 +250,19 @@ mod tests {
                 socket: "/var/run/postgres/.s.PGSQL.5432".to_string(),
                 ..Default::default()
             })
-                .to_uri()
-                .unwrap(),
+            .to_uri()
+            .unwrap(),
             "host=/var/run/postgres/.s.PGSQL.5432"
         );
 
         // File mode (not supported)
-        assert!(
-            (Connection {
-                driver: "postgresql".to_string(),
-                mode: ConnectionMode::File,
-                file: "/tmp/file".to_string(),
-                ..Default::default()
-            })
-                .to_uri()
-                .is_err()
-        );
+        assert!((Connection {
+            driver: "postgresql".to_string(),
+            mode: ConnectionMode::File,
+            file: "/tmp/file".to_string(),
+            ..Default::default()
+        })
+        .to_uri()
+        .is_err());
     }
 }

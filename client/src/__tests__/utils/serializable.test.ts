@@ -20,8 +20,8 @@ describe("snakeCase", () => {
         {
           user_id: "MartyMcFly",
         },
-        User
-      )
+        User,
+      ),
     ).toEqual({
       userId: "MartyMcFly",
     });
@@ -39,8 +39,8 @@ describe("deserialization", () => {
         {
           username: "marty",
         },
-        User
-      )
+        User,
+      ),
     ).toEqual({
       username: "marty",
     });
@@ -56,8 +56,8 @@ describe("deserialization", () => {
         {
           x: 10,
         },
-        Point
-      )
+        Point,
+      ),
     ).toEqual({
       x: 10,
     });
@@ -73,8 +73,8 @@ describe("deserialization", () => {
         {
           date: "2021-01-01T00:00:00Z",
         },
-        Appointment
-      )
+        Appointment,
+      ),
     ).toEqual({
       date: new Date("2021-01-01T00:00:00Z"),
     });
@@ -97,8 +97,8 @@ describe("deserialization", () => {
           username: "marty",
           password: ";?DeLorean42",
         },
-        SuperUser
-      )
+        SuperUser,
+      ),
     ).toEqual({
       username: "marty",
       password: ";?DeLorean42",
@@ -122,7 +122,7 @@ describe("deserialization", () => {
           property: "hello world",
         },
       },
-      ObjectB
+      ObjectB,
     );
 
     expect(object_b).toEqual({
@@ -155,7 +155,7 @@ describe("deserialization", () => {
           property: "hello world",
         },
       },
-      ObjectB
+      ObjectB,
     );
 
     expect(object_b).toEqual({
@@ -165,6 +165,64 @@ describe("deserialization", () => {
     });
     expect(object_b).toBeInstanceOf(ObjectB);
     expect(object_b.property).toBeInstanceOf(ObjectA);
+  });
+
+  test("record", () => {
+    class ObjectA {
+      @serializable("record", { items: { type: "string" } })
+      metadata: Record<string, string>;
+    }
+
+    class ObjectB {
+      @serializable("record", { items: { type: "integer", options: { max: 2 } } })
+      metadata: Record<string, number>;
+    }
+
+    expect(
+      deserialize<ObjectA>(
+        {
+          metadata: {
+            key1: "value1",
+            key2: "value2",
+          },
+        },
+        ObjectA,
+      ),
+    ).toEqual({
+      metadata: {
+        key1: "value1",
+        key2: "value2",
+      },
+    });
+
+    expect(
+      deserialize<ObjectB>(
+        {
+          metadata: {
+            key1: 1,
+            key2: 2,
+          },
+        },
+        ObjectB,
+      ),
+    ).toEqual({
+      metadata: {
+        key1: 1,
+        key2: 2,
+      },
+    });
+
+    expect(() => {
+      deserialize<ObjectB>(
+        {
+          metadata: {
+            key1: 1,
+            key2: 3,
+          },
+        },
+        ObjectB,
+      );
+    }).toThrow(/3 is invalid, should be at most 2/);
   });
 
   test("custom deserializer", () => {
@@ -225,8 +283,8 @@ describe("deserialization", () => {
           d: 5,
           e: 7,
         },
-        ObjectD
-      )
+        ObjectD,
+      ),
     ).toEqual({
       a: 1,
       b: 15,
@@ -274,8 +332,8 @@ describe("deserialization", () => {
             },
           ],
         },
-        ObjectF
-      )
+        ObjectF,
+      ),
     ).toEqual({
       strings: ["a", "b", "c"],
       integers: [1, 2, 3],
@@ -340,8 +398,8 @@ describe("serialization", () => {
           age: 17,
           timeTraveler: true,
           birthDate: new Date("1968-06-12T00:00:00.000Z"),
-        })
-      )
+        }),
+      ),
     ).toEqual({
       username: "marty",
       age: 17,
@@ -405,7 +463,7 @@ describe("serialization", () => {
     }
 
     expect(() => serialize<User>(Object.assign(new User(), { username: 42 }))).toThrow(
-      /failure for the property 'username'/
+      /failure for the property 'username'/,
     );
   });
 });

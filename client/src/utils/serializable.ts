@@ -7,6 +7,7 @@ import {
   deserializeDate,
   deserializeInteger,
   deserializeObject,
+  deserializeRecord,
   deserializeString,
   DeserializeStringFormatOption,
   safeDeserialization,
@@ -135,7 +136,16 @@ function callFactory<T extends object>(factory: ObjectFactory<T>, ...args: unkno
  * Decorators
  */
 
-type SerializableType = "string" | "boolean" | "integer" | "datetime" | "object" | "identifier" | "array" | "any";
+type SerializableType =
+  | "string"
+  | "boolean"
+  | "integer"
+  | "datetime"
+  | "object"
+  | "identifier"
+  | "array"
+  | "any"
+  | "record";
 
 /**
  * Options used by the @serializable decoration.
@@ -322,6 +332,21 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
         }
         /* c8 ignore end */
         return [fnTransformKey(key), deserialize<T>(value, objectFactory, safeKey(key))];
+      };
+    }
+    case "record": {
+      const items = options?.items;
+      /* c8 ignore start */
+      if (!items) {
+        raise(`The 'items' option is required for the decoration @serialize("record")`);
+      }
+      /* c8 ignore end */
+      return (value: unknown, key: string | number) => {
+        const itemDeserializer = makeDeserializer(items.type, items.options);
+        return [
+          fnTransformKey(key),
+          deserializeRecord(value, (item, index) => [item[0], itemDeserializer(item[1], index)[1]]),
+        ];
       };
     }
     case "array": {

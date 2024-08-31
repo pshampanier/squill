@@ -7,7 +7,7 @@ import * as data from "./query-terminal-preview-data.json";
 import { QueryExecution } from "@/models/query-execution";
 
 const dateRefDiff = new Date().getTime() - new Date(data.dateRef).getTime();
-const HISTORY = data.executions
+const _HISTORY = data.executions
   .map((execution: unknown) => new QueryExecution(execution as Partial<QueryExecution>))
   .map((execution) => {
     return { ...execution, executedAt: new Date(new Date(execution.executedAt).getTime() + dateRefDiff) };
@@ -48,7 +48,7 @@ export default function QueryTerminalPreview() {
             onValidate={handleValidate}
             colorScheme={colorScheme}
             prompt={<SessionQueryPrompt />}
-            history={HISTORY}
+            history={undefined}
           ></QueryTerminal>
         </PreviewBox>
       </Preview>

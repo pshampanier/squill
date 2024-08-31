@@ -1,18 +1,17 @@
+use crate::api::error::{Error, ServerResult};
+use crate::models::auth::{Authentication, AuthenticationMethod, RefreshToken, SecurityToken, TokenType};
+use crate::resources::users;
+use crate::server::state::ServerState;
+use crate::settings;
+use crate::utils::user_error::UserError;
+use crate::utils::validators::{parse_authorization_header, sanitize_username};
+use axum::extract::{Json, State};
+use axum::http::header::{HeaderMap, AUTHORIZATION};
+use axum::{routing::post, Router};
 use hex;
 use rand::Rng;
-use axum::{ Router, routing::post };
-use axum::extract::{ Json, State };
-use axum::http::header::{ HeaderMap, AUTHORIZATION };
-use tracing::error;
-use crate::resources::users;
-use crate::utils::user_error::UserError;
-use crate::utils::validators::{ parse_authorization_header, sanitize_username };
-use crate::settings;
-use crate::server::state::ServerState;
-use crate::models::auth::{ Authentication, AuthenticationMethod, RefreshToken, SecurityToken, TokenType };
-use crate::api::error::{ Error, ServerResult };
-
-const USERNAME_LOCAL: &str = "local";
+use tracing::{debug, error, info, warn};
+use uuid::Uuid;
 
 impl Default for SecurityToken {
     fn default() -> Self {
@@ -21,7 +20,7 @@ impl Default for SecurityToken {
             token_type: TokenType::Bearer,
             refresh_token: generate_token(),
             expires_in: settings::get_token_expiration().as_secs() as u32,
-            user_id: String::new(),
+            user_id: Uuid::new_v4(),
         }
     }
 }
@@ -38,7 +37,7 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
             let username = sanitize_username(auth.credentials.username.as_str())?;
 
             // As for now, only the local user is supported.
-            if username.ne(USERNAME_LOCAL) {
+            if username.ne(users::local_username()) {
                 return Err(Error::Forbidden);
             }
 
@@ -47,23 +46,23 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
                 return Err(Error::BadRequest("Password must be empty".to_string()));
             }
 
-            match users::get_user(&username) {
+            let conn = state.get_agentdb_connection().await?;
+            match users::get_by_username(&conn, &username).await {
                 Ok(user) => {
                     let token = state.add_user_session(&username, &user.user_id);
+                    info!("User `{}` logged in.", &username);
                     Ok(Json((*token).clone()))
                 }
-                Err(err) => {
-                    match err.downcast_ref::<UserError>() {
-                        Some(UserError::NotFound(_)) => {
-                            error!("{}", err);
-                            Err(Error::Forbidden)
-                        }
-                        _ => {
-                            error!("Logon error for user `{}`: {}", &username, err);
-                            Err(Error::InternalServerError)
-                        }
+                Err(err) => match err.downcast_ref::<UserError>() {
+                    Some(UserError::NotFound(_)) => {
+                        error!("{}", err);
+                        Err(Error::Forbidden)
                     }
-                }
+                    _ => {
+                        error!("Logon error for user `{}`: {}", &username, err);
+                        Err(Error::InternalServerError)
+                    }
+                },
             }
         }
     }
@@ -72,13 +71,13 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
 /// POST /auth/refresh-token
 async fn refresh_token(
     State(state): State<ServerState>,
-    token: Json<RefreshToken>
+    token: Json<RefreshToken>,
 ) -> ServerResult<Json<SecurityToken>> {
     let Some(refresh_token) = state.get_refresh_token(&token.refresh_token) else {
         // Refresh token not found.
         return Err(Error::Forbidden);
     };
-
+    debug!("Security token refreshed for user `{}`", refresh_token.get_username());
     let new_security_token = state.refresh_security_token(&refresh_token);
     Ok(Json((*new_security_token).clone()))
 }
@@ -95,15 +94,17 @@ async fn logout(State(state): State<ServerState>, headers: HeaderMap) -> ServerR
         return Err(Error::BadRequest("Missing Authorization header".to_string()));
     }
 
-    let Ok(security_token) = parse_authorization_header(
-        AuthenticationMethod::UserPassword,
-        authorization_header.unwrap()
-    ) else {
+    let Ok(security_token) =
+        parse_authorization_header(AuthenticationMethod::UserPassword, authorization_header.unwrap())
+    else {
         return Err(Error::BadRequest("Invalid Authorization header".to_string()));
     };
 
     if let Some(user_session) = state.get_user_session(&security_token) {
         state.revoke_security_token(&user_session.get_security_token());
+        info!("User `{}` logged out.", user_session.get_username());
+    } else {
+        warn!("logout: security token not found.");
     }
 
     Ok(())
@@ -129,11 +130,11 @@ fn generate_token() -> String {
 
 #[cfg(test)]
 mod test {
-    use axum::http::HeaderValue;
-    use crate::resources::users::create_user;
-    use crate::models::auth::{ AuthenticationMethod, Credentials };
-    use crate::utils::tests::settings;
     use super::*;
+    use crate::models::auth::{AuthenticationMethod, Credentials};
+    use crate::resources::users;
+    use crate::utils::tests;
+    use axum::http::HeaderValue;
 
     #[test]
     fn test_generate_token() {
@@ -143,18 +144,14 @@ mod test {
 
     #[tokio::test]
     async fn test_logon() {
-        // setup
-        let temp_dir = tempfile::tempdir().unwrap();
-        settings::set_base_dir(temp_dir.path().to_str().unwrap().to_string());
+        let _base_dir = tests::setup().await.unwrap();
+        let local_username = users::local_username();
 
         // 1) invalid user (the user directory does not exist)
         {
             let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
-                credentials: Credentials {
-                    username: "local".to_string(),
-                    password: "".to_string(),
-                },
+                credentials: Credentials { username: "invalid_user".to_string(), password: "".to_string() },
             });
             let state = axum::extract::State(ServerState::new());
             assert!(matches!(logon(state, body).await, Err(Error::Forbidden)));
@@ -162,13 +159,9 @@ mod test {
 
         // 2) valid user
         {
-            create_user(&"local".into()).unwrap();
             let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
-                credentials: Credentials {
-                    username: "local".to_string(),
-                    password: "".to_string(),
-                },
+                credentials: Credentials { username: local_username.to_string(), password: "".to_string() },
             });
             let state = axum::extract::State(ServerState::new());
             let result = logon(state, body).await;
@@ -181,10 +174,7 @@ mod test {
         {
             let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
-                credentials: Credentials {
-                    username: "marty_mcfly".to_string(),
-                    password: "".to_string(),
-                },
+                credentials: Credentials { username: "marty_mcfly".to_string(), password: "".to_string() },
             });
             let state = axum::extract::State(ServerState::new());
             assert!(matches!(logon(state, body).await, Err(Error::Forbidden)));
@@ -194,40 +184,32 @@ mod test {
         {
             let body = Json(Authentication {
                 method: AuthenticationMethod::UserPassword,
-                credentials: Credentials {
-                    username: "local".to_string(),
-                    password: "****".to_string(),
-                },
+                credentials: Credentials { username: local_username.to_string(), password: "****".to_string() },
             });
             let state = axum::extract::State(ServerState::new());
             assert!(matches!(logon(state, body).await, Err(Error::BadRequest(_))));
         }
-
-        // cleanup
-        std::fs::remove_dir_all(temp_dir).unwrap();
     }
 
     #[tokio::test]
     async fn test_refresh_token() {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
-        let security_token = state.add_user_session(&"local".into(), "local_id");
+        let security_token = state.add_user_session(&"local".into(), &Uuid::new_v4());
 
         // 1) invalid refresh token
-        assert!(
-            matches!(
-                refresh_token(state.clone(), Json(RefreshToken { refresh_token: "invalid".to_string() })).await,
-                Err(Error::Forbidden)
-            )
-        );
+        assert!(matches!(
+            refresh_token(state.clone(), Json(RefreshToken { refresh_token: "invalid".to_string() })).await,
+            Err(Error::Forbidden)
+        ));
 
         // 2) valid refresh token
-        assert!(
-            refresh_token(
-                state.clone(),
-                Json(RefreshToken { refresh_token: security_token.refresh_token.clone() })
-            ).await.is_ok()
-        );
+        assert!(refresh_token(
+            state.clone(),
+            Json(RefreshToken { refresh_token: security_token.refresh_token.clone() })
+        )
+        .await
+        .is_ok());
     }
 
     #[tokio::test]
@@ -235,7 +217,7 @@ mod test {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
         let mut headers = HeaderMap::new();
-        let security_token = state.add_user_session(&"local".into(), "local_id");
+        let security_token = state.add_user_session(&"local".into(), &Uuid::new_v4());
 
         // 1) missing Authorization header
         assert!(matches!(logout(state.clone(), headers.clone()).await, Err(Error::BadRequest(_))));

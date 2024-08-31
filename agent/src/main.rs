@@ -1,22 +1,25 @@
+mod agent_db;
 mod api;
 mod commandline;
 mod models;
 mod resources;
-mod settings;
 mod server;
+mod settings;
 mod utils;
 
-use std::path::PathBuf;
+pub use utils::user_error::UserError;
+
+use crate::server::web::Server;
+use anyhow::{Context, Result};
 use common::pid_file::AgentStatus;
+use std::path::PathBuf;
 use tracing::level_filters::LevelFilter;
+use tracing::{error, Subscriber};
 use tracing_appender::rolling;
-use tracing::{ error, Subscriber };
-use tracing_subscriber::{ self, filter::EnvFilter };
-use tracing_subscriber::{ prelude::*, Registry };
-use anyhow::{ Result, Context };
+use tracing_subscriber::{self, filter::EnvFilter};
+use tracing_subscriber::{prelude::*, Registry};
 use utils::constants::ENV_VAR_LOG_LEVEL;
 use utils::validators::sanitize_username;
-use crate::server::web::Server;
 
 /// Include the generated build information from the module built
 pub mod built_info {
@@ -37,7 +40,13 @@ async fn main() {
 
 fn get_tracing_filter(args: Option<&commandline::Args>) -> EnvFilter {
     let default_level: LevelFilter = match args {
-        Some(args) => if args.verbose { LevelFilter::DEBUG } else { LevelFilter::INFO }
+        Some(args) => {
+            if args.verbose {
+                LevelFilter::DEBUG
+            } else {
+                LevelFilter::INFO
+            }
+        }
         None => LevelFilter::INFO,
     };
     EnvFilter::builder().with_default_directive(default_level.into()).with_env_var(ENV_VAR_LOG_LEVEL).from_env_lossy()
@@ -48,8 +57,7 @@ fn get_tracing_filter(args: Option<&commandline::Args>) -> EnvFilter {
 /// All logs are written to the standard output and to log files if the logging collector is enabled.
 fn get_tracing_subscriber(args: Option<&commandline::Args>) -> Result<Box<dyn Subscriber + Send + Sync>> {
     // logs are always written to the standard output.
-    let stdout_log = tracing_subscriber::fmt
-        ::layer()
+    let stdout_log = tracing_subscriber::fmt::layer()
         .with_writer(std::io::stdout.with_max_level(settings::get_log_level()))
         .pretty()
         .compact()
@@ -63,18 +71,16 @@ fn get_tracing_subscriber(args: Option<&commandline::Args>) -> Result<Box<dyn Su
         // the logging collector is enabled, we must be initiate the creation of log files.
         let log_dir = PathBuf::from(settings::get_log_dir());
         if !log_dir.exists() {
-            std::fs
-                ::create_dir_all(log_dir.as_path())
-                .with_context(|| { format!("Unable to create the log directory: {}", log_dir.to_str().unwrap()) })?;
+            std::fs::create_dir_all(log_dir.as_path())
+                .with_context(|| format!("Unable to create the log directory: {}", log_dir.to_str().unwrap()))?;
         }
         let file_appender = rolling::daily(log_dir, "agent.log");
         Some(
-            tracing_subscriber::fmt
-                ::layer()
+            tracing_subscriber::fmt::layer()
                 .with_ansi(false)
                 .with_thread_ids(true)
                 .with_writer(file_appender.with_max_level(settings::get_log_level()))
-                .with_filter(get_tracing_filter(args))
+                .with_filter(get_tracing_filter(args)),
         )
     } else {
         None
@@ -88,9 +94,8 @@ async fn run(args: &commandline::Args) -> Result<()> {
     // we must be able to create files in the app directory (such as agent.pid, logs...).
     let app_dir = settings::get_app_dir();
     if !app_dir.exists() {
-        std::fs
-            ::create_dir_all(app_dir.as_path())
-            .with_context(|| { format!("Unable to create the application directory: {}", app_dir.to_str().unwrap()) })?;
+        std::fs::create_dir_all(app_dir.as_path())
+            .with_context(|| format!("Unable to create the application directory: {}", app_dir.to_str().unwrap()))?;
     }
     // now that the command line has been parsed, the app_directory exists we can initialize the tracing system.
     tracing::subscriber::set_global_default(get_tracing_subscriber(Some(args))?)?;
@@ -116,10 +121,12 @@ async fn run(args: &commandline::Args) -> Result<()> {
             }
         }
         commandline::Commands::UserAdd { username } => {
-            resources::users::create_user(&sanitize_username(username)?)?;
+            agent_db::init().await?;
+            resources::users::create(&agent_db::get_connection().await?, &sanitize_username(username)?).await?;
         }
         commandline::Commands::UserDel { username } => {
-            resources::users::delete_user(&sanitize_username(username)?)?;
+            agent_db::init().await?;
+            resources::users::delete(&agent_db::get_connection().await?, &sanitize_username(username)?).await?;
         }
         commandline::Commands::ShowConfig => {
             settings::show_config();
@@ -152,8 +159,7 @@ mod tests {
         tracing::subscriber::with_default(subscriber, || {
             tracing::info!("test");
         });
-        let log_files: Vec<_> = std::fs
-            ::read_dir(&log_dir)
+        let log_files: Vec<_> = std::fs::read_dir(&log_dir)
             .unwrap()
             .filter_map(|res| {
                 res.ok().and_then(|entry| {

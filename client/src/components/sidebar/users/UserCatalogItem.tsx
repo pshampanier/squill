@@ -1,26 +1,21 @@
-import { CatalogEntry } from "@/resources/users";
 import SidebarItem, { SidebarItemProps } from "@/components/sidebar/SidebarItem";
 import ConnectionSidebarItem from "@/components/sidebar/ConnectionSidebarItem";
 import FolderIcon from "@/icons/folder.svg?react";
-import WorkspaceIcon from "@/icons/workspace.svg?react";
 import ServerIcon from "@/icons/server.svg?react";
-import { useUserStore } from "@/stores/UserStore";
+import { CatalogItem, useUserStore } from "@/stores/UserStore";
 import { useAppStore } from "@/stores/AppStore";
 
 type Props = {
-  parentPath: string;
+  // Id of the catalog item to render.
   id: string;
 };
 
-export default function UserCatalogItem({ parentPath, id }: Props) {
+export default function UserCatalogItem({ id }: Props) {
   /// Get the catalog entry from the store.
   const entry = useUserStore((state) => state.catalog.get(id));
   const renameCatalogEntry = useUserStore((state) => state.renameCatalogEntry);
   const loadCatalog = useUserStore((state) => state.loadCatalog);
   const selected = useAppStore((state) => state.activeId === id);
-
-  // The path of the catalog entry.
-  const path = `${parentPath}/${entry.name}`;
 
   /// Check if the new name for the catalog entry is valid while the user is editing it.
   ///
@@ -47,12 +42,12 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
     if (value.length === 0) {
       throw new Error("The name cannot be empty.");
     } else {
-      return renameCatalogEntry(id, path, value);
+      return renameCatalogEntry(id, value);
     }
   };
 
   const handleLoadFolder = async () => {
-    return loadCatalog(path, id);
+    return loadCatalog(id);
   };
 
   const props: SidebarItemProps = {
@@ -65,16 +60,14 @@ export default function UserCatalogItem({ parentPath, id }: Props) {
 
   switch (entry.type) {
     case "connection":
-      return <ConnectionSidebarItem {...props} id={id} parentPath={path} />;
+      return <ConnectionSidebarItem {...props} id={id} />;
     case "environment":
       return <SidebarItem {...props} icon={ServerIcon} editable />;
-    case "workspace":
-      return <SidebarItem {...props} icon={WorkspaceIcon} editable />;
     case "folder": {
       return (
         <SidebarItem {...props} loaderfn={handleLoadFolder} icon={FolderIcon} collapsible editable>
-          {entry.children?.map((child: CatalogEntry) => {
-            return <UserCatalogItem key={child.id} id={child.id} parentPath={path} />;
+          {entry.children?.map((child: CatalogItem) => {
+            return <UserCatalogItem key={child.id} id={child.id} />;
           })}
         </SidebarItem>
       );

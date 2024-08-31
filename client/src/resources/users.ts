@@ -1,10 +1,8 @@
 import { AuthRequest } from "@/models/auth";
+import { ResourceType, ResourceRef } from "@/models/resources";
 import { User, UserSettings } from "@/models/users";
 import { agent } from "@/resources/agent";
-import { CollectionItem } from "@/resources/collection-item";
-
-export type CatalogEntryType = "folder" | "workspace" | "environment" | "connection" | "unknown";
-export type CatalogEntry = CollectionItem<CatalogEntryType>;
+import { HTTP_HEADER_X_RESOURCE_TYPE } from "@/utils/constants";
 
 /**
  * User resources
@@ -35,29 +33,25 @@ const Users = {
     return this._current;
   },
 
-  async readCatalog(path: string): Promise<CatalogEntry[]> {
-    const encodedPath = encodeURIComponent(path);
+  async readCatalog(parentId?: string): Promise<ResourceRef[]> {
     const encodedUsername = encodeURIComponent(this.current.username);
-    return (await agent().get<CatalogEntry>(`/users/${encodedUsername}/catalog?path=${encodedPath}`)).asArray(
-      CollectionItem<CatalogEntryType>
-    );
+    const catalogPath = parentId ? `catalog/${encodeURIComponent(parentId)}/list` : `catalog/list`;
+    return (await agent().get<ResourceRef>(`/users/${encodedUsername}/${catalogPath}`)).asArray(ResourceRef);
   },
 
-  async renameCatalogEntry(path: string, newName: string): Promise<void> {
-    const encodedPath = encodeURIComponent(path);
+  async renameCatalogEntry(resourceId: string, newName: string): Promise<void> {
     const encodedUsername = encodeURIComponent(this.current.username);
-    await agent().post(`/users/${encodedUsername}/catalog/rename?path=${encodedPath}`, { new_name: newName });
+    const encodedResourceId = encodeURIComponent(resourceId);
+    await agent().post(`/users/${encodedUsername}/catalog/${encodedResourceId}/rename?path=`, { new_name: newName });
   },
 
-  /**
-   * Add an entry to the user's catalog.
-   */
-  async createCatalogEntry<T extends object>(path: string, item: T): Promise<CatalogEntry> {
-    const encodedPath = encodeURIComponent(path);
+  async createCatalogResource<T extends object>(type: ResourceType, item: T): Promise<ResourceRef> {
     const encodedUsername = encodeURIComponent(this.current.username);
-    return (await agent().post<T, CatalogEntry>(`/users/${encodedUsername}/catalog?path=${encodedPath}`, item)).as(
-      CollectionItem<CatalogEntryType>
-    );
+    return (
+      await agent().post<T, ResourceRef>(`/users/${encodedUsername}/catalog`, item, {
+        headers: { [HTTP_HEADER_X_RESOURCE_TYPE]: type },
+      })
+    ).as(ResourceRef);
   },
 
   // Save the settings for the current user.

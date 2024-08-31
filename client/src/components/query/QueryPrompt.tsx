@@ -36,7 +36,7 @@ function QueryPrompt({ children, className }: QueryPromptProps) {
       {React.Children.toArray(children).map((child, index) => (
         <span className="flex items-center justify-center h-full" key={index}>
           <span
-            className="flex h-full items-center px-2"
+            className="flex h-full items-center px-2 cursor-default"
             style={{
               color: "var(--query-prompt-text)",
               backgroundColor: `var(--query-prompt-color-${(index % MAX_COLORS) + 1})`,

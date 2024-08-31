@@ -75,7 +75,7 @@ pub fn set_app_dir(_new_app_dir: &std::path::Path) {
 pub fn get_app_dir() -> PathBuf {
     #[cfg(any(test, feature = "test-hooks"))]
     {
-        APP_DIR.with(|app_dir| { app_dir.borrow().clone() })
+        APP_DIR.with(|app_dir| app_dir.borrow().clone())
     }
     #[cfg(not(any(test, feature = "test-hooks")))]
     APP_DIR.clone()

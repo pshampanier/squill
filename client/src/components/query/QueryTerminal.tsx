@@ -1,11 +1,9 @@
 import QueryInput from "@/components/query/QueryInput";
-import QueryHistoryTimeline from "@/components/query/QueryHistoryTimeline";
 import { primary as colors } from "@/utils/colors";
 import cx from "classix";
 import Kbd from "@/components/core/Kbd";
 import { registerCommand } from "@/utils/commands";
 import CommandLinks from "@/components/CommandLinks";
-import { QueryExecution } from "@/models/query-execution";
 
 registerCommand(
   {
@@ -33,19 +31,20 @@ type QueryTerminalProps = {
 
   /**
    * A callback function that is called when the user validates a query.
-   *
    * If the editor contains multiple queries (separated by a semicolon), this function is called for each query.
    */
   onValidate?: (query: string) => void;
 
   /**
    * The query prompt.
-   *
-   * This is the element that is displayed before the query input.
+   * This is the component that is displayed before the query input.
    */
   prompt: React.ReactNode;
 
-  history: Array<QueryExecution>;
+  /**
+   * The components that display the history of the terminal.
+   */
+  history: React.ReactNode;
 
   className?: string;
 };
@@ -68,8 +67,8 @@ export default function QueryTerminal({ colorScheme, onValidate, prompt, classNa
        * The history of the terminal
        **/}
       <div className="flex flex-col flex-grow w-full overflow-auto">
-        {!!history.length && <QueryHistoryTimeline history={history} />}
-        {!history.length && (
+        {history}
+        {!history && (
           <div className="flex w-full h-full items-center justify-center opacity-70">
             <CommandLinks>
               <CommandLinks.Link command="terminal.clear" />

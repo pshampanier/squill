@@ -1,5 +1,11 @@
 ## Building
 
+Building and the program in debug mode requires a couple of environment variables to be set. The file `.env.sh` can be used to set them for you.
+
+```sh
+source .env.sh
+```
+
 ### Release
 
 ```bash
@@ -20,6 +26,20 @@ npm run dev
 ```
 
 Then select the configuration `webapp` in **Run and Debug**.
+
+### Debugging the agent and the client together
+
+To open two VS Code on the same workspace, you need use the menu `File / Duplicate Workspace` from VS Code.
+Unfortunately when doing so, VS Code does not automatically export the environment variables and launching the build or
+debugger may fail due to missing expected variables. To solve this issue, you can automatically load the `.env.sh` file
+in your `~/.zprofile`:
+
+```sh
+# Loading `.env.sh` on VS Code embedded terminal
+if [[ "$TERM_PROGRAM" == "vscode" && -f ".env.sh" ]]; then
+  source .env.sh
+fi
+```
 
 ## Testing Github actions
 

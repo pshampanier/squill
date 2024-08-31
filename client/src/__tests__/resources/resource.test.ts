@@ -1,7 +1,6 @@
 import { Resource } from "@/resources/resource";
 import { test, expect, describe } from "vitest";
 import { serializable } from "@/utils/serializable";
-import { ResourceRef } from "@/resources/resource-ref";
 
 // A class that does not have at least one @serializable property cannot be deserialized
 class NonSerializableClass {
@@ -23,14 +22,15 @@ describe("as", () => {
     expect(() => new Resource<Test>("application/json", "{").as(Test).val).toThrowError();
     expect(() => new Resource<Test>("text/plain", "").as(Test).val).toThrowError(/No data available/);
     expect(() => new Resource<Test>("text/plain", "{}").as(Test).val).toThrowError(
-      /Expecting 'content-type: application\/json'/
+      /Expecting 'content-type: application\/json'/,
     );
   });
 
   test("non serializable object", () => {
     expect(
       () =>
-        new Resource<NonSerializableClass>("application/json", JSON.stringify({ val: 42 })).as(NonSerializableClass).val
+        new Resource<NonSerializableClass>("application/json", JSON.stringify({ val: 42 })).as(NonSerializableClass)
+          .val,
     ).toThrowError(/Unexpected property 'val'/);
   });
 });
@@ -57,18 +57,5 @@ describe("asText", () => {
   test("invalid", () => {
     expect(() => new Resource("application/json", "{}").asText()).toThrowError(/Expecting 'content-type: text\//);
     expect(() => new Resource("text/plain", "").asText()).toThrowError(/No data available/);
-  });
-});
-
-describe("ref", () => {
-  test("set", () => {
-    const resource = new Resource("text/plain", "Hello");
-    resource.ref = new ResourceRef("id");
-    expect(resource.ref).toEqual({ _id: "id" });
-  });
-
-  test("get", () => {
-    const resource = new Resource("text/plain", "Hello");
-    expect(() => resource.ref).toThrowError(/No ref available/);
   });
 });
