@@ -299,6 +299,34 @@ export default function QueryInput({
       editor.getModel().setValue("");
       e.preventDefault();
       e.stopPropagation();
+    } else if (
+      mode == "terminal" &&
+      e.keyCode === monaco.KeyCode.Enter &&
+      !e.shiftKey &&
+      !e.ctrlKey &&
+      !e.altKey &&
+      !e.metaKey
+    ) {
+      //
+      // [Enter] => If at the end of the input, check the input value is terminated by a semicolon, otherwise enter a
+      // new line.
+      //
+      const lastLineNumber = editor.getModel().getLineCount();
+      const cursor = editor.getPosition();
+      const value = editor.getModel().getValue();
+      if (cursor.lineNumber === lastLineNumber && value.trim().endsWith(";")) {
+        applyWithoutTriggeringSuggestion(() => {
+          acceptSuggestions(editor, suggestionRef.current);
+          onValidate?.(getCurrentQuery(editor));
+        });
+        editor.getModel().setValue("");
+        e.preventDefault();
+        e.stopPropagation();
+      } else {
+        applyWithoutTriggeringSuggestion(() => {
+          suggestionRef.current = clearSuggestions(editor, suggestionRef.current);
+        });
+      }
     } else if (!MODIFIER_KEYS.includes(e.keyCode)) {
       //
       // [Any key other than a modifier] => clear the suggestion

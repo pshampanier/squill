@@ -8,3 +8,8 @@ declare module "*.worker?worker" {
   const content: new () => Worker;
   export = content;
 }
+
+declare module "*.wasm" {
+  const value: string;
+  export default value;
+}

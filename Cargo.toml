@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["agent", "common", "client/src-tauri"]
-exclude = ["squill-drivers"]
+exclude = ["squill-drivers", "loose-sqlparser-rs"]
 
 [workspace.package]
 version = "0.1.0"
