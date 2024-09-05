@@ -30,10 +30,9 @@ type QueryTerminalProps = {
   colorScheme: "light" | "dark";
 
   /**
-   * A callback function that is called when the user validates a query.
-   * If the editor contains multiple queries (separated by a semicolon), this function is called for each query.
+   * A callback function that is called when the user validates the value in the editor.
    */
-  onValidate?: (query: string) => void;
+  onValidate?: (value: string) => void;
 
   /**
    * The query prompt.

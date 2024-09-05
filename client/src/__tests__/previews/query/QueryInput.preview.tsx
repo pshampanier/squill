@@ -63,7 +63,8 @@ export default function QueryPromptPreview() {
 
   const placeHolder = (
     <>
-      Press <Kbd shortcut={["Meta+[Enter]", "Ctrl+[Enter]"]} /> or just <Kbd shortcut={"[Enter]"} /> after a semicolon
+      Press <Kbd shortcut={"[Enter]"} /> after a semicolon or use
+      <Kbd shortcut={"Shift+[Enter]"} /> to prevent execution
     </>
   );
 

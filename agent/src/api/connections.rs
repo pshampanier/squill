@@ -1,6 +1,8 @@
 use crate::api::error::ServerResult;
 use crate::err_forbidden;
 use crate::models;
+use crate::models::QueryExecution;
+use crate::models::QueryExecutionStatus;
 use crate::resources::catalog;
 use crate::server::context::RequestContext;
 use crate::server::state::ServerState;
@@ -12,6 +14,7 @@ use axum::{
     Json, Router,
 };
 use squill_drivers::futures::Connection as DriverConnection;
+use squill_drivers::params;
 use uuid::Uuid;
 
 /// GET /connections/defaults
@@ -39,6 +42,55 @@ async fn get_connection(
     Ok(Json(connection))
 }
 
+async fn execute_buffer(
+    state: State<ServerState>,
+    context: ServerResult<RequestContext>,
+    Path(id): Path<Uuid>,
+    buffer: String,
+) -> ServerResult<Json<Vec<models::QueryExecution>>> {
+    let user_session = context?.get_user_session()?;
+    let conn = state.get_agentdb_connection().await?;
+    let connection: models::Connection = catalog::get(&conn, id).await?;
+    if connection.owner_user_id != user_session.get_user_id() {
+        return Err(err_forbidden!("You are not allowed to access this connection."));
+    }
+
+    let mut queries: Vec<models::QueryExecution> = Vec::new();
+
+    // Parse the SQL query
+    let statements = loose_sqlparser::parse(&buffer);
+    for statement in statements {
+        match conn
+            .query_map_row(
+                r#"INSERT INTO query_history(query_history_id, connection_id, user_id, query)
+                           VALUES(?, ?, ?, ?) RETURNING query_history_id, created_at"#,
+                params!(Uuid::new_v4(), id, user_session.get_user_id(), statement.sql()),
+                |row| {
+                    Ok(QueryExecution {
+                        id: row.try_get(0)?,
+                        connection_id: id,
+                        user_id: user_session.get_user_id(),
+                        query: statement.sql().to_string(),
+                        status: QueryExecutionStatus::Pending,
+                        error: None,
+                        executed_at: None,
+                        created_at: row.try_get(1)?,
+                        affected_rows: 0,
+                        execution_time: 0.0,
+                    })
+                },
+            )
+            .await
+        {
+            Ok(Some(query_execution)) => queries.push(query_execution),
+            Ok(None) => return Err(UserError::InternalError("Failed to insert query history".to_string()).into()),
+            Err(e) => return Err(UserError::InternalError(e.to_string()).into()),
+        }
+    }
+
+    Ok(Json(queries))
+}
+
 /// POST /connections/test
 ///
 /// Test if the connection is valid (can connect to the datasource).
@@ -55,5 +107,6 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/connections/defaults", get(get_connection_defaults))
         .route("/connections/test", post(test_connection))
         .route("/connections/:id", get(get_connection))
+        .route("/connections/:id/execute", post(execute_buffer))
         .with_state(state)
 }

@@ -10,6 +10,7 @@ import QueryTerminal from "@/components/query/QueryTerminal";
 import QueryPrompt from "@/components/query/QueryPrompt";
 import LoadingContainer from "@/components/core/LoadingContainer";
 import { AuthenticationError } from "@/utils/errors";
+import { useUserStore } from "@/stores/UserStore";
 
 /**
  * The page displayed when the user is using a Connection from the sidebar.
@@ -18,6 +19,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   const colorScheme = useAppStore((state) => state.colorScheme);
   const page = useAppStore((state) => state.pages.find((page) => page.id === pageId));
   const connId = page?.itemId; // UUID of the connection.
+  const executeBuffer = useUserStore((state) => state.executeBuffer);
 
   const {
     status,
@@ -36,6 +38,10 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
     refetchOnWindowFocus: false,
   });
 
+  const handleValidate = (value: string) => {
+    executeBuffer(connId, value);
+  };
+
   return (
     <div className="w-full h-full px-2">
       {status !== "success" && (
@@ -48,7 +54,12 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
         />
       )}
       {status === "success" && (
-        <QueryTerminal prompt={<ConnectionPrompt />} colorScheme={colorScheme} history={undefined} />
+        <QueryTerminal
+          prompt={<ConnectionPrompt />}
+          colorScheme={colorScheme}
+          history={undefined}
+          onValidate={handleValidate}
+        />
       )}
     </div>
   );

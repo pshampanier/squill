@@ -1,4 +1,5 @@
 import { Connection } from "@/models/connections";
+import { QueryExecution } from "@/models/query-execution";
 import { agent } from "@/resources/agent";
 
 const Connections = {
@@ -12,6 +13,10 @@ const Connections = {
 
   async test(connection: Connection): Promise<void> {
     await agent().post(`/connections/test`, connection);
+  },
+
+  async execute(id: string, buffer: string): Promise<QueryExecution[]> {
+    return (await agent().post<string, QueryExecution>(`/connections/${id}/execute`, buffer)).asArray(QueryExecution);
   },
 };
 

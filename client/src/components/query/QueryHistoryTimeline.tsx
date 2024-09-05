@@ -7,7 +7,7 @@ import {
   formatRelativeDate,
   generateDateClassifier,
 } from "@/utils/time";
-import QueryOutput from "./QueryOutput";
+import QueryOutput from "@/components/query/QueryOutput";
 import SuccessIcon from "@/icons/true.svg?react";
 import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
@@ -21,7 +21,6 @@ type QueryHistoryTimelineProps = {
 };
 
 export default function QueryHistoryTimeline({ history, className }: QueryHistoryTimelineProps) {
-
   const classifier = generateDateClassifier();
   const groupsByDate = Array.from(
     history
@@ -87,7 +86,7 @@ function QueryHistoryTimelineItem({
       dateClassification,
     };
     switch (queryExecution.status) {
-      case "success":
+      case "competed":
         return {
           severity: "success",
           label: "Success",
@@ -108,7 +107,7 @@ function QueryHistoryTimelineItem({
           icon: <Spinner />,
           title: <Title {...titleProps} />,
         };
-      case "error":
+      case "failed":
         return {
           severity: "danger",
           label: "Failed",

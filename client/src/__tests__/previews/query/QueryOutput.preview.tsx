@@ -21,10 +21,12 @@ const QUERY_ERROR = new QueryExecution({
 FROM 
     hotels;`,
   executedAt: addTime(new Date(), -1, "day"),
-  status: "error",
-  errorMessage: 'ERROR:  relation "hotels" does not exist\nLINE 11:     hotels;\n             ^',
-  errorLine: 11,
-  errorColumn: 5,
+  status: "failed",
+  error: {
+    message: 'ERROR:  relation "hotels" does not exist\nLINE 11:     hotels;\n             ^',
+    line: 11,
+    column: 5,
+  },
 });
 
 const QUERY_CANCELLED = new QueryExecution({
@@ -39,7 +41,7 @@ const QUERY_SUCCESS = new QueryExecution({
  WHERE listprice > 0 AND weight IS NOT NULL
  LIMIT 10;`,
   executedAt: addTime(new Date(), -5, "minute"),
-  status: "success",
+  status: "competed",
   executionTime: 32.365002 * MICROSECONDS_IN_A_SECOND,
 });
 

@@ -146,8 +146,16 @@ export class Agent {
     return this.fetch<R>(path, "PUT", { ...options, body: JSON.stringify(serialize<B>(body)) });
   }
 
-  async post<B extends object, R extends object>(path: string, body: B, options?: FetchOptions): Promise<Resource<R>> {
-    return this.fetch<R>(path, "POST", { ...options, body: JSON.stringify(serialize<B>(body)) });
+  async post<B extends object | string, R extends object>(
+    path: string,
+    body: B,
+    options?: FetchOptions,
+  ): Promise<Resource<R>> {
+    if (typeof body === "object" && typeof body !== "string") {
+      return this.fetch<R>(path, "POST", { ...options, body: JSON.stringify(serialize(body)) });
+    } else {
+      return this.fetch<R>(path, "POST", { ...options, body });
+    }
   }
 
   async logon(auth: AuthRequest): Promise<void> {

@@ -125,6 +125,58 @@ paths:
         "404":
           description: Connection not found
 
+  /connections/{id}/execute:
+    post:
+      summary: Execute one or more queries on the connection.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          plain/text:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        "401":
+          description: Unauthorized
+
+  /connections/{id}/history:
+    get:
+      summary: Get the history of the connection.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QueryExecution"
+        "401":
+          description: Unauthorized
+
   /connections/test:
     post:
       summary: Test a connection.
@@ -355,6 +407,15 @@ components:
 
     Connection:
       description: A connection to a datasource.
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+
+    QueryExecution:
+      description: The execution of a query.
       type: object
       required:
         - id

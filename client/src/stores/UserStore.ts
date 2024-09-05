@@ -6,9 +6,11 @@ import { create } from "zustand";
 import { ResourceRef, ResourceType } from "@/models/resources";
 import { METADATA_CONTENT_TYPE } from "@/utils/constants";
 import { ContentType } from "@/models/folders";
+import { QueryExecution } from "@/models/query-execution";
+import Connections from "@/resources/connections";
 
 export type CatalogItem = ResourceRef & {
-  children?: ResourceRef[];
+  children?: CatalogItem[];
 };
 
 export type State = {
@@ -26,6 +28,14 @@ export type State = {
    * The key is the id of the entry ad the value is the entry itself.
    */
   catalog: Map<string, CatalogItem>;
+
+  /**
+   * The history of query executions.
+   *
+   * The key is the id of the query execution and the value is the query execution itself.
+   * All query executions are stored in the history, regardless of the component that initiated the query.
+   */
+  history: Map<string, QueryExecution>;
 };
 
 export type Actions = {
@@ -56,19 +66,6 @@ export type Actions = {
   renameCatalogEntry: (id: string, newName: string) => Promise<void>;
 
   /**
-   * Create a new catalog entry.
-   *
-   * The entry is first created on the server and then the store is updated if the server operation is successful,
-   * otherwise a exception is thrown.
-   *
-   * @param path The path of the catalog where the entry should be created (this is the parent of the entry to be created).
-   * @param id The id of the folder where the entry should be created (this is the parent of the entry to be created) or
-   *        `undefined` if the entry should be created at the root of the catalog.
-   * @param item The item to be created.
-  createCatalogEntry: (path: string, id: string | undefined, item: object) => Promise<void>;
-   */
-
-  /**
    * Create a new resource in the catalog.
    */
   createResource: (resourceType: ResourceType, resource: object) => Promise<void>;
@@ -77,12 +74,21 @@ export type Actions = {
    * The the default resource folder for the given resource type.
    */
   getDefaultResourceFolder: (contentType: ContentType) => ResourceRef;
+
+  /**
+   * Execute a buffer on a connection.
+   *
+   * The buffer is may contain 0 or more queries. For each query, a query execution is created and added to the history
+   * and the the identifier of each query execution is returned.
+   */
+  executeBuffer: (connectionId: string, buffer: string) => Promise<string[]>;
 };
 
 const initialState: State = {
   settings: null,
   catalogSections: [],
   catalog: new Map<string, CatalogItem>(),
+  history: new Map<string, QueryExecution>(),
 };
 
 export const useUserStore = create<State & Actions>((set, get) => {
@@ -163,6 +169,25 @@ export const useUserStore = create<State & Actions>((set, get) => {
     },
 
     /**
+     * Execute a buffer on a connection.
+     *
+     * The buffer is may contain 0 or more queries. For each query, a query execution is created and added to the history
+     * and the the identifier of each query execution is returned.
+     */
+    async executeBuffer(connectionId: string, buffer: string) {
+      const queryExecutions = await Connections.execute(connectionId, buffer);
+      const additionalItems = queryExecutions.reduce((map, qe) => {
+        map.set(qe.id, qe);
+        return map;
+      }, new Map<string, QueryExecution>());
+      set((state) => ({
+        ...state,
+        history: new Map([...state.history, ...additionalItems]),
+      }));
+      return queryExecutions.map((qe) => qe.id);
+    },
+
+    /**
      * The the default resource folder for the given resource type.
      *
      * The default resource folder is expected to be the first folder of the given resource type at the root of
@@ -175,39 +200,6 @@ export const useUserStore = create<State & Actions>((set, get) => {
       });
       return get().catalog.get(id);
     },
-
-    /**
-     * Create a new catalog entry.
-    async createCatalogEntry(path: string, id: string | undefined, item: object) {
-      const entry = await Users.createCatalogEntry(path, item);
-      if (id === undefined) {
-        // Adding the entry to the root of the catalog.
-        // TODO: The store should also take care of the state of the parent folder (open/close).
-        const rootPath = path as CatalogRoot;
-        const rootCollection = get()[rootPath];
-        if (rootCollection.length === 0) {
-          // Loading the catalog will take care of adding the newly created entry to the catalog.
-          await get().loadCatalog(rootPath);
-        } else {
-          set((state) => ({
-            ...state,
-            [path]: [...state[rootPath], entry.id],
-            catalog: mergeCatalog(state.catalog, [entry]),
-          }));
-        }
-      } else {
-        // Adding an entry to a folder in the catalog.
-        // We need to add the entry to the folder's children.
-        set((state) => ({
-          ...state,
-          catalog: mergeAndMutateCatalog(state.catalog, [entry], id, (folder) => ({
-            ...folder,
-            children: [...folder.children, entry],
-          })),
-        }));
-      }
-    },
-     */
   };
 });
 
