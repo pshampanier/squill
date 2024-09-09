@@ -414,15 +414,6 @@ components:
         id:
           type: string
 
-    QueryExecution:
-      description: The execution of a query.
-      type: object
-      required:
-        - id
-      properties:
-        id:
-          type: string
-
     Error:
       type: object
       required:
@@ -458,6 +449,14 @@ components:
           type: string
       required:
         - new_name
+
+    ResourceType:
+      type: string
+      enum:
+        - connection
+        - environment
+        - folder
+        - user
 
     ResourceRef:
       description: A reference to a resource.
@@ -511,6 +510,98 @@ components:
     Username:
       description: A username
       type: string
+
+    QueryExecutionStatus:
+      description: The status of a query execution.
+      type: string
+      enum:
+        - pending
+        - running
+        - completed
+        - failed
+        - cancelled
+
+    QueryExecutionError:
+      description: An error message from a query execution.
+      type: object
+      properties:
+        message:
+          type: string
+        line:
+          type: number
+          format: int32
+          minimum: 0
+        column:
+          type: number
+          format: int32
+          minimum: 0
+
+    QueryExecution:
+      description: The execution of a query.
+      type: object
+      required:
+        - id
+        - connection_id
+        - user_id
+        - query
+        - status
+        - created_at
+        - affected_rows
+        - execution_time
+      properties:
+        id:
+          description: The unique identifier of the query execution.
+          type: string
+          format: uuid
+        connection_id:
+          description: The unique identifier of the connection used to execute the query.
+          type: string
+          format: uuid
+        user_id:
+          description: The unique identifier of the user that executed the query.
+          type: string
+          format: uuid
+        query:
+          description: The query that was executed.
+          type: string
+        status:
+          description: The status of the query execution.
+          $ref: "#/components/schemas/QueryExecutionStatus"
+        error:
+          description: The error message if the query execution failed.
+          $ref: "#/components/schemas/QueryExecutionError"
+        executed_at:
+          description: |
+            The date and time when the query was executed.
+
+            This is the time the query was submitted to the agent but the time when the query was submitted to the
+            driver
+          type: string
+          format: date-time
+        created_at:
+          description: |
+            The date and time when the query execution was created.
+
+            This is the time when the query was submitted to the agent.
+          type: string
+          format: date-time
+        affected_rows:
+          description: The number of rows affected by the query.
+          type: number
+          format: int64
+          minimum: 0
+        execution_time:
+          description: |
+            The time it took to execute the query in seconds.
+
+            The time is captured in nanoseconds and converted to seconds using a 64-bit floating-point allowing for
+            high precision on fast queries without loosing the ability to represent long running queries in seconds.
+            This decision was made to keep that field usable in Javascript where the number type is a 64-bit 
+            floating-point but can only represent integers up to 2^53 - 1 which would be only 2.5 hours in nanoseconds 
+            before starting to loose precision. In addition seconds are more user friendly than nanoseconds.
+          type: number
+          format: double
+          minimum: 0
 
   securitySchemes:
     ApiKeyAuth:

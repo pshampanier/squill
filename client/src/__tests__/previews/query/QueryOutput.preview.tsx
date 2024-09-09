@@ -41,7 +41,7 @@ const QUERY_SUCCESS = new QueryExecution({
  WHERE listprice > 0 AND weight IS NOT NULL
  LIMIT 10;`,
   executedAt: addTime(new Date(), -5, "minute"),
-  status: "competed",
+  status: "completed",
   executionTime: 32.365002 * MICROSECONDS_IN_A_SECOND,
 });
 

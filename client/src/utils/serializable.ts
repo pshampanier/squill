@@ -5,6 +5,7 @@ import {
   deserializeArray,
   deserializeBoolean,
   deserializeDate,
+  deserializeFloat,
   deserializeInteger,
   deserializeObject,
   deserializeRecord,
@@ -140,6 +141,7 @@ type SerializableType =
   | "string"
   | "boolean"
   | "integer"
+  | "float"
   | "datetime"
   | "object"
   | "identifier"
@@ -311,6 +313,11 @@ function makeDeserializer<T extends object>(type: SerializableType, options?: Se
     case "integer": {
       return (value: unknown, key: string | number) => {
         return [fnTransformKey(key), deserializeInteger(value, { ...options, name: safeKey(key) })];
+      };
+    }
+    case "float": {
+      return (value: unknown, key: string | number) => {
+        return [fnTransformKey(key), deserializeFloat(value, { ...options, name: safeKey(key) })];
       };
     }
     case "boolean": {

@@ -15,7 +15,7 @@ describe("deserializeInteger", () => {
     expect(s.deserializeInteger("10", { max: 11 })).toBe(10);
     expect(s.deserializeInteger("11", { max: 11 })).toBe(11);
     expect(s.deserializeInteger(10)).toBe(10);
-    expect(s.deserializeInteger("1,042")).toBe(1042);
+    expect(s.deserializeInteger("1_042")).toBe(1042);
     expect(s.deserializeInteger("1 042")).toBe(1042);
   });
   test("invalid value", () => {
@@ -30,6 +30,38 @@ describe("deserializeInteger", () => {
     expect(() => s.deserializeInteger("xxx", { name: "test" })).toThrowError(/for the property 'test'/);
     expect(() => s.deserializeInteger(undefined)).toThrowError(/'' is not a valid integer/);
     expect(() => s.deserializeInteger(new Date())).toThrowError(/is not a valid integer/);
+  });
+});
+
+describe("deserializeFloat", () => {
+  test("valid value", () => {
+    expect(s.deserializeFloat("10")).toBe(10);
+    expect(s.deserializeFloat("10.0")).toBe(10);
+    expect(s.deserializeFloat("10.1")).toBe(10.1);
+    expect(s.deserializeFloat(" 10.1 ")).toBe(10.1);
+    expect(s.deserializeFloat(" +10.1 ")).toBe(10.1);
+    expect(s.deserializeFloat(" -10.1 ")).toBe(-10.1);
+    expect(s.deserializeFloat("\t10.1\t")).toBe(10.1);
+    expect(s.deserializeFloat("10", { min: 9 })).toBe(10);
+    expect(s.deserializeFloat("9", { min: 9 })).toBe(9);
+    expect(s.deserializeFloat("10", { max: 11 })).toBe(10);
+    expect(s.deserializeFloat("11", { max: 11 })).toBe(11);
+    expect(s.deserializeFloat(10)).toBe(10);
+    expect(s.deserializeFloat("3.14e10")).toBe(3.14e10);
+    expect(s.deserializeFloat("-2.71E-3")).toBe(-2.71e-3);
+  });
+  test("invalid value", () => {
+    expect(() => s.deserializeFloat("hello")).toThrowError(/is not a valid float/);
+    expect(() => s.deserializeFloat("12x3")).toThrowError(/is not a valid float/);
+    expect(() => s.deserializeFloat("1.03.1")).toThrowError(/is not a valid float/);
+    expect(() => s.deserializeFloat("")).toThrowError(/is not a valid float/);
+    expect(() => s.deserializeFloat(" ")).toThrowError(/is not a valid float/);
+    expect(() => s.deserializeFloat("+")).toThrowError(/is not a valid float/);
+    expect(() => s.deserializeFloat("8", { min: 9 })).toThrowError(/should be at least 9/);
+    expect(() => s.deserializeFloat("10", { max: 9 })).toThrowError(/should be at most 9/);
+    expect(() => s.deserializeFloat("xxx", { name: "test" })).toThrowError(/for the property 'test'/);
+    expect(() => s.deserializeFloat(undefined)).toThrowError(/'' is not a valid float/);
+    expect(() => s.deserializeFloat(new Date())).toThrowError(/is not a valid float/);
   });
 });
 
@@ -54,7 +86,7 @@ describe("deserializeString", () => {
     expect(() => s.deserializeString(12, { format: "identifier" })).toThrowError(/is not valid/);
     expect(() => s.deserializeString("12_my_identifier", { format: "identifier" })).toThrowError(/is not valid/);
     expect(() => s.deserializeString(undefined, { name: "test", format: "identifier" })).toThrowError(
-      /'' is not valid \(expected format: 'identifier'\) for the property 'test'/
+      /'' is not valid \(expected format: 'identifier'\) for the property 'test'/,
     );
   });
 });
@@ -72,7 +104,7 @@ describe("deserializeDate", () => {
     expect(() => s.deserializeDate("")).toThrowError(/is not a valid date/);
     expect(() => s.deserializeDate("2021-13-01T00:00:00.000Z")).toThrowError(/is not a valid date/);
     expect(() => s.deserializeDate("2021-13-01T00:00:00.000Z", { name: "test" })).toThrowError(
-      /'2021-13-01T00:00:00.000Z' is not a valid date for the property 'test'/
+      /'2021-13-01T00:00:00.000Z' is not a valid date for the property 'test'/,
     );
   });
 });
@@ -106,7 +138,7 @@ describe("deserializeObject", () => {
     expect(() =>
       s.deserializeObject("", ([k, v]) => {
         k && v;
-      })
+      }),
     ).toThrowError(/is not valid/);
 
     //
@@ -118,8 +150,8 @@ describe("deserializeObject", () => {
         ([k, v]) => {
           k && v;
         },
-        { name: "test" }
-      )
+        { name: "test" },
+      ),
     ).toThrowError(/is not valid, object expected for the property 'test'/);
 
     //
@@ -141,13 +173,13 @@ describe("deserializeObject", () => {
                     item;
                   });
                 },
-                { name: k }
+                { name: k },
               );
             }
           }
         },
-        { name: "user" }
-      )
+        { name: "user" },
+      ),
     ).toThrowError(/is not valid, object expected at 'user\.aliases\[1\]'/);
 
     //
@@ -159,8 +191,8 @@ describe("deserializeObject", () => {
         () => {
           throw new Error("invalid object");
         },
-        { name: "test" }
-      )
+        { name: "test" },
+      ),
     ).toThrowError(/invalid object for the property 'test'/);
 
     expect(() =>
@@ -169,8 +201,8 @@ describe("deserializeObject", () => {
         () => {
           throw "invalid object";
         },
-        { name: "test" }
-      )
+        { name: "test" },
+      ),
     ).toThrowError(/invalid object for the property 'test'/);
 
     expect(() =>
@@ -179,8 +211,8 @@ describe("deserializeObject", () => {
         () => {
           throw 42;
         },
-        { name: "test" }
-      )
+        { name: "test" },
+      ),
     ).toThrowError(/42 for the property 'test'/);
 
     expect(() =>
@@ -189,8 +221,8 @@ describe("deserializeObject", () => {
         () => {
           throw null;
         },
-        { name: "test" }
-      )
+        { name: "test" },
+      ),
     ).toThrowError(/for the property 'test'/);
   });
 
@@ -218,7 +250,7 @@ describe("deserializeObject", () => {
       },
       {
         required: ["firstname", "age"],
-      }
+      },
     );
     expect(obj).toEqual(expected);
 
@@ -236,8 +268,8 @@ describe("deserializeObject", () => {
         },
         {
           required: ["firstname", "age"],
-        }
-      )
+        },
+      ),
     ).toThrowError(/'age' of the required properties missing/);
 
     //
@@ -254,8 +286,8 @@ describe("deserializeObject", () => {
         },
         {
           required: ["firstname", "age"],
-        }
-      )
+        },
+      ),
     ).toThrowError(/'firstname', 'age' of the required properties missing/);
 
     //
@@ -273,8 +305,8 @@ describe("deserializeObject", () => {
         },
         {
           required: ["firstname"],
-        }
-      )
+        },
+      ),
     ).toThrowError(/'firstname' of the required properties missing/);
 
     //
@@ -294,8 +326,8 @@ describe("deserializeObject", () => {
             default:
               return null;
           }
-        }
-      )
+        },
+      ),
     ).toThrowError(/Unexpected property 'xlastname'/);
   });
 
@@ -327,7 +359,7 @@ describe("deserializeObject", () => {
         dependencies: {
           b: ["c"],
         },
-      }
+      },
     );
     expect(obj).toEqual({
       a: 1,
@@ -361,7 +393,7 @@ describe("deserializeObject", () => {
         dependencies: {
           b: ["c"],
         },
-      }
+      },
     );
     expect(obj).toEqual({
       a: 1,
@@ -388,8 +420,8 @@ describe("deserializeObject", () => {
           dependencies: {
             b: ["c"],
           },
-        }
-      )
+        },
+      ),
     ).toThrowError(/The property 'b' depends on 'c' which is not available/);
   });
 });
@@ -401,7 +433,7 @@ describe("deserializeArray", () => {
       s.deserializeArray<number>(["1", "2"], (item, index) => {
         expect(index).toBe(expectedIndex++);
         return parseInt(item as string);
-      })
+      }),
     ).toEqual([1, 2]);
     expect(s.deserializeArray<number>([], (item) => parseInt(item as string), { minSize: 0 })).toEqual([]);
 
@@ -427,13 +459,13 @@ describe("deserializeArray", () => {
      * options (min, max, name)
      */
     expect(() =>
-      s.deserializeArray<number>(["1", "2"], (item) => parseInt(item as string), { minSize: 3 })
+      s.deserializeArray<number>(["1", "2"], (item) => parseInt(item as string), { minSize: 3 }),
     ).toThrowError(/Expecting at least 3 item\(s\)/);
     expect(() =>
-      s.deserializeArray<number>(["1", "2"], (item) => parseInt(item as string), { maxSize: 1 })
+      s.deserializeArray<number>(["1", "2"], (item) => parseInt(item as string), { maxSize: 1 }),
     ).toThrowError(/Expecting at most 1 item\(s\)/);
     expect(() => s.deserializeArray<number>(12, (item) => parseInt(item as string), { name: "test" })).toThrowError(
-      /'12' is not an array for the property 'test'/
+      /'12' is not an array for the property 'test'/,
     );
   });
 });

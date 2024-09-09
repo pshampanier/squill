@@ -86,7 +86,7 @@ function QueryHistoryTimelineItem({
       dateClassification,
     };
     switch (queryExecution.status) {
-      case "competed":
+      case "completed":
         return {
           severity: "success",
           label: "Success",

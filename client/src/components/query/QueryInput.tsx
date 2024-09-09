@@ -290,7 +290,7 @@ export default function QueryInput({
       e.stopPropagation();
     } else if (e.keyCode === monaco.KeyCode.Enter && e.metaKey && !e.shiftKey && !e.ctrlKey && !e.altKey) {
       //
-      // [Meta + Enter] => Validate the query
+      // [Enter] => Validate the query
       //
       applyWithoutTriggeringSuggestion(() => {
         acceptSuggestions(editor, suggestionRef.current);

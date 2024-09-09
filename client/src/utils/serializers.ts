@@ -79,20 +79,37 @@ function validateNumber<T>(value: T, options: DeserializeNumberOptions<T>): void
 
 /**
  * Deserialize a value as an integer
- * @param value
- * @param options
- * @returns
  */
 export function deserializeInteger(value: unknown, options?: DeserializeNumberOptions<number>): number {
   return safeDeserialization<number>(() => {
     let i: number | undefined;
     if (typeof value === "number") {
       i = value as number;
-    } else if (typeof value === "string" && /^[\s]*[+-]?[\s,0-9]+\s*$/.test(value)) {
-      i = parseInt(value?.replace(/[\s,]/g, ""));
+    } else if (typeof value === "string" && /^[\s]*[+-]?[\s_0-9]+\s*$/.test(value)) {
+      i = parseInt(value?.replace(/[\s_]/g, ""));
     }
     if (i === undefined || isNaN(i)) {
       throw new SerializationError(`'${value || ""}' is not a valid integer`);
+    } else if (options) {
+      validateNumber(i, options);
+    }
+    return i;
+  }, options?.name);
+}
+
+/**
+ * Deserialize a value as a float
+ */
+export function deserializeFloat(value: unknown, options?: DeserializeNumberOptions<number>): number {
+  return safeDeserialization<number>(() => {
+    let i: number | undefined;
+    if (typeof value === "number") {
+      i = value as number;
+    } else if (typeof value === "string" && /^[\s]*[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?[\s]*$/.test(value)) {
+      i = parseFloat(value?.replace(/[\s,]/g, ""));
+    }
+    if (i === undefined || isNaN(i)) {
+      throw new SerializationError(`'${value || ""}' is not a valid floating point number`);
     } else if (options) {
       validateNumber(i, options);
     }
