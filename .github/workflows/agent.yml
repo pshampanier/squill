@@ -17,6 +17,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout loose-sqlparser-rs repository
+        uses: actions/checkout@v4
+        with:
+          repository: squill-app/loose-sqlparser-rs
+          path: loose-sqlparser-rs
+
       - name: Checkout squill-drivers repository
         uses: actions/checkout@v4
         with:
