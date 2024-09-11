@@ -1,0 +1,14 @@
+name: duckdb
+label: DuckDB
+icon: duckdb.svg
+description: >-
+  DuckDB is a high-performance analytical database system. It is designed to
+  be fast, reliable, portable, and easy to use.
+capabilities:
+  - sql
+  - connect_file
+  - connect_string
+  - read_only
+defaults:
+  CONNECTION_MODE: file
+  CONNECTION_STRING: memory://

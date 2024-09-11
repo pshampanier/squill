@@ -1,0 +1,14 @@
+name: sqlite
+label: SQLite
+icon: sqlite.svg
+description: >-
+  SQLite is a C-language library that implements a small, fast,
+  self-contained, high-reliability, full-featured, SQL database engine.
+capabilities:
+  - sql
+  - connect_file
+  - connect_string
+  - read_only
+defaults:
+  CONNECTION_STRING: ":memory:"
+  CONNECTION_MODE: file

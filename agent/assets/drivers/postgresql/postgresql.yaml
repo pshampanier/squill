@@ -1,0 +1,19 @@
+name: postgresql
+label: PostgreSQL
+icon: postgresql.svg
+description: >-
+  PostgreSQL is a powerful, open source object-relational database system with
+  over 30 years of active development that has earned it a strong reputation
+  for reliability, feature robustness, and performance.
+capabilities:
+  - sql
+  - auth_user_password
+  - connect_string
+  - connect_host
+  - connect_socket
+defaults:
+  PORT: 5432
+  USER: postgres
+  HOST: localhost
+  CONNECTION_MODE: host
+  SOCKET: /var/run/postgres/.s.PGSQL.5432

@@ -31,6 +31,7 @@ loose-sqlparser = { path = "../loose-sqlparser-rs" }
 common = { path = "../common" }
 futures = { workspace = true }
 chrono = { version = "0.4.38", features = ["serde"] }
+serde_yml = "0.0.12"
 
 # The following dependencies are not directly used b the package but need to be forced to specific versions in order 
 # to prevent vulnerabilities.

@@ -14,6 +14,7 @@ pub mod workspaces;
 
 // Re-export the models.
 pub use connections::Connection;
+pub use drivers::Driver;
 pub use environments::Environment;
 pub use folders::Folder;
 pub use query_execution::QueryExecution;

@@ -1,13 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub const DRIVER_PORT: &str = "PORT";
-pub const DRIVER_USER: &str = "USER";
-pub const DRIVER_HOST: &str = "HOST";
-pub const DRIVER_SOCKET: &str = "SOCKET";
-pub const DRIVER_CONNECTION_STRING: &str = "CONNECTION_STRING";
-pub const DRIVER_CONNECTION_MODE: &str = "CONNECTION_MODE";
-
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Capability {

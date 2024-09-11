@@ -7,6 +7,7 @@ use serde::Serialize;
 use serde_json::Value;
 use uuid::Uuid;
 
+pub mod agent;
 pub mod catalog;
 pub mod connections;
 pub mod environments;
