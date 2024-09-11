@@ -16,7 +16,7 @@ export default function QueryOutput({ className, queryExecution }: QueryOutputPr
         {query}
       </Code>
       {status === "failed" && (
-        <Alert severity="danger" icon className="w-full mt-2">
+        <Alert severity="danger" icon className="w-full mt-2 mb-2">
           <pre className="text-xs">{error.message}</pre>
         </Alert>
       )}

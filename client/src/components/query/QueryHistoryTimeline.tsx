@@ -13,32 +13,139 @@ import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
 import Spinner from "@/components/core/Spinner";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+// A callback that is called when a query execution are updated or added to the history.
+export type ExecutionEventHandler = (queryExecutions: QueryExecution[]) => void;
+
+type QueryHistoryGroup = { classification: DateClassification; executions: QueryExecution[] };
 
 type QueryHistoryTimelineProps = {
   className?: string;
-  history: Array<QueryExecution>;
+  registerSubscriber: (subscriber: ExecutionEventHandler) => void;
 };
 
-export default function QueryHistoryTimeline({ history, className }: QueryHistoryTimelineProps) {
-  const classifier = generateDateClassifier();
-  const groupsByDate = Array.from(
-    history
-      .reduce<Map<DateClassification, QueryExecution[]>>((acc, execution: QueryExecution) => {
-        const classification = classifier(execution.executedAt);
-        acc.set(classification, [...(acc.get(classification) || []), execution]);
-        return acc;
-      }, new Map<DateClassification, QueryExecution[]>())
-      .entries(),
-  ).sort((a, b) => a[1][0].executedAt.getTime() - b[1][0].executedAt.getTime());
+/**
+ * Returns the date to be used to group the query executions in the timeline.
+ * The date is the execution date if available, otherwise it's the creation date.
+ */
+function getGroupDate(execution: QueryExecution): Date {
+  return execution.executedAt || execution.createdAt;
+}
+
+export default function QueryHistoryTimeline({ className, registerSubscriber }: QueryHistoryTimelineProps) {
+  // A reference to the history of query executions to be displayed
+  const history = useRef<Map<string, QueryExecution>>(null);
+  const [historyGroups, setHistoryGroups] = useState<QueryHistoryGroup[]>([]);
+
+  //
+  // A callback that handles the notifications when query executions are updated or added to the history.
+  //
+  const handleExecutionEvents = useCallback<ExecutionEventHandler>(
+    (queryExecutions) => {
+      if (history.current === null) {
+        //
+        // Initial load of the history
+        //
+        const classifier = generateDateClassifier();
+        const groups = new Map<DateClassification, QueryExecution[]>();
+        history.current = new Map<string, QueryExecution>();
+        queryExecutions.forEach((execution) => {
+          history.current.set(execution.id, execution);
+          const classification = classifier(getGroupDate(execution));
+          groups.get(classification)?.push(execution) || groups.set(classification, [execution]);
+        });
+        const sortedGroups = Array.from(groups.entries())
+          .map(([classification, executions]) => ({
+            classification,
+            executions,
+          }))
+          .sort((a, b) => getGroupDate(a.executions[0]).getTime() - getGroupDate(b.executions[0]).getTime());
+        setHistoryGroups(sortedGroups);
+      } else {
+        //
+        // Update the history with the given query executions
+        // This is called when a new query executions are added or existing ones are updated.
+        // Because React states are immutable, we need to create a new `historyGroups` from the existing one.
+        //
+        const classifier = generateDateClassifier();
+        let groups = new Array<QueryHistoryGroup>(...historyGroups);
+        queryExecutions.forEach((execution) => {
+          const classification = classifier(getGroupDate(execution));
+          if (history.current.get(execution.id)) {
+            //
+            // Update the existing query execution
+            //
+            // 1) update the execution in the history
+            history.current.set(execution.id, execution);
+
+            // 2) update the execution in the corresponding group
+            //    - the group can have changed, so we'll first look for the group where the execution is expected to be
+            //      but if not found there we'll look for it in the other groups.
+            const expectedGroupIndex = groups.findIndex((group) => group.classification === classification);
+            let currentGroupIndex = -1;
+            let currentExecutionIndex = -1;
+            if (expectedGroupIndex !== -1) {
+              // Check if the execution is already in the expected group
+              currentExecutionIndex = groups[expectedGroupIndex].executions.findIndex((e) => e.id === execution.id);
+              if (currentExecutionIndex !== -1) {
+                currentGroupIndex = expectedGroupIndex;
+              }
+            }
+            if (currentExecutionIndex === -1) {
+              // Not found in the expected group, look in the other groups
+              currentGroupIndex = groups.findIndex((group) => {
+                currentExecutionIndex = group.executions.findIndex((e) => e.id === execution.id);
+                return currentExecutionIndex !== -1;
+              });
+            }
+            if (currentGroupIndex == -1) {
+              // Execution not found, this should not happen
+              console.error(`Execution ${execution.id} not found in the groups.`);
+            } else if (currentGroupIndex === expectedGroupIndex) {
+              // The execution is already in the expected group, update it
+              groups[currentGroupIndex].executions[currentExecutionIndex] = execution;
+            } else {
+              // The execution is in another group, remove it from the current group and add it to the expected group
+              groups[currentGroupIndex].executions.splice(currentExecutionIndex, 1);
+              groups[expectedGroupIndex].executions.push(execution);
+            }
+          } else {
+            //
+            // Add a new query execution
+            //
+            // 1) add the execution to the history
+            history.current.set(execution.id, execution);
+            // 2) add the new execution to the corresponding group
+            const groupIndex = groups.findIndex((group) => group.classification === classification);
+            if (groupIndex === -1) {
+              groups.push({ classification, executions: [execution] });
+            } else {
+              groups[groupIndex].executions.push(execution);
+            }
+          }
+          // 3) Because we may have added a new group, we need to sort the groups by date.
+          groups = groups.sort(
+            (a, b) => getGroupDate(a.executions[0]).getTime() - getGroupDate(b.executions[0]).getTime(),
+          );
+          setHistoryGroups(groups);
+        });
+      }
+    },
+    [historyGroups],
+  );
+
+  useEffect(() => {
+    registerSubscriber(handleExecutionEvents);
+  }, [historyGroups]);
 
   return (
     <Timeline className={className}>
-      {groupsByDate.map(([classification, executions], index, array) => (
+      {historyGroups.map((group, index, array) => (
         <QueryHistoryTimelineGroup
-          key={classification}
-          queryExecutions={executions}
-          dateClassification={classification}
+          key={group.classification}
+          queryExecutions={group.executions}
+          dateClassification={group.classification}
           open={index === array.length - 1}
         />
       ))}
@@ -82,7 +189,7 @@ function QueryHistoryTimelineItem({
     title: React.ReactNode;
   } = (() => {
     const titleProps = {
-      executedAt: queryExecution.executedAt,
+      date: queryExecution.executedAt || queryExecution.createdAt,
       dateClassification,
     };
     switch (queryExecution.status) {
@@ -132,23 +239,23 @@ function QueryHistoryTimelineItem({
 }
 
 function Title({
-  executedAt,
+  date,
   dateClassification,
   executionTime,
 }: {
-  executedAt: Date;
+  date: Date;
   dateClassification: DateClassification;
   executionTime?: number;
 }) {
   return (
     <ul className="list-none flex flex-row items-center h-full text-xs">
       <li className="flex text-divider">
-        <ExecutedAt date={executedAt} dateClassification={dateClassification} />
+        <ExecutedAt date={date} dateClassification={dateClassification} />
       </li>
       {executionTime && (
         <li className="flex text-divider items-center">
           <StopwatchIcon className="mr-1" />
-          {formatDuration(executionTime)[0]}
+          {formatDuration(executionTime * 1_000_000)[0]}
         </li>
       )}
     </ul>

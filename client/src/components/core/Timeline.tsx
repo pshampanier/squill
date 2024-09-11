@@ -1,7 +1,9 @@
 import cx from "classix";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
-import { primary as colors } from "@/utils/colors";
+import { primary as colors, secondary as secondaryColors } from "@/utils/colors";
+
+const SCROLL_TO_BOTTOM_THRESHOLD = 50;
 
 type TimelineProps = {
   children: React.ReactNode;
@@ -9,17 +11,60 @@ type TimelineProps = {
 };
 
 function Timeline({ children, className }: TimelineProps) {
-  const timelineRef = React.useRef<HTMLDivElement>(null);
+  const scrollBottomOffset = useRef<number>(0);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const classes = cx("timeline flex flex-col w-full overflow-y-auto overflow-x-hidden", className);
+
+  // - When the component is mounted, scroll to the bottom
+  // - When the content is resized, scroll to the bottom if the user is already at the bottom
   useEffect(() => {
-    // Automatic move to the bottom of the timeline
-    if (timelineRef.current) {
-      timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
+    // This element is used to track the size of the content.
+    const contentElement = contentRef.current;
+
+    // This function is called when the content is resized.
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      for (const entry of entries) {
+        if (entry.target === contentElement) {
+          if (scrollBottomOffset.current < SCROLL_TO_BOTTOM_THRESHOLD) {
+            scrollBottomOffset.current = 0;
+            timelineElement.scrollTo({
+              top: timelineElement.scrollHeight,
+              behavior: "smooth",
+            });
+          }
+        }
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (contentElement) {
+      resizeObserver.observe(contentElement);
     }
+
+    // This element is used to track the scroll position.
+    const timelineElement = timelineRef.current;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = timelineElement;
+      scrollBottomOffset.current = scrollHeight - scrollTop - clientHeight;
+    };
+
+    if (timelineElement) {
+      // Automatic move to the bottom of the timeline when the component is mounted
+      timelineElement.scrollTop = timelineElement.scrollHeight;
+      timelineElement.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      contentElement && resizeObserver.unobserve(contentElement);
+      timelineElement?.removeEventListener("scroll", handleScroll);
+    };
   }, []);
   return (
     <div ref={timelineRef} className={classes}>
-      {children}
+      <div ref={contentRef} className="content">
+        {children}
+      </div>
     </div>
   );
 }
@@ -40,21 +85,22 @@ function TimelineGroup({ title, children, className, defaultOpen = true }: Timel
 
   const classes = {
     self: cx("timeline-group flex flex-col w-full", className),
-    chevron: cx("flex flex-none w-4 h-4 mr-2 transition-transform", !open && "rotate-90", open && "-rotate-90"),
+    chevron: cx("flex flex-none w-4 h-4 ml-auto transition-transform", !open && "rotate-90", open && "-rotate-90"),
     header: cx(
-      "group-header flex flex-row items-center justify-start w-full h-8 text-sm font-semibold",
-      colors("background", "text"),
+      "group-header flex flex-row items-center justify-start w-full h-8 text-sm font-semibold rounded pl-2 pr-2 mb-0.5 mt-0.5",
+      secondaryColors("background", "text"),
     ),
+    body: cx("group-body w-full"),
   };
   return (
     <section className={classes.self}>
       <div className={cx(classes.header)}>
-        <button className="flex flex-row space-x-2 h-full items-center" onClick={handleToggleOpen}>
+        <button className="flex flex-row h-full w-full items-center" onClick={handleToggleOpen}>
           <div className="flex select-none capitalize">{title}</div>
           <ChevronIcon className={classes.chevron} />
         </button>
       </div>
-      {open && <div className="group-body w-full">{children}</div>}
+      <div className={classes.body}>{open && children}</div>
     </section>
   );
 }

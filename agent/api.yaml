@@ -366,7 +366,6 @@ components:
   schemas:
     Agent:
       description: Description of the agent.
-      x-namespace: agent
       type: object
       required:
         - version
@@ -374,27 +373,33 @@ components:
         version:
           type: string
 
+    AuthenticationMethod:
+      type: string
+      enum:
+        - user_password
+
     Authentication:
-      x-namespace: auth
       type: object
       required:
         - method
         - credentials
       properties:
         method:
-          type: string
-          enum:
-            - user_password
+          $ref: "#/components/schemas/AuthenticationMethod"
         credentials:
-          type: object
-          properties:
-            username:
-              $ref: "#/components/schemas/Username"
-            password:
-              type: string
-          required:
-            - username
-            - password
+          $ref: "#/components/schemas/Credentials"
+
+    Credentials:
+      description: The credentials used to authenticate a user.
+      type: object
+      properties:
+        username:
+          $ref: "#/components/schemas/Username"
+        password:
+          type: string
+      required:
+        - username
+        - password
 
     User:
       description: A user that can logon to the system.
@@ -495,17 +500,22 @@ components:
       type: object
       properties:
         token:
+          description: The security token is a 256-bit random number encoded in hexadecimal.
           type: string
         token_type:
-          type: string
-          enum:
-            - Bearer
+          description: The type of the token (always "Bearer" for now)
+          $ref: "#/components/schemas/TokenType"
         refresh_token:
+          description: The refresh token is used to generate a new security token.
           type: string
         expires_in:
+          description: The number of seconds after which the token will expire.
           type: number
+          format: int32
         user_id:
+          description: The unique identifier of the user that the token belongs to.
           type: string
+          format: uuid
 
     Username:
       description: A username
@@ -602,6 +612,11 @@ components:
           type: number
           format: double
           minimum: 0
+
+    TokenType:
+      type: string
+      enum:
+        - Bearer
 
   securitySchemes:
     ApiKeyAuth:

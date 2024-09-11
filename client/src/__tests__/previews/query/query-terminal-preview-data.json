@@ -3,785 +3,1057 @@
   "executions": [
     {
       "id": "47b8691c-d350-4f81-8c1c-668cac7003c6",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT createdAt, email, token, title, status, password, category, title, phone, status, group\n  FROM Employees WHERE createdAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-05-28T09:36:52.111Z",
-      "status": "success",
-      "executionTime": 356558,
-      "affectedRows": 17880599
+      "createdAt": "2024-05-28T09:36:52.111Z",
+      "affectedRows": 17880599,
+      "executionTime": 0.356558
     },
     {
       "id": "5a38929d-b7b5-481a-96ec-594d17a44ccb",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, title, group\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-05-28T10:29:48.898Z",
-      "status": "success",
-      "executionTime": 340015,
-      "affectedRows": 65831134
+      "createdAt": "2024-05-28T10:29:48.898Z",
+      "affectedRows": 65831134,
+      "executionTime": 0.340015
     },
     {
       "id": "a01c3a71-16b9-4b65-a228-5f6f342478cc",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, token\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-05-28T12:42:59.405Z",
-      "status": "cancelled"
+      "createdAt": "2024-05-28T12:42:59.405Z"
     },
     {
       "id": "32b0ccce-546d-4527-a88e-fb07c459c7bc",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, createdAt, createdAt, name, avatar, status, createdAt, comment\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-05-28T16:16:26.660Z",
-      "status": "cancelled"
+      "createdAt": "2024-05-28T16:16:26.660Z"
     },
     {
       "id": "cb953606-3793-4cdd-9bd0-5daf8616c529",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, id, comment, updatedAt, phone, avatar, comment, status, status, id, comment, status\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Crinis umquam sapiente dolor culpa utroque vaco cavus acies una.",
+        "line": 1,
+        "column": 99
+      },
       "executedAt": "2024-05-29T01:26:41.067Z",
-      "status": "error",
-      "errorMessage": "Crinis umquam sapiente dolor culpa utroque vaco cavus acies una.",
-      "errorLine": 1,
-      "errorColumn": 99
+      "createdAt": "2024-05-29T01:26:41.067Z"
     },
     {
       "id": "7d9be083-82de-4882-b5ce-52dd3f5111b0",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, title, avatar, avatar, avatar, category, password, title, avatar, title, avatar\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Adaugeo desolo subvenio ab nulla cohaero tondeo curatio.", "line": 1, "column": 133 },
       "executedAt": "2024-05-29T01:58:57.253Z",
-      "status": "error",
-      "errorMessage": "Adaugeo desolo subvenio ab nulla cohaero tondeo curatio.",
-      "errorLine": 1,
-      "errorColumn": 133
+      "createdAt": "2024-05-29T01:58:57.253Z"
     },
     {
       "id": "3c601832-2c3a-411c-8602-5aea75a3c004",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, token, title, avatar, updatedAt, title, category, group, avatar, email, category, email, id, name, token, updatedAt, token, name, id\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Molestiae perspiciatis aperio.", "line": 1, "column": 121 },
       "executedAt": "2024-05-29T08:34:28.288Z",
-      "status": "error",
-      "errorMessage": "Molestiae perspiciatis aperio.",
-      "errorLine": 1,
-      "errorColumn": 121
+      "createdAt": "2024-05-29T08:34:28.288Z"
     },
     {
       "id": "4686203a-b38b-4f48-b674-e67fb5f7c6ad",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, token, avatar, updatedAt, email, avatar, id\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Beneficium decens dolores aqua vitae.", "line": 1, "column": 63 },
       "executedAt": "2024-05-29T14:31:44.902Z",
-      "status": "error",
-      "errorMessage": "Beneficium decens dolores aqua vitae.",
-      "errorLine": 1,
-      "errorColumn": 63
+      "createdAt": "2024-05-29T14:31:44.902Z"
     },
     {
       "id": "61d2450e-5d23-4db3-b579-e08eb7f29ed0",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, updatedAt, comment, phone, title, phone, comment, status, title, status\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Uterque clamo tremo defessus ultio tergum depono vita debeo occaecati.",
+        "line": 1,
+        "column": 69
+      },
       "executedAt": "2024-05-29T17:56:15.464Z",
-      "status": "error",
-      "errorMessage": "Uterque clamo tremo defessus ultio tergum depono vita debeo occaecati.",
-      "errorLine": 1,
-      "errorColumn": 69
+      "createdAt": "2024-05-29T17:56:15.464Z"
     },
     {
       "id": "886a1e91-8abc-41bf-b6d3-d020f525c5e2",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT group, email\n  FROM Employees WHERE group IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Tribuo venio cimentarius sunt adnuo tam.", "line": 1, "column": 2 },
       "executedAt": "2024-05-29T20:26:48.546Z",
-      "status": "error",
-      "errorMessage": "Tribuo venio cimentarius sunt adnuo tam.",
-      "errorLine": 1,
-      "errorColumn": 2
+      "createdAt": "2024-05-29T20:26:48.546Z"
     },
     {
       "id": "b0c62446-989d-4628-94a7-dc09abbe54cb",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, password, token, token, email, password, id, group, category, id, category, status\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Asperiores quo clementia.", "line": 1, "column": 134 },
       "executedAt": "2024-05-29T21:59:22.039Z",
-      "status": "error",
-      "errorMessage": "Asperiores quo clementia.",
-      "errorLine": 1,
-      "errorColumn": 134
+      "createdAt": "2024-05-29T21:59:22.039Z"
     },
     {
       "id": "3115ac2f-8100-40d5-aa26-c68ac4d1d2e6",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT category, comment, status, password, email, updatedAt, avatar, title, title, status, password, status, token, group, phone, updatedAt, createdAt, token, name\n  FROM Employees WHERE category IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-05-29T22:11:37.882Z",
-      "status": "success",
-      "executionTime": 798462,
-      "affectedRows": 54862948
+      "createdAt": "2024-05-29T22:11:37.882Z",
+      "affectedRows": 54862948,
+      "executionTime": 0.798462
     },
     {
       "id": "5b595d6a-250e-4bc5-92fc-a456053ae7af",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, id, title\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-05-29T23:42:09.148Z",
-      "status": "success",
-      "executionTime": 20512,
-      "affectedRows": 14242764
+      "createdAt": "2024-05-29T23:42:09.148Z",
+      "affectedRows": 14242764,
+      "executionTime": 0.020512
     },
     {
       "id": "f7ef3219-fdef-41d6-a66d-b7edb0f554a5",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT \n  FROM Employees WHERE undefined IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-05-30T00:03:35.843Z",
-      "status": "cancelled"
+      "createdAt": "2024-05-30T00:03:35.843Z"
     },
     {
       "id": "a35e9539-80da-47c5-b619-01760a4373c0",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, avatar, phone, avatar, password, createdAt, category, phone, name, comment, comment, password\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Bibo aliquid conturbo copiose complectus.", "line": 1, "column": 147 },
       "executedAt": "2024-05-30T01:00:03.848Z",
-      "status": "error",
-      "errorMessage": "Bibo aliquid conturbo copiose complectus.",
-      "errorLine": 1,
-      "errorColumn": 147
+      "createdAt": "2024-05-30T01:00:03.848Z"
     },
     {
       "id": "7c0378a3-db3b-4a43-9ab4-477df8a268e0",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT group, createdAt, name, updatedAt, name, createdAt\n  FROM Employees WHERE group IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-05-30T14:18:36.978Z",
-      "status": "cancelled"
+      "createdAt": "2024-05-30T14:18:36.978Z"
     },
     {
       "id": "1be2afc9-3e4a-4752-a604-186aded1d141",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, email, category, password, name, category, status, phone, group, comment, title\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-05-30T15:09:20.743Z",
-      "status": "success",
-      "executionTime": 404258,
-      "affectedRows": 57420802
+      "createdAt": "2024-05-30T15:09:20.743Z",
+      "affectedRows": 57420802,
+      "executionTime": 0.404258
     },
     {
       "id": "35b82650-de0e-4f6e-89c2-1c1a7928cc48",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, createdAt, password, token, updatedAt, title, email, createdAt\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-05-31T02:23:18.930Z",
-      "status": "cancelled"
+      "createdAt": "2024-05-31T02:23:18.930Z"
     },
     {
       "id": "4d50bac1-99ff-4b60-bd5c-a999a084f690",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, phone, group, phone, group, name, updatedAt, avatar, avatar\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Vestigium caveo vere solio texo acerbitas viriliter degusto necessitatibus defaeco.",
+        "line": 1,
+        "column": 38
+      },
       "executedAt": "2024-05-31T04:37:28.084Z",
-      "status": "error",
-      "errorMessage": "Vestigium caveo vere solio texo acerbitas viriliter degusto necessitatibus defaeco.",
-      "errorLine": 1,
-      "errorColumn": 38
+      "createdAt": "2024-05-31T04:37:28.084Z"
     },
     {
       "id": "8045fae6-2782-4995-bc5f-06ff508866dc",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, id, status, password, token, password, email\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-01T01:36:58.369Z",
-      "status": "success",
-      "executionTime": 282323,
-      "affectedRows": 11307108
+      "createdAt": "2024-06-01T01:36:58.369Z",
+      "affectedRows": 11307108,
+      "executionTime": 0.282323
     },
     {
       "id": "42f308ed-7446-4fba-bc25-3897a0117aec",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, title, token, phone, avatar, avatar, token, group\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Aggero hic mollitia.", "line": 1, "column": 88 },
       "executedAt": "2024-06-01T09:01:29.756Z",
-      "status": "error",
-      "errorMessage": "Aggero hic mollitia.",
-      "errorLine": 1,
-      "errorColumn": 88
+      "createdAt": "2024-06-01T09:01:29.756Z"
     },
     {
       "id": "68beb9b7-b71a-496c-8b7b-2ac3f8d276cf",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, avatar, phone, group\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Tabernus debeo causa derelinquo.", "line": 1, "column": 39 },
       "executedAt": "2024-06-01T11:06:52.445Z",
-      "status": "error",
-      "errorMessage": "Tabernus debeo causa derelinquo.",
-      "errorLine": 1,
-      "errorColumn": 39
+      "createdAt": "2024-06-01T11:06:52.445Z"
     },
     {
       "id": "07e67286-a8bb-40eb-ad78-dd8022965bba",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, id, avatar, token, category, phone, comment, email, id, phone, title, password, phone, status, email, status\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-01T12:31:18.948Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-01T12:31:18.948Z"
     },
     {
       "id": "dc08c8cf-8c27-4a48-86a2-31b3477cc3a2",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, updatedAt, status, phone, updatedAt, phone, group, category, id, email, name, category, status, email\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-01T12:47:41.534Z",
-      "status": "success",
-      "executionTime": 989129,
-      "affectedRows": 55870700
+      "createdAt": "2024-06-01T12:47:41.534Z",
+      "affectedRows": 55870700,
+      "executionTime": 0.989129
     },
     {
       "id": "2abce762-20e6-46a1-b49e-33547c84f27c",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, password\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-01T17:12:23.215Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-01T17:12:23.215Z"
     },
     {
       "id": "b74b43cb-3930-4708-aea8-1f10909bc584",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, token, createdAt, name, phone, name\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-02T00:53:41.019Z",
-      "status": "success",
-      "executionTime": 91663,
-      "affectedRows": 20598658
+      "createdAt": "2024-06-02T00:53:41.019Z",
+      "affectedRows": 20598658,
+      "executionTime": 0.091663
     },
     {
       "id": "5575f493-2aa9-4679-b8c6-c6a1e484e13e",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-02T03:50:38.486Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-02T03:50:38.486Z"
     },
     {
       "id": "e84c8967-f679-4f92-9076-f5de22ed302a",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, id, category, comment, updatedAt, status, token, category, id, updatedAt, status, group, status, title\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-02T04:00:45.344Z",
-      "status": "success",
-      "executionTime": 954203,
-      "affectedRows": 68762784
+      "createdAt": "2024-06-02T04:00:45.344Z",
+      "affectedRows": 68762784,
+      "executionTime": 0.954203
     },
     {
       "id": "d5424658-7edd-409e-bce9-4eb5bcc1af52",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT name, createdAt, password, email, password, comment, avatar, token, phone\n  FROM Employees WHERE name IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Arcus ad toties aeneus.", "line": 1, "column": 72 },
       "executedAt": "2024-06-02T07:57:42.677Z",
-      "status": "error",
-      "errorMessage": "Arcus ad toties aeneus.",
-      "errorLine": 1,
-      "errorColumn": 72
+      "createdAt": "2024-06-02T07:57:42.677Z"
     },
     {
       "id": "f77cb683-83c4-4f43-97e0-583375662005",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, category, status, token, title, avatar, title, title, status, status, updatedAt, email\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-02T21:10:42.424Z",
-      "status": "success",
-      "executionTime": 610301,
-      "affectedRows": 90944146
+      "createdAt": "2024-06-02T21:10:42.424Z",
+      "affectedRows": 90944146,
+      "executionTime": 0.610301
     },
     {
       "id": "c9172db6-6a55-4691-91fd-de5ac730d451",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, createdAt, status, group, token, title, password, title, id, createdAt, name, name, avatar, phone, createdAt\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-03T04:44:12.739Z",
-      "status": "success",
-      "executionTime": 297743,
-      "affectedRows": 4940398
+      "createdAt": "2024-06-03T04:44:12.739Z",
+      "affectedRows": 4940398,
+      "executionTime": 0.297743
     },
     {
       "id": "327f02cf-6789-427f-ad2a-d9a9f136c1bd",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, status, avatar, createdAt, category, password, id, name, status, avatar, id\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-03T06:23:43.116Z",
-      "status": "success",
-      "executionTime": 744921,
-      "affectedRows": 30512940
+      "createdAt": "2024-06-03T06:23:43.116Z",
+      "affectedRows": 30512940,
+      "executionTime": 0.744921
     },
     {
       "id": "f9a0192b-be93-45a0-8fe3-20d95dea547c",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT category, phone, title, updatedAt, name, avatar, comment, updatedAt, id\n  FROM Employees WHERE category IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Dicta solvo umerus caveo conqueror atque voluntarius voluptatem.",
+        "line": 1,
+        "column": 121
+      },
       "executedAt": "2024-06-03T09:10:02.971Z",
-      "status": "error",
-      "errorMessage": "Dicta solvo umerus caveo conqueror atque voluntarius voluptatem.",
-      "errorLine": 1,
-      "errorColumn": 121
+      "createdAt": "2024-06-03T09:10:02.971Z"
     },
     {
       "id": "5945e163-1845-40c6-bb4c-5349847c9bf0",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT category, title, email, comment, avatar, phone, phone, token\n  FROM Employees WHERE category IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-03T10:23:28.228Z",
-      "status": "success",
-      "executionTime": 961583,
-      "affectedRows": 61293430
+      "createdAt": "2024-06-03T10:23:28.228Z",
+      "affectedRows": 61293430,
+      "executionTime": 0.961583
     },
     {
       "id": "9107f5db-4024-4078-a191-8e4439a75024",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, name, avatar\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Vulnus non cogo beneficium.", "line": 1, "column": 11 },
       "executedAt": "2024-06-03T12:13:30.591Z",
-      "status": "error",
-      "errorMessage": "Vulnus non cogo beneficium.",
-      "errorLine": 1,
-      "errorColumn": 11
+      "createdAt": "2024-06-03T12:13:30.591Z"
     },
     {
       "id": "c55f9d33-79b1-4b31-b363-3ca23aab0242",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT createdAt, createdAt, password, status, updatedAt, updatedAt, updatedAt, id, password, comment, title, updatedAt, password, category, updatedAt\n  FROM Employees WHERE createdAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-03T13:58:03.715Z",
-      "status": "success",
-      "executionTime": 327485,
-      "affectedRows": 97174257
+      "createdAt": "2024-06-03T13:58:03.715Z",
+      "affectedRows": 97174257,
+      "executionTime": 0.327485
     },
     {
       "id": "c3eeed55-4209-4030-903d-a309aa21062c",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT phone, updatedAt, category, category, name, status, password, id, updatedAt\n  FROM Employees WHERE phone IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-03T18:44:56.797Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-03T18:44:56.797Z"
     },
     {
       "id": "af45c91b-e06a-44a8-a2bf-0a6f8623c6ff",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, category, comment, name, name, comment, email, email, phone\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Decens ara deinde correptius aliquid.", "line": 1, "column": 91 },
       "executedAt": "2024-06-04T06:06:34.478Z",
-      "status": "error",
-      "errorMessage": "Decens ara deinde correptius aliquid.",
-      "errorLine": 1,
-      "errorColumn": 91
+      "createdAt": "2024-06-04T06:06:34.478Z"
     },
     {
       "id": "63e8e478-6b4a-4e17-bb84-660af8ce941f",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, status, password, avatar, title, comment, avatar, group, email, password, comment, createdAt, token, avatar\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-04T08:45:17.185Z",
-      "status": "success",
-      "executionTime": 983801,
-      "affectedRows": 16468704
+      "createdAt": "2024-06-04T08:45:17.185Z",
+      "affectedRows": 16468704,
+      "executionTime": 0.983801
     },
     {
       "id": "a9ce9eee-f995-4193-946f-9e0155c9fef0",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT createdAt, password, updatedAt, createdAt, title, name, status, avatar, updatedAt, token\n  FROM Employees WHERE createdAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-04T09:54:09.419Z",
-      "status": "success",
-      "executionTime": 86724,
-      "affectedRows": 88220856
+      "createdAt": "2024-06-04T09:54:09.419Z",
+      "affectedRows": 88220856,
+      "executionTime": 0.086724
     },
     {
       "id": "8baa4dd2-fd1b-4bba-9151-cd0076bbf400",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, createdAt, email, password, group, id, token, token, phone, category, phone, title, status, title, password\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-04T18:42:48.577Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-04T18:42:48.577Z"
     },
     {
       "id": "78d89492-d9cc-434b-95b4-b2b29eb2969f",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Demens ara conscendo socius defessus pax solvo.", "line": 1, "column": 56 },
       "executedAt": "2024-06-04T22:55:09.889Z",
-      "status": "error",
-      "errorMessage": "Demens ara conscendo socius defessus pax solvo.",
-      "errorLine": 1,
-      "errorColumn": 56
+      "createdAt": "2024-06-04T22:55:09.889Z"
     },
     {
       "id": "2841d54b-1399-451a-85b7-35b0874131ca",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT createdAt, id, title, title, category\n  FROM Employees WHERE createdAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-05T00:03:26.485Z",
-      "status": "success",
-      "executionTime": 105459,
-      "affectedRows": 79861022
+      "createdAt": "2024-06-05T00:03:26.485Z",
+      "affectedRows": 79861022,
+      "executionTime": 0.105459
     },
     {
       "id": "4c824841-ca92-4f1d-bde3-822428cbd8bd",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, avatar, avatar, status, group, email, email, password, status, comment, updatedAt, name\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-05T05:47:48.053Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-05T05:47:48.053Z"
     },
     {
       "id": "ca48e86c-3242-4c9f-ba15-fd5f15abb9f5",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, id, name, updatedAt, token, email, group, createdAt, email, password, createdAt, updatedAt, comment, avatar, category, token\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Aggero nobis suggero.", "line": 1, "column": 6 },
       "executedAt": "2024-06-05T13:18:28.821Z",
-      "status": "error",
-      "errorMessage": "Aggero nobis suggero.",
-      "errorLine": 1,
-      "errorColumn": 6
+      "createdAt": "2024-06-05T13:18:28.821Z"
     },
     {
       "id": "4d82ab1b-d84a-4084-a359-ed8e4bfaa4ab",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, comment\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-06T02:57:07.931Z",
-      "status": "success",
-      "executionTime": 621014,
-      "affectedRows": 3729279
+      "createdAt": "2024-06-06T02:57:07.931Z",
+      "affectedRows": 3729279,
+      "executionTime": 0.621014
     },
     {
       "id": "4c7effd9-ffbd-4cd3-be46-c2679108e1d4",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, token, avatar, category, name, id, category, title, email, email, email, id, email\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Eligendi accommodo unde communis crastinus vivo.", "line": 1, "column": 77 },
       "executedAt": "2024-06-06T07:35:12.360Z",
-      "status": "error",
-      "errorMessage": "Eligendi accommodo unde communis crastinus vivo.",
-      "errorLine": 1,
-      "errorColumn": 77
+      "createdAt": "2024-06-06T07:35:12.360Z"
     },
     {
       "id": "cf30cf4b-10be-4416-9140-4201455123aa",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT \n  FROM Employees WHERE undefined IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-06T14:02:14.745Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-06T14:02:14.745Z"
     },
     {
       "id": "f6d6076a-77a3-4094-be21-19746f70f264",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, token, id, token, category, avatar, title, group, title, email, token\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Truculenter amor super aequitas bene quam creator cruentus celebrer.",
+        "line": 1,
+        "column": 116
+      },
       "executedAt": "2024-06-07T12:28:32.472Z",
-      "status": "error",
-      "errorMessage": "Truculenter amor super aequitas bene quam creator cruentus celebrer.",
-      "errorLine": 1,
-      "errorColumn": 116
+      "createdAt": "2024-06-07T12:28:32.472Z"
     },
     {
       "id": "c9f7231d-fe45-4a01-8f75-0d161d75a132",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, title, avatar, phone, id, updatedAt, password, createdAt, password, title, id, password, token, avatar, token, name, updatedAt, updatedAt, createdAt\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-07T16:06:00.078Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-07T16:06:00.078Z"
     },
     {
       "id": "e24e1b70-acb0-48d2-bdde-9f404c362107",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, password, password\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-07T16:10:30.468Z",
-      "status": "success",
-      "executionTime": 833628,
-      "affectedRows": 83295976
+      "createdAt": "2024-06-07T16:10:30.468Z",
+      "affectedRows": 83295976,
+      "executionTime": 0.833628
     },
     {
       "id": "a82a9554-7663-47bd-9bf4-3ebb2772a854",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, email, createdAt, status, id, status, phone, password, avatar, group, updatedAt, category\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-07T19:08:40.137Z",
-      "status": "success",
-      "executionTime": 775599,
-      "affectedRows": 71118505
+      "createdAt": "2024-06-07T19:08:40.137Z",
+      "affectedRows": 71118505,
+      "executionTime": 0.775599
     },
     {
       "id": "50777859-4129-44f2-bf80-f2a8fb0d0911",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, category, title, avatar, name, status, phone, group\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-08T00:20:12.093Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-08T00:20:12.093Z"
     },
     {
       "id": "9b66cc01-4a1d-414c-8d9d-0f47ee579e21",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, phone, comment, email, token, token, comment, avatar, category\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-08T00:25:43.701Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-08T00:25:43.701Z"
     },
     {
       "id": "6b48daa2-cd42-42e1-92de-8b401a48f1a3",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-08T06:01:56.029Z",
-      "status": "success",
-      "executionTime": 924061,
-      "affectedRows": 89063772
+      "createdAt": "2024-06-08T06:01:56.029Z",
+      "affectedRows": 89063772,
+      "executionTime": 0.924061
     },
     {
       "id": "84a4a580-49ce-4edd-9ce1-eb0bc8faaf16",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, createdAt, avatar, phone, id, avatar, id, name, name, name, avatar\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-08T15:39:35.014Z",
-      "status": "success",
-      "executionTime": 793467,
-      "affectedRows": 28923528
+      "createdAt": "2024-06-08T15:39:35.014Z",
+      "affectedRows": 28923528,
+      "executionTime": 0.793467
     },
     {
       "id": "59c467ab-5bf4-448f-9e48-9cf523e7cc63",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, createdAt, password, category, avatar, title, phone, email, password, password, updatedAt, email\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Solvo thalassinus verus aegrotatio angelus ciminatio crinis tot deprimo.",
+        "line": 1,
+        "column": 12
+      },
       "executedAt": "2024-06-08T19:46:15.414Z",
-      "status": "error",
-      "errorMessage": "Solvo thalassinus verus aegrotatio angelus ciminatio crinis tot deprimo.",
-      "errorLine": 1,
-      "errorColumn": 12
+      "createdAt": "2024-06-08T19:46:15.414Z"
     },
     {
       "id": "3a1f4f7d-e1bc-488e-8b7e-86bcf37ad15b",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT phone, comment, name\n  FROM Employees WHERE phone IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-08T20:13:22.031Z",
-      "status": "success",
-      "executionTime": 450676,
-      "affectedRows": 33937516
+      "createdAt": "2024-06-08T20:13:22.031Z",
+      "affectedRows": 33937516,
+      "executionTime": 0.450676
     },
     {
       "id": "a2ad138b-5389-4905-8b7f-59be6e57a8c6",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, comment, token, name, group\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-09T04:47:42.091Z",
-      "status": "success",
-      "executionTime": 587899,
-      "affectedRows": 29628199
+      "createdAt": "2024-06-09T04:47:42.091Z",
+      "affectedRows": 29628199,
+      "executionTime": 0.587899
     },
     {
       "id": "6fbbf0b3-8c78-4dfa-b79f-2440cc5dbf18",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT phone, comment, comment, title, password, name, avatar\n  FROM Employees WHERE phone IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-09T17:03:39.181Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-09T17:03:39.181Z"
     },
     {
       "id": "2f9c622c-7537-49b4-b51f-85d87c00c900",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, group, email, email, updatedAt, id, comment, category, password, name, name, group, id, category, createdAt, email, status\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-10T01:57:17.831Z",
-      "status": "success",
-      "executionTime": 626667,
-      "affectedRows": 20026765
+      "createdAt": "2024-06-10T01:57:17.831Z",
+      "affectedRows": 20026765,
+      "executionTime": 0.626667
     },
     {
       "id": "15e4944d-41d3-4160-bf48-74b19f2c1a1a",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, token\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-10T05:27:33.268Z",
-      "status": "success",
-      "executionTime": 611235,
-      "affectedRows": 43626102
+      "createdAt": "2024-06-10T05:27:33.268Z",
+      "affectedRows": 43626102,
+      "executionTime": 0.611235
     },
     {
       "id": "1b3b3168-cb10-4cc4-8e79-8a8f6787f0c5",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT \n  FROM Employees WHERE undefined IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-10T07:46:35.211Z",
-      "status": "success",
-      "executionTime": 286091,
-      "affectedRows": 55524535
+      "createdAt": "2024-06-10T07:46:35.211Z",
+      "affectedRows": 55524535,
+      "executionTime": 0.286091
     },
     {
       "id": "a4148283-f218-467e-a801-0c190d254eef",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, id, group, password, phone, email, group, status, password, name\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Contabesco inventore utroque solitudo.", "line": 1, "column": 57 },
       "executedAt": "2024-06-10T09:03:59.309Z",
-      "status": "error",
-      "errorMessage": "Contabesco inventore utroque solitudo.",
-      "errorLine": 1,
-      "errorColumn": 57
+      "createdAt": "2024-06-10T09:03:59.309Z"
     },
     {
       "id": "55bf7c73-3764-41ef-9c0c-884d41caa359",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, comment, createdAt, updatedAt, group, comment, email, status, title, token, status, createdAt, token, status\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Clamo aequus demitto vicinus.", "line": 1, "column": 105 },
       "executedAt": "2024-06-10T16:46:06.959Z",
-      "status": "error",
-      "errorMessage": "Clamo aequus demitto vicinus.",
-      "errorLine": 1,
-      "errorColumn": 105
+      "createdAt": "2024-06-10T16:46:06.959Z"
     },
     {
       "id": "dde47002-1eec-466c-a76d-d67c88785065",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, createdAt, status\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Termes clementia sum accendo laborum amiculum demoror contigo depromo brevis.",
+        "line": 1,
+        "column": 41
+      },
       "executedAt": "2024-06-10T20:08:53.917Z",
-      "status": "error",
-      "errorMessage": "Termes clementia sum accendo laborum amiculum demoror contigo depromo brevis.",
-      "errorLine": 1,
-      "errorColumn": 41
+      "createdAt": "2024-06-10T20:08:53.917Z"
     },
     {
       "id": "eccdfcbb-fa3e-407b-9712-4af95be9caa7",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, comment, token, comment, token, category, title, phone, updatedAt, status, token, phone, createdAt, comment, category, group, title, status, group\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-11T13:10:15.906Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-11T13:10:15.906Z"
     },
     {
       "id": "f8bd0e56-de17-431a-8795-f8c849eaaad8",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, id, comment, name, updatedAt, updatedAt, token, name, updatedAt, updatedAt, category\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Confero accommodo et unde ustulo certus optio nulla valeo aperiam.",
+        "line": 1,
+        "column": 119
+      },
       "executedAt": "2024-06-11T13:14:28.641Z",
-      "status": "error",
-      "errorMessage": "Confero accommodo et unde ustulo certus optio nulla valeo aperiam.",
-      "errorLine": 1,
-      "errorColumn": 119
+      "createdAt": "2024-06-11T13:14:28.641Z"
     },
     {
       "id": "c209fb60-68e6-4471-b387-0574863c9ea1",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, email, status, status, avatar, comment, title, password, email, title\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-12T09:14:36.105Z",
-      "status": "success",
-      "executionTime": 918473,
-      "affectedRows": 37273405
+      "createdAt": "2024-06-12T09:14:36.105Z",
+      "affectedRows": 37273405,
+      "executionTime": 0.918473
     },
     {
       "id": "3f7db542-e630-401a-898e-e4287e86cee9",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, email, status, email, phone, updatedAt, createdAt, category, comment, email, createdAt, title, email, updatedAt, updatedAt, name\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-12T11:48:14.087Z",
-      "status": "success",
-      "executionTime": 357883,
-      "affectedRows": 7223464
+      "createdAt": "2024-06-12T11:48:14.087Z",
+      "affectedRows": 7223464,
+      "executionTime": 0.357883
     },
     {
       "id": "5c6e0f46-17d8-4390-9c42-ec874a30d7b9",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT category, createdAt, title, token, group, group, token, comment, phone, email\n  FROM Employees WHERE category IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-12T12:32:10.221Z",
-      "status": "success",
-      "executionTime": 465136,
-      "affectedRows": 60443949
+      "createdAt": "2024-06-12T12:32:10.221Z",
+      "affectedRows": 60443949,
+      "executionTime": 0.465136
     },
     {
       "id": "0661fae2-7800-49ec-ba68-83d6ab3bcd6e",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, title, avatar\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-12T20:53:20.237Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-12T20:53:20.237Z"
     },
     {
       "id": "1859a6e1-d886-4178-955b-e6f9b3dde74a",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, email, category, title, email, category, phone, group, name, id, category, createdAt, password, avatar, group, email, email, createdAt, createdAt\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-13T00:45:29.593Z",
-      "status": "success",
-      "executionTime": 271925,
-      "affectedRows": 10480973
+      "createdAt": "2024-06-13T00:45:29.593Z",
+      "affectedRows": 10480973,
+      "executionTime": 0.271925
     },
     {
       "id": "ec48327b-5e45-4bf2-b8aa-cc3b97d6b67d",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, phone, comment, avatar, updatedAt, password, avatar, group, comment\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-13T06:29:24.668Z",
-      "status": "success",
-      "executionTime": 496855,
-      "affectedRows": 59354042
+      "createdAt": "2024-06-13T06:29:24.668Z",
+      "affectedRows": 59354042,
+      "executionTime": 0.496855
     },
     {
       "id": "8dddf095-e1a2-4555-a712-cd3acbd91545",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, phone, avatar, createdAt, name, name, phone, updatedAt, group, comment, category, group, category, category, id, status, password\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-13T06:50:35.426Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-13T06:50:35.426Z"
     },
     {
       "id": "9b71f8c4-aaa8-4fe2-89f3-431388d3bb91",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT name, group, token, phone, id, name, phone, category, group, phone, id, name, status\n  FROM Employees WHERE name IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Eligendi ducimus coma sint terebro.", "line": 1, "column": 100 },
       "executedAt": "2024-06-13T07:18:31.187Z",
-      "status": "error",
-      "errorMessage": "Eligendi ducimus coma sint terebro.",
-      "errorLine": 1,
-      "errorColumn": 100
+      "createdAt": "2024-06-13T07:18:31.187Z"
     },
     {
       "id": "c901907c-cd59-4837-93b2-e1d1e66e850a",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, name\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-13T11:07:19.701Z",
-      "status": "success",
-      "executionTime": 209793,
-      "affectedRows": 47270686
+      "createdAt": "2024-06-13T11:07:19.701Z",
+      "affectedRows": 47270686,
+      "executionTime": 0.209793
     },
     {
       "id": "f66cf555-9e1f-43ff-9d32-388e03728986",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, id, name, createdAt\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-13T12:39:07.531Z",
-      "status": "success",
-      "executionTime": 431469,
-      "affectedRows": 84925839
+      "createdAt": "2024-06-13T12:39:07.531Z",
+      "affectedRows": 84925839,
+      "executionTime": 0.431469
     },
     {
       "id": "1d157029-cd40-497d-8476-ba44c69d8d2d",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, category, title, avatar\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Acervus degusto cohors.", "line": 1, "column": 7 },
       "executedAt": "2024-06-13T14:42:25.445Z",
-      "status": "error",
-      "errorMessage": "Acervus degusto cohors.",
-      "errorLine": 1,
-      "errorColumn": 7
+      "createdAt": "2024-06-13T14:42:25.445Z"
     },
     {
       "id": "4179c59d-3290-416a-a975-6527584f1dbd",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, title, password, updatedAt, group, createdAt, category, comment, updatedAt\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-13T18:34:23.141Z",
-      "status": "success",
-      "executionTime": 155796,
-      "affectedRows": 234833
+      "createdAt": "2024-06-13T18:34:23.141Z",
+      "affectedRows": 234833,
+      "executionTime": 0.155796
     },
     {
       "id": "e2469789-3c6e-4282-8384-b500997a7301",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT updatedAt, group, createdAt, password, email, name, token, phone, password, status, status, updatedAt, phone, avatar, phone, createdAt, id, status, id\n  FROM Employees WHERE updatedAt IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-13T19:58:45.846Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-13T19:58:45.846Z"
     },
     {
       "id": "f3bcc94d-b861-4d31-9a79-b304cf8960eb",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT createdAt, status, email, password, email, name, id, name, status, group, group, email, phone\n  FROM Employees WHERE createdAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-14T07:45:36.743Z",
-      "status": "success",
-      "executionTime": 813776,
-      "affectedRows": 37827774
+      "createdAt": "2024-06-14T07:45:36.743Z",
+      "affectedRows": 37827774,
+      "executionTime": 0.813776
     },
     {
       "id": "93a55418-d2d9-41ec-8374-8c1df58b122a",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, updatedAt, token, group, email, email, updatedAt, avatar, status, group, name, name, comment, createdAt\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-14T16:52:26.602Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-14T16:52:26.602Z"
     },
     {
       "id": "8c9c5381-7f67-4d46-9056-0bd615cff321",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, token, token, updatedAt, updatedAt, comment\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Corrumpo adfectus vester ocer tergiversatio amicitia nobis.", "line": 1, "column": 7 },
       "executedAt": "2024-06-14T17:14:27.355Z",
-      "status": "error",
-      "errorMessage": "Corrumpo adfectus vester ocer tergiversatio amicitia nobis.",
-      "errorLine": 1,
-      "errorColumn": 7
+      "createdAt": "2024-06-14T17:14:27.355Z"
     },
     {
       "id": "4c85a7ae-ab73-4e84-bf72-8c8a4eb6650a",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT id, comment, avatar, comment, title, title, phone, avatar, createdAt, name, token, email, email\n  FROM Employees WHERE id IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-14T18:48:51.753Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-14T18:48:51.753Z"
     },
     {
       "id": "f5f01e46-0572-460c-8f92-179211bdce2b",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, group, password, email, avatar, phone, password, password, status, email\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Tergum uredo eos aestivus creber via.", "line": 1, "column": 108 },
       "executedAt": "2024-06-15T03:42:01.489Z",
-      "status": "error",
-      "errorMessage": "Tergum uredo eos aestivus creber via.",
-      "errorLine": 1,
-      "errorColumn": 108
+      "createdAt": "2024-06-15T03:42:01.489Z"
     },
     {
       "id": "a08b0d7d-4215-4ae2-a8f1-7770cd163eb7",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, group, createdAt, group, createdAt, status, comment, email, title, password, status, status, id\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Delego suadeo bene odit aestus stipes.", "line": 1, "column": 21 },
       "executedAt": "2024-06-15T09:45:59.892Z",
-      "status": "error",
-      "errorMessage": "Delego suadeo bene odit aestus stipes.",
-      "errorLine": 1,
-      "errorColumn": 21
+      "createdAt": "2024-06-15T09:45:59.892Z"
     },
     {
       "id": "2bd3f659-fc55-4a2a-aad8-da26427038be",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, id, email, avatar, avatar, title\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-15T09:50:15.905Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-15T09:50:15.905Z"
     },
     {
       "id": "7097018a-5cb5-4555-b6b2-fbdd15c2e366",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT status, group, name, name, password, email, token, phone, id, status, id, title, token, title, name\n  FROM Employees WHERE status IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Atque conor vindico argumentum veniam strues argentum suadeo deorsum tergeo.",
+        "line": 1,
+        "column": 67
+      },
       "executedAt": "2024-06-15T11:50:24.283Z",
-      "status": "error",
-      "errorMessage": "Atque conor vindico argumentum veniam strues argentum suadeo deorsum tergeo.",
-      "errorLine": 1,
-      "errorColumn": 67
+      "createdAt": "2024-06-15T11:50:24.283Z"
     },
     {
       "id": "fddfc585-937b-41de-ac12-fcfebaa14fb4",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, email, id, phone, password, password, avatar, token, password, token, avatar, updatedAt, avatar, avatar, title, updatedAt\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-15T16:44:39.134Z",
-      "status": "success",
-      "executionTime": 179380,
-      "affectedRows": 26130248
+      "createdAt": "2024-06-15T16:44:39.134Z",
+      "affectedRows": 26130248,
+      "executionTime": 0.17938
     },
     {
       "id": "29cf382c-d732-49db-a105-115b6dc60649",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT avatar, avatar, id, id, id, createdAt, name, createdAt, status, updatedAt\n  FROM Employees WHERE avatar IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Curso tribuo tero solio corona tricesimus toties crudelis.", "line": 1, "column": 70 },
       "executedAt": "2024-06-15T19:28:56.885Z",
-      "status": "error",
-      "errorMessage": "Curso tribuo tero solio corona tricesimus toties crudelis.",
-      "errorLine": 1,
-      "errorColumn": 70
+      "createdAt": "2024-06-15T19:28:56.885Z"
     },
     {
       "id": "bc150da4-a614-4d8e-8824-cd3a23fcddfd",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT token, status, createdAt, id, token, group, comment, avatar, avatar, status, status\n  FROM Employees WHERE token IS NOT NULL;",
+      "status": "failed",
+      "error": {
+        "message": "Excepturi spiritus aspicio sollers textilis color officiis supplanto pauci concedo.",
+        "line": 1,
+        "column": 91
+      },
       "executedAt": "2024-06-15T21:08:10.776Z",
-      "status": "error",
-      "errorMessage": "Excepturi spiritus aspicio sollers textilis color officiis supplanto pauci concedo.",
-      "errorLine": 1,
-      "errorColumn": 91
+      "createdAt": "2024-06-15T21:08:10.776Z"
     },
     {
       "id": "31dee548-52c2-4c5b-b6c3-ec048243c5f1",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT group, name, name, createdAt, email, title, avatar, email, title, createdAt, email, comment, comment, avatar, email\n  FROM Employees WHERE group IS NOT NULL;",
+      "status": "cancelled",
       "executedAt": "2024-06-15T22:02:17.304Z",
-      "status": "cancelled"
+      "createdAt": "2024-06-15T22:02:17.304Z"
     },
     {
       "id": "fc975473-52c6-4d25-8001-aacad1bfed2c",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT title, updatedAt, email\n  FROM Employees WHERE title IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-15T23:29:05.489Z",
-      "status": "success",
-      "executionTime": 737539,
-      "affectedRows": 16642405
+      "createdAt": "2024-06-15T23:29:05.489Z",
+      "affectedRows": 16642405,
+      "executionTime": 0.737539
     },
     {
       "id": "b3de0e91-df8a-4cea-9d60-93e4720a4a2b",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT email, name, name, avatar, title, password, password, id\n  FROM Employees WHERE email IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-16T00:21:49.098Z",
-      "status": "success",
-      "executionTime": 745220,
-      "affectedRows": 1563186
+      "createdAt": "2024-06-16T00:21:49.098Z",
+      "affectedRows": 1563186,
+      "executionTime": 0.74522
     },
     {
       "id": "b9119cc1-0135-4937-82ec-8048be1a4d65",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT createdAt, status, comment, comment, avatar, email, comment, updatedAt, title, category, createdAt, avatar, comment, category, createdAt\n  FROM Employees WHERE createdAt IS NOT NULL;",
+      "status": "completed",
       "executedAt": "2024-06-16T03:34:27.273Z",
-      "status": "success",
-      "executionTime": 403656,
-      "affectedRows": 41460955
+      "createdAt": "2024-06-16T03:34:27.273Z",
+      "affectedRows": 41460955,
+      "executionTime": 0.403656
     },
     {
       "id": "1794687b-d1d6-4d22-84c3-c8bf093539fb",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT comment, id, createdAt, name, comment, token, updatedAt, phone, status, comment, status, password, email, title, title, email\n  FROM Employees WHERE comment IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Valetudo copiose volo.", "line": 1, "column": 57 },
       "executedAt": "2024-06-16T13:42:47.865Z",
-      "status": "error",
-      "errorMessage": "Valetudo copiose volo.",
-      "errorLine": 1,
-      "errorColumn": 57
+      "createdAt": "2024-06-16T13:42:47.865Z"
     },
     {
       "id": "87e9cece-b2c5-4fb9-ba91-26121cf9b640",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT name, status, updatedAt, status, group, createdAt, createdAt, createdAt, category, email, phone, email, password, id, comment, comment, phone, title, comment\n  FROM Employees WHERE name IS NOT NULL;",
+      "status": "failed",
+      "error": { "message": "Color concedo bis perspiciatis.", "line": 1, "column": 108 },
       "executedAt": "2024-06-16T14:43:59.460Z",
-      "status": "error",
-      "errorMessage": "Color concedo bis perspiciatis.",
-      "errorLine": 1,
-      "errorColumn": 108
+      "createdAt": "2024-06-16T14:43:59.460Z"
     },
     {
       "id": "430b9426-06a3-470b-9af4-5cc8dd383392",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT password, phone\n  FROM Employees WHERE password IS NOT NULL;",
+      "status": "running",
       "executedAt": "2024-06-17T05:58:04.173Z",
-      "status": "running"
+      "createdAt": "2024-06-17T05:58:04.173Z"
     },
     {
       "id": "06b8b3a8-c218-4ce0-b3a5-6e7d412aae7d",
+      "connectionId": "51f9a747-acc6-41ae-85de-1d2798924813",
+      "userId": "9f1775d9-6f03-4abe-b01e-52ae4f7a65fd",
       "query": "SELECT name, status, name, group\n  FROM Employees WHERE name IS NOT NULL;",
+      "status": "pending",
       "executedAt": "2024-06-17T05:58:09.173Z",
-      "status": "pending"
+      "createdAt": "2024-06-17T05:58:09.173Z"
     }
   ]
 }
