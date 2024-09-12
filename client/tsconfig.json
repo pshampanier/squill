@@ -40,5 +40,6 @@
     }
   },
   "include": ["src"],
+  "exclude": ["src/__tests__/setup.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

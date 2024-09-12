@@ -2,7 +2,6 @@ use crate::err_param;
 use crate::models::auth::AuthenticationMethod;
 use crate::utils::constants::WINDOWS_RESERVED_NAMES;
 use anyhow::Result;
-use axum::http::HeaderValue;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -123,17 +122,14 @@ fn is_valid_catalog_name(comp: &str) -> bool {
 ///
 /// #Returns
 /// Returns the token if the header is syntactically valid, otherwise returns an error.
-pub fn parse_authorization_header(
-    authentication_method: AuthenticationMethod,
-    authorization_header: &HeaderValue,
-) -> Result<String> {
+pub fn parse_authorization_header(authentication_method: AuthenticationMethod, authorization: &str) -> Result<String> {
     match authentication_method {
         AuthenticationMethod::UserPassword => {
-            let parts: Vec<&str> = authorization_header.to_str()?.split(' ').collect();
-            if parts.len() != 2 || parts[0] != "Bearer" {
-                return Err(anyhow::anyhow!("Invalid syntax, expecting 'Bearer <token>'"));
+            let parts: Vec<&str> = authorization.split(' ').collect();
+            match parts.len() {
+                2 if parts[0] == "Bearer" => Ok(parts[1].to_string()),
+                _ => Err(err_param!("Invalid syntax, expecting 'Bearer <token>'")),
             }
-            Ok(parts[1].to_string())
         }
     }
 }
@@ -145,19 +141,13 @@ mod tests {
     #[test]
     fn test_parse_authorization_header() {
         // 1) invalid syntax
-        let authorization_header = HeaderValue::from_static("Bearer");
-        assert!(parse_authorization_header(AuthenticationMethod::UserPassword, &authorization_header).is_err());
+        assert!(parse_authorization_header(AuthenticationMethod::UserPassword, "Bearer").is_err());
 
         // 2) invalid authentication method
-        let authorization_header = HeaderValue::from_static("Basic abcdef");
-        assert!(parse_authorization_header(AuthenticationMethod::UserPassword, &authorization_header).is_err());
+        assert!(parse_authorization_header(AuthenticationMethod::UserPassword, "Basic abcdef").is_err());
 
         // 3) valid syntax
-        let authorization_header = HeaderValue::from_static("Bearer abcdef");
-        assert_eq!(
-            parse_authorization_header(AuthenticationMethod::UserPassword, &authorization_header).unwrap(),
-            "abcdef"
-        );
+        assert_eq!(parse_authorization_header(AuthenticationMethod::UserPassword, "Bearer abcdef").unwrap(), "abcdef");
     }
 
     #[test]

@@ -9,10 +9,13 @@ use axum::extract::State;
 use axum::http::{self, HeaderValue, Method};
 use axum::middleware::{from_fn, from_fn_with_state, Next};
 use axum::{extract::Request, response::Response, Router};
-use common::constants::{X_API_KEY_HEADER, X_REQUEST_ID_HEADER, X_RESOURCE_TYPE};
+use common::constants::{
+    QUERY_PARAM_API_KEY, QUERY_PARAM_TOKEN, X_API_KEY_HEADER, X_REQUEST_ID_HEADER, X_RESOURCE_TYPE,
+};
 use common::pid_file::{delete_pid_file, get_agent_status, load_pid_file, save_pid_file, AgentStatus, PID_FILENAME};
 use http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
 use rand::Rng;
+use std::net::SocketAddr;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::net::TcpListener;
@@ -108,7 +111,9 @@ impl Server {
         );
 
         // Add the CORS middleware
-        let layers = api.layer(get_cors_layer().context("Error while configuring CORS.")?);
+        let layers = api
+            .layer(get_cors_layer().context("Error while configuring CORS.")?)
+            .into_make_service_with_connect_info::<SocketAddr>();
 
         // start the server
         info!("Listening on {}", listener.local_addr().unwrap().to_string());
@@ -198,6 +203,22 @@ fn get_cors_layer() -> Result<CorsLayer> {
     Ok(cors)
 }
 
+fn get_query_parameter<'r>(req: &'r Request, key: &str) -> Option<&'r str> {
+    req.uri().query().and_then(|query| {
+        query
+            .split('&')
+            .find(|pair| {
+                let mut iter = pair.split('=');
+                iter.next().unwrap_or_default() == key
+            })
+            .map(|pair| {
+                let mut iter = pair.split('=');
+                iter.next().unwrap_or_default();
+                iter.next().unwrap_or_default()
+            })
+    })
+}
+
 // "Authorization", "Content-Type", "X-Api-Key"
 
 /// Check the API key.
@@ -205,23 +226,27 @@ fn get_cors_layer() -> Result<CorsLayer> {
 /// The API key is passed in the X-API-Key header and is required for all requests.
 /// If the API key is not provided or invalid, the request will be rejected with a 403 Forbidden error.
 async fn check_api_key(mut req: Request, next: Next) -> ServerResult<Response> {
-    let api_key_header = req.headers().get(X_API_KEY_HEADER);
-    if let Some(api_key) = api_key_header {
-        let value = api_key.to_str();
-        if value.is_ok() && value.unwrap() == settings::get_api_key() {
-            // We've found the api key, before continuing to the next middleware, we need to add the context request
-            // TODO: If there is already a request id in the request header, we should not generate a new one.
-            let request_id = gen_request_id();
-            let context = RequestContext::new(&request_id);
-            req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
-            let mut response = next.run(req).await;
-            response.headers_mut().insert(X_REQUEST_ID_HEADER, HeaderValue::from_str(&request_id)?);
-            return Ok(response);
+    let api_key = {
+        if let Some(header) = req.headers().get(X_API_KEY_HEADER) {
+            Some(header.to_str().unwrap_or_default())
+        } else {
+            get_query_parameter(&req, QUERY_PARAM_API_KEY)
         }
+    };
+    if api_key == Some(&settings::get_api_key()) {
+        // We've found the api key, before continuing to the next middleware, we need to add the context request
+        // TODO: If there is already a request id in the request header, we should not generate a new one.
+        let request_id = gen_request_id();
+        let context = RequestContext::new(&request_id);
+        req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
+        let mut response = next.run(req).await;
+        response.headers_mut().insert(X_REQUEST_ID_HEADER, HeaderValue::from_str(&request_id)?);
+        Ok(response)
+    } else {
+        warn!("Invalid or missing API key.");
+        debug!("headers: {:?}", req.headers());
+        Err(Error::Forbidden)
     }
-    warn!("Invalid or missing API key.");
-    debug!("headers: {:?}", req.headers());
-    Err(Error::Forbidden)
 }
 
 /// Check the security token.
@@ -235,28 +260,32 @@ async fn check_authentication(
     mut req: Request,
     next: Next,
 ) -> ServerResult<Response> {
-    let authorization_header = req.headers().get(http::header::AUTHORIZATION);
-    let Some(authorization_header) = authorization_header else {
-        // The Authorization header is missing.
-        warn!("Authorization header is missing.");
-        return Err(Error::Forbidden);
-    };
-    let Ok(security_token) = parse_authorization_header(AuthenticationMethod::UserPassword, authorization_header)
-    else {
-        return Err(Error::BadRequest("(Invalid 'Authorization' header)".to_string()));
+    let (authorization, from_header) = {
+        if let Some(header) = req.headers().get(AUTHORIZATION) {
+            (Some(header.to_str().unwrap_or_default()), true)
+        } else {
+            (get_query_parameter(&req, QUERY_PARAM_TOKEN), false)
+        }
     };
 
-    let Some(user_session) = state.get_user_session(&security_token) else {
-        warn!("Invalid security token.");
-        return Err(Error::Forbidden);
-    };
-
-    // Add the user_session information to the context of the request.
-    let mut context = context?;
-    context.add_user_session(user_session);
-    req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
-
-    Ok(next.run(req).await)
+    match authorization {
+        Some(authorization) => {
+            let security_token = match from_header {
+                true => parse_authorization_header(AuthenticationMethod::UserPassword, authorization)
+                    .map_err(|e| Error::BadRequest(e.to_string()))?,
+                false => authorization.to_string(),
+            };
+            let user_session = state.get_user_session(&security_token).ok_or(Error::Forbidden)?;
+            let mut context = context?;
+            context.add_user_session(user_session);
+            req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));
+            Ok(next.run(req).await)
+        }
+        None => {
+            warn!("Authorization header is missing.");
+            Err(Error::Forbidden)
+        }
+    }
 }
 
 /// Generate a request id.

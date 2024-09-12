@@ -89,15 +89,13 @@ async fn refresh_token(
 /// or expired. Instead, it will return a 200 OK since the goal is only to invalidate the tokens. Nevertheless if the
 /// Authorization header is missing or syntactically wrong, a 400 Bad Request will be returned.
 async fn logout(State(state): State<ServerState>, headers: HeaderMap) -> ServerResult<()> {
-    let authorization_header = headers.get(AUTHORIZATION);
-    if authorization_header.is_none() {
-        return Err(Error::BadRequest("Missing Authorization header".to_string()));
-    }
-
-    let Ok(security_token) =
-        parse_authorization_header(AuthenticationMethod::UserPassword, authorization_header.unwrap())
-    else {
-        return Err(Error::BadRequest("Invalid Authorization header".to_string()));
+    let security_token = match headers.get(AUTHORIZATION) {
+        Some(header) => match header.to_str() {
+            Ok(header_value) => parse_authorization_header(AuthenticationMethod::UserPassword, header_value)
+                .map_err(|e| Error::BadRequest(e.to_string()))?,
+            Err(_) => return Err(Error::BadRequest("Invalid Authorization header".to_string())),
+        },
+        None => return Err(Error::BadRequest("Missing Authorization header".to_string())),
     };
 
     if let Some(user_session) = state.get_user_session(&security_token) {

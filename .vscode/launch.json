@@ -12,6 +12,9 @@
         "args": ["build", "--package=agent"]
       },
       "args": ["--verbose", "start", "--dev"],
+      "env": {
+        "SQUILL_LOG_LEVEL": "trace"
+      },
       "cwd": "${workspaceFolder}"
     },
     {

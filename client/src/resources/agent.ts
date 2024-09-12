@@ -29,6 +29,10 @@ export class Agent {
   /// The API key used to authenticate the client.
   readonly apiKey!: string;
 
+  /// A unique identifier of the client.
+  /// This identifier is used by the server to associated the web socket connection with the client.
+  readonly clientId!: string;
+
   /// The version of the agent.
   @serializable("string")
   readonly version!: string;
@@ -48,6 +52,9 @@ export class Agent {
   /// The Unix Epoch time (in milliseconds) at which the security token will expire.
   /// If there is no security token, this value is undefined.
   private securityTokenExpiresAt: number = 0;
+
+  /// The web socket connection used to receive notifications events from the agent.
+  private websocket?: WebSocket;
 
   private setSecurityToken(token: SecurityToken): void {
     this.securityToken = token;
@@ -87,6 +94,7 @@ export class Agent {
   constructor(url: string, apiKey: string) {
     this.url = url?.endsWith("/") ? url.slice(0, url.length - 1) : url;
     this.apiKey = apiKey;
+    this.clientId = crypto.randomUUID();
   }
 
   private async fetch<T extends object>(path: string, method: string, options?: FetchOptions): Promise<Resource<T>> {
@@ -161,6 +169,7 @@ export class Agent {
   async logon(auth: AuthRequest): Promise<void> {
     if (auth.method === "user_password") {
       this.setSecurityToken((await this.post<AuthRequest, SecurityToken>("/auth/logon", auth)).as(SecurityToken));
+      this.connectWebSocket();
     } else {
       throw new Error("Not implemented");
     }
@@ -169,6 +178,26 @@ export class Agent {
   static async connect(url: string, apiKey: string): Promise<Agent> {
     Agent.agent = (await new Agent(url, apiKey).get<Agent>("/agent")).as(() => new Agent(url, apiKey));
     return Agent.agent;
+  }
+
+  private connectWebSocket() {
+    const query = `token=${this.securityToken.token}&api_key=${this.apiKey}&client_id=${this.clientId}`;
+    this.websocket = new WebSocket(`${this.url.replace("http", "ws")}${API_PATH}/ws?${query}`);
+    this.websocket.addEventListener("open", (event) => {
+      console.log("WebSocket is open now.", event);
+    });
+
+    this.websocket.addEventListener("message", (event) => {
+      console.log("Message from server:", event.data);
+    });
+
+    this.websocket.addEventListener("close", (event) => {
+      console.log("WebSocket is closed now.", event);
+    });
+
+    this.websocket.addEventListener("error", (error) => {
+      console.error("WebSocket error:", error);
+    });
   }
 }
 

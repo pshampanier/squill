@@ -6,6 +6,7 @@ export default mergeConfig(
   defineConfig({
     test: {
       root: "src",
+      setupFiles: "__tests__/setup.ts",
       environment: "happy-dom",
       coverage: {
         enabled: true,
@@ -15,5 +16,5 @@ export default mergeConfig(
         all: true,
       },
     },
-  })
+  }),
 );
