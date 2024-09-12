@@ -42,6 +42,19 @@ export class Env {
     return import.meta.env.DEV ? "debug" : "release";
   }
 
+  /**
+   * A unique identifier for the client.
+   * This is used for telemetry, allowing to distinguish between different downloads of the client.
+   */
+  get clientId(): string {
+    let uuid = localStorage.getItem("client_id");
+    if (!uuid) {
+      uuid = crypto.randomUUID();
+      localStorage.setItem("client_id", uuid);
+    }
+    return uuid;
+  }
+
   getAgentEndpoint(): AgentEndpoint {
     if (!this.agentEndpoint) throw new UserError("The agent is not currently running.");
     return this.agentEndpoint;

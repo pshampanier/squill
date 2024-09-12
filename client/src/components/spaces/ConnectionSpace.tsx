@@ -2,7 +2,7 @@ import { User } from "@/models/users";
 import { Agent } from "@/resources/agent.ts";
 import Users from "@/resources/users";
 import { env } from "@/utils/env";
-import { AuthRequest } from "@/models/auth";
+import { Authentication } from "@/models/auth";
 import { useAppStore } from "@/stores/AppStore";
 import Space, { SpaceProps } from "@/components/spaces/Space";
 import Titlebar from "@/components/titlebar/Titlebar";
@@ -21,31 +21,36 @@ export default function ConnectionSpace(props: SpaceProps) {
   const { status, refetch, error } = useQuery<boolean, Error>({
     queryKey: ["agent-connect"],
     queryFn: async () => {
-      // Get the agent connection parameters which are stored in the environment
-      const endpoint = env.getAgentEndpoint();
+      try {
+        // Get the agent connection parameters which are stored in the environment
+        const endpoint = env.getAgentEndpoint();
 
-      // Connect to the agent
-      console.log(`Connecting agent: ${endpoint.url}`);
-      await Agent.connect(endpoint.url, endpoint.apiKey);
+        // Connect to the agent
+        console.log(`Connecting agent: ${endpoint.url}`);
+        await Agent.connect(endpoint.url, endpoint.apiKey);
 
-      // Once the agent is connected, log in the user.
-      // As for now, only the 'local' user is supported.
-      console.log("Logging in user 'local'");
-      const authRequest = new AuthRequest({
-        method: "user_password",
-        credentials: { username: "local", password: "" },
-      });
-      const user: User = await Users.logon(authRequest);
-      console.log(`user '${user.username}' logged in`);
+        // Once the agent is connected, log in the user.
+        // As for now, only the 'local' user is supported.
+        console.log("Logging in user 'local'");
+        const authRequest = new Authentication({
+          method: "user_password",
+          credentials: { username: "local", password: "" },
+        });
+        const user: User = await Users.logon(authRequest);
+        console.log(`user '${user.username}' logged in`);
 
-      // Connected with the agent and logged in the user, reset the user store and set the active space to 'user'
-      reset();
+        // Connected with the agent and logged in the user, reset the user store and set the active space to 'user'
+        reset();
 
-      // load the user's catalog (the root of the catalog only)
-      await loadCatalog();
+        // load the user's catalog (the root of the catalog only)
+        await loadCatalog();
 
-      setActiveSpace("user");
-      return true; // Not used but required by useQuery...
+        setActiveSpace("user");
+        return true; // Not used but required by useQuery...
+      } catch (error) {
+        console.error("Failed to connect to the agent", error);
+        throw error;
+      }
     },
     retry: 5,
     retryDelay: 2000,

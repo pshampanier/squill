@@ -1,50 +1,60 @@
-use crate::json_enum;
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-json_enum!(AuthenticationMethod, UserPassword);
-json_enum!(TokenType, Bearer);
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum AuthenticationMethod {
+    UserPassword,
+}
 
-/// Body of the POST /auth/logon endpoint.
-#[derive(Deserialize, Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum TokenType {
+    Bearer,
+}
+
+/// A username
+pub type Username = String;
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Authentication {
-    /// The authentication method.
-    /// As of now, only the UserPassword method is supported.
-    pub method: AuthenticationMethod,
-
-    /// The credentials used to authenticate the user.
     pub credentials: Credentials,
+
+    pub method: AuthenticationMethod,
 }
 
-/// Credentials used to authenticate a user.
-#[derive(Deserialize, Debug)]
+/// The credentials used to authenticate a user.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Credentials {
-    pub username: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub password: String,
+
+    pub username: Username,
 }
 
-/// Response of the POST /auth/logon endpoint.
-#[derive(Serialize, Clone)]
+/// A security token used for authentication.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SecurityToken {
+    /// The number of seconds after which the token will expire.
+    pub expires_in: u32,
+
+    /// The refresh token is used to generate a new security token.
+    pub refresh_token: String,
+
     /// The security token is a 256-bit random number encoded in hexadecimal.
     pub token: String,
 
     /// The type of the token (always "Bearer" for now)
     pub token_type: TokenType,
 
-    /// The refresh token is used to generate a new security token.
-    pub refresh_token: String,
-
-    /// The number of seconds after which the token will expire.
-    pub expires_in: u32,
-
-    /// The user id associated with the token.
-    pub user_id: Uuid,
+    /// The unique identifier of the user that the token belongs to.
+    pub user_id: uuid::Uuid,
 }
 
 /// The request body of the POST /auth/refresh-token endpoint.
-#[derive(Deserialize, Debug)]
-#[cfg_attr(test, derive(Serialize))]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefreshToken {
     pub refresh_token: String,
 }

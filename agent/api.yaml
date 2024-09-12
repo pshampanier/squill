@@ -399,7 +399,6 @@ components:
           type: string
       required:
         - username
-        - password
 
     User:
       description: A user that can logon to the system.
@@ -438,7 +437,6 @@ components:
 
     RefreshToken:
       description: The request body of the POST /auth/refresh-token endpoint.
-      x-namespace: auth
       type: object
       properties:
         refresh_token:
@@ -496,8 +494,13 @@ components:
 
     SecurityToken:
       description: A security token used for authentication.
-      x-namespace: auth
       type: object
+      required:
+        - token
+        - token_type
+        - refresh_token
+        - expires_in
+        - user_id
       properties:
         token:
           description: The security token is a 256-bit random number encoded in hexadecimal.
@@ -512,6 +515,7 @@ components:
           description: The number of seconds after which the token will expire.
           type: number
           format: int32
+          minimum: 0
         user_id:
           description: The unique identifier of the user that the token belongs to.
           type: string
@@ -616,7 +620,7 @@ components:
     TokenType:
       type: string
       enum:
-        - Bearer
+        - bearer
 
   securitySchemes:
     ApiKeyAuth:

@@ -1,6 +1,6 @@
 import { Resource } from "@/resources/resource";
 import { serializable, serialize } from "@/utils/serializable";
-import { AuthenticationMethod, AUTHENTICATION_METHOD, AuthRequest, AuthRefresh } from "@/models/auth";
+import { AuthenticationMethod, AUTHENTICATION_METHOD_VALUES, Authentication, RefreshToken } from "@/models/auth";
 import { SecurityToken } from "@/models/auth";
 import { AuthenticationError, HttpRequestError, UserError } from "@/utils/errors";
 import {
@@ -39,7 +39,7 @@ export class Agent {
 
   /// A list of authentication methods supported by the agent.
   @serializable("array", {
-    items: { type: "string", options: { format: new RegExp(`^${AUTHENTICATION_METHOD.join("|")}$`) } },
+    items: { type: "string", options: { format: new RegExp(`^${AUTHENTICATION_METHOD_VALUES.join("|")}$`) } },
   })
   readonly authenticationMethods!: AuthenticationMethod[];
 
@@ -68,14 +68,14 @@ export class Agent {
   /// is thrown and the current security token is discarded.
   private async refreshToken(): Promise<void> {
     const url = this.url + API_PATH + "/auth/refresh-token";
-    const authRefresh = new AuthRefresh({ refreshToken: this.securityToken.refreshToken });
+    const authRefresh = new RefreshToken({ refreshToken: this.securityToken.refreshToken });
     const response = await fetch(url, {
       method: "POST",
       headers: {
         [HTTP_HEADER_X_API_KEY]: this.apiKey,
         [HTTP_HEADER_CONTENT_TYPE]: MEDIA_TYPE_APPLICATION_JSON,
       },
-      body: JSON.stringify(serialize<AuthRefresh>(authRefresh)),
+      body: JSON.stringify(serialize<RefreshToken>(authRefresh)),
     });
     if (response.ok) {
       const contentType = response.headers.get(HTTP_HEADER_CONTENT_TYPE) || MEDIA_TYPE_PLAIN_TEXT;
@@ -166,9 +166,9 @@ export class Agent {
     }
   }
 
-  async logon(auth: AuthRequest): Promise<void> {
+  async logon(auth: Authentication): Promise<void> {
     if (auth.method === "user_password") {
-      this.setSecurityToken((await this.post<AuthRequest, SecurityToken>("/auth/logon", auth)).as(SecurityToken));
+      this.setSecurityToken((await this.post<Authentication, SecurityToken>("/auth/logon", auth)).as(SecurityToken));
       this.connectWebSocket();
     } else {
       throw new Error("Not implemented");

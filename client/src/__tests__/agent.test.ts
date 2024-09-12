@@ -1,4 +1,6 @@
+import { SecurityToken } from "@/models/auth";
 import { Agent } from "@/resources/agent";
+import { serialize } from "@/utils/serializable";
 import { test, expect, vi, afterEach } from "vitest";
 
 afterEach(() => {
@@ -40,6 +42,18 @@ test("connect", async () => {
 });
 
 test("logon", async () => {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    headers: {
+      get: () => {
+        return "application/json";
+      },
+    },
+    text: () => {
+      return Promise.resolve("{}");
+    },
+  });
+
   const agent = await Agent.connect("http://localhost", "x-test-api-key");
 
   global.fetch = vi.fn().mockResolvedValue({
@@ -50,7 +64,19 @@ test("logon", async () => {
       },
     },
     text: () => {
-      return Promise.resolve("{}");
+      return Promise.resolve(
+        JSON.stringify(
+          serialize(
+            new SecurityToken({
+              expiresIn: 10,
+              refreshToken: "x-test-refresh-token",
+              token: "x-test-token",
+              tokenType: "bearer",
+              userId: "68F3669F-57E2-4983-A648-D1CACB11F0DC",
+            }),
+          ),
+        ),
+      );
     },
   });
 

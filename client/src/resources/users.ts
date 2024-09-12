@@ -1,4 +1,4 @@
-import { AuthRequest } from "@/models/auth";
+import { Authentication } from "@/models/auth";
 import { ResourceType, ResourceRef } from "@/models/resources";
 import { User, UserSettings } from "@/models/users";
 import { agent } from "@/resources/agent";
@@ -26,7 +26,7 @@ const Users = {
     return this._current;
   },
 
-  async logon(auth: AuthRequest): Promise<User> {
+  async logon(auth: Authentication): Promise<User> {
     await agent().logon(auth);
     const encodedUsername = encodeURIComponent(auth.credentials.username);
     this._current = (await agent().get<User>(`/users/${encodedUsername}/user`)).as(User);
