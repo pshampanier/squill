@@ -220,31 +220,31 @@ mod tests {
         let username: Username = "marty.mcfly".into();
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
         let state = ServerState::new();
-        let security_token = state.add_user_session(&username, marty_mcfly.user_id);
+        let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
 
         // 1) valid user
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = get_user(State(state.clone()), context, Path(username.to_string())).await;
         assert!(result.is_ok());
         assert!(result.as_ref().unwrap().username.eq(username.as_str()));
 
         // 2) invalid user parameter (do no pass sanitization)
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = get_user(State(state.clone()), context, Path("../user1".to_string())).await;
         assert!(matches!(result, Err(Error::UserError(UserError::InvalidParameter(_)))));
 
         // 3) invalid username (different from the authenticated user)
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = get_user(State(state.clone()), context, Path("another_user".to_string())).await;
         assert!(matches!(result, Err(Error::Forbidden)));
 
         // 4) failed for some reasons (e.g. user file is corrupted)
         users::delete(&conn, &username).await.unwrap();
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = get_user(State(state.clone()), context, Path(username.to_string())).await;
         assert!(result.is_err());
     }
@@ -256,14 +256,14 @@ mod tests {
         let username: Username = "marty.mcfly".into();
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
         let state = ServerState::new();
-        let security_token = state.add_user_session(&username, marty_mcfly.user_id);
+        let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
         let root_folders = catalog::list(&conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
         let environments_folder = root_folders
             .iter()
             .find(|f| f.get_metadata(METADATA_CONTENT_TYPE) == Some(ContentType::Environments.as_ref()))
             .unwrap();
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
 
         // 1) valid connection
         let mut http_headers = HeaderMap::new();
@@ -369,7 +369,7 @@ mod tests {
 
         // 1) valid user & path
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = read_user_catalog(
             State(state.clone()),
             ServerResult::Ok(context),
@@ -384,7 +384,7 @@ mod tests {
 
         // 2) invalid user parameter (do no pass sanitization)
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = read_user_catalog(
             State(state.clone()),
             ServerResult::Ok(context),
@@ -396,7 +396,7 @@ mod tests {
 
         // 3) invalid path parameter (do no pass sanitization)
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = read_user_catalog(
             State(state.clone()),
             ServerResult::Ok(context),
@@ -408,7 +408,7 @@ mod tests {
 
         // 4) invalid username (different from the authenticated user)
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = read_user_catalog(
             State(state.clone()),
             ServerResult::Ok(context),
@@ -420,7 +420,7 @@ mod tests {
 
         // 5) invalid path parameter (path does not exist)
         let mut context = RequestContext::new(Uuid::nil());
-        context.add_user_session(state.get_user_session(&security_token.token).unwrap());
+        context.add_user_session(state.get_user_session(&security_tokens.access_token).unwrap());
         let result = read_user_catalog(
             State(state.clone()),
             ServerResult::Ok(context),

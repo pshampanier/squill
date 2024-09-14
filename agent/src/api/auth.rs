@@ -1,5 +1,5 @@
 use crate::api::error::{Error, ServerResult};
-use crate::models::auth::{Authentication, AuthenticationMethod, RefreshToken, SecurityToken, TokenType};
+use crate::models::auth::{Authentication, AuthenticationMethod, RefreshToken, SecurityTokens, TokenType};
 use crate::resources::users;
 use crate::server::state::ServerState;
 use crate::settings;
@@ -13,11 +13,11 @@ use rand::Rng;
 use tracing::{error, info};
 use uuid::Uuid;
 
-impl Default for SecurityToken {
+impl Default for SecurityTokens {
     fn default() -> Self {
         Self {
-            token: generate_token(),
-            token_type: TokenType::Bearer,
+            access_token: generate_token(),
+            access_token_type: TokenType::Bearer,
             refresh_token: generate_token(),
             expires_in: settings::get_token_expiration().as_secs() as u32,
             user_id: Uuid::nil(),
@@ -31,7 +31,7 @@ impl Default for SecurityToken {
 ///
 /// This endpoint is used to authenticate a user and to generate a security token.
 /// As for now it only supports the local user and the password must be empty.
-async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> ServerResult<Json<SecurityToken>> {
+async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> ServerResult<Json<SecurityTokens>> {
     match auth.method {
         AuthenticationMethod::UserPassword => {
             // Usernames are case insensitive. We are using the lowercase version to prevent any duplicate issues when the
@@ -74,8 +74,8 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
 async fn refresh_token(
     State(state): State<ServerState>,
     token: Json<RefreshToken>,
-) -> ServerResult<Json<SecurityToken>> {
-    let Ok(refresh_token) = state.refresh_security_token(&token.refresh_token) else {
+) -> ServerResult<Json<SecurityTokens>> {
+    let Ok(refresh_token) = state.refresh_security_tokens(&token.refresh_token) else {
         // Refresh token not found.
         return Err(Error::Forbidden);
     };
@@ -159,7 +159,7 @@ mod test {
             let result = logon(state, body).await;
             assert!(result.is_ok());
             let result = result.unwrap();
-            assert_eq!(result.token.len(), 64);
+            assert_eq!(result.access_token.len(), 64);
         }
 
         // 3) unexpected username (not "local")
@@ -209,7 +209,7 @@ mod test {
         // setup: create a user session
         let state = axum::extract::State(ServerState::new());
         let mut headers = HeaderMap::new();
-        let security_token = state.add_user_session(&"local".into(), Uuid::new_v4());
+        let security_tokens = state.add_user_session(&"local".into(), Uuid::new_v4());
 
         // 1) missing Authorization header
         assert!(matches!(logout(state.clone(), headers.clone()).await, Err(Error::BadRequest(_))));
@@ -219,11 +219,12 @@ mod test {
         assert!(matches!(logout(state.clone(), headers.clone()).await, Err(Error::BadRequest(_))));
 
         // 3) valid Authorization header
-        headers.insert(AUTHORIZATION, HeaderValue::from_str(&format!("Bearer {}", security_token.token)).unwrap());
+        headers
+            .insert(AUTHORIZATION, HeaderValue::from_str(&format!("Bearer {}", security_tokens.access_token)).unwrap());
         assert!(logout(state.clone(), headers.clone()).await.is_ok());
-        assert!(state.get_user_session(&security_token.token).is_none());
+        assert!(state.get_user_session(&security_tokens.access_token).is_none());
 
-        // 4) valid Authorization header but the security token is no longer valid
+        // 4) valid Authorization header but the access token is no longer valid
         assert!(logout(state.clone(), headers.clone()).await.is_ok());
     }
 }

@@ -128,6 +128,10 @@ fn get_config(settings: &AgentSettings) -> Ini {
     ini
 }
 
+// Initialize the agent settings.
+//
+// This function reads the configuration file and the command line arguments to initialize the agent settings.
+// It's called automatically at the start of the program and the settings are stored in a global static variable.
 fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
     // 1) apply defaults
     let mut settings = AgentSettings::default();

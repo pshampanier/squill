@@ -1,7 +1,7 @@
 import { Resource } from "@/resources/resource";
 import { serializable, serialize } from "@/utils/serializable";
 import { AuthenticationMethod, AUTHENTICATION_METHOD_VALUES, Authentication, RefreshToken } from "@/models/auth";
-import { SecurityToken } from "@/models/auth";
+import { SecurityTokens } from "@/models/auth";
 import { AuthenticationError, HttpRequestError, UserError } from "@/utils/errors";
 import {
   HTTP_HEADER_CONTENT_TYPE,
@@ -47,18 +47,18 @@ export class Agent {
   readonly drivers!: Driver[];
 
   /// The security token used to authenticate the client.
-  private securityToken: SecurityToken = null;
+  private securityTokens: SecurityTokens = null;
 
-  /// The Unix Epoch time (in milliseconds) at which the security token will expire.
-  /// If there is no security token, this value is undefined.
-  private securityTokenExpiresAt: number = 0;
+  /// The Unix Epoch time (in milliseconds) at which the access token will expire.
+  /// If there is no security tokens, this value is undefined.
+  private accessTokenExpiresAt: number = 0;
 
   /// The web socket connection used to receive notifications events from the agent.
   private websocket?: WebSocket;
 
-  private setSecurityToken(token: SecurityToken): void {
-    this.securityToken = token;
-    this.securityTokenExpiresAt = Date.now() + this.securityToken.expiresIn * 1000;
+  private setSecurityTokens(token: SecurityTokens): void {
+    this.securityTokens = token;
+    this.accessTokenExpiresAt = Date.now() + this.securityTokens.expiresIn * 1000;
   }
 
   /// Refresh the security token.
@@ -68,7 +68,7 @@ export class Agent {
   /// is thrown and the current security token is discarded.
   private async refreshToken(): Promise<void> {
     const url = this.url + API_PATH + "/auth/refresh-token";
-    const authRefresh = new RefreshToken({ refreshToken: this.securityToken.refreshToken });
+    const authRefresh = new RefreshToken({ refreshToken: this.securityTokens.refreshToken });
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -79,10 +79,10 @@ export class Agent {
     });
     if (response.ok) {
       const contentType = response.headers.get(HTTP_HEADER_CONTENT_TYPE) || MEDIA_TYPE_PLAIN_TEXT;
-      this.setSecurityToken(new Resource<SecurityToken>(contentType, await response.text()).as(SecurityToken));
+      this.setSecurityTokens(new Resource<SecurityTokens>(contentType, await response.text()).as(SecurityTokens));
     } else {
-      this.securityToken = null;
-      this.securityTokenExpiresAt = 0;
+      this.securityTokens = null;
+      this.accessTokenExpiresAt = 0;
       if (response.status === 401 /* Unauthorized */) {
         throw new AuthenticationError();
       } else {
@@ -106,14 +106,14 @@ export class Agent {
         url += new URLSearchParams(options.query);
       }
 
-      if (this.securityTokenExpiresAt && this.securityTokenExpiresAt < Date.now()) {
+      if (this.accessTokenExpiresAt && this.accessTokenExpiresAt < Date.now()) {
         // The security token has expired, we need to refresh it.
         await this.refreshToken();
       }
 
       const headers: Record<string, string> = {
         [HTTP_HEADER_X_API_KEY]: this.apiKey,
-        ...(this.securityToken && { Authorization: `Bearer ${this.securityToken.token}` }),
+        ...(this.securityTokens && { Authorization: `Bearer ${this.securityTokens.accessToken}` }),
         ...(options?.body && { [HTTP_HEADER_CONTENT_TYPE]: MEDIA_TYPE_APPLICATION_JSON }),
         ...(options?.headers && options?.headers),
       };
@@ -168,7 +168,7 @@ export class Agent {
 
   async logon(auth: Authentication): Promise<void> {
     if (auth.method === "user_password") {
-      this.setSecurityToken((await this.post<Authentication, SecurityToken>("/auth/logon", auth)).as(SecurityToken));
+      this.setSecurityTokens((await this.post<Authentication, SecurityTokens>("/auth/logon", auth)).as(SecurityTokens));
       this.connectWebSocket();
     } else {
       throw new Error("Not implemented");
@@ -181,7 +181,7 @@ export class Agent {
   }
 
   private connectWebSocket() {
-    const query = `token=${this.securityToken.token}&api_key=${this.apiKey}&client_id=${this.clientId}`;
+    const query = `token=${this.securityTokens.accessToken}&api_key=${this.apiKey}&client_id=${this.clientId}`;
     this.websocket = new WebSocket(`${this.url.replace("http", "ws")}${API_PATH}/ws?${query}`);
     this.websocket.addEventListener("open", (event) => {
       console.log("WebSocket is open now.", event);

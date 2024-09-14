@@ -1,4 +1,4 @@
-import { SecurityToken } from "@/models/auth";
+import { SecurityTokens } from "@/models/auth";
 import { Agent } from "@/resources/agent";
 import { serialize } from "@/utils/serializable";
 import { test, expect, vi, afterEach } from "vitest";
@@ -67,11 +67,11 @@ test("logon", async () => {
       return Promise.resolve(
         JSON.stringify(
           serialize(
-            new SecurityToken({
+            new SecurityTokens({
               expiresIn: 10,
               refreshToken: "x-test-refresh-token",
-              token: "x-test-token",
-              tokenType: "bearer",
+              accessToken: "x-test-token",
+              accessTokenType: "bearer",
               userId: "68F3669F-57E2-4983-A648-D1CACB11F0DC",
               clientId: "3F95E87E-DAA2-40AA-8CE3-C4D245AD6EAC",
               sessionId: "6B69D188-EA12-4877-AB16-567CE8E35A1E",

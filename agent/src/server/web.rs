@@ -560,7 +560,7 @@ mod tests {
                     .uri(format!("/api/v1/users/{local_username}/user"))
                     .method("GET")
                     .header(X_API_KEY_HEADER, settings::get_api_key())
-                    .header(AUTHORIZATION, format!("Bearer {}", security_token.token.as_str()))
+                    .header(AUTHORIZATION, format!("Bearer {}", security_token.access_token.as_str()))
                     .body(Body::empty())
                     .unwrap(),
             )
