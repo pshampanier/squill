@@ -85,7 +85,7 @@ async fn handle_notification_channel(socket: WebSocket, state: ServerState, user
     }
 
     // We are done with the connection, remove the notification channel from the user session.
-    todo!("Remove the notification channel from the user session");
+    state.detach_notification_channel(user_session_id);
 }
 
 pub fn routes(state: ServerState) -> Router {

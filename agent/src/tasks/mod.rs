@@ -36,7 +36,8 @@ impl TasksQueue {
         self.receiver.is_empty()
     }
 
-    pub async fn run(&mut self) {
+    /// Start the consumers.
+    pub async fn start(&self) {
         for _ in 0..self.max_concurrency {
             let rx = self.receiver.clone();
             tokio::spawn(async move {
@@ -75,7 +76,7 @@ mod tests {
 
         let counter = Arc::new(AtomicUsize::new(0));
         let mut queue = TasksQueue::new(10, 2);
-        queue.run().await;
+        queue.start().await;
 
         for _ in 0..100 {
             queue.push(Box::new(TestTask { counter: counter.clone() })).await.unwrap();

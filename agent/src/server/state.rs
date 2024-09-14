@@ -47,11 +47,6 @@ impl UserSession {
         self.security_tokens.user_id
     }
 
-    /// Get the security token used to create the user session.
-    pub fn get_security_tokens(&self) -> Arc<SecurityTokens> {
-        self.security_tokens.clone()
-    }
-
     pub fn get_id(&self) -> Uuid {
         self.security_tokens.session_id
     }
@@ -59,6 +54,16 @@ impl UserSession {
     pub async fn push_notification(&self, notification: Notification) {
         if let Some(notification_channel) = &self.notification_channel {
             notification_channel.push(notification).await;
+        }
+    }
+
+    /// Clone the user session and assign the given notification channel.
+    pub fn with_channel(&self, notification_channel: Option<Arc<NotificationChannel>>) -> Self {
+        Self {
+            username: self.username.clone(),
+            security_tokens: self.security_tokens.clone(),
+            expires_at: self.expires_at,
+            notification_channel,
         }
     }
 }
@@ -119,23 +124,13 @@ impl ServerState {
         }
     }
 
-    pub async fn get_agentdb_connection(&self) -> Result<Connection> {
-        agent_db::get_connection().await
+    /// Start the background tasks run by the state.
+    pub async fn start(&self) {
+        self.tasks_queue.start().await
     }
 
-    /// Replace a user session in the cache.
-    ///
-    /// This method is used to replace a user session in the cache. It is used when the user session is updated, the
-    /// [UserSession] to be replaced is identified by the security token within the new `user_session`.
-    pub fn replace_user_session(&self, user_session: Arc<UserSession>) {
-        match self.security_caches.lock() {
-            Ok(mut security_caches) => {
-                security_caches.user_sessions.put(user_session.security_tokens.session_id, user_session);
-            }
-            Err(_) => {
-                panic!("Unable to recover from a poisoned user session mutex");
-            }
-        }
+    pub async fn get_agentdb_connection(&self) -> Result<Connection> {
+        agent_db::get_connection().await
     }
 
     /// Add a user session.
@@ -287,16 +282,28 @@ impl ServerState {
         }
     }
 
+    /// Attach a notification channel to a user session.
     pub fn attach_notification_channel(&self, user_session_id: Uuid, notification_channel: NotificationChannel) {
         match self.security_caches.lock() {
             Ok(mut security_caches) => {
                 if let Some(user_session) = security_caches.user_sessions.get(&user_session_id) {
-                    let new_user_session = UserSession {
-                        username: user_session.username.clone(),
-                        security_tokens: user_session.security_tokens.clone(),
-                        expires_at: user_session.expires_at,
-                        notification_channel: Some(Arc::new(notification_channel)),
-                    };
+                    debug!("Notification channel attached to user `{}`", &user_session.username);
+                    let new_user_session = user_session.with_channel(Some(Arc::new(notification_channel)));
+                    security_caches.user_sessions.put(user_session_id, Arc::new(new_user_session));
+                }
+            }
+            Err(_) => {
+                panic!("Unable to recover from a poisoned user session mutex");
+            }
+        }
+    }
+
+    pub fn detach_notification_channel(&self, user_session_id: Uuid) {
+        match self.security_caches.lock() {
+            Ok(mut security_caches) => {
+                if let Some(user_session) = security_caches.user_sessions.get(&user_session_id) {
+                    debug!("Notification channel detach to user `{}`", &user_session.username);
+                    let new_user_session = user_session.with_channel(None);
                     security_caches.user_sessions.put(user_session_id, Arc::new(new_user_session));
                 }
             }

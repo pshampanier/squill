@@ -102,6 +102,9 @@ impl Server {
         // create the server state
         let state = ServerState::new();
 
+        // Start the background tasks run by the state.
+        state.start().await;
+
         // Get the router that will handle all the requests for the REST API.
         let api = Self::api(&state).layer(
             TraceLayer::new_for_http()
