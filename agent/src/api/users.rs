@@ -239,7 +239,7 @@ mod tests {
         let mut context = RequestContext::new(Uuid::nil());
         context.add_user_session(state.get_user_session(&security_token.token).unwrap());
         let result = get_user(State(state.clone()), context, Path("another_user".to_string())).await;
-        assert!(matches!(result, Err(Error::UserError(UserError::Forbidden(_)))));
+        assert!(matches!(result, Err(Error::Forbidden)));
 
         // 4) failed for some reasons (e.g. user file is corrupted)
         users::delete(&conn, &username).await.unwrap();

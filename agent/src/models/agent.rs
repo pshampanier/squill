@@ -1,6 +1,6 @@
 use crate::json_enum;
 use crate::models::drivers::Driver;
-use serde::{ Serialize, Deserialize };
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Agent {
@@ -27,11 +27,14 @@ pub struct AgentSettings {
     /// The API key used to authenticate the client applications.
     pub api_key: String,
 
-    /// The maximum number of user sessions that can be stored in memory at a given point of time.
+    /// The maximum number of user sessions that can be active at a given point of time.
     pub max_user_sessions: usize,
 
-    /// The maximum number of refresh tokens that can be stored in memory at a given point of time.
-    pub max_refresh_tokens: usize,
+    /// The maximum number of concurrent tasks that can be executed at a given point of time.
+    pub max_concurrent_tasks: usize,
+
+    /// The maximum number of tasks that can be queued at a given point of time.
+    pub max_task_queue_size: usize,
 
     /// The number of seconds after which a security token will expire.
     /// This does not applies to the refresh token which only expires when it is evicted from the cache.

@@ -1,13 +1,11 @@
-use std::sync::Arc;
-
 use crate::{
     api::error::{Error, ServerResult},
-    err_forbidden,
     server::state::UserSession,
     utils::{constants::USERNAME_ANONYMOUS, validators::sanitize_username},
     Result,
 };
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct RequestContext {
@@ -39,10 +37,11 @@ impl RequestContext {
     }
 
     /// Get the user session.
-    pub fn get_user_session(&self) -> Result<Arc<UserSession>> {
+    pub fn get_user_session(&self) -> ServerResult<Arc<UserSession>> {
         match self.user_session.as_ref() {
             Some(user_session) => Ok(user_session.clone()),
-            None => Err(err_forbidden!("You must be authenticated to access this resource.")),
+            // FIXME: Err(err_forbidden!("You must be authenticated to access this resource."))
+            None => Err(crate::api::error::Error::Forbidden),
         }
     }
 
@@ -54,11 +53,12 @@ impl RequestContext {
     /// # Returns
     /// If the user session does not match the given username, return `UserError::Forbidden`.
     /// If username is a not a valid username, return [UserError::InvalidParameter].
-    pub fn get_user_session_with_username(&self, username: &str) -> Result<Arc<UserSession>> {
+    pub fn get_user_session_with_username(&self, username: &str) -> ServerResult<Arc<UserSession>> {
         sanitize_username(username)?;
         match self.user_session.as_ref() {
             Some(user_session) if user_session.get_username() == username => Ok(user_session.clone()),
-            _ => Err(err_forbidden!("You are not allowed to access this resource.")),
+            // FIXME: Err(err_forbidden!("You are not allowed to access this resource."))
+            _ => Err(crate::api::error::Error::Forbidden),
         }
     }
 }

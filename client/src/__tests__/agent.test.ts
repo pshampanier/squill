@@ -73,6 +73,8 @@ test("logon", async () => {
               token: "x-test-token",
               tokenType: "bearer",
               userId: "68F3669F-57E2-4983-A648-D1CACB11F0DC",
+              clientId: "3F95E87E-DAA2-40AA-8CE3-C4D245AD6EAC",
+              sessionId: "6B69D188-EA12-4877-AB16-567CE8E35A1E",
             }),
           ),
         ),

@@ -31,7 +31,8 @@ settings_getters! {
     get_base_dir, base_dir: String,
     get_api_key, api_key: String,
     get_max_user_sessions, max_user_sessions: usize,
-    get_max_refresh_tokens, max_refresh_tokens: usize,
+    get_max_concurrent_tasks, max_concurrent_tasks: usize,
+    get_max_task_queue_size, max_task_queue_size: usize,
     get_token_expiration, token_expiration: std::time::Duration,
     get_log_collector, log_collector: bool,
     get_log_dir, log_dir: String,
@@ -61,7 +62,8 @@ impl Default for AgentSettings {
             base_dir: get_app_dir().to_str().unwrap().to_string(),
             api_key: generate_api_key(),
             max_user_sessions: 100,
-            max_refresh_tokens: 100,
+            max_concurrent_tasks: 20,
+            max_task_queue_size: 100,
             token_expiration: std::time::Duration::from_secs(3600),
             log_collector: true,
             log_dir: get_app_dir().join("logs").to_str().unwrap().to_string(),
@@ -171,6 +173,23 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
         if api_key.is_some() {
             settings.api_key = api_key.clone().unwrap().to_string();
         }
+    }
+
+    // Check for invalid values
+    if settings.max_concurrent_tasks == 0 {
+        return Err(anyhow!("max_concurrent_tasks must be greater than 0"));
+    }
+    if settings.max_task_queue_size == 0 {
+        return Err(anyhow!("max_task_queue_size must be greater than 0"));
+    }
+    if settings.token_expiration.as_secs() == 0 {
+        return Err(anyhow!("token_expiration must be greater than 0"));
+    }
+    if settings.cors_max_age.as_secs() == 0 {
+        return Err(anyhow!("cors_max_age must be greater than 0"));
+    }
+    if settings.max_user_sessions == 0 {
+        return Err(anyhow!("max_user_sessions must be greater than 0"));
     }
 
     Ok(settings)

@@ -10,7 +10,7 @@ use axum::http::header::{HeaderMap, AUTHORIZATION};
 use axum::{routing::post, Router};
 use hex;
 use rand::Rng;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info};
 use uuid::Uuid;
 
 impl Default for SecurityToken {
@@ -20,7 +20,9 @@ impl Default for SecurityToken {
             token_type: TokenType::Bearer,
             refresh_token: generate_token(),
             expires_in: settings::get_token_expiration().as_secs() as u32,
-            user_id: Uuid::new_v4(),
+            user_id: Uuid::nil(),
+            client_id: Uuid::nil(),
+            session_id: Uuid::nil(),
         }
     }
 }
@@ -73,13 +75,11 @@ async fn refresh_token(
     State(state): State<ServerState>,
     token: Json<RefreshToken>,
 ) -> ServerResult<Json<SecurityToken>> {
-    let Some(refresh_token) = state.get_refresh_token(&token.refresh_token) else {
+    let Ok(refresh_token) = state.refresh_security_token(&token.refresh_token) else {
         // Refresh token not found.
         return Err(Error::Forbidden);
     };
-    debug!("Security token refreshed for user `{}`", refresh_token.get_username());
-    let new_security_token = state.refresh_security_token(&refresh_token);
-    Ok(Json((*new_security_token).clone()))
+    Ok(Json((*refresh_token).clone()))
 }
 
 /// POST /auth/logout
@@ -98,13 +98,7 @@ async fn logout(State(state): State<ServerState>, headers: HeaderMap) -> ServerR
         None => return Err(Error::BadRequest("Missing Authorization header".to_string())),
     };
 
-    if let Some(user_session) = state.get_user_session(&security_token) {
-        state.revoke_security_token(&user_session.get_security_token());
-        info!("User `{}` logged out.", user_session.get_username());
-    } else {
-        warn!("logout: security token not found.");
-    }
-
+    state.revoke_session(&security_token);
     Ok(())
 }
 

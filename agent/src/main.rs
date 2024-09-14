@@ -5,6 +5,7 @@ mod models;
 mod resources;
 mod server;
 mod settings;
+mod tasks;
 mod utils;
 
 pub use utils::user_error::UserError;
