@@ -6,7 +6,7 @@ use crate::models::QueryExecutionStatus;
 use crate::resources::catalog;
 use crate::server::context::RequestContext;
 use crate::server::state::ServerState;
-use crate::tasks::queries::QueryTask;
+use crate::tasks::execute_queries_task;
 use crate::{models::Connection, utils::user_error::UserError};
 use axum::extract::Path;
 use axum::extract::State;
@@ -90,8 +90,15 @@ async fn execute_buffer(
     }
 
     // Create a new task to execute the queries & push it to the task queue
-    let task = QueryTask { queries: queries.clone(), state: state.0.clone(), session_id: user_session.get_id() };
-    state.push_task(Box::new(task)).await?;
+    // let task = QueryTask { queries: queries.clone(), state: state.0.clone(), session_id: user_session.get_id() };
+    state
+        .push_task({
+            let queries = queries.clone();
+            let state = state.0.clone();
+            let session_id = user_session.get_id();
+            Box::new(move || execute_queries_task(state, session_id, queries))
+        })
+        .await?;
 
     // All good, return the queries
     Ok(Json(queries))

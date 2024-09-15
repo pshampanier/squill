@@ -1,7 +1,7 @@
 use crate::models::auth::SecurityTokens;
 use crate::server::notification_channel::Notification;
 use crate::server::notification_channel::NotificationChannel;
-use crate::tasks::{Task, TasksQueue};
+use crate::tasks::{TaskFn, TasksQueue};
 use crate::utils::validators::Username;
 use crate::UserError;
 use crate::{agent_db, settings};
@@ -318,8 +318,9 @@ impl ServerState {
     /// The task will be executed by one of the worker threads.
     /// The returned result indicates whether the task was successfully pushed into the queue. It does not indicate
     /// whether the task was successfully executed.
-    pub async fn push_task(&self, task: Box<dyn Task + Send + Sync>) -> Result<()> {
+    pub async fn push_task(&self, task: TaskFn) -> Result<()> {
         self.tasks_queue.push(task).await
+        // todo!()
     }
 
     /// Calculate the expiration time based on the current time and a duration in seconds.

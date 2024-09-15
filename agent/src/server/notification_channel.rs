@@ -21,9 +21,9 @@ impl Serialize for Notification {
     {
         let mut state = serializer.serialize_struct("Notification", 2)?;
         match self {
-            Notification::Error(error_msg) => {
+            Notification::Error(message) => {
                 state.serialize_field("type", "error")?;
-                state.serialize_field("error", error_msg)?;
+                state.serialize_field("error", message)?;
             }
             Notification::QueryExecution(query_execution) => {
                 state.serialize_field("type", "query_execution")?;
