@@ -94,6 +94,21 @@ export class QueryExecution {
   id!: string;
   
   /**
+   * A flag indicating if the query is a result set returning query.
+   * 
+   * This flag is used to determine if the query execution may return the result set or not.
+   * 
+   * Examples of result set returning queries are:
+   * - `SELECT``: The primary statement that retrieves rows from one or more tables.
+   * - `SHOW``: A statement that shows information about databases, tables, or other objects.
+   * - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can 
+   *    return rows when combined with the `RETURNING` clause.
+   * 
+   **/
+  @serializable("boolean", { snakeCase: "property" })
+  isResultSetQuery?: boolean;
+  
+  /**
    * The query that was executed.
    **/
   @serializable("string", { required: true })

@@ -14,6 +14,18 @@ pub enum QueryExecutionStatus {
     Cancelled,
 }
 
+impl QueryExecutionStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            QueryExecutionStatus::Pending => "pending",
+            QueryExecutionStatus::Running => "running",
+            QueryExecutionStatus::Completed => "completed",
+            QueryExecutionStatus::Failed => "failed",
+            QueryExecutionStatus::Cancelled => "cancelled",
+        }
+    }
+}
+
 /// An error message from a query execution.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct QueryExecutionError {
@@ -63,6 +75,18 @@ pub struct QueryExecution {
 
     /// The unique identifier of the query execution.
     pub id: uuid::Uuid,
+
+    /// A flag indicating if the query is a result set returning query.
+    ///
+    /// This flag is used to determine if the query execution may return the result set or not.
+    ///
+    /// Examples of result set returning queries are:
+    /// - `SELECT``: The primary statement that retrieves rows from one or more tables.
+    /// - `SHOW``: A statement that shows information about databases, tables, or other objects.
+    /// - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can
+    ///    return rows when combined with the `RETURNING` clause.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_result_set_query: Option<bool>,
 
     /// The query that was executed.
     pub query: String,

@@ -72,6 +72,7 @@ async fn execute_buffer(
                         connection_id: id,
                         user_id: user_session.get_user_id(),
                         query: statement.sql().to_string(),
+                        is_result_set_query: Some(statement.is_query()),
                         status: QueryExecutionStatus::Pending,
                         error: None,
                         executed_at: None,

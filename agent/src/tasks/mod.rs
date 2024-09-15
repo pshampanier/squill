@@ -85,6 +85,14 @@ mod tests {
             tokio::task::yield_now().await;
         }
 
+        // Even if the queue is empty, the tasks may still be running... so we need to wait a bit (up to 1 second)
+        tokio::task::yield_now().await;
+        for _ in 0..10 {
+            if counter.load(Ordering::Relaxed) == 100 {
+                break;
+            }
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+        }
         assert_eq!(counter.load(Ordering::Relaxed), 100);
     }
 }

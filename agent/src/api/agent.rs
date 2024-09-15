@@ -8,7 +8,7 @@ use axum::extract::ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade};
 use axum::extract::{ConnectInfo, State};
 use axum::response::IntoResponse;
 use axum::{extract::Json, routing::get, Router};
-use futures::{sink::SinkExt, stream::StreamExt};
+use futures::stream::StreamExt;
 use std::net::SocketAddr;
 use tracing::{debug, error, info, warn};
 use uuid::Uuid; //allows to split the websocket stream into sender and receiver

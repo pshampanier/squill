@@ -1,9 +1,14 @@
 use crate::models::QueryExecution;
 use axum::extract::ws::{Message, WebSocket};
 use futures::stream::SplitSink;
+use futures::SinkExt;
 use serde::{ser::SerializeStruct, Serialize, Serializer};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use tracing::error;
 
 pub enum Notification {
+    #[allow(dead_code)]
     Error(String),
     QueryExecution(QueryExecution),
 }
@@ -35,17 +40,27 @@ impl Serialize for Notification {
 }
 
 pub struct NotificationChannel {
-    sender: SplitSink<WebSocket, Message>,
+    sender: Arc<Mutex<SplitSink<WebSocket, Message>>>,
 }
 
 impl NotificationChannel {
     pub fn new(sender: SplitSink<WebSocket, Message>) -> Self {
-        Self { sender }
+        Self { sender: Arc::new(Mutex::new(sender)) }
     }
 
     pub async fn push<N: Into<Notification>>(&self, notification: N) {
-        let notification = notification.into();
-        todo!();
+        let sender = Arc::clone(&self.sender);
+        match serde_json::to_string(&notification.into()) {
+            Ok(notification) => {
+                let mut mutex_guard = sender.lock().await;
+                if let Err(e) = mutex_guard.send(Message::Text(notification)).await {
+                    error!("Failed to send notification: {}", e);
+                }
+            }
+            Err(e) => {
+                error!("Failed to serialize notification: {}", e);
+            }
+        }
     }
 }
 
@@ -61,6 +76,7 @@ mod tests {
             serde_json::to_string(&Notification::from(QueryExecution {
                 id: Uuid::parse_str("f5330ffa-1f3c-427b-82f4-0756a12fc064").unwrap(),
                 query: "SHOW".to_string(),
+                is_result_set_query: None,
                 status: crate::models::QueryExecutionStatus::Completed,
                 created_at: chrono::DateTime::parse_from_rfc3339("2024-09-14T15:16:23.630794Z").unwrap().to_utc(),
                 affected_rows: 0,

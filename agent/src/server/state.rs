@@ -13,6 +13,7 @@ use std::num::NonZeroUsize;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 use tracing::debug;
+use tracing::trace;
 use tracing::warn;
 use uuid::Uuid;
 
@@ -51,9 +52,16 @@ impl UserSession {
         self.security_tokens.session_id
     }
 
+    /// Push a notification to the client through the notification channel.
+    ///
+    /// If the notification channel is not attached or an error occurs, the notification will be ignored.
+    /// Error are logged as trace messages but they can be ignored because notifications are not critical, they may
+    /// leave the client in an inconsistent state but the client will recover when it reconnects.
     pub async fn push_notification(&self, notification: Notification) {
         if let Some(notification_channel) = &self.notification_channel {
             notification_channel.push(notification).await;
+        } else {
+            trace!("Push Notification ignored (reason: notification channel not attached).");
         }
     }
 
@@ -309,6 +317,26 @@ impl ServerState {
             }
             Err(_) => {
                 panic!("Unable to recover from a poisoned user session mutex");
+            }
+        }
+    }
+
+    /// Push a notification to the client through the notification channel.
+    ///
+    /// If the notification channel is not attached or an error occurs, the notification will be ignored.
+    /// Error are logged as trace messages but they can be ignored because notifications are not critical, they may
+    /// leave the client in an inconsistent state but the client will recover when it reconnects.
+    pub async fn push_notification(&self, user_session_id: Uuid, notification: Notification) {
+        let user_session = match self.security_caches.lock() {
+            Ok(mut security_caches) => security_caches.user_sessions.get(&user_session_id).cloned(),
+            Err(_) => {
+                panic!("Unable to recover from a poisoned user session mutex");
+            }
+        };
+        match user_session {
+            Some(user_session) => user_session.push_notification(notification).await,
+            None => {
+                trace!("Push Notification ignored (reason: user session not found in the cache).");
             }
         }
     }

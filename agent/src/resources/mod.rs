@@ -91,6 +91,7 @@ where
 
 impl ResourceRef {
     /// Get a metadata value by key.
+    #[allow(dead_code)]
     pub fn get_metadata(&self, key: &str) -> Option<&str> {
         self.metadata.as_ref().and_then(|metadata| metadata.get(key).map(|s| s.as_str()))
     }
