@@ -13,138 +13,172 @@ import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
 import Spinner from "@/components/core/Spinner";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useReducer, Dispatch, useState } from "react";
 
-// A callback that is called when a query execution are updated or added to the history.
-export type ExecutionEventHandler = (queryExecutions: QueryExecution[]) => void;
-
-type QueryHistoryGroup = { classification: DateClassification; executions: QueryExecution[] };
-
-type QueryHistoryTimelineProps = {
-  className?: string;
-  registerSubscriber: (subscriber: ExecutionEventHandler) => void;
-};
-
-/**
- * Returns the date to be used to group the query executions in the timeline.
- * The date is the execution date if available, otherwise it's the creation date.
- */
-function getGroupDate(execution: QueryExecution): Date {
-  return execution.executedAt || execution.createdAt;
+export interface QueryHistoryAction {
+  type: "update" | "remove" | "clear";
+  queries: QueryExecution[];
 }
 
-export default function QueryHistoryTimeline({ className, registerSubscriber }: QueryHistoryTimelineProps) {
-  // A reference to the history of query executions to be displayed
-  const history = useRef<Map<string, QueryExecution>>(null);
-  const [historyGroups, setHistoryGroups] = useState<QueryHistoryGroup[]>([]);
+interface QueryHistoryState {
+  revision: number;
+  queries: Map<string, QueryExecution>;
+  groups: QueryHistoryGroup[];
+}
 
-  //
-  // A callback that handles the notifications when query executions are updated or added to the history.
-  //
-  const handleExecutionEvents = useCallback<ExecutionEventHandler>(
-    (queryExecutions) => {
-      if (history.current === null) {
+interface QueryHistoryGroup {
+  classification: DateClassification;
+  queries: QueryExecution[];
+}
+
+function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHistoryState {
+  console.debug(`QueryHistoryReducer: action: ${action.type}, revision: ${state.revision}`);
+  const classifier = generateDateClassifier();
+  const queries = new Map<string, QueryExecution>(state.queries);
+  const groups = state.groups.slice();
+  // A flag to indicate if the state has been modified.
+  // This is used to avoid unnecessary re-renders when the state has not changed.
+  let modified = false;
+  switch (action.type) {
+    case "update": {
+      if (state.queries.size === 0) {
         //
         // Initial load of the history
         //
-        const classifier = generateDateClassifier();
-        const groups = new Map<DateClassification, QueryExecution[]>();
-        history.current = new Map<string, QueryExecution>();
-        queryExecutions.forEach((execution) => {
-          history.current.set(execution.id, execution);
-          const classification = classifier(getGroupDate(execution));
-          groups.get(classification)?.push(execution) || groups.set(classification, [execution]);
+        action.queries.forEach((query) => {
+          modified = true;
+          queries.set(query.id, query);
+          const classification = classifier(query.createdAt);
+          groups.find((group) => group.classification === classification)?.queries.push(query) ||
+            groups.push({ classification, queries: [query] });
         });
-        const sortedGroups = Array.from(groups.entries())
-          .map(([classification, executions]) => ({
-            classification,
-            executions,
-          }))
-          .sort((a, b) => getGroupDate(a.executions[0]).getTime() - getGroupDate(b.executions[0]).getTime());
-        setHistoryGroups(sortedGroups);
       } else {
         //
-        // Update the history with the given query executions
-        // This is called when a new query executions are added or existing ones are updated.
+        // Update the history with the given query queries
+        // This is called when a new query queries are added or existing ones are updated.
         // Because React states are immutable, we need to create a new `historyGroups` from the existing one.
         //
-        const classifier = generateDateClassifier();
-        let groups = new Array<QueryHistoryGroup>(...historyGroups);
-        queryExecutions.forEach((execution) => {
-          const classification = classifier(getGroupDate(execution));
-          if (history.current.get(execution.id)) {
+        action.queries.forEach((query) => {
+          console.debug(
+            `QueryHistoryReducer: updating query: id=${query.id}, , revision=${query.revision}, status=${query.status}`,
+          );
+          const classification = classifier(query.createdAt);
+          const lastQueryRevision = queries.get(query.id);
+          if (lastQueryRevision?.revision > query.revision) {
+            console.debug(`QueryHistoryReducer: ignoring outdated query: id=${query.id}, revision=${query.revision}`);
+          } else if (lastQueryRevision?.revision === query.revision) {
+            console.debug(`QueryHistoryReducer: ignoring query: id=${query.id}, revision=${query.revision}`);
+          } else if (lastQueryRevision) {
             //
             // Update the existing query execution
             //
+            modified = true;
+
             // 1) update the execution in the history
-            history.current.set(execution.id, execution);
+            queries.set(query.id, query);
 
             // 2) update the execution in the corresponding group
             //    - the group can have changed, so we'll first look for the group where the execution is expected to be
             //      but if not found there we'll look for it in the other groups.
             const expectedGroupIndex = groups.findIndex((group) => group.classification === classification);
             let currentGroupIndex = -1;
-            let currentExecutionIndex = -1;
+            let currentQueryIndex = -1;
             if (expectedGroupIndex !== -1) {
               // Check if the execution is already in the expected group
-              currentExecutionIndex = groups[expectedGroupIndex].executions.findIndex((e) => e.id === execution.id);
-              if (currentExecutionIndex !== -1) {
+              currentQueryIndex = groups[expectedGroupIndex].queries.findIndex((e) => e.id === query.id);
+              if (currentQueryIndex !== -1) {
                 currentGroupIndex = expectedGroupIndex;
               }
             }
-            if (currentExecutionIndex === -1) {
+            if (currentQueryIndex === -1) {
               // Not found in the expected group, look in the other groups
               currentGroupIndex = groups.findIndex((group) => {
-                currentExecutionIndex = group.executions.findIndex((e) => e.id === execution.id);
-                return currentExecutionIndex !== -1;
+                currentQueryIndex = group.queries.findIndex((e) => e.id === query.id);
+                return currentQueryIndex !== -1;
               });
             }
             if (currentGroupIndex == -1) {
               // Execution not found, this should not happen
-              console.error(`Execution ${execution.id} not found in the groups.`);
+              console.error(`Execution ${query.id} not found in the groups.`);
             } else if (currentGroupIndex === expectedGroupIndex) {
               // The execution is already in the expected group, update it
-              groups[currentGroupIndex].executions[currentExecutionIndex] = execution;
+              groups[currentGroupIndex].queries[currentQueryIndex] = query;
             } else {
               // The execution is in another group, remove it from the current group and add it to the expected group
-              groups[currentGroupIndex].executions.splice(currentExecutionIndex, 1);
-              groups[expectedGroupIndex].executions.push(execution);
+              groups[currentGroupIndex].queries.splice(currentQueryIndex, 1);
+              groups[expectedGroupIndex].queries.push(query);
             }
           } else {
             //
             // Add a new query execution
             //
+            modified = true;
+
             // 1) add the execution to the history
-            history.current.set(execution.id, execution);
+            queries.set(query.id, query);
             // 2) add the new execution to the corresponding group
             const groupIndex = groups.findIndex((group) => group.classification === classification);
             if (groupIndex === -1) {
-              groups.push({ classification, executions: [execution] });
+              groups.push({ classification, queries: [query] });
             } else {
-              groups[groupIndex].executions.push(execution);
+              groups[groupIndex].queries.push(query);
             }
           }
-          // 3) Because we may have added a new group, we need to sort the groups by date.
-          groups = groups.sort(
-            (a, b) => getGroupDate(a.executions[0]).getTime() - getGroupDate(b.executions[0]).getTime(),
-          );
-          setHistoryGroups(groups);
         });
       }
-    },
-    [historyGroups],
-  );
+      break;
+    }
+    default: {
+      console.error(`Unsupported action type: ${action.type}`);
+    }
+  }
+  if (!modified) {
+    console.debug("QueryHistoryReducer: state not modified");
+    return state;
+  } else {
+    return {
+      revision: state.revision + 1,
+      queries,
+      groups: groups.sort((a, b) => a.queries[0].createdAt.getTime() - b.queries[0].createdAt.getTime()),
+    };
+  }
+}
+
+type QueryHistoryTimelineProps = {
+  className?: string;
+
+  /**
+   * A callback to register the dispatcher function to update the history.
+   *
+   * The dispatcher function is then expected to be called every time the history needs to be updated.
+   */
+  registerDispatcher: (dispatcher: Dispatch<QueryHistoryAction>) => void;
+};
+
+export default function QueryHistoryTimeline({ className, registerDispatcher }: QueryHistoryTimelineProps) {
+  // The history of query queries.
+  //
+  // Used by the event handler to update the history. Because the event handler can be called multiple times in between
+  // the renders we cannot use states and make .
+  // - `queries` is a map of query queries indexed by their id.
+  // - `groups` is a list of query queries grouped by date as expected by the timeline component.
+
+  const [history, dispatch] = useReducer(reducer, {
+    revision: 1,
+    queries: new Map(),
+    groups: [],
+  });
 
   useEffect(() => {
-    registerSubscriber(handleExecutionEvents);
-  }, [historyGroups]);
+    registerDispatcher(dispatch);
+  }, []);
 
   return (
     <Timeline className={className}>
-      {historyGroups.map((group, index, array) => (
+      {history.groups.map((group, index, array) => (
         <QueryHistoryTimelineGroup
           key={group.classification}
-          queryExecutions={group.executions}
+          queries={group.queries}
           dateClassification={group.classification}
           open={index === array.length - 1}
         />
@@ -154,17 +188,17 @@ export default function QueryHistoryTimeline({ className, registerSubscriber }: 
 }
 
 function QueryHistoryTimelineGroup({
-  queryExecutions,
+  queries,
   dateClassification,
   open,
 }: {
-  queryExecutions: QueryExecution[];
+  queries: QueryExecution[];
   dateClassification: DateClassification;
   open?: boolean;
 }) {
   return (
     <Timeline.Group title={formatDateClassification(dateClassification)} defaultOpen={open}>
-      {queryExecutions.map((execution) => (
+      {queries.map((execution) => (
         <QueryHistoryTimelineItem
           key={execution.id}
           queryExecution={execution}

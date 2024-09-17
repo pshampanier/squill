@@ -46,7 +46,9 @@ fn main() {
     }
 
     rust_codegen!("query_execution");
-    typescript_codegen!("query-execution");
     rust_codegen!("auth");
+    rust_codegen!("push_notifications");
+    typescript_codegen!("query-execution");
     typescript_codegen!("auth");
+    typescript_codegen!("push-notifications");
 }

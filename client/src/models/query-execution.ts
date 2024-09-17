@@ -115,6 +115,18 @@ export class QueryExecution {
   query!: string;
   
   /**
+   * The revision number of the query execution.
+   * 
+   * The revision number is used to track the changes to the query execution. It is incremented each time the
+   * query execution is updated. Because the client receive updates of the query execution via different channels
+   * (HTTP and WebSocket) there is no guarantee that the last update received is the most recent. By using the
+   * revision number the client can avoid overwriting a more recent update with an older one.
+   * 
+   **/
+  @serializable("integer", { required: true, min: 0 })
+  revision!: number;
+  
+  /**
    * The status of the query execution.
    **/
   @serializable("string", { format: formatRegExp(QUERY_EXECUTION_STATUS_VALUES), required: true })

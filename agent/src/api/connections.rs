@@ -69,6 +69,7 @@ async fn execute_buffer(
                 |row| {
                     Ok(QueryExecution {
                         id: row.try_get(0)?,
+                        revision: 0,
                         connection_id: id,
                         user_id: user_session.get_user_id(),
                         query: statement.sql().to_string(),

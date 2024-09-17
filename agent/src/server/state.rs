@@ -1,5 +1,5 @@
 use crate::models::auth::SecurityTokens;
-use crate::server::notification_channel::Notification;
+use crate::models::PushMessage;
 use crate::server::notification_channel::NotificationChannel;
 use crate::tasks::{TaskFn, TasksQueue};
 use crate::utils::validators::Username;
@@ -57,9 +57,9 @@ impl UserSession {
     /// If the notification channel is not attached or an error occurs, the notification will be ignored.
     /// Error are logged as trace messages but they can be ignored because notifications are not critical, they may
     /// leave the client in an inconsistent state but the client will recover when it reconnects.
-    pub async fn push_notification(&self, notification: Notification) {
+    pub async fn push_notification<T: Into<PushMessage>>(&self, message: T) {
         if let Some(notification_channel) = &self.notification_channel {
-            notification_channel.push(notification).await;
+            notification_channel.push(message).await;
         } else {
             trace!("Push Notification ignored (reason: notification channel not attached).");
         }
@@ -326,7 +326,7 @@ impl ServerState {
     /// If the notification channel is not attached or an error occurs, the notification will be ignored.
     /// Error are logged as trace messages but they can be ignored because notifications are not critical, they may
     /// leave the client in an inconsistent state but the client will recover when it reconnects.
-    pub async fn push_notification(&self, user_session_id: Uuid, notification: Notification) {
+    pub async fn push_notification<T: Into<PushMessage>>(&self, user_session_id: Uuid, message: T) {
         let user_session = match self.security_caches.lock() {
             Ok(mut security_caches) => security_caches.user_sessions.get(&user_session_id).cloned(),
             Err(_) => {
@@ -334,7 +334,7 @@ impl ServerState {
             }
         };
         match user_session {
-            Some(user_session) => user_session.push_notification(notification).await,
+            Some(user_session) => user_session.push_notification(message).await,
             None => {
                 trace!("Push Notification ignored (reason: user session not found in the cache).");
             }

@@ -1,5 +1,4 @@
 use crate::models::QueryExecutionStatus;
-use crate::server::notification_channel::Notification;
 use crate::Result;
 use crate::{models::QueryExecution, server::state::ServerState};
 use futures::future::BoxFuture;
@@ -55,7 +54,14 @@ async fn execute_query(
                               WHERE query_history_id=?
                           RETURNING executed_at"#,
                 params!(updated_status.as_str(), query.id),
-                |row| Ok(QueryExecution { executed_at: Some(row.try_get(0)?), status: updated_status, ..query }),
+                |row| {
+                    Ok(QueryExecution {
+                        revision: query.revision + 1,
+                        executed_at: Some(row.try_get(0)?),
+                        status: updated_status,
+                        ..query
+                    })
+                },
             )
             .await
         {
@@ -65,7 +71,7 @@ async fn execute_query(
         }
     };
     // 2) Send a notification to the client that the query is running
-    state.push_notification(session_id, Notification::QueryExecution(running_query.clone())).await;
+    state.push_notification(session_id, running_query.clone()).await;
 
     Ok(Some(running_query))
 }

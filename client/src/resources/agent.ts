@@ -11,8 +11,14 @@ import {
   HTTP_HEADER_X_API_KEY,
 } from "@/utils/constants";
 import { Driver } from "@/models/drivers";
+import { PushMessage, PushMessageType } from "@/models/push-notifications";
 
 const API_PATH = "/api/v1";
+
+/**
+ * A handler associated to a push notification subscription.
+ */
+export type PushNotificationHandler = (message: PushMessage) => void;
 
 type FetchOptions = {
   headers?: Record<string, string>;
@@ -45,6 +51,11 @@ export class Agent {
 
   @serializable("array", { items: { type: "object", options: { factory: Driver } } })
   readonly drivers!: Driver[];
+
+  readonly pushSubscriptions: {
+    log: PushNotificationHandler[];
+    query: PushNotificationHandler[];
+  };
 
   /// The security token used to authenticate the client.
   private securityTokens: SecurityTokens = null;
@@ -95,6 +106,10 @@ export class Agent {
     this.url = url?.endsWith("/") ? url.slice(0, url.length - 1) : url;
     this.apiKey = apiKey;
     this.clientId = crypto.randomUUID();
+    this.pushSubscriptions = {
+      log: [],
+      query: [],
+    };
   }
 
   private async fetch<T extends object>(path: string, method: string, options?: FetchOptions): Promise<Resource<T>> {
@@ -175,6 +190,21 @@ export class Agent {
     }
   }
 
+  /**
+   * Subscribe to push notifications of a given type.
+   * The same handler can be used to subscribe to multiple types of notifications.
+   */
+  subscribeToPushNotifications(type: PushMessageType, handler: PushNotificationHandler): void {
+    this.pushSubscriptions[type].push(handler);
+  }
+
+  /**
+   * Unsubscribe from push notifications of a given type.
+   */
+  unsubscribeFromPushNotifications(type: PushMessageType, handler: PushNotificationHandler): void {
+    this.pushSubscriptions[type] = this.pushSubscriptions[type].filter((h) => h !== handler);
+  }
+
   static async connect(url: string, apiKey: string): Promise<Agent> {
     Agent.agent = (await new Agent(url, apiKey).get<Agent>("/agent")).as(() => new Agent(url, apiKey));
     return Agent.agent;
@@ -188,7 +218,12 @@ export class Agent {
     });
 
     this.websocket.addEventListener("message", (event) => {
-      console.log("Message from server:", event.data);
+      console.debug("WebSocket message received:", event.data);
+      const message = new Resource<PushMessage>("application/json", event.data).as(PushMessage);
+      const subscriptions = this.pushSubscriptions[message.type];
+      for (const handler of subscriptions) {
+        handler(message);
+      }
     });
 
     this.websocket.addEventListener("close", (event) => {

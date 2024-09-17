@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { Dispatch, useCallback, useEffect, useRef } from "react";
 import { EDITOR_CONNECTION } from "@/utils/constants";
 import { useAppStore } from "@/stores/AppStore";
 import { editors } from "@/resources/editors";
@@ -9,8 +9,10 @@ import ConnectionIcon from "@/icons/plug.svg?react";
 import QueryTerminal from "@/components/query/QueryTerminal";
 import QueryPrompt from "@/components/query/QueryPrompt";
 import LoadingContainer from "@/components/core/LoadingContainer";
-import QueryHistoryTimeline, { ExecutionEventHandler } from "@/components/query/QueryHistoryTimeline";
+import QueryHistoryTimeline, { QueryHistoryAction } from "@/components/query/QueryHistoryTimeline";
 import { AuthenticationError } from "@/utils/errors";
+import { PushMessage } from "@/models/push-notifications";
+import { agent } from "@/resources/agent";
 
 /**
  * The page displayed when the user is using a Connection from the sidebar.
@@ -21,14 +23,9 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   const connectionId = page?.itemId; // UUID of the connection.
 
   // Children components can subscribe to the history of query executions.
-  const executionEventHandler = useRef<ExecutionEventHandler>(null);
-  const registerSubscriber = (handler: ExecutionEventHandler) => {
-    if (handler && executionEventHandler.current === null) {
-      // The first subscriber will receive the history immediately
-      executionEventHandler.current = handler;
-    } else {
-      executionEventHandler.current = handler;
-    }
+  const queryEventHandler = useRef<Dispatch<QueryHistoryAction>>(null);
+  const registerQueryEventHandler = (dispatcher: Dispatch<QueryHistoryAction>) => {
+    queryEventHandler.current = dispatcher;
   };
 
   const {
@@ -49,10 +46,27 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   });
 
   const handleValidate = (value: string) => {
-    Connections.execute(connectionId, value).then((executions) => {
-      executionEventHandler.current(executions);
+    Connections.execute(connectionId, value).then((queries) => {
+      queryEventHandler.current?.call(null, {
+        type: "update",
+        queries,
+      });
     });
   };
+
+  const handleQueryUpdate = useCallback((message: PushMessage) => {
+    queryEventHandler.current?.call(null, {
+      type: "update",
+      queries: [message.query],
+    });
+  }, []);
+
+  useEffect(() => {
+    agent().subscribeToPushNotifications("query", handleQueryUpdate);
+    return () => {
+      agent().unsubscribeFromPushNotifications("query", handleQueryUpdate);
+    };
+  }, []);
 
   return (
     <div className="w-full h-full px-2">
@@ -69,7 +83,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
         <QueryTerminal
           prompt={<ConnectionPrompt />}
           colorScheme={colorScheme}
-          history={<QueryHistoryTimeline registerSubscriber={registerSubscriber} />}
+          history={<QueryHistoryTimeline registerDispatcher={registerQueryEventHandler} />}
           onValidate={handleValidate}
         />
       )}

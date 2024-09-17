@@ -574,6 +574,7 @@ components:
       type: object
       required:
         - id
+        - revision
         - connection_id
         - user_id
         - query
@@ -586,6 +587,17 @@ components:
           description: The unique identifier of the query execution.
           type: string
           format: uuid
+        revision:
+          description: |
+            The revision number of the query execution.
+
+            The revision number is used to track the changes to the query execution. It is incremented each time the
+            query execution is updated. Because the client receive updates of the query execution via different channels
+            (HTTP and WebSocket) there is no guarantee that the last update received is the most recent. By using the
+            revision number the client can avoid overwriting a more recent update with an older one.
+          type: number
+          format: int32
+          minimum: 0
         connection_id:
           description: The unique identifier of the connection used to execute the query.
           type: string
@@ -652,6 +664,58 @@ components:
       type: string
       enum:
         - bearer
+
+    LogLevel:
+      description: The level of the message sent through a the Push Notification Channel.
+      type: string
+      enum:
+        - info
+        - warning
+        - error
+
+    Log:
+      description: A log message sent by the agent to the client through the Push Notification Channel.
+      type: object
+      required:
+        - level
+        - message
+      properties:
+        level:
+          $ref: "#/components/schemas/LogLevel"
+        message:
+          description: The log message.
+          type: string
+
+    PushMessageType:
+      description: |
+        The type of a Push Notification.
+
+        The type of the notification is used to determine the structure of the notification object.
+        It could be either a message or a query execution.
+      type: string
+      enum:
+        - log
+        - query
+
+    PushMessage:
+      description: A Push Notification sent by the agent to the client through the Notification Channel.
+      type: object
+      required:
+        - type
+        - silent
+      properties:
+        silent:
+          description: A flag indicating if the notification should be displayed to the user.
+          type: boolean
+        type:
+          x-rust-name: message_type
+          $ref: "#/components/schemas/PushMessageType"
+        log:
+          description: A info/warning/error log message if the type is `log`.
+          $ref: "#/components/schemas/Log"
+        query:
+          description: An updated query execution if the type is `query`.
+          $ref: "#/components/schemas/QueryExecution"
 
   securitySchemes:
     ApiKeyAuth:
