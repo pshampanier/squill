@@ -1,6 +1,6 @@
 use crate::api::error::{Error, ServerResult};
 use crate::models::auth::AuthenticationMethod;
-use crate::server::context::RequestContext;
+use crate::server::contexts::RequestContext;
 use crate::server::state::ServerState;
 use crate::utils::validators::parse_authorization_header;
 use crate::{agent_db, api, settings};

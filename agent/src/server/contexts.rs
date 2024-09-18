@@ -1,9 +1,7 @@
-use crate::{
-    api::error::{Error, ServerResult},
-    server::state::UserSession,
-    utils::{constants::USERNAME_ANONYMOUS, validators::sanitize_username},
-    Result,
-};
+use crate::api::error::{Error, ServerResult};
+use crate::server::user_sessions::UserSession;
+use crate::utils::{constants::USERNAME_ANONYMOUS, validators::sanitize_username};
+use crate::Result;
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use std::sync::Arc;
 

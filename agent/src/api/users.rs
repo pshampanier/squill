@@ -10,7 +10,7 @@ use crate::models::ResourceType;
 use crate::resources::catalog;
 use crate::resources::users;
 use crate::resources::Resource;
-use crate::server::context::RequestContext;
+use crate::server::contexts::RequestContext;
 use crate::server::state::ServerState;
 use crate::utils::validators;
 use crate::utils::validators::sanitize_catalog_name;

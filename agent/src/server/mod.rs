@@ -1,4 +1,5 @@
-pub mod context;
-pub mod notification_channel;
+pub mod contexts;
+pub mod notification_channels;
 pub mod state;
+pub mod user_sessions;
 pub mod web;

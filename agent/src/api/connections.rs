@@ -4,7 +4,7 @@ use crate::models;
 use crate::models::QueryExecution;
 use crate::models::QueryExecutionStatus;
 use crate::resources::catalog;
-use crate::server::context::RequestContext;
+use crate::server::contexts::RequestContext;
 use crate::server::state::ServerState;
 use crate::tasks::execute_queries_task;
 use crate::{models::Connection, utils::user_error::UserError};

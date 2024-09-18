@@ -1,7 +1,7 @@
 use crate::models::agent::AgentSettings;
 use crate::resources::agent::load_drivers;
-use crate::server::context::RequestContext;
-use crate::server::notification_channel::NotificationChannel;
+use crate::server::contexts::RequestContext;
+use crate::server::notification_channels::NotificationChannel;
 use crate::server::state::ServerState;
 use crate::{api::error::ServerResult, models::agent::Agent};
 use axum::extract::ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade};
