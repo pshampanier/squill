@@ -1,4 +1,6 @@
-use crate::agent_db;
+use std::sync::Arc;
+
+use crate::{agent_db, pool::ConnectionPool};
 use anyhow::Result;
 
 /// Set a path to read-only and return its original permissions.
@@ -121,9 +123,9 @@ pub mod settings {
 // ```
 //
 // The temporary directory is used as the base directory and can also be accessed using `tests::settings::get_base_dir()`.
-pub async fn setup() -> Result<tempfile::TempDir> {
+pub async fn setup() -> Result<(tempfile::TempDir, Arc<ConnectionPool>)> {
     let base_dir = tempfile::tempdir()?;
     settings::set_base_dir(base_dir.path().to_str().unwrap());
-    agent_db::init().await?;
-    Ok(base_dir)
+    let conn_pool = agent_db::init().await?;
+    Ok((base_dir, conn_pool))
 }

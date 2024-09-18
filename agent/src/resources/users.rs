@@ -159,14 +159,14 @@ pub async fn save_settings(conn: &Connection, username: &Username, user_settings
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{agent_db, utils::tests};
+    use crate::utils::tests;
 
     #[tokio::test]
     async fn _test_delete_user() {
         // setup
         let non_existent_user: Username = "non_existent_user".into();
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
 
         assert!(delete(&conn, local_username()).await.is_ok());
         assert!(delete(&conn, &non_existent_user).await.is_err());
@@ -175,8 +175,8 @@ mod tests {
     #[tokio::test]
     async fn test_users_get_by_username() {
         let non_existent_user: Username = "non_existent_user".into();
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
 
         assert!(get_by_username(&conn, local_username()).await.is_ok());
         assert!(get_by_username(&conn, &non_existent_user).await.is_err());
@@ -186,8 +186,8 @@ mod tests {
     async fn test_users_save_settings() {
         let non_existent_user: Username = "non_existent_user".into();
         let user_settings = UserSettings::default();
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
 
         assert!(save_settings(&conn, local_username(), &user_settings).await.is_ok());
         assert!(save_settings(&conn, &non_existent_user, &user_settings).await.is_err());

@@ -1,14 +1,14 @@
 use crate::models::auth::SecurityTokens;
 use crate::models::PushMessage;
+use crate::pool::{ConnectionGuard, ConnectionPool};
 use crate::server::notification_channel::NotificationChannel;
+use crate::settings;
 use crate::tasks::{TaskFn, TasksQueue};
 use crate::utils::validators::Username;
 use crate::UserError;
-use crate::{agent_db, settings};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use core::panic;
 use lru::LruCache;
-use squill_drivers::futures::Connection;
 use std::num::NonZeroUsize;
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
@@ -118,17 +118,21 @@ pub struct ServerState {
     /// A queue of tasks to be executed by the agent.
     /// The tasks are executed in a FIFO order but can be executed concurrently.
     tasks_queue: Arc<TasksQueue>,
+
+    /// The connection pool to the agent database.
+    agent_db_conn_pool: Arc<ConnectionPool>,
 }
 
 impl ServerState {
     /// Create a new state with the given agent settings.
-    pub fn new() -> Self {
+    pub fn new(agent_db_conn_pool: Arc<ConnectionPool>) -> Self {
         Self {
             security_caches: Arc::new(Mutex::new(SecurityCaches::new())),
             tasks_queue: Arc::new(TasksQueue::new(
                 settings::get_max_concurrent_tasks(),
                 settings::get_max_task_queue_size(),
             )),
+            agent_db_conn_pool,
         }
     }
 
@@ -137,8 +141,12 @@ impl ServerState {
         self.tasks_queue.start().await
     }
 
-    pub async fn get_agentdb_connection(&self) -> Result<Connection> {
-        agent_db::get_connection().await
+    pub async fn get_agentdb_connection(&self) -> Result<ConnectionGuard> {
+        self.agent_db_conn_pool
+            .get()
+            .await
+            .map_err(anyhow::Error::from)
+            .context("Cannot get a connection to the agent database.")
     }
 
     /// Add a user session.
@@ -366,18 +374,20 @@ impl ServerState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::tests::settings;
+    use crate::utils::tests;
 
-    #[test]
-    fn test_add_user_session() {
-        let state = ServerState::new();
+    #[tokio::test]
+    async fn test_add_user_session() {
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let state = ServerState::new(conn_pool);
         let session_tokens = state.add_user_session(&"username".into(), Uuid::new_v4());
         assert!(state.get_user_session(&session_tokens.access_token).is_some());
     }
 
-    #[test]
-    fn test_get_user_session() {
-        let state = ServerState::new();
+    #[tokio::test]
+    async fn test_get_user_session() {
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&"username".into(), Uuid::new_v4());
 
         // 1. get a non existing user session
@@ -388,15 +398,16 @@ mod tests {
         assert_eq!(user_session.get_user_id(), security_tokens.user_id);
 
         // 3. get an expired user session
-        settings::set_token_expiration(std::time::Duration::from_secs(0));
+        tests::settings::set_token_expiration(std::time::Duration::from_secs(0));
         let security_tokens_expired = state.add_user_session(&"username_expired".into(), Uuid::new_v4());
         assert!(state.get_user_session(&security_tokens_expired.access_token).is_none());
     }
 
-    #[test]
-    fn test_refresh_security_tokens() {
+    #[tokio::test]
+    async fn test_refresh_security_tokens() {
         // setup: create a security token
-        let state = ServerState::new();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&"username".into(), Uuid::new_v4());
 
         // refresh the security token using the refresh token

@@ -118,7 +118,7 @@ export default function TableView({
   const estimatedRowHeight = getEstimatedRowHeight(settings);
 
   // The height in pixels of the entire table
-  const estimatedTotalHeight = estimatedRowHeight * dataframe.getSizeHint();
+  const estimatedTotalHeight = estimatedRowHeight * (dataframe?.getSizeHint() || 0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [columns, setColumns] = useState<Column[]>(null);
@@ -138,7 +138,7 @@ export default function TableView({
 
   const virtualizerConfig = useMemo(
     () => ({
-      count: dataframe.getSizeHint(),
+      count: dataframe?.getSizeHint() || 0,
       estimateSize: () => estimatedRowHeight, // for accurate scrollbar dragging
       getScrollElement: () => containerRef.current,
       gap: 1,
@@ -151,7 +151,7 @@ export default function TableView({
 
   const makeQueryConfig = useCallback(
     (offset: number) => ({
-      queryKey: ["dataframe", dataframe.getId(), offset, fetchSize],
+      queryKey: ["dataframe", dataframe?.getId(), offset, fetchSize],
       queryFn: () => dataframe.getSlice(offset, fetchSize),
       placeholderData: keepPreviousData,
       staleTime: new Duration(1, "minute").toMilliseconds(),
@@ -167,7 +167,7 @@ export default function TableView({
   useEffect(() => {
     // Get the schema of the dataset to determine the columns.
     const columns = dataframe
-      .getSchema()
+      ?.getSchema()
       .items.map((attr): Partial<Column> => {
         return {
           title: attr.name,
@@ -222,39 +222,47 @@ export default function TableView({
     console.debug(`resizing column ${columnIndex} to ${width}px completed`);
   }, []);
 
-  console.debug(
-    `rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)}, settings=${JSON.stringify(settings)}, revision=${refreshRevision})`,
-  );
-  if (!columns) {
-    return null;
-  } else {
-    const classes = {
-      container: cx("relative w-full h-full overflow-auto", className, colors("text", "background")),
-      table: {
-        self: cx("table-view grid w-full text-left select-none border-collapse", isFetching && "fetching"),
-        thead: {
-          self: cx("grid sticky top-0 z-10 text-xs uppercase font-semibold items-center", colors("background")),
-          tr: "flex w-full",
-          th: cx(
-            "flex grow",
-            settings.density === "compact" && "p-1",
-            settings.density === "comfortable" && "px-6 py-3",
-          ),
-          rowNum: buildColumnClasses(null, -1, columns, true, { settings }),
-        },
-        tbody: {
-          self: cx(
-            "relative grid w-full z-0",
-            settings.dividers !== "none" && "divide-y",
-            settings.dividers !== "none" && colors("divide"),
-          ),
-          tr: {
-            self: cx("z-0", settings.dividers === "grid" && cx("divide-x", colors("divide"))),
-            rowNum: buildColumnClasses(null, -1, columns, false, { settings }),
-          },
+  const classes = {
+    container: cx("relative w-full h-full overflow-auto", className, colors("text", "background")),
+    table: {
+      self: cx("table-view grid w-full text-left select-none border-collapse", isFetching && "fetching"),
+      thead: {
+        self: cx("grid sticky top-0 z-10 text-xs uppercase font-semibold items-center", colors("background")),
+        tr: "flex w-full",
+        th: cx("flex grow", settings.density === "compact" && "p-1", settings.density === "comfortable" && "px-6 py-3"),
+        rowNum: buildColumnClasses(null, -1, columns, true, { settings }),
+      },
+      tbody: {
+        self: cx(
+          "relative grid w-full z-0",
+          settings.dividers !== "none" && "divide-y",
+          settings.dividers !== "none" && colors("divide"),
+        ),
+        tr: {
+          self: cx("z-0", settings.dividers === "grid" && cx("divide-x", colors("divide"))),
+          rowNum: buildColumnClasses(null, -1, columns, false, { settings }),
         },
       },
-    };
+    },
+  };
+
+  if (!columns) {
+    return (
+      <div ref={containerRef} className={classes.container}>
+        <table className={cx(classes.table.self, "fetching")}>
+          <TableViewHeader
+            refreshRevision={refreshRevision}
+            columns={columns}
+            settings={settings}
+            classes={classes.table.thead}
+          />
+        </table>
+      </div>
+    );
+  } else {
+    console.debug(
+      `rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)}, settings=${JSON.stringify(settings)}, revision=${refreshRevision})`,
+    );
     return (
       <div ref={containerRef} className={classes.container}>
         <table className={classes.table.self}>
@@ -312,8 +320,8 @@ const TableViewHeader = memo(
     columns: Column[];
     settings: TableSettings;
     classes: { self: string; tr: string; th: string; rowNum: { self: string; div: string } };
-    onResize: ResizeObserver;
-    onResizeEnd: ResizeObserver;
+    onResize?: ResizeObserver;
+    onResizeEnd?: ResizeObserver;
   }) => {
     console.debug("rendering header");
     return (
@@ -324,35 +332,42 @@ const TableViewHeader = memo(
               <div className={classes.rowNum.div}></div>
             </th>
           )}
-          {columns.map((column, i) => (
+          {!columns &&
+            Array.from({ length: 5 }).map((_, i) => (
+              <th key={i} scope="col" className={cx(classes.th, secondary("background"), "rounded ml-0.5 mr-0.5")}></th>
+            ))}
+          {columns &&
+            columns.map((column, i) => (
+              <th
+                key={i}
+                scope="col"
+                style={{ width: column.width + "px" }}
+                className={cx("relative", classes.th, column.format.name === "boolean" && "justify-center")}
+              >
+                <div className="truncate">{column.title}</div>
+                <ResizePanel
+                  className="absolute right-0 h-4"
+                  width={column.width}
+                  minWidth={100}
+                  maxWidth={1000}
+                  onResize={(width) => onResize(i, width)}
+                  onResizeEnd={(width) => onResizeEnd(i, width)}
+                />
+              </th>
+            ))}
+        </tr>
+        {columns && (
+          <tr>
             <th
-              key={i}
-              scope="col"
-              style={{ width: column.width + "px" }}
-              className={cx("relative", classes.th, column.format.name === "boolean" && "justify-center")}
+              className={cx("relative flex w-full h-0.5 overflow-hidden", colors("divide-background"))}
+              colSpan={columns.length + (settings.showRowNumbers ? 1 : 0)}
             >
-              <div className="truncate">{column.title}</div>
-              <ResizePanel
-                className="absolute right-0 h-4"
-                width={column.width}
-                minWidth={100}
-                maxWidth={1000}
-                onResize={(width) => onResize(i, width)}
-                onResizeEnd={(width) => onResizeEnd(i, width)}
-              />
+              <div className="rail absolute top-0 left-0 w-full h-full">
+                <div className={cx("w-5 h-full", colors("selected:background"))}></div>
+              </div>
             </th>
-          ))}
-        </tr>
-        <tr>
-          <th
-            className={cx("relative flex w-full h-0.5 overflow-hidden", colors("divide-background"))}
-            colSpan={columns.length + (settings.showRowNumbers ? 1 : 0)}
-          >
-            <div className="rail absolute top-0 left-0 w-full h-full">
-              <div className={cx("w-5 h-full", colors("selected:background"))}></div>
-            </div>
-          </th>
-        </tr>
+          </tr>
+        )}
       </thead>
     );
   },

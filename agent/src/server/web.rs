@@ -42,9 +42,6 @@ impl Server {
         // If the server is already running, return an error.
         Self::check_if_running().await?;
 
-        // Initialize the agent database
-        agent_db::init().await?;
-
         // Server initialization
         let mut server = Server {};
         let listener = server.bind().await?;
@@ -99,8 +96,11 @@ impl Server {
     ///
     /// This function will start the server and will not return until the server is stopped.
     async fn run(&mut self, listener: TcpListener) -> Result<()> {
+        // Initialize the agent database
+        let conn_pool = agent_db::init().await?;
+
         // create the server state
-        let state = ServerState::new();
+        let state = ServerState::new(conn_pool);
 
         // Start the background tasks run by the state.
         state.start().await;
@@ -464,7 +464,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_check_api_key() {
-        let state = ServerState::new();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let state = ServerState::new(conn_pool);
 
         // 1. Missing API key
         let response = super::Server::api(&state)
@@ -505,9 +506,9 @@ mod tests {
     #[tokio::test]
     async fn test_check_authentication() {
         // We are using GET /users/:username/user for this test since this endpoint requires authentication.
-        let _base_dir = tests::setup().await;
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
         let local_username = users::local_username().as_str();
-        let state = ServerState::new();
+        let state = ServerState::new(conn_pool);
         let conn = state.get_agentdb_connection().await.unwrap();
         let user = users::get_by_username(&conn, users::local_username()).await.unwrap();
         let security_token = state.add_user_session(&local_username.into(), user.user_id);

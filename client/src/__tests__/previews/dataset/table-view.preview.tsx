@@ -19,6 +19,21 @@ export default function TableViewPreview() {
   return (
     <>
       {/*
+       * No dataset
+       */}
+      <Preview>
+        <Preview.Title>No Dataset</Preview.Title>
+        <Preview.Description>
+          Dataset can be displayed by the <code className="text-xs">TableView</code> component that will initiate the
+          loading of the data as needed.
+        </Preview.Description>
+        <PreviewBox>
+          <div className="flex w-full h-[100px] overflow-hidden">
+            <TableView dataframe={undefined} fetchSize={50} />
+          </div>
+        </PreviewBox>
+      </Preview>
+      {/*
        * Normal density
        */}
       <Preview>

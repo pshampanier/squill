@@ -136,7 +136,7 @@ mod test {
 
     #[tokio::test]
     async fn test_logon() {
-        let _base_dir = tests::setup().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
         let local_username = users::local_username();
 
         // 1) invalid user (the user directory does not exist)
@@ -145,7 +145,7 @@ mod test {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials { username: "invalid_user".to_string(), password: "".to_string() },
             });
-            let state = axum::extract::State(ServerState::new());
+            let state = axum::extract::State(ServerState::new(conn_pool.clone()));
             assert!(matches!(logon(state, body).await, Err(Error::Forbidden)));
         }
 
@@ -155,7 +155,7 @@ mod test {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials { username: local_username.to_string(), password: "".to_string() },
             });
-            let state = axum::extract::State(ServerState::new());
+            let state = axum::extract::State(ServerState::new(conn_pool.clone()));
             let result = logon(state, body).await;
             assert!(result.is_ok());
             let result = result.unwrap();
@@ -168,7 +168,7 @@ mod test {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials { username: "marty_mcfly".to_string(), password: "".to_string() },
             });
-            let state = axum::extract::State(ServerState::new());
+            let state = axum::extract::State(ServerState::new(conn_pool.clone()));
             assert!(matches!(logon(state, body).await, Err(Error::Forbidden)));
         }
 
@@ -178,7 +178,7 @@ mod test {
                 method: AuthenticationMethod::UserPassword,
                 credentials: Credentials { username: local_username.to_string(), password: "****".to_string() },
             });
-            let state = axum::extract::State(ServerState::new());
+            let state = axum::extract::State(ServerState::new(conn_pool.clone()));
             assert!(matches!(logon(state, body).await, Err(Error::BadRequest(_))));
         }
     }
@@ -186,7 +186,8 @@ mod test {
     #[tokio::test]
     async fn test_refresh_token() {
         // setup: create a user session
-        let state = axum::extract::State(ServerState::new());
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let state = axum::extract::State(ServerState::new(conn_pool));
         let security_token = state.add_user_session(&"local".into(), Uuid::new_v4());
 
         // 1) invalid refresh token
@@ -207,7 +208,8 @@ mod test {
     #[tokio::test]
     async fn test_logout() {
         // setup: create a user session
-        let state = axum::extract::State(ServerState::new());
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let state = axum::extract::State(ServerState::new(conn_pool));
         let mut headers = HeaderMap::new();
         let security_tokens = state.add_user_session(&"local".into(), Uuid::new_v4());
 

@@ -2,7 +2,7 @@ import QueryOutput from "@/components/query/QueryOutput";
 import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
-import { MICROSECONDS_IN_A_SECOND, addTime } from "@/utils/time";
+import { addTime } from "@/utils/time";
 import { DataFrameSchema } from "@/models/dataframe-schema";
 import { DatasetAttribute } from "@/models/dataset-attribute";
 import { MemoryDataFrame } from "@/utils/dataframe";
@@ -42,7 +42,8 @@ const QUERY_SUCCESS = new QueryExecution({
  LIMIT 10;`,
   executedAt: addTime(new Date(), -5, "minute"),
   status: "completed",
-  executionTime: 32.365002 * MICROSECONDS_IN_A_SECOND,
+  isResultSetQuery: true,
+  executionTime: 32.365002,
 });
 
 const QUERY_SUCCESS_RESULT = `
@@ -87,12 +88,14 @@ const QUERY_RUNNING = new QueryExecution({
   query: `SELECT * FROM hotels;`,
   executedAt: addTime(new Date(), -30, "second"),
   status: "running",
+  isResultSetQuery: true,
 });
 
 const QUERY_PENDING = new QueryExecution({
   query: `SELECT name, address FROM hotels ORDER BY name;`,
   executedAt: new Date(),
   status: "pending",
+  isResultSetQuery: true,
 });
 
 export default function QueryOutputPreview() {

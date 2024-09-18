@@ -1,9 +1,10 @@
+use crate::pool::{ConnectionManager, ConnectionPool};
 use crate::resources::users;
 use crate::settings;
 use anyhow::{Context, Result};
-use squill_drivers::futures::Connection;
 use squill_drivers::{register_drivers, sqlite, Factory};
 use std::path::PathBuf;
+use std::sync::Arc;
 use tracing::info;
 
 const AGENT_DB_NAME: &str = "agent.db";
@@ -20,26 +21,28 @@ pub fn uri() -> String {
     format!("{}://{}", sqlite::DRIVER_NAME, Factory::to_uri_path(&file_path()))
 }
 
-/// Open a connection to the agent database.
-pub async fn get_connection() -> Result<Connection> {
-    Connection::open(&uri())
-        .await
-        .map_err(anyhow::Error::from)
-        .context("Unable to open a connection to the agent database.")
-}
-
 /// Initialize the agent database.
 ///
 /// This function will create the database if it does not exist and initialize it
-pub async fn init() -> Result<()> {
+///
+/// # Returns
+/// A connection pool to the agent database.
+pub async fn init() -> Result<Arc<ConnectionPool>> {
     // Make sure that all database drivers are ready to be used.
     register_drivers();
 
     // If the database file does not exist, we need to create the database & initialize the database.
     let new_database = !file_path().exists();
 
+    let conn_pool = match ConnectionPool::builder(ConnectionManager { uri: uri() }).build() {
+        Ok(pool) => Arc::new(pool),
+        Err(e) => {
+            return Err(anyhow::Error::from(e)).context("Unable to create the agent database connection pool.");
+        }
+    };
+
     // Opening a connection to a non existing database will create it.
-    let conn = get_connection().await?;
+    let conn = conn_pool.get().await?;
     if new_database {
         info!("Initializing the agent database.");
         // 1. Setup the schema.
@@ -51,7 +54,7 @@ pub async fn init() -> Result<()> {
         users::create(&conn, users::local_username()).await?;
         info!("Agent database initialized: {}", file_path().display());
     }
-    Ok(())
+    Ok(conn_pool)
 }
 
 #[cfg(test)]

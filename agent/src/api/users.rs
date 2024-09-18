@@ -203,7 +203,6 @@ pub fn authenticated_routes(state: ServerState) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::agent_db;
     use crate::resources::folders::METADATA_CONTENT_TYPE;
     use crate::resources::users;
     use crate::server::state::ServerState;
@@ -215,11 +214,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_user() {
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
         let username: Username = "marty.mcfly".into();
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
-        let state = ServerState::new();
+        let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
 
         // 1) valid user
@@ -251,11 +250,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_create_user_catalog_resource() {
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
         let username: Username = "marty.mcfly".into();
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
-        let state = ServerState::new();
+        let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
         let root_folders = catalog::list(&conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
         let environments_folder = root_folders

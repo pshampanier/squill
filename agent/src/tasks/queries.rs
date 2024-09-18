@@ -73,5 +73,20 @@ async fn execute_query(
     // 2) Send a notification to the client that the query is running
     state.push_notification(session_id, running_query.clone()).await;
 
+    /*
+    // 3) Execute the query
+    if running_query.is_result_set_query.unwrap_or(false) {
+        //
+        // The query is expected to return a result set
+        //
+        todo!("Implement the query execution for result set queries");
+    } else {
+        //
+        // The query is expected to return a number of affected rows
+        //
+        todo!("Implement the query execution for non-result set queries");
+    }
+    */
+
     Ok(Some(running_query))
 }

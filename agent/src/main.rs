@@ -2,6 +2,7 @@ mod agent_db;
 mod api;
 mod commandline;
 mod models;
+mod pool;
 mod resources;
 mod server;
 mod settings;
@@ -122,12 +123,14 @@ async fn run(args: &commandline::Args) -> Result<()> {
             }
         }
         commandline::Commands::UserAdd { username } => {
-            agent_db::init().await?;
-            resources::users::create(&agent_db::get_connection().await?, &sanitize_username(username)?).await?;
+            let conn_pool = agent_db::init().await?;
+            let conn = conn_pool.get().await?;
+            resources::users::create(&conn, &sanitize_username(username)?).await?;
         }
         commandline::Commands::UserDel { username } => {
-            agent_db::init().await?;
-            resources::users::delete(&agent_db::get_connection().await?, &sanitize_username(username)?).await?;
+            let conn_pool = agent_db::init().await?;
+            let conn = conn_pool.get().await?;
+            resources::users::delete(&conn, &sanitize_username(username)?).await?;
         }
         commandline::Commands::ShowConfig => {
             settings::show_config();

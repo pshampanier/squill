@@ -162,7 +162,6 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> 
 
 #[cfg(test)]
 mod tests {
-    use crate::agent_db;
     use crate::models::{folders::ContentType, Folder};
     use crate::resources::catalog;
     use crate::resources::catalog::Resource;
@@ -173,8 +172,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_catalog_add() {
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
         let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
         // create a root catalog entries
         let root_folder = Folder::new(Uuid::nil(), "New Folder", local_user.user_id, ContentType::Connections);
@@ -191,8 +190,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_catalog_list() {
-        let _base_dir = tests::setup().await;
-        let conn = agent_db::get_connection().await.unwrap();
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
         let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
 
         // We are listing the root catalog entries for the user, which should only contain the default folders.
