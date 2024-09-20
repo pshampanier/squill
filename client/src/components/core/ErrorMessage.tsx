@@ -14,7 +14,7 @@ export default function ErrorMessage({ message, className, onClose }: ErrorMessa
   // const [showDetails, setShowDetails] = useState(false);
   const errorMessage = message instanceof Error ? message.message : message;
   return (
-    <Alert title={true} icon={true} severity="danger" border className={className}>
+    <Alert title={true} icon={true} severity="danger" border="outline" className={className}>
       <p>{errorMessage}</p>
       <Button onClick={onClose} className="mt-4 ml-auto" variant="solid" text="Close" />
     </Alert>

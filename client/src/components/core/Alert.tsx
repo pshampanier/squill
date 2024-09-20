@@ -13,28 +13,48 @@ import SuccessIcon from "@/icons/check-circle.svg?react";
 type AlertSeverity = "message" | "info" | "success" | "warning" | "danger";
 type AlertProps = {
   severity: AlertSeverity;
+  variant?: "solid" | "ghost";
   className?: string;
   children: React.ReactNode;
   colors?: ColorsFunction;
   title?: boolean | string;
   icon?: boolean | SVGIcon;
   onDismiss?: () => void;
-  border?: boolean;
+  border?: "none" | "outline" | "accent";
+  size?: "sm" | "md" | "lg";
 };
 
-function Alert({ severity, className, children, title, icon, onDismiss, colors, border }: AlertProps) {
+function Alert({
+  severity,
+  variant = "solid",
+  className,
+  children,
+  title,
+  icon,
+  onDismiss,
+  colors,
+  border = "none",
+  size = "md",
+}: AlertProps) {
   colors = colors || useContext(ColorsContext) || primary;
 
   const classes = {
     component: cx(
-      "flex flex-row items-top p-4 rounded text-sm space-x-2",
-      border && "border border-solid",
-      colors(`${severity}:background`, `${severity}:text`, `${severity}:border`),
-      className
+      "flex flex-row items-top text-sm space-x-2",
+      size == "sm" && "p-2",
+      size == "md" && "p-3",
+      size == "lg" && "p-4",
+      border == "outline" && "border border-solid",
+      border == "accent" && "border-l-4 border-solid",
+      border != "accent" && "rounded",
+      variant == "solid" && colors(`${severity}:background`),
+      variant == "ghost" && colors("background"),
+      colors(`${severity}:text`, `${severity}:border`),
+      className,
     ),
     dismiss: cx(
       "flex grow-0 ml-auto w-5 h-5 border-0 p-1 ring-0 outline-none rounded-full hover:bg-transparent dark:hover:bg-transparent",
-      colors(`${severity}:text`)
+      colors(`${severity}:text`),
     ),
   };
 

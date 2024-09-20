@@ -13,7 +13,7 @@ export default function QueryOutput({ className, queryExecution }: QueryOutputPr
   const { status, error, query, isResultSetQuery } = queryExecution;
   return (
     <div className={cx("flex flex-col min-w-full w-full space-y-1", className)}>
-      <Code className="w-full max-h-90 overflow-scroll" language="sql" showLineNumbers={status === "failed"}>
+      <Code className="w-full max-h-90 overflow-scroll" language="sql" showLineNumbers={false}>
         {query}
       </Code>
       {isResultSetQuery && (status === "pending" || status === "running") && (
@@ -22,7 +22,7 @@ export default function QueryOutput({ className, queryExecution }: QueryOutputPr
         </div>
       )}
       {status === "failed" && (
-        <Alert severity="danger" icon className="w-full mt-2 mb-2">
+        <Alert severity="danger" className="w-full mt-2 mb-2" border="accent" variant="ghost" size="sm">
           <pre className="text-xs">{error.message}</pre>
         </Alert>
       )}

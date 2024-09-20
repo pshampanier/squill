@@ -99,21 +99,43 @@ export default function AlertPreview() {
        */}
       <Preview>
         <Preview.Title>Borders</Preview.Title>
-        <Preview.Description>Alerts can have a border.</Preview.Description>
+        <Preview.Description>
+          Alerts can have a border with <kbd>border=&quot;outline&quot;</kbd>.
+        </Preview.Description>
         <PreviewBox>
-          <Alert severity="message" border>
+          <Alert severity="message" border="outline">
             <b>Message!</b>&nbsp;This is a message.
           </Alert>
-          <Alert severity="info" border>
+          <Alert severity="info" border="outline">
             <b>Info!</b>&nbsp;This is a message.
           </Alert>
-          <Alert severity="success" border>
+          <Alert severity="success" border="outline">
             <b>Success!</b>&nbsp;This is a message.
           </Alert>
-          <Alert severity="warning" border>
+          <Alert severity="warning" border="outline">
             <b>Warning!</b>&nbsp;This is a message.
           </Alert>
-          <Alert severity="danger" border>
+          <Alert severity="danger" border="outline">
+            <b>Danger!</b>&nbsp;This is a message.
+          </Alert>
+        </PreviewBox>
+        <Preview.Description>
+          Alerts can have an accent border with <kbd>border=&quot;accent&quot;</kbd>.
+        </Preview.Description>
+        <PreviewBox>
+          <Alert severity="message" border="accent">
+            <b>Message!</b>&nbsp;This is a message.
+          </Alert>
+          <Alert severity="info" border="accent">
+            <b>Info!</b>&nbsp;This is a message.
+          </Alert>
+          <Alert severity="success" border="accent">
+            <b>Success!</b>&nbsp;This is a message.
+          </Alert>
+          <Alert severity="warning" border="accent">
+            <b>Warning!</b>&nbsp;This is a message.
+          </Alert>
+          <Alert severity="danger" border="accent">
             <b>Danger!</b>&nbsp;This is a message.
           </Alert>
         </PreviewBox>

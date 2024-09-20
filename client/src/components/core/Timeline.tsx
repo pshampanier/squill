@@ -85,7 +85,7 @@ function TimelineGroup({ title, children, className, defaultOpen = true }: Timel
 
   const classes = {
     self: cx("timeline-group flex flex-col w-full", className),
-    chevron: cx("flex flex-none w-4 h-4 ml-auto transition-transform", !open && "rotate-90", open && "-rotate-90"),
+    chevron: cx("flex flex-none w-4 h-4 transition-transform", open && "rotate-90"),
     header: cx(
       "group-header flex flex-row items-center justify-start w-full h-8 text-sm font-semibold rounded pl-2 pr-2 mb-0.5 mt-0.5",
       secondaryColors("background", "text"),
@@ -95,9 +95,9 @@ function TimelineGroup({ title, children, className, defaultOpen = true }: Timel
   return (
     <section className={classes.self}>
       <div className={cx(classes.header)}>
-        <button className="flex flex-row h-full w-full items-center" onClick={handleToggleOpen}>
-          <div className="flex select-none capitalize">{title}</div>
+        <button className="flex flex-row h-full w-full items-center space-x-2" onClick={handleToggleOpen}>
           <ChevronIcon className={classes.chevron} />
+          <div className="flex select-none capitalize">{title}</div>
         </button>
       </div>
       <div className={classes.body}>{open && children}</div>

@@ -232,7 +232,13 @@ function QueryHistoryTimelineItem({
           severity: "success",
           label: "Success",
           icon: <SuccessIcon />,
-          title: <Title {...titleProps} executionTime={queryExecution.executionTime} />,
+          title: (
+            <Title
+              {...titleProps}
+              executionTime={queryExecution.executionTime}
+              affectedRows={queryExecution.affectedRows}
+            />
+          ),
         };
       case "pending":
         return {
@@ -276,10 +282,12 @@ function Title({
   date,
   dateClassification,
   executionTime,
+  affectedRows,
 }: {
   date: Date;
   dateClassification: DateClassification;
   executionTime?: number;
+  affectedRows?: number;
 }) {
   return (
     <ul className="list-none flex flex-row items-center h-full text-xs">
@@ -290,6 +298,11 @@ function Title({
         <li className="flex text-divider items-center">
           <StopwatchIcon className="mr-1" />
           {formatDuration(executionTime * 1_000_000)[0]}
+        </li>
+      )}
+      {affectedRows > 0 && (
+        <li className="flex text-divider items-center">
+          {affectedRows} {(affectedRows > 1 && "rows") || "row"}
         </li>
       )}
     </ul>
@@ -332,8 +345,8 @@ function ExecutedAt({
           }
           case "minute":
           case "second": {
-            // 'x minutes ago' or 'x seconds ago', we need to refresh the value every second.
-            refreshInterval = 1000;
+            // 'x minutes ago' or 'x seconds ago', refresh every 10 seconds.
+            refreshInterval = 10000;
             break;
           }
         }
