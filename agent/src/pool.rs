@@ -1,3 +1,4 @@
+use anyhow::Result;
 use deadpool::managed::{Manager, Metrics, Object, Pool, RecycleResult};
 use squill_drivers::futures::Connection;
 
@@ -19,4 +20,9 @@ impl Manager for ConnectionManager {
     async fn recycle(&self, _: &mut Connection, _: &Metrics) -> RecycleResult<Self::Error> {
         Ok(())
     }
+}
+
+/// Create a connection pool to the given Connection URI.
+pub fn create<S: Into<String>>(uri: S) -> Result<ConnectionPool> {
+    Ok(ConnectionPool::builder(ConnectionManager { uri: uri.into() }).build()?)
 }

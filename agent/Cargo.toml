@@ -35,6 +35,7 @@ chrono = { version = "0.4.38", features = ["serde"] }
 serde_yml = "0.0.12"
 flume = { version = "0.11.0", default-features = false, features = ["async", "select"] }
 deadpool = "0.12.1"
+minijinja = { version = "2.3.1", features = ["loader"] }
 
 # The following dependencies are not directly used b the package but need to be forced to specific versions in order 
 # to prevent vulnerabilities.

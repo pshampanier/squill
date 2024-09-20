@@ -1,6 +1,7 @@
 mod agent_db;
 mod api;
 mod commandline;
+mod jinja;
 mod models;
 mod pool;
 mod resources;
@@ -101,6 +102,11 @@ async fn run(args: &commandline::Args) -> Result<()> {
     }
     // now that the command line has been parsed, the app_directory exists we can initialize the tracing system.
     tracing::subscriber::set_global_default(get_tracing_subscriber(Some(args))?)?;
+
+    // Check if the assets directory exists, if not the application cannot run properly.
+    if settings::get_assets_dir().as_os_str().is_empty() {
+        return Err(anyhow::anyhow!("The `assets` directory cannot be found."));
+    }
 
     match &args.command {
         commandline::Commands::Start { .. } => {

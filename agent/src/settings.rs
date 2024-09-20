@@ -217,6 +217,37 @@ pub fn get_user_dir<S: AsRef<str>>(username: S) -> PathBuf {
     PathBuf::from(get_base_dir()).join(USERS_DIRNAME).join(username.as_ref())
 }
 
+/// Return the path to the assets directory.
+///
+/// The assets directory is expected to be in the same directory as the executable but in a development environment
+/// it is in the parent directory of the Cargo.toml file.
+///
+/// # Returns
+/// - The path to the assets directory if it exists.
+/// - An empty path if the assets directory does not exist.
+pub fn get_assets_dir() -> PathBuf {
+    if let Ok(current_exe) = std::env::current_exe() {
+        // We can safely use unwrap here because we know that the current_exe is a file
+        let assets_dir = current_exe.parent().unwrap().join("assets");
+        if assets_dir.exists() && assets_dir.is_dir() {
+            return assets_dir;
+        }
+    }
+    let asserts_dir = {
+        if !env!("CARGO_MANIFEST_DIR").is_empty() {
+            let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets");
+            if path.exists() && path.is_dir() {
+                Some(path)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+    asserts_dir.unwrap_or_else(PathBuf::new)
+}
+
 pub fn show_config() {
     #[cfg(not(test))]
     println!("{}", *SETTINGS);

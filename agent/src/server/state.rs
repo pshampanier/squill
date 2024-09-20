@@ -1,6 +1,8 @@
+use crate::jinja::JinjaEnvironment;
 use crate::models::auth::SecurityTokens;
 use crate::models::PushMessage;
-use crate::pool::{ConnectionGuard, ConnectionPool};
+use crate::pool::{self, ConnectionGuard, ConnectionPool};
+use crate::resources::catalog;
 use crate::server::notification_channels::NotificationChannel;
 use crate::server::user_sessions::UserSession;
 use crate::settings;
@@ -63,6 +65,12 @@ pub struct ServerState {
 
     /// The connection pool to the agent database.
     agent_db_conn_pool: Arc<ConnectionPool>,
+
+    /// The connection pool to the user's databases.
+    ///
+    /// - the key is a `connection_id` from a [crate::models::Connection].
+    /// - the value is a connection pool to the database.
+    user_db_conn_pool: Arc<Mutex<LruCache<Uuid, Arc<ConnectionPool>>>>,
 }
 
 impl ServerState {
@@ -75,6 +83,7 @@ impl ServerState {
                 settings::get_max_task_queue_size(),
             )),
             agent_db_conn_pool,
+            user_db_conn_pool: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(100).unwrap()))),
         }
     }
 
@@ -83,12 +92,61 @@ impl ServerState {
         self.tasks_queue.start().await
     }
 
+    /// Get a connection to the agent database.
+    /// 
+    /// The connection is taken from the connection pool and will return to the pool once dropped.
     pub async fn get_agentdb_connection(&self) -> Result<ConnectionGuard> {
         self.agent_db_conn_pool
             .get()
             .await
             .map_err(anyhow::Error::from)
             .context("Cannot get a connection to the agent database.")
+    }
+
+    /// Get a connection to a user's database.
+    /// 
+    /// Here a user's database refers to a connection created by a user in the catalog.
+    /// The connection is taken from the connection pool and will return to the pool once dropped.
+    pub async fn get_user_db_connection(&self, connection_id: Uuid) -> Result<ConnectionGuard> {
+        // Get the connection pool from the cache.
+        // This code is intentionally not trying to get a connection from the pool as soon as we've got the pool,
+        // instead we get the pool first and release the lock on the mutex before getting the connection. This is to
+        // avoid holding the lock for too long while waiting for the connection to be available because getting the
+        // connection from the pool can take some time if there is no connection available in the pool.
+        let conn_pool_opt = match self.user_db_conn_pool.lock() {
+            Ok(mut user_db_conn_pool) => user_db_conn_pool.get(&connection_id).cloned(),
+            Err(_) => {
+                panic!("Unable to recover from a poisoned user db connection mutex");
+            }
+        };
+
+        // Using the connection pool if found in cache, otherwise crate it and add it to the cache.
+        let conn_pool = match conn_pool_opt {
+            Some(pool) => pool,
+            None => {
+                // connection pool not found in the cache.
+                let agent_db_conn = self.get_agentdb_connection().await?;
+                catalog::get::<crate::models::Connection>(&agent_db_conn, connection_id)
+                    .await
+                    .context("Cannot get the connection from the agent database.")
+                    .and_then(|conn_model| {
+                        let jinja_env = self.get_jinja_env(&conn_model.driver);
+                        let uri = jinja_env.render_template("uri", &conn_model)?;
+                        let conn_pool = Arc::new(pool::create(uri)?);
+                        match self.user_db_conn_pool.lock() {
+                            Ok(mut user_db_conn_pool) => {
+                                user_db_conn_pool.put(connection_id, conn_pool.clone());
+                                Ok(conn_pool)
+                            }
+                            Err(_) => {
+                                panic!("Unable to recover from a poisoned user db connection mutex");
+                            }
+                        }
+                    })?
+            }
+        };
+
+        conn_pool.get().await.map_err(anyhow::Error::from).context("Cannot get a connection to the user database.")
     }
 
     /// Add a user session.
@@ -256,6 +314,10 @@ impl ServerState {
         }
     }
 
+    /// Detach a notification channel from a user session.
+    /// 
+    /// The notification channel will be removed from the user session and all future notifications will be ignored
+    /// until a new notification channel is attached.
     pub fn detach_notification_channel(&self, user_session_id: Uuid) {
         match self.security_caches.lock() {
             Ok(mut security_caches) => {
@@ -310,6 +372,13 @@ impl ServerState {
     /// The expiration time in seconds since the UNIX epoch.
     fn get_expiration_time(duration: u32) -> u32 {
         (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as u32) + duration
+    }
+
+    /// Get a Jinja environment for a specific driver.
+    pub fn get_jinja_env(&self, driver: &str) -> JinjaEnvironment<'_> {
+        let mut jinja_env = JinjaEnvironment::new();
+        jinja_env.set_template_directory(settings::get_assets_dir().join("drivers").join(driver));
+        jinja_env
     }
 }
 

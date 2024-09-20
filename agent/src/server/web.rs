@@ -39,6 +39,8 @@ impl Server {
             std::process::id()
         );
 
+        debug!("The assets directory is: {:?}", settings::get_assets_dir());
+
         // If the server is already running, return an error.
         Self::check_if_running().await?;
 

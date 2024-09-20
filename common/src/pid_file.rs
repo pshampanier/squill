@@ -1,8 +1,11 @@
-use std::{ io::Write, path::{ Path, PathBuf } };
-use serde::{ Deserialize, Serialize };
-use anyhow::{ Context, Result };
-use tracing::{ debug, trace, warn };
-use sysinfo::{ Pid, ProcessRefreshKind, RefreshKind, System };
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
+use sysinfo::{Pid, ProcessRefreshKind, RefreshKind, System};
+use tracing::{trace, warn};
 
 use crate::constants::X_API_KEY_HEADER;
 
@@ -60,8 +63,7 @@ pub fn save_pid_file(dir: &Path, local_addr: &std::net::SocketAddr, api_key: &st
     };
     let file_path = get_pid_file_path(dir);
     let mut file = std::fs::File::create(&file_path)?;
-    file
-        .write_all(toml::to_string_pretty(&content)?.as_bytes())
+    file.write_all(toml::to_string_pretty(&content)?.as_bytes())
         .with_context(|| format!("Cannot write the pid file: '{:?}'.", &file_path))?;
     trace!("The pid file has been created: {:?}", &file_path);
     Ok(())
@@ -98,17 +100,16 @@ pub async fn get_agent_status(pid_file: &PidFile) -> AgentStatus {
     let running_proc = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::everything()));
     if running_proc.process(Pid::from_u32(pid_file.pid)).is_none() {
         // The process is no longer running
-        debug!("No process with pid={} found, continue...", pid_file.pid);
         return AgentStatus::NotRunning;
     }
 
     // Check of the server is responding to an API request
     let http_client = reqwest::Client::new();
-    match
-        http_client
-            .get(format!("{}/api/v1/agent", get_agent_url(pid_file)))
-            .header(X_API_KEY_HEADER, &pid_file.api_key)
-            .send().await
+    match http_client
+        .get(format!("{}/api/v1/agent", get_agent_url(pid_file)))
+        .header(X_API_KEY_HEADER, &pid_file.api_key)
+        .send()
+        .await
     {
         Ok(response) => {
             if response.status().is_success() {
@@ -117,7 +118,7 @@ pub async fn get_agent_status(pid_file: &PidFile) -> AgentStatus {
                 AgentStatus::NotResponding(pid_file.pid, response.status().to_string())
             }
         }
-        Err(err) => { AgentStatus::NotResponding(pid_file.pid, err.to_string()) }
+        Err(err) => AgentStatus::NotResponding(pid_file.pid, err.to_string()),
     }
 }
 
