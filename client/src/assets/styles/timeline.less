@@ -1,7 +1,12 @@
 .timeline {
   .status {
-    @apply flex z-10 h-6 items-center transition-all duration-300 ease-in-out rounded-full select-none;
-    @apply ring-4 ring-gray-50 dark:ring-white/[.05];
+    @apply relative flex z-0 h-6 items-center transition-all duration-300 ease-in-out rounded-full select-none;
+    @apply ring-4 ring-gray-50 dark:ring-gray-700; // Apply ring to the main element.
+    &::before {
+      content: "";
+      @apply absolute -inset-0  dark:bg-gray-800 rounded-full; // Background with opacity.
+      z-index: -1; // Ensure it’s behind both the ring and content.
+    }
   }
 
   .status-icon {
@@ -30,7 +35,7 @@
       @apply relative;
       &::before {
         content: "";
-        @apply absolute w-1 h-full bg-gray-50 dark:bg-white/[.05] z-0 left-3.5;
+        @apply absolute w-1 h-full bg-gray-50 dark:bg-gray-700 z-0 left-3.5;
       }
       /* Padding is needed to display the ring around the status */
       @apply px-1;
