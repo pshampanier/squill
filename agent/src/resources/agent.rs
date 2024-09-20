@@ -1,21 +1,14 @@
 use crate::models;
+use crate::settings;
+use crate::utils::constants::DRIVERS_DIRNAME;
 use crate::Result;
 use anyhow::anyhow;
-use std::env;
 use std::path::Path;
-use std::path::PathBuf;
 use tracing::debug;
 
 /// Load the drivers from the agent's assets directory.
 pub fn load_drivers() -> Result<Vec<models::Driver>> {
-    if env::current_exe()?.parent().unwrap().join("assets/drivers").exists() {
-        return load_drivers_from_dir(env::current_exe()?.parent().unwrap().join("assets/drivers"));
-    }
-    #[cfg(debug_assertions)]
-    if PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/drivers").exists() {
-        return load_drivers_from_dir(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/drivers"));
-    }
-    Err(anyhow!("Drivers directory not found"))
+    load_drivers_from_dir(settings::get_assets_dir().join(DRIVERS_DIRNAME))
 }
 
 // Load the drivers from the given directory.
@@ -42,12 +35,11 @@ fn load_drivers_from_dir<P: AsRef<Path>>(path: P) -> Result<Vec<models::Driver>>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::PathBuf;
+    use tokio_test::assert_ok;
 
     #[test]
     fn test_load_drivers() {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("assets/drivers");
-        let drivers = load_drivers_from_dir(path).unwrap();
+        let drivers = assert_ok!(load_drivers());
         assert_eq!(drivers.len(), 4);
     }
 }
