@@ -14,13 +14,11 @@ import { QueryExecution } from "@/models/query-execution";
 export const PUSH_MESSAGE_TYPE_VALUES = ["log", "query"] as const;
 export type PushMessageType = (typeof PUSH_MESSAGE_TYPE_VALUES)[number];
 
-
 /**
  * The level of the message sent through a the Push Notification Channel.
  */
 export const LOG_LEVEL_VALUES = ["info", "warning", "error"] as const;
 export type LogLevel = (typeof LOG_LEVEL_VALUES)[number];
-
 
 
 /**
@@ -71,7 +69,7 @@ export class PushMessage {
   
   constructor(object?: Partial<PushMessage>) {
     Object.assign(this, object);
-    this.log = new Log(object?.log);
-    this.query = new QueryExecution(object?.query);
+    this.log = object?.log && new Log(object.log);
+    this.query = object?.query && new QueryExecution(object.query);
   }
 }

@@ -2,16 +2,14 @@ import TableView from "@/components/dataset/table-view";
 import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import { MemoryDataFrame } from "@/utils/dataframe";
-import { DatasetAttribute as Attribute } from "@/models/dataset-attribute";
-import { DataFrameSchema } from "@/models/dataframe-schema";
+import { DataframeSchema, DataframeAttribute as Attribute } from "@/models/dataframes";
 import previewDataset from "../../assets/datasets/table-view.preview.json";
 import { TableSettings } from "@/models/users";
 
 const ROWS: Array<Array<string>> = previewDataset.data;
-const SCHEMA = new DataFrameSchema({
-  name: "query",
-  type: "array",
-  items: previewDataset.attributes.map((attr) => new Attribute(attr as Partial<Attribute>)),
+const SCHEMA = new DataframeSchema({
+  id: "query",
+  attributes: previewDataset.attributes.map((attr) => new Attribute(attr as Partial<Attribute>)),
 });
 
 export default function TableViewPreview() {

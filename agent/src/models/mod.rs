@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod auth;
 pub mod connections;
+pub mod dataframes;
 pub mod datasources;
 pub mod drivers;
 pub mod environments;

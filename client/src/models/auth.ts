@@ -5,10 +5,8 @@ import { formatRegExp, serializable } from "@/utils/serializable";
 
 export const TOKEN_TYPE_VALUES = ["bearer"] as const;
 export type TokenType = (typeof TOKEN_TYPE_VALUES)[number];
-
 export const AUTHENTICATION_METHOD_VALUES = ["user_password"] as const;
 export type AuthenticationMethod = (typeof AUTHENTICATION_METHOD_VALUES)[number];
-
 
 
 /// A username
@@ -105,7 +103,7 @@ export class Authentication {
   
   constructor(object?: Partial<Authentication>) {
     Object.assign(this, object);
-    this.credentials = new Credentials(object?.credentials);
+    this.credentials = object?.credentials && new Credentials(object.credentials);
   }
 }
 

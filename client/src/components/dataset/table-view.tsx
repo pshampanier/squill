@@ -1,5 +1,5 @@
 import cx from "classix";
-import { DatasetAttributeFormat } from "@/models/dataset-attribute-format";
+import { DataframeAttributeFormat } from "@/models/dataframes";
 import { primary as colors, secondary } from "@/utils/colors";
 import { DataFrame, DataFrameSlice } from "@/utils/dataframe";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -56,7 +56,7 @@ type Column = {
   /**
    * The format of the column
    */
-  format: DatasetAttributeFormat;
+  format: DataframeAttributeFormat;
 
   /**
    * The width of the column (in pixels)
@@ -168,7 +168,7 @@ export default function TableView({
     // Get the schema of the dataset to determine the columns.
     const columns = dataframe
       ?.getSchema()
-      .items.map((attr): Partial<Column> => {
+      .attributes.map((attr): Partial<Column> => {
         return {
           title: attr.name,
           format: attr.format,

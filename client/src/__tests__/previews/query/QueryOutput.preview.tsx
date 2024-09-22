@@ -3,8 +3,7 @@ import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/query-execution";
 import { addTime } from "@/utils/time";
-import { DataFrameSchema } from "@/models/dataframe-schema";
-import { DatasetAttribute } from "@/models/dataset-attribute";
+import { DataframeSchema, DataframeAttribute } from "@/models/dataframes";
 import { MemoryDataFrame } from "@/utils/dataframe";
 import TableView from "@/components/dataset/table-view";
 
@@ -68,19 +67,18 @@ const QUERY_SUCCESS_RESULT = `
     ),
   );
 
-const QUERY_SUCCESS_DATASET_SCHEMA = new DataFrameSchema({
-  name: "query",
-  type: "array",
-  items: [
-    new DatasetAttribute({ name: "productid", type: "text", format: { name: "text" } }),
-    new DatasetAttribute({ name: "name", type: "text", format: { name: "text" } }),
-    new DatasetAttribute({ name: "productnumber", type: "text", format: { name: "text" } }),
-    new DatasetAttribute({ name: "makeflag", type: "boolean", format: { name: "boolean" } }),
-    new DatasetAttribute({ name: "finishedgoodsflag", type: "boolean", format: { name: "boolean" } }),
-    new DatasetAttribute({ name: "color", type: "text", format: { name: "color" } }),
-    new DatasetAttribute({ name: "listprice", type: "float32", format: { name: "money" } }),
-    new DatasetAttribute({ name: "weight", type: "float32", format: { name: "float" } }),
-    new DatasetAttribute({ name: "weightunitmeasurecode", type: "text", format: { name: "text" } }),
+const QUERY_SUCCESS_DATASET_SCHEMA = new DataframeSchema({
+  id: "query",
+  attributes: [
+    new DataframeAttribute({ name: "productid", type: "text", format: { name: "text" } }),
+    new DataframeAttribute({ name: "name", type: "text", format: { name: "text" } }),
+    new DataframeAttribute({ name: "productnumber", type: "text", format: { name: "text" } }),
+    new DataframeAttribute({ name: "makeflag", type: "boolean", format: { name: "boolean" } }),
+    new DataframeAttribute({ name: "finishedgoodsflag", type: "boolean", format: { name: "boolean" } }),
+    new DataframeAttribute({ name: "color", type: "text", format: { name: "color" } }),
+    new DataframeAttribute({ name: "listprice", type: "float32", format: { name: "money" } }),
+    new DataframeAttribute({ name: "weight", type: "float32", format: { name: "float" } }),
+    new DataframeAttribute({ name: "weightunitmeasurecode", type: "text", format: { name: "text" } }),
   ],
 });
 

@@ -1,5 +1,4 @@
-import { DataFrameSchema } from "@/models/dataframe-schema";
-import { DatasetAttribute } from "@/models/dataset-attribute";
+import { DataframeSchema, DataframeAttribute, DataframeAttributeFormat } from "@/models/dataframes";
 
 export interface DataFrame<E> {
   /**
@@ -10,7 +9,7 @@ export interface DataFrame<E> {
   /**
    * Get the schema of the elements (E) stored in the dataset.
    */
-  getSchema(): DataFrameSchema;
+  getSchema(): DataframeSchema;
 
   /**
    * Get an estimate of the number of elements in the dataset.
@@ -53,10 +52,10 @@ export type DataFrameSlice<E> = {
  */
 export class MemoryDataFrame<E> implements DataFrame<E> {
   private id!: string;
-  private schema!: DataFrameSchema;
+  private schema!: DataframeSchema;
   private data!: Array<E>;
 
-  constructor(id: string, schema: DataFrameSchema, data: Array<E>) {
+  constructor(id: string, schema: DataframeSchema, data: Array<E>) {
     this.id = id;
     this.schema = schema;
     this.data = data;
@@ -66,7 +65,7 @@ export class MemoryDataFrame<E> implements DataFrame<E> {
     return this.id;
   }
 
-  getSchema(): DataFrameSchema {
+  getSchema(): DataframeSchema {
     return this.schema;
   }
 
@@ -105,13 +104,15 @@ export class TableDataFrameFactory {
       }
       return response.text().then((text) => {
         const lines = text.split("\n");
-        const schema = new DataFrameSchema({
+        const schema = new DataframeSchema({
           id: url,
-          type: "array",
-          items: lines[0].split(",").map((column) => {
-            return new DatasetAttribute({
+          attributes: lines[0].split(",").map((column) => {
+            return new DataframeAttribute({
               name: column,
               type: "text",
+              format: new DataframeAttributeFormat({
+                name: "text",
+              }),
             });
           }),
         });

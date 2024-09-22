@@ -11,7 +11,6 @@ export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed",
 export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number];
 
 
-
 /**
  * An error message from a query execution.
  **/
@@ -140,6 +139,6 @@ export class QueryExecution {
   
   constructor(object?: Partial<QueryExecution>) {
     Object.assign(this, object);
-    this.error = new QueryExecutionError(object?.error);
+    this.error = object?.error && new QueryExecutionError(object.error);
   }
 }
