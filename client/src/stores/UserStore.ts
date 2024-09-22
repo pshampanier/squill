@@ -6,7 +6,7 @@ import { create } from "zustand";
 import { ResourceRef, ResourceType } from "@/models/resources";
 import { METADATA_CONTENT_TYPE } from "@/utils/constants";
 import { ContentType } from "@/models/folders";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import Connections from "@/resources/connections";
 
 export type CatalogItem = ResourceRef & {

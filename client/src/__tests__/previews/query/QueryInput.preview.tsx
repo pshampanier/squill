@@ -1,6 +1,6 @@
 import QueryInput, { QuerySuggestionEvent } from "@/components/query/QueryInput";
 import PreviewBox from "../PreviewBox";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import { useQuerySuggestion } from "@/hooks/use-query-suggestion";
 import QuerySuggestionMenu from "@/components/query/QuerySuggestionMenu";
 import Preview from "../Preview";

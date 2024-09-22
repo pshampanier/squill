@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use crate::models::query_execution::QueryExecutionError;
+use crate::models::queries::QueryExecutionError;
 use crate::models::QueryExecutionStatus;
 use crate::Result;
 use crate::{models::QueryExecution, server::state::ServerState};

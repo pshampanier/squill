@@ -1,7 +1,7 @@
 import QueryOutput from "@/components/query/QueryOutput";
 import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import { addTime } from "@/utils/time";
 import { DataframeSchema, DataframeAttribute } from "@/models/dataframes";
 import { MemoryDataFrame } from "@/utils/dataframe";

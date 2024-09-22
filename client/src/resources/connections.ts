@@ -1,5 +1,5 @@
 import { Connection } from "@/models/connections";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import { agent } from "@/resources/agent";
 
 const Connections = {

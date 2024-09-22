@@ -1,4 +1,4 @@
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import { QueryHistoryHook, useQueryHistory } from "@/hooks/use-query-history";
 import { useEffect, useRef, useState } from "react";
 

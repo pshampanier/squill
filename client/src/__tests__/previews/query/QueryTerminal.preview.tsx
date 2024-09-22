@@ -4,7 +4,7 @@ import PreviewBox from "../PreviewBox";
 import { usePreviewsStore } from "../previewsStore";
 import QueryPrompt from "@/components/query/QueryPrompt";
 import * as data from "./query-terminal-preview-data.json";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 
 const dateRefDiff = new Date().getTime() - new Date(data.dateRef).getTime();
 const _HISTORY = data.executions

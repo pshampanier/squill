@@ -1,4 +1,4 @@
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import Menu from "@/components/core/Menu";
 import HistoryIcon from "@/icons/history.svg?react";
 import { KeyboardShortcut } from "@/utils/types";

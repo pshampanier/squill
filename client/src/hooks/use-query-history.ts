@@ -1,4 +1,4 @@
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import { useState } from "react";
 
 /**

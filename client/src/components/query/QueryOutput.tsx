@@ -1,5 +1,5 @@
 import cx from "classix";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import Alert from "@/components/core/Alert";
 import Code from "@/components/core/Code";
 import TableView from "../dataset/table-view";

@@ -45,11 +45,11 @@ fn main() {
         };
     }
 
-    rust_codegen!("query_execution");
+    rust_codegen!("queries");
     rust_codegen!("auth");
     rust_codegen!("push_notifications");
     rust_codegen!("dataframes");
-    typescript_codegen!("query-execution");
+    typescript_codegen!("queries");
     typescript_codegen!("auth");
     typescript_codegen!("push-notifications");
     typescript_codegen!("dataframes");

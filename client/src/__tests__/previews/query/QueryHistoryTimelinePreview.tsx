@@ -1,7 +1,7 @@
 import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import * as data from "./query-terminal-preview-data.json";
-import { QueryExecution } from "@/models/query-execution";
+import { QueryExecution } from "@/models/queries";
 import QueryHistoryTimeline, { QueryHistoryAction } from "@/components/query/QueryHistoryTimeline";
 import { Dispatch, useRef } from "react";
 import Button from "@/components/core/Button";
