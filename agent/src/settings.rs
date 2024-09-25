@@ -20,6 +20,15 @@ const DEFAULT_LISTEN_ADDRESS: &str = "127.0.0.1";
 /// The default port is 0 which means that the OS will choose a free port.
 const DEFAULT_PORT: u16 = 0;
 
+/// Default maximum number of rows per file.
+const DEFAULT_MAX_ROWS_PER_HISTORY_FILE: usize = 1_000_000;
+
+/// Default number of rows expected to be fetched immediately after a query is executed.
+const DEFAULT_INITIAL_QUERY_FETCH_SIZE: usize = 1_000;
+
+/// Default maximum number of connection pools that can be created for users.
+const DEFAULT_MAX_USERS_CONN_POOL_SIZE: usize = 100;
+
 /// Get the directory used by the application to store any additional data.
 pub fn get_app_dir() -> PathBuf {
     common::get_app_dir()
@@ -38,6 +47,9 @@ settings_getters! {
     get_log_dir, log_dir: String,
     get_cors_allowed_origins, cors_allowed_origins: Vec<String>,
     get_cors_max_age, cors_max_age: std::time::Duration,
+    get_initial_query_fetch_size, initial_query_fetch_size: usize,
+    get_max_rows_per_history_file, max_rows_per_history_file: usize,
+    get_max_users_conn_pool_size, max_users_conn_pool_size: usize,
 }
 
 pub fn get_log_level() -> tracing::Level {
@@ -62,7 +74,7 @@ impl Default for AgentSettings {
             base_dir: get_app_dir().to_str().unwrap().to_string(),
             api_key: generate_api_key(),
             max_user_sessions: 100,
-            max_concurrent_tasks: 20,
+            max_concurrent_tasks: 0,
             max_task_queue_size: 100,
             token_expiration: std::time::Duration::from_secs(3600),
             log_collector: true,
@@ -70,6 +82,9 @@ impl Default for AgentSettings {
             log_level: LogLevel::Info,
             cors_allowed_origins: vec!["*".to_string()],
             cors_max_age: std::time::Duration::from_secs(86400),
+            initial_query_fetch_size: DEFAULT_INITIAL_QUERY_FETCH_SIZE,
+            max_rows_per_history_file: DEFAULT_MAX_ROWS_PER_HISTORY_FILE,
+            max_users_conn_pool_size: DEFAULT_MAX_USERS_CONN_POOL_SIZE,
         }
     }
 }
@@ -180,9 +195,6 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
     }
 
     // Check for invalid values
-    if settings.max_concurrent_tasks == 0 {
-        return Err(anyhow!("max_concurrent_tasks must be greater than 0"));
-    }
     if settings.max_task_queue_size == 0 {
         return Err(anyhow!("max_task_queue_size must be greater than 0"));
     }
@@ -194,6 +206,16 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
     }
     if settings.max_user_sessions == 0 {
         return Err(anyhow!("max_user_sessions must be greater than 0"));
+    }
+    if settings.initial_query_fetch_size < 100 {
+        return Err(anyhow!("initial_query_fetch_size must be at least 100"));
+    }
+    if settings.max_rows_per_history_file < 10_0000 {
+        // The minimum number of rows per file is 10,000 to avoid having too many small files.
+        return Err(anyhow!("max_rows_per_history_file must be at least 10,000"));
+    }
+    if settings.max_users_conn_pool_size == 0 {
+        return Err(anyhow!("max_users_conn_pool_size must be greater than 0"));
     }
 
     Ok(settings)

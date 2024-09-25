@@ -1,0 +1,13 @@
+{% from "rust/macros" import enum, type, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+
+{{ enum("AuthenticationMethod", components.schemas.AuthenticationMethod) }}
+{{ enum("TokenType", components.schemas.TokenType) }}
+{{ type("Username", components.schemas.Username) }}
+{{ struct("Authentication", components.schemas.Authentication) }}
+{{ struct("Credentials", components.schemas.Credentials) }}
+{{ struct("SecurityTokens", components.schemas.SecurityTokens) }}
+{{ struct("RefreshToken", components.schemas.RefreshToken) }}

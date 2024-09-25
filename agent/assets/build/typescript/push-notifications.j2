@@ -1,0 +1,11 @@
+{% from "typescript/macros" import enum, object -%}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ ********************************************************************/
+import { formatRegExp, serializable } from "@/utils/serializable";
+import { QueryExecution } from "@/models/queries";
+
+{{ enum("PushMessageType", components.schemas.PushMessageType) }}
+{{ enum("LogLevel", components.schemas.LogLevel) }}
+{{ object("Log", components.schemas.Log) }}
+{{ object("PushMessage", components.schemas.PushMessage) }}

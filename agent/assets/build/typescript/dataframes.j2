@@ -1,0 +1,11 @@
+{% from "typescript/macros" import enum, object -%}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ ********************************************************************/
+import { formatRegExp, serializable } from "@/utils/serializable";
+
+{{ enum("DataframeAttributeType", components.schemas.DataframeAttributeType) }}
+{{ enum("DataframeAttributeFormatName", components.schemas.DataframeAttributeFormatName) }}
+{{ object("DataframeAttributeFormat", components.schemas.DataframeAttributeFormat) }}
+{{ object("DataframeAttribute", components.schemas.DataframeAttribute) }}
+{{ object("DataframeSchema", components.schemas.DataframeSchema) }}

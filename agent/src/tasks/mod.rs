@@ -2,14 +2,19 @@ use crate::Result;
 use futures::future::BoxFuture;
 use tracing::error;
 
-// Should be private...
-pub mod queries;
+mod queries;
+mod statistics;
 
 pub use queries::execute_queries_task;
 
+/// An asynchronous task that can be executed through the task queue ([TasksQueue]).
 pub type TaskFn = Box<dyn FnOnce() -> BoxFuture<'static, Result<()>> + Send + Sync>;
 
 /// A queue of tasks that can be executed concurrently.
+///
+/// This is a multi-producer, multi-consumer queue that can be used to execute tasks concurrently.
+/// The queue is bounded and will block producers if the queue is full.
+/// A task is a function that returns a future. The task will be executed by one of the worker threads.
 pub struct TasksQueue {
     max_concurrency: usize,
     sender: flume::Sender<TaskFn>,
@@ -40,7 +45,11 @@ impl TasksQueue {
 
     /// Start the consumers.
     pub async fn start(&self) {
-        for _ in 0..self.max_concurrency {
+        let max_concurrency = match self.max_concurrency {
+            0 => num_cpus::get(),
+            n => n,
+        };
+        for _ in 0..max_concurrency {
             let rx = self.receiver.clone();
             tokio::spawn(async move {
                 while let Ok(task) = rx.recv_async().await {

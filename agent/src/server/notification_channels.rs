@@ -1,20 +1,28 @@
 use crate::models::QueryExecution;
 use crate::models::{PushMessage, PushMessageType};
 use axum::extract::ws::{Message, WebSocket};
+use futures::future::BoxFuture;
 use futures::stream::SplitSink;
 use futures::SinkExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error};
+use uuid::Uuid;
+
+pub struct NotificationChannel {
+    sender: Arc<Mutex<SplitSink<WebSocket, Message>>>,
+}
+
+/// A trait that can be implemented by the server state to push notifications to the client.
+pub trait PushNotificationService {
+    /// Push a notification to the client through the notification channel.
+    fn push_notification(&self, user_session_id: Uuid, message: impl Into<PushMessage>) -> BoxFuture<'_, ()>;
+}
 
 impl From<QueryExecution> for PushMessage {
     fn from(query_execution: QueryExecution) -> Self {
         Self { log: None, query: Some(query_execution), silent: true, message_type: PushMessageType::Query }
     }
-}
-
-pub struct NotificationChannel {
-    sender: Arc<Mutex<SplitSink<WebSocket, Message>>>,
 }
 
 impl NotificationChannel {

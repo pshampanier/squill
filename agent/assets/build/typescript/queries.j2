@@ -1,0 +1,9 @@
+{% from "typescript/macros" import enum, object -%}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ ********************************************************************/
+import { formatRegExp, serializable } from "@/utils/serializable";
+
+{{ enum("QueryExecutionStatus", components.schemas.QueryExecutionStatus) }}
+{{ object("QueryExecutionError", components.schemas.QueryExecutionError) }}
+{{ object("QueryExecution", components.schemas.QueryExecution) }}

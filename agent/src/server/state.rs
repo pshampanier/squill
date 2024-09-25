@@ -12,6 +12,7 @@ use crate::utils::validators::Username;
 use crate::UserError;
 use anyhow::{Context, Result};
 use core::panic;
+use futures::future::BoxFuture;
 use lru::LruCache;
 use std::num::NonZeroUsize;
 use std::sync::{Arc, Mutex};
@@ -20,6 +21,8 @@ use tracing::debug;
 use tracing::trace;
 use tracing::warn;
 use uuid::Uuid;
+
+use super::notification_channels::PushNotificationService;
 
 pub struct SecurityCaches {
     /// The security token cache.
@@ -84,7 +87,9 @@ impl ServerState {
                 settings::get_max_task_queue_size(),
             )),
             agent_db_conn_pool,
-            user_db_conn_pool: Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(100).unwrap()))),
+            user_db_conn_pool: Arc::new(Mutex::new(LruCache::new(
+                NonZeroUsize::new(settings::get_max_users_conn_pool_size()).unwrap(),
+            ))),
         }
     }
 
@@ -94,7 +99,7 @@ impl ServerState {
     }
 
     /// Get a connection to the agent database.
-    /// 
+    ///
     /// The connection is taken from the connection pool and will return to the pool once dropped.
     pub async fn get_agentdb_connection(&self) -> Result<ConnectionGuard> {
         self.agent_db_conn_pool
@@ -105,7 +110,7 @@ impl ServerState {
     }
 
     /// Get a connection to a user's database.
-    /// 
+    ///
     /// Here a user's database refers to a connection created by a user in the catalog.
     /// The connection is taken from the connection pool and will return to the pool once dropped.
     pub async fn get_user_db_connection(&self, connection_id: Uuid) -> Result<ConnectionGuard> {
@@ -183,10 +188,22 @@ impl ServerState {
         }
     }
 
+    /// Get a user session from its id.
+    ///
+    /// This method will return None if the user session is not found in the cache.
+    pub fn get_user_session(&self, session_id: Uuid) -> Option<Arc<UserSession>> {
+        match self.security_caches.lock() {
+            Ok(mut security_caches) => security_caches.user_sessions.get(&session_id).cloned(),
+            Err(_) => {
+                panic!("Unable to recover from a poisoned user session mutex");
+            }
+        }
+    }
+
     /// Get a user session from a security token.
     ///
     /// This method will return None if the security token is not found in the cache or if the security token is expired.
-    pub fn get_user_session(&self, token: &str) -> Option<Arc<UserSession>> {
+    pub fn get_user_session_from_token(&self, token: &str) -> Option<Arc<UserSession>> {
         match self.security_caches.lock() {
             Ok(mut security_caches) => {
                 // First, check if the session_id exists
@@ -316,7 +333,7 @@ impl ServerState {
     }
 
     /// Detach a notification channel from a user session.
-    /// 
+    ///
     /// The notification channel will be removed from the user session and all future notifications will be ignored
     /// until a new notification channel is attached.
     pub fn detach_notification_channel(&self, user_session_id: Uuid) {
@@ -334,26 +351,6 @@ impl ServerState {
         }
     }
 
-    /// Push a notification to the client through the notification channel.
-    ///
-    /// If the notification channel is not attached or an error occurs, the notification will be ignored.
-    /// Error are logged as trace messages but they can be ignored because notifications are not critical, they may
-    /// leave the client in an inconsistent state but the client will recover when it reconnects.
-    pub async fn push_notification<T: Into<PushMessage>>(&self, user_session_id: Uuid, message: T) {
-        let user_session = match self.security_caches.lock() {
-            Ok(mut security_caches) => security_caches.user_sessions.get(&user_session_id).cloned(),
-            Err(_) => {
-                panic!("Unable to recover from a poisoned user session mutex");
-            }
-        };
-        match user_session {
-            Some(user_session) => user_session.push_notification(message).await,
-            None => {
-                trace!("Push Notification ignored (reason: user session not found in the cache).");
-            }
-        }
-    }
-
     /// Push a task into the queue.
     ///
     /// The task will be executed by one of the worker threads.
@@ -361,7 +358,6 @@ impl ServerState {
     /// whether the task was successfully executed.
     pub async fn push_task(&self, task: TaskFn) -> Result<()> {
         self.tasks_queue.push(task).await
-        // todo!()
     }
 
     /// Calculate the expiration time based on the current time and a duration in seconds.
@@ -383,6 +379,31 @@ impl ServerState {
     }
 }
 
+impl PushNotificationService for ServerState {
+    /// Push a notification to the client through the notification channel.
+    ///
+    /// If the notification channel is not attached or an error occurs, the notification will be ignored.
+    /// Error are logged as trace messages but they can be ignored because notifications are not critical, they may
+    /// leave the client in an inconsistent state but the client will recover when it reconnects.
+    fn push_notification(&self, user_session_id: Uuid, message: impl Into<PushMessage>) -> BoxFuture<'_, ()> {
+        let message = message.into();
+        Box::pin(async move {
+            let user_session = match self.security_caches.lock() {
+                Ok(mut security_caches) => security_caches.user_sessions.get(&user_session_id).cloned(),
+                Err(_) => {
+                    panic!("Unable to recover from a poisoned user session mutex");
+                }
+            };
+            match user_session {
+                Some(user_session) => user_session.push_notification(message).await,
+                None => {
+                    trace!("Push Notification ignored (reason: user session not found in the cache).");
+                }
+            }
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -393,26 +414,26 @@ mod tests {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
         let state = ServerState::new(conn_pool);
         let session_tokens = state.add_user_session(&"username".into(), Uuid::new_v4());
-        assert!(state.get_user_session(&session_tokens.access_token).is_some());
+        assert!(state.get_user_session_from_token(&session_tokens.access_token).is_some());
     }
 
     #[tokio::test]
-    async fn test_get_user_session() {
+    async fn test_get_user_session_from_token() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
         let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&"username".into(), Uuid::new_v4());
 
         // 1. get a non existing user session
-        assert!(state.get_user_session("non_existent_token").is_none());
+        assert!(state.get_user_session_from_token("non_existent_token").is_none());
 
         // 2. get an existing user session
-        let user_session = state.get_user_session(&security_tokens.access_token).unwrap();
+        let user_session = state.get_user_session_from_token(&security_tokens.access_token).unwrap();
         assert_eq!(user_session.get_user_id(), security_tokens.user_id);
 
         // 3. get an expired user session
         tests::settings::set_token_expiration(std::time::Duration::from_secs(0));
         let security_tokens_expired = state.add_user_session(&"username_expired".into(), Uuid::new_v4());
-        assert!(state.get_user_session(&security_tokens_expired.access_token).is_none());
+        assert!(state.get_user_session_from_token(&security_tokens_expired.access_token).is_none());
     }
 
     #[tokio::test]
@@ -427,11 +448,11 @@ mod tests {
         assert!(new_security_tokens.is_ok());
 
         // check that the old security token and refresh token are not valid anymore
-        assert!(state.get_user_session(&security_tokens.access_token).is_none());
+        assert!(state.get_user_session_from_token(&security_tokens.access_token).is_none());
         assert!(state.refresh_security_tokens(&security_tokens.refresh_token).is_err());
 
         // check that the new security token is able to retrieve the user session
-        let new_user_session = state.get_user_session(&new_security_tokens.unwrap().access_token);
+        let new_user_session = state.get_user_session_from_token(&new_security_tokens.unwrap().access_token);
         assert!(new_user_session.is_some());
         assert_eq!(new_user_session.unwrap().get_user_id(), security_tokens.user_id);
     }

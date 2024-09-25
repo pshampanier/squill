@@ -1,0 +1,13 @@
+{% from "typescript/macros" import enum, type, object -%}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ ********************************************************************/
+import { formatRegExp, serializable } from "@/utils/serializable";
+
+{{ enum("TokenType", components.schemas.TokenType) }}
+{{ enum("AuthenticationMethod", components.schemas.AuthenticationMethod) }}
+{{ type("Username", components.schemas.Username) }}
+{{ object("SecurityTokens", components.schemas.SecurityTokens) }}
+{{ object("Credentials", components.schemas.Credentials) }}
+{{ object("Authentication", components.schemas.Authentication) }}
+{{ object("RefreshToken", components.schemas.RefreshToken) }}

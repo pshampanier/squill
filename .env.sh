@@ -13,7 +13,35 @@ export CARGO_BUILD_TARGET_DIR=${BUILD_DIR}/${target}
 # Add the debug build directory to the PATH
 if ! echo $PATH | grep -q "${CARGO_BUILD_TARGET_DIR}/debug"; then
     export PATH=${CARGO_BUILD_TARGET_DIR}/debug:$PATH
-fi    
+fi
+
+function codecov() {
+  export LLVM_PROFILE_FILE=rsql-%p-%m.profraw
+  export RUST_BACKTRACE=1
+  export RUST_LOG="info"
+  export RUST_LOG_SPAN_EVENTS=full
+  export RUSTFLAGS=-Cinstrument-coverage
+  export RUSTDOCFLAGS=-Cinstrument-coverage
+
+  cargo test --package=agent && \
+  grcov $(find ./agent -name "rsql-*.profraw" -print) \
+    -s ./agent \
+    --branch \
+    --ignore-not-existing \
+    --ignore='/*' \
+    --binary-path ${CARGO_BUILD_TARGET_DIR} \
+    --excl-line='#\[derive' \
+    -t html \
+    -o ${CARGO_BUILD_TARGET_DIR}
+}
+
+function clean() {
+  local profile_files=($(find . -name "rsql-*.profraw" -print))
+  for file in "${profile_files[@]}"; do
+    rm $file
+  done
+  [ -f "lcov.info" ] && rm lcov.info
+}
 
 function build {
   local target="$1"

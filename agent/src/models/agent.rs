@@ -31,6 +31,8 @@ pub struct AgentSettings {
     pub max_user_sessions: usize,
 
     /// The maximum number of concurrent tasks that can be executed at a given point of time.
+    ///
+    /// #default: 0 (will be automatically set to the number of CPUs)
     pub max_concurrent_tasks: usize,
 
     /// The maximum number of tasks that can be queued at a given point of time.
@@ -64,4 +66,30 @@ pub struct AgentSettings {
     ///
     /// #default: 86400
     pub cors_max_age: std::time::Duration,
+
+    /// The number of rows expected to be fetched immediately after a query is executed.
+    ///
+    /// This value is the expected number of rows that will be fetched by the client to display the result right after
+    /// executing a query. It is used by the agent to create an initial file in the query history directory that will
+    /// contains just those data and by doing so make those data available to the client as soon as possible.
+    ///
+    /// #default: 1000
+    pub initial_query_fetch_size: usize,
+
+    /// The maximum number of rows per file.
+    ///
+    /// The maximum number of rows that can be stored in a single parquet file.
+    /// #default: 1_000_000
+    pub max_rows_per_history_file: usize,
+
+    /// The maximum number of connection pools that can be created for users.
+    ///
+    /// For every connection definition in the catalog, a connection pool is created when the connection definition is
+    /// actually used to instantiate connections. This value is the maximum number of pool that can be created
+    /// maintained at a given point of time by the agent. This value does not prevent the agent to create more pools
+    /// when needed, it just make the agent drop the least recently used pool when the maximum number of pools is
+    /// reached.
+    ///
+    /// #default: 100
+    pub max_users_conn_pool_size: usize,
 }

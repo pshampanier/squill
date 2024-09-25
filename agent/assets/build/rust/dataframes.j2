@@ -1,0 +1,11 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+
+{{ enum("DataframeAttributeType", components.schemas.DataframeAttributeType) }}
+{{ enum("DataframeAttributeFormatName", components.schemas.DataframeAttributeFormatName) }}
+{{ struct("DataframeAttributeFormat", components.schemas.DataframeAttributeFormat) }}
+{{ struct("DataframeAttribute", components.schemas.DataframeAttribute) }}
+{{ struct("DataframeSchema", components.schemas.DataframeSchema) }}

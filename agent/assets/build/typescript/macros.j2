@@ -1,0 +1,123 @@
+{% macro schema_name(property) %}
+  {{- property["$ref"] | split('/') | list | last -}}
+{% endmacro %}
+
+{%- macro enum(name, schema) -%}
+  {%- if schema.enum is defined -%}
+    {%- set values = schema.enum -%}
+  {%- elif schema.oneOf is defined -%}
+    {%- set values = schema.oneOf | map(attribute='title') -%}
+  {%- endif -%}
+  {%- if schema.description %}
+/**
+ * {{ schema.description | trim | replace('\n', '\n/// ') }}
+ */
+{% endif -%}
+export const {{ name | snake_case | upper }}_VALUES = ["{{ values | join('", "') }}"] as const;
+export type {{ name | pascal_case }} = (typeof {{ name | snake_case |  upper }}_VALUES)[number];
+{%- endmacro -%}
+
+{% macro type(name, schema) %}
+{% if schema.description %}
+/// {{ schema.description | trim | replace('\n', '\n  /// ') }}
+{%- endif %}
+type {{ name | pascal_case }} = {{ ts_type(schema) }};
+{% endmacro %}
+
+{#- 
+ # Macro to generate the name of the object 
+ # 
+ # @param prop: the property having a $ref attribute
+-#}
+{% macro object_name(prop) %}
+  {{- prop["$ref"] | replace('#/components/schemas/', '') -}}
+{% endmacro %}
+
+{% macro ts_type(prop) %}
+  {%- if prop.format == "date-time" -%}
+    Date
+  {%- elif prop["$ref"] -%}
+    {{ object_name(prop) }}
+  {%- elif prop.type == "array" and prop.items["$ref"] is defined -%}
+    {{ object_name(prop.items) ~ '[]'}}
+  {%- else -%}
+    {{prop.type}}
+  {%- endif -%}
+{% endmacro -%}
+
+{% macro serializable_type(prop) %}
+  {%- if prop.format == "date-time" -%}
+    datetime
+  {%- elif prop.format in ("int64", "int32", "int16") -%}
+    integer
+  {%- elif prop.format in ("float", "double") -%}
+    float
+  {%- elif prop["$ref"] -%}
+    {{components.schemas[schema_name(prop)].type}}
+  {%- else -%}
+    {{prop.type}}
+  {%- endif -%}
+{% endmacro -%}
+
+{% macro serializable_attr(name, prop, required) %}
+  {%- set attributes = [] -%}
+  {%- if prop.format == "uuid" -%}
+    {% set attributes = attributes + ['format: "uuid"'] %}
+  {%- elif prop["$ref"] and components.schemas[schema_name(prop)].type == "object" -%}
+    {% set attributes = attributes + ['factory: ' ~ prop["$ref"]  | replace('#/components/schemas/', '')] %}
+  {%- elif prop["$ref"] and components.schemas[schema_name(prop)].enum is defined -%}
+    {% set attributes = attributes + ['format: formatRegExp(' ~ object_name(prop) | snake_case | upper ~ '_VALUES)'] %}
+  {%- endif -%}
+  {%- if required -%}
+    {% set attributes = attributes + ['required: true'] %}
+  {%- endif -%}
+  {%- if prop.minimum is defined -%}
+    {% set attributes = attributes + ['min: ' ~ prop.minimum] %}
+  {%- endif -%}
+  {%- if prop.maximum is defined -%}
+    {% set attributes = attributes + ['max: ' ~ prop.maximum] %}
+  {%- endif -%}
+  {%- if prop.type == "array" and prop.items["$ref"] is defined -%}
+    {% set attributes = attributes + ['items: { type: "object", options: { factory: ' ~ object_name(prop.items) ~ ' } }'] %}
+  {%- elif prop.type == "array" -%}
+    {% set attributes = attributes + ['items: { type: "' ~ prop.items.type ~ '" }'] %}
+  {%- endif -%}
+  {%- if '_' in name -%}
+    {% set attributes = attributes + ['snakeCase: "property"'] %}
+  {%- endif -%}
+  {%- if attributes | length > 0 -%}
+  , { {{ attributes | join(', ') }} }
+  {%- endif -%}
+{%- endmacro -%}
+
+{% macro object(name, schema) %}
+{% if schema.description %}
+/**
+ * {{ schema.description | replace('\n', '\n   * ') }}
+ **/
+{%- endif %}
+export class {{ name }} {
+  {% for key in schema.properties -%}
+  {% set prop = schema.properties[key] -%}
+  {% set prop_ts_type = ts_type(prop) -%}
+  {% set is_required = key in schema.required -%}
+  {% if prop.description %}
+  /**
+   * {{ prop.description | replace('\n', '\n   * ') }}
+   **/
+  {%- endif %}
+  @serializable("{{ serializable_type(prop) }}"{{serializable_attr(key, prop, is_required)}})
+  {{ key | camel_case }}{%- if is_required %}!{%- else -%}?{%- endif -%}: {{ prop_ts_type }};
+  {% endfor %}
+  constructor(object?: Partial<{{ name }}>) {
+    Object.assign(this, object);
+    {%- for key in schema.properties -%}
+      {%- if schema.properties[key]["$ref"] is defined and components.schemas[schema_name(schema.properties[key])].type == "object" %}
+    this.{{ key | camel_case }} = object?.{{ key | camel_case }} && new {{ object_name(schema.properties[key]) }}(object.{{ key | camel_case }});
+      {%- elif schema.properties[key].type == "array" and schema.properties[key].items["$ref"] is defined %}
+    this.{{ key | camel_case }} = (object?.{{ key | camel_case }} || []).map((item) => new {{ schema.properties[key].items["$ref"] | replace('#/components/schemas/', '') }}(item));
+      {%- endif %}
+    {%- endfor %}
+  }
+}
+{%- endmacro -%}

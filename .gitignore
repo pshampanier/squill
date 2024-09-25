@@ -1,5 +1,6 @@
-build/
+/build/
 target/
 squill-drivers
 loose-sqlparser-rs
 **/node_modules/
+**/*.profraw

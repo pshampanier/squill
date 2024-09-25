@@ -224,7 +224,7 @@ mod test {
         headers
             .insert(AUTHORIZATION, HeaderValue::from_str(&format!("Bearer {}", security_tokens.access_token)).unwrap());
         assert!(logout(state.clone(), headers.clone()).await.is_ok());
-        assert!(state.get_user_session(&security_tokens.access_token).is_none());
+        assert!(state.get_user_session_from_token(&security_tokens.access_token).is_none());
 
         // 4) valid Authorization header but the access token is no longer valid
         assert!(logout(state.clone(), headers.clone()).await.is_ok());

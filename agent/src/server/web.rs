@@ -280,7 +280,7 @@ async fn check_authentication(
                     .map_err(|e| Error::BadRequest(e.to_string()))?,
                 false => authorization.to_string(),
             };
-            let user_session = state.get_user_session(&security_token).ok_or(Error::Forbidden)?;
+            let user_session = state.get_user_session_from_token(&security_token).ok_or(Error::Forbidden)?;
             let mut context = context?;
             context.add_user_session(user_session);
             req.extensions_mut().insert(Result::<RequestContext, Error>::Ok(context));

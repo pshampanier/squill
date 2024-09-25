@@ -1,0 +1,22 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+
+{{ enum("QueryExecutionStatus", components.schemas.QueryExecutionStatus) }}
+
+impl QueryExecutionStatus {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            QueryExecutionStatus::Pending => "pending",
+            QueryExecutionStatus::Running => "running",
+            QueryExecutionStatus::Completed => "completed",
+            QueryExecutionStatus::Failed => "failed",
+            QueryExecutionStatus::Cancelled => "cancelled",
+        }
+    }
+}
+
+{{ struct("QueryExecutionError", components.schemas.QueryExecutionError) }}
+{{ struct("QueryExecution", components.schemas.QueryExecution) }}

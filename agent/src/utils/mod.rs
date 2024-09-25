@@ -1,5 +1,6 @@
 pub mod constants;
 pub mod macros;
+pub mod parquet;
 pub mod user_error;
 pub mod validators;
 

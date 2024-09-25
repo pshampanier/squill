@@ -1,0 +1,11 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+use crate::models::QueryExecution;
+
+{{ enum("PushMessageType", components.schemas.PushMessageType) }}
+{{ enum("LogLevel", components.schemas.LogLevel) }}
+{{ struct("Log", components.schemas.Log) }}
+{{ struct("PushMessage", components.schemas.PushMessage) }}
