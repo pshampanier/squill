@@ -25,7 +25,7 @@ export class DataframeAttributeFormat {
   /**
    * The name of the format.
    **/
-  @serializable("string", { required: true })
+  @serializable("string", { format: formatRegExp(DATAFRAME_ATTRIBUTE_FORMAT_NAME_VALUES), required: true })
   name!: DataframeAttributeFormatName;
   
   constructor(object?: Partial<DataframeAttributeFormat>) {

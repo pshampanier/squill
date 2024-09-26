@@ -29,17 +29,29 @@ type {{ name | pascal_case }} = {{ ts_type(schema) }};
  # 
  # @param prop: the property having a $ref attribute
 -#}
-{% macro object_name(prop) %}
+{% macro ref_name(prop) %}
   {{- prop["$ref"] | replace('#/components/schemas/', '') -}}
 {% endmacro %}
+
+{#- 
+ # Get the type of a property having a $ref attribute
+ # 
+ # @param prop: the property having a $ref attribute
+-#}
+{% macro ref_type(prop) %}
+  {%- set ref = components.schemas[ref_name(prop)] -%}
+  {{ ref.type }}
+{%- endmacro -%}
 
 {% macro ts_type(prop) %}
   {%- if prop.format == "date-time" -%}
     Date
   {%- elif prop["$ref"] -%}
-    {{ object_name(prop) }}
+    {{ ref_name(prop) }}
   {%- elif prop.type == "array" and prop.items["$ref"] is defined -%}
-    {{ object_name(prop.items) ~ '[]'}}
+    {{ ref_name(prop.items) ~ '[]'}}
+  {%- elif prop.type == "object" and prop.additionalProperties is defined -%}
+    Record<string, {{ ts_type(prop.additionalProperties) }}>
   {%- else -%}
     {{prop.type}}
   {%- endif -%}
@@ -54,19 +66,29 @@ type {{ name | pascal_case }} = {{ ts_type(schema) }};
     float
   {%- elif prop["$ref"] -%}
     {{components.schemas[schema_name(prop)].type}}
+  {%- elif prop.type == "object" and prop.additionalProperties is defined -%}
+    record
   {%- else -%}
     {{prop.type}}
   {%- endif -%}
 {% endmacro -%}
 
-{% macro serializable_attr(name, prop, required) %}
+{% macro serializable_array_items_attr(name, ref) %}
+items: { {{ serializable_attr(name, ref) }} }
+{% endmacro %}
+
+{% macro serializable_attr_list(name, prop, required) %}
   {%- set attributes = [] -%}
   {%- if prop.format == "uuid" -%}
     {% set attributes = attributes + ['format: "uuid"'] %}
   {%- elif prop["$ref"] and components.schemas[schema_name(prop)].type == "object" -%}
-    {% set attributes = attributes + ['factory: ' ~ prop["$ref"]  | replace('#/components/schemas/', '')] %}
-  {%- elif prop["$ref"] and components.schemas[schema_name(prop)].enum is defined -%}
-    {% set attributes = attributes + ['format: formatRegExp(' ~ object_name(prop) | snake_case | upper ~ '_VALUES)'] %}
+    {% set attributes = attributes + ['factory: ' ~ ref_name(prop)] %}
+  {%- elif prop["$ref"] -%}
+    {%- set ref_name = ref_name(prop) -%}
+    {%- set attributes = attributes + [serializable_attr_list(ref_name, components.schemas[ref_name], false)] -%}
+  {%- endif -%}
+  {%- if prop.enum is defined or prop.oneOf is defined -%}
+    {% set attributes = attributes + ['format: formatRegExp(' ~ name | snake_case | upper ~ '_VALUES)'] %}
   {%- endif -%}
   {%- if required -%}
     {% set attributes = attributes + ['required: true'] %}
@@ -78,15 +100,25 @@ type {{ name | pascal_case }} = {{ ts_type(schema) }};
     {% set attributes = attributes + ['max: ' ~ prop.maximum] %}
   {%- endif -%}
   {%- if prop.type == "array" and prop.items["$ref"] is defined -%}
-    {% set attributes = attributes + ['items: { type: "object", options: { factory: ' ~ object_name(prop.items) ~ ' } }'] %}
+    {%- set ref_name = ref_name(prop.items) -%}
+    {% set attributes = attributes + ['items: { type: "' ~ ref_type(prop.items) ~ '", options: { ' ~ serializable_attr_list(ref_name, components.schemas[ref_name], false) ~ ' } }'] %}
   {%- elif prop.type == "array" -%}
     {% set attributes = attributes + ['items: { type: "' ~ prop.items.type ~ '" }'] %}
+  {%- elif prop.type == "object" and prop.additionalProperties is defined -%}
+    {% set attributes = attributes + ['items: { type: "' ~ ts_type(prop.additionalProperties) ~ '" }'] %}
+  {%- elif prop.type == "object" -%}
+    {% set attributes = attributes + ['factory: ' ~ name] %}
   {%- endif -%}
   {%- if '_' in name -%}
     {% set attributes = attributes + ['snakeCase: "property"'] %}
   {%- endif -%}
+  {{ attributes | join(', ') }}
+{%- endmacro -%}
+
+{% macro serializable_attr(name, prop, required) %}
+  {%- set attributes = serializable_attr_list(name, prop, required) -%}
   {%- if attributes | length > 0 -%}
-  , { {{ attributes | join(', ') }} }
+  , { {{ attributes }} }
   {%- endif -%}
 {%- endmacro -%}
 
@@ -113,9 +145,13 @@ export class {{ name }} {
     Object.assign(this, object);
     {%- for key in schema.properties -%}
       {%- if schema.properties[key]["$ref"] is defined and components.schemas[schema_name(schema.properties[key])].type == "object" %}
-    this.{{ key | camel_case }} = object?.{{ key | camel_case }} && new {{ object_name(schema.properties[key]) }}(object.{{ key | camel_case }});
+    this.{{ key | camel_case }} = object?.{{ key | camel_case }} && new {{ ref_name(schema.properties[key]) }}(object.{{ key | camel_case }});
       {%- elif schema.properties[key].type == "array" and schema.properties[key].items["$ref"] is defined %}
+        {%- if ref_type(schema.properties[key].items) == "object" %}
     this.{{ key | camel_case }} = (object?.{{ key | camel_case }} || []).map((item) => new {{ schema.properties[key].items["$ref"] | replace('#/components/schemas/', '') }}(item));
+        {%- else %}
+    this.{{ key | camel_case }} = Array.from(object?.{{ key | camel_case }} || []);
+        {%- endif %}
       {%- endif %}
     {%- endfor %}
   }

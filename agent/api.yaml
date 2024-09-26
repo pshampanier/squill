@@ -409,6 +409,66 @@ components:
         username:
           type: string
 
+    DriverCapabilities:
+      description: The description of the capabilities of a driver.
+      type: string
+      oneOf:
+        - title: sql
+          description: The driver is capable of executing SQL queries.
+        - title: auth_user_password
+          description: The driver is capable of authenticating users using a username and password.
+        - title: auth_password
+          description: The driver is capable of authenticating users using a password only.
+        - title: connect_string
+          description: The driver is capable of connecting to a datasource using a connection string.
+        - title: connect_host
+          description: The driver is capable of connecting host-based data source.
+        - title: connect_socket
+          description: The driver is capable of connecting to a socket-based data source.
+        - title: connect_file
+          description: The driver is capable of connecting to a file-based data source.
+        - title: connect_uri
+          description: The driver is capable of connecting to a data source using a URI.
+        - title: read_only
+          description: The driver is capable of opening a connection in read-only mode.
+        - title: connect_ssl
+          description: The driver is capable of connecting to a data source through SSL.
+
+    Driver:
+      description: A driver that can be used to connect to a datasource.
+      type: object
+      required:
+        - name
+        - label
+        - icon
+        - description
+        - capabilities
+        - defaults
+      properties:
+        name:
+          type: string
+          format: identifier
+          description: The name of the driver (should be an identifier, e.g. "postgresql").
+        label:
+          type: string
+          description: The label of the driver (should be human-readable, e.g. "PostgreSQL").
+        icon:
+          type: string
+          description: The icon of the driver (should be a filename, e.g. "postgresql.svg").
+        description:
+          type: string
+          description: The description of the driver.
+        capabilities:
+          type: array
+          description: The capabilities of the driver.
+          items:
+            $ref: "#/components/schemas/DriverCapabilities"
+        defaults:
+          type: object
+          description: The default connection settings of the driver.
+          additionalProperties:
+            type: string
+
     Connection:
       description: A connection to a datasource.
       type: object

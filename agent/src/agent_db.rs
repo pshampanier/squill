@@ -32,19 +32,13 @@ pub async fn init() -> Result<Arc<ConnectionPool>> {
     register_drivers();
 
     // If the database file does not exist, we need to create the database & initialize the database.
-    let new_database = !file_path().exists();
-
-    let conn_pool = match ConnectionPool::builder(ConnectionManager { uri: uri() }).build() {
-        Ok(pool) => Arc::new(pool),
-        Err(e) => {
-            return Err(anyhow::Error::from(e)).context("Unable to create the agent database connection pool.");
-        }
-    };
-
-    // Opening a connection to a non existing database will create it.
-    let conn = conn_pool.get().await?;
-    if new_database {
+    if !file_path().exists() {
         info!("Initializing the agent database.");
+
+        // 1) Create the database (by opening a connection in read+write+create mode).
+        let uri = uri() + "?mode=rwc";
+        let conn = squill_drivers::futures::Connection::open(&uri).await?;
+
         // 1. Setup the schema.
         let statements = loose_sqlparser::parse(SETUP_SQL_SCRIPT);
         for statement in statements {
@@ -54,7 +48,11 @@ pub async fn init() -> Result<Arc<ConnectionPool>> {
         users::create(&conn, users::local_username()).await?;
         info!("Agent database initialized: {}", file_path().display());
     }
-    Ok(conn_pool)
+
+    match ConnectionPool::builder(ConnectionManager { uri: uri() }).build() {
+        Ok(pool) => Ok(Arc::new(pool)),
+        Err(e) => Err(anyhow::Error::from(e)).context("Unable to create the agent database connection pool."),
+    }
 }
 
 #[cfg(test)]

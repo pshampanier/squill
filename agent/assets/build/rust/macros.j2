@@ -48,8 +48,12 @@ pub type {{ name | pascal_case }} = {{ rust_type(schema) }};
     f32
   {%- elif field.format == "double" -%}
     f64
+  {%- elif field.format == "identifier" -%}
+    String
   {%- elif field["$ref"] -%}
     {{ field["$ref"] | replace('#/components/schemas/', '') }}
+  {%- elif field.type == "object" and field.additionalProperties is defined -%}
+    HashMap<String, {{ rust_type(field.additionalProperties) }}>
   {%- elif field.format is not defined and field.type == "string" -%}
     String
   {%- elif field.type == "boolean" -%}

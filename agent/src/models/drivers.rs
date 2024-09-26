@@ -1,54 +1,62 @@
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize)]
+/// The description of the capabilities of a driver.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
-pub enum Capability {
-    /// This capability indicates the data source is supporting SQL.
+pub enum DriverCapabilities {
+    /// The driver is capable of executing SQL queries.
     Sql,
 
-    /// This capability is used to connect to a database using a username and password.
+    /// The driver is capable of authenticating users using a username and password.
     AuthUserPassword,
 
-    /// This capability is used to connect to a data source using a password only.
+    /// The driver is capable of authenticating users using a password only.
     AuthPassword,
 
-    /// This capability is used to connect to a data source using a connection string.
+    /// The driver is capable of connecting to a datasource using a connection string.
     ConnectString,
 
-    /// This capability is used to connect to a host-based data source.
+    /// The driver is capable of connecting host-based data source.
     ConnectHost,
 
-    /// This capability is used to connect to a socket-based data source.
+    /// The driver is capable of connecting to a socket-based data source.
     ConnectSocket,
 
-    /// This capability is used to connect to a file-based data source.
+    /// The driver is capable of connecting to a file-based data source.
     ConnectFile,
 
-    /// This capability states the data source support read-only mode.
+    /// The driver is capable of connecting to a data source using a URI.
+    ConnectUri,
+
+    /// The driver is capable of opening a connection in read-only mode.
     ReadOnly,
 
-    /// This capability is used to connect to a data source using SSL.
+    /// The driver is capable of connecting to a data source through SSL.
     ConnectSsl,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+/// A driver that can be used to connect to a datasource.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Driver {
-    /// The name of the driver (should be an identifier, e.g. "postgresql")
-    pub name: String,
+    /// The capabilities of the driver.
+    pub capabilities: Vec<DriverCapabilities>,
 
-    /// The label of the driver (should be human-readable, e.g. "PostgreSQL")
-    pub label: String,
+    /// The default connection settings of the driver.
+    pub defaults: HashMap<String, String>,
 
-    /// The icon of the driver (should be a filename, e.g. "postgresql.svg")
-    pub icon: String,
-
-    /// The description of the driver
+    /// The description of the driver.
     pub description: String,
 
-    /// The capabilities of the driver
-    pub capabilities: Vec<Capability>,
+    /// The icon of the driver (should be a filename, e.g. "postgresql.svg").
+    pub icon: String,
 
-    /// The default connection settings of the driver
-    pub defaults: HashMap<String, String>,
+    /// The label of the driver (should be human-readable, e.g. "PostgreSQL").
+    pub label: String,
+
+    /// The name of the driver (should be an identifier, e.g. "postgresql").
+    pub name: String,
 }
