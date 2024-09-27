@@ -12,6 +12,7 @@ import { forwardRef } from "react";
 import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
 import ButtonGroup from "@/components/core/ButtonGroup";
+import Switch from "@/components/core/Switch";
 
 type ConnectFormProps = {
   name?: string;
@@ -118,6 +119,26 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
           required
           onChange={(e) => onChange({ file: e.target.value })}
         />
+      )}
+      {driver.capabilities.includes("read_only") && (
+        <>
+          <div className={cx("flex flex-row border-t py-2", colors("border"))}>
+            <div className="flex flex-col space-y-1">
+              <label htmlFor="read_only">Read only</label>
+              <label htmlFor="read_only" className="text-xs">
+                Opens the connection in read-only mode. Write will be prohibited.
+              </label>
+            </div>
+            <div className="flex flex-col ml-auto justify-center">
+              <Switch
+                id="read_only"
+                defaultChecked={connection.options?.["read_only"] === "on"}
+                onChange={(e) => onChange({ options: { ["read_only"]: e.target.checked ? "on" : "off" } })}
+              />
+            </div>
+          </div>
+          <div className="flex flex-row w-full gap-2"></div>
+        </>
       )}
     </form>
   );

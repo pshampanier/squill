@@ -65,7 +65,7 @@ function DriverRadio({ driver, onChange, defaultChecked }: DriverRadioProps) {
         htmlFor={id}
         className={cx(
           "rounded flex flex-row space-x-4 p-4 border",
-          colors("hover:ghost-background", "hover:ghost-text"),
+          colors("hover:ghost-background", "hover:ghost-text", "border"),
         )}
       >
         <div className="flex flex-row space-x-4 grow align-center items-center">

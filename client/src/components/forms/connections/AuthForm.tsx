@@ -59,7 +59,6 @@ const AuthForm = forwardRef<HTMLFormElement, AuthFormProps>((props, ref) => {
                 />
               </div>
             </div>
-
             <div className="flex flex-row w-full gap-2"></div>
           </>
         )}

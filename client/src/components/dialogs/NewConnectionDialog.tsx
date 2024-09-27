@@ -91,6 +91,10 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
   const handleChange = (value: Partial<Connection>) => {
     const c = new Connection(
       produce(connection, (draft) => {
+        if (value.options && draft.options) {
+          // Merge the options with the existing options.
+          value.options = { ...draft.options, ...value.options };
+        }
         return { ...draft, ...value };
       }),
     );

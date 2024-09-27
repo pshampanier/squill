@@ -76,6 +76,12 @@ export class Connection {
   name!: string;
   
   /**
+   * Additional options of the connection.
+   **/
+  @serializable("record", { items: { type: "string" } })
+  options?: Record<string, string>;
+  
+  /**
    * The unique identifier of the user that owns the connection.
    **/
   @serializable("string", { format: "uuid", required: true, snakeCase: "property" })

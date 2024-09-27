@@ -103,6 +103,9 @@ pub struct {{ name | pascal_case }} {
   {% elif field.type == "array" %}
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
   pub {{ field_name }}: {{ field_rust_type }},
+  {% elif field.type == "object" and field.additionalProperties is defined %}
+  #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+  pub {{ field_name }}: {{ field_rust_type }},
   {% else %}
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub {{ field_name }}: Option<{{ field_rust_type }}>,

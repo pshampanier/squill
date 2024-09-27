@@ -557,6 +557,12 @@ components:
           type: string
           description: The name of the default datasource to use.
 
+        options:
+          type: object
+          description: Additional options of the connection.
+          additionalProperties:
+            type: string
+
     ConnectionMode:
       description: The mode of a connection.
       type: string
@@ -571,6 +577,13 @@ components:
           description: The connection is a connection string-based connection.
         - title: uri
           description: The connection is a URI-based connection.
+
+    ConnectionOption:
+      description: Options for a connection.
+      type: string
+      oneOf:
+        - title: read_only
+          description: Opens the connection in read-only mode. Write will be prohibited.
 
     Error:
       type: object

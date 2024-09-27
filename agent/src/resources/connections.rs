@@ -2,7 +2,7 @@ use crate::models::connections::{Connection, ConnectionMode};
 use crate::models::ResourceType;
 use crate::resources::Resource;
 use anyhow::Result;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use uuid::Uuid;
 
 impl Resource for Connection {
@@ -59,6 +59,7 @@ impl Default for Connection {
             datasource: String::new(),
             driver: String::new(),
             uri: String::new(),
+            options: HashMap::new(),
         }
     }
 }

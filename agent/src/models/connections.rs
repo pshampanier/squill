@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// The mode of a connection.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -21,6 +22,14 @@ pub enum ConnectionMode {
 
     /// The connection is a URI-based connection.
     Uri,
+}
+
+/// Options for a connection.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "snake_case")]
+pub enum ConnectionOption {
+    /// Opens the connection in read-only mode. Write will be prohibited.
+    ReadOnly,
 }
 
 /// Description of a connection to a datasource.
@@ -61,6 +70,10 @@ pub struct Connection {
 
     /// The name of the connection.
     pub name: String,
+
+    /// Additional options of the connection.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub options: HashMap<String, String>,
 
     /// The unique identifier of the user that owns the connection.
     pub owner_user_id: uuid::Uuid,
