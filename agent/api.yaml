@@ -472,12 +472,12 @@ components:
     Connection:
       description: Description of a connection to a datasource.
       type: object
+      x-immerable: true
       required:
         - id
         - parent_id
         - owner_user_id
         - mode
-        - driver
         - name
         - save_password
       properties:

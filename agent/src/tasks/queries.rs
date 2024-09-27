@@ -243,7 +243,7 @@ async fn write_query_result(
     let history_dir = state
         .get_user_session(session_id)
         .ok_or_else(|| anyhow!("User session no longer available, operation aborted."))
-        .map(|user_session| settings::get_app_dir().join(user_session.get_username()).join(USER_HISTORY_DIRNAME))?;
+        .map(|user_session| settings::get_user_dir(user_session.get_username()).join(USER_HISTORY_DIRNAME))?;
 
     let mut record_batch_writer = RecordBatchWriter::new(
         WriterProperties::builder().set_compression(Compression::SNAPPY).build(),

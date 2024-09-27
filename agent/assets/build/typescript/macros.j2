@@ -131,6 +131,9 @@ items: { {{ serializable_attr(name, ref) }} }
  **/
 {%- endif %}
 export class {{ name }} {
+  {% if schema["x-immerable"] -%}
+  [immerable] = true;
+  {% endif -%}
   {% for key in schema.properties -%}
   {% set prop = schema.properties[key] -%}
   {% set prop_ts_type = ts_type(prop) -%}

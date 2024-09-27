@@ -7,7 +7,7 @@ description: >-
 capabilities:
   - sql
   - connect_file
-  - connect_string
+  - connect_uri
   - read_only
 defaults:
   CONNECTION_STRING: ":memory:"

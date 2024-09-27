@@ -43,6 +43,7 @@ pub struct Connection {
     pub description: String,
 
     /// The name of the driver used to connect to the datasource.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub driver: String,
 
     /// The file of the connection.if the connection mode is "file".

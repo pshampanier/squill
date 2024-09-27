@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  ********************************************************************/
 import { formatRegExp, serializable } from "@/utils/serializable";
+import { immerable } from "immer";
 
 
 /**
@@ -15,6 +16,7 @@ export type ConnectionMode = (typeof CONNECTION_MODE_VALUES)[number];
  * Description of a connection to a datasource.
  **/
 export class Connection {
+  [immerable] = true;
   
   /**
    * The alias of the connection.
@@ -43,8 +45,8 @@ export class Connection {
   /**
    * The name of the driver used to connect to the datasource.
    **/
-  @serializable("string", { required: true })
-  driver!: string;
+  @serializable("string")
+  driver?: string;
   
   /**
    * The file of the connection.if the connection mode is "file".
