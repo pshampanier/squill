@@ -39,6 +39,32 @@ impl Resource for Connection {
         }
     }
 }
+
+impl Default for Connection {
+    fn default() -> Self {
+        Self {
+            id: uuid::Uuid::new_v4(),
+            owner_user_id: uuid::Uuid::nil(),
+            parent_id: uuid::Uuid::nil(),
+            name: "conn".to_string(),
+            mode: ConnectionMode::Host,
+            save_password: false,
+            port: None,
+            host: String::new(),
+            socket: String::new(),
+            file: String::new(),
+            connection_string: String::new(),
+            username: String::new(),
+            password: String::new(),
+            alias: String::new(),
+            description: String::new(),
+            datasource: String::new(),
+            driver: String::new(),
+            uri: String::new(),
+        }
+    }
+}
+
 impl Connection {
     pub fn new(owner_user_id: Uuid, name: String) -> Connection {
         Connection {
@@ -137,6 +163,10 @@ impl Connection {
                     }
                     return Ok(connection_string);
                 }
+            }
+            ConnectionMode::Uri => {
+                // TODO: Implement this method
+                todo!()
             }
         }
 

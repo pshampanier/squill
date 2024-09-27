@@ -470,13 +470,107 @@ components:
             type: string
 
     Connection:
-      description: A connection to a datasource.
+      description: Description of a connection to a datasource.
       type: object
       required:
         - id
+        - parent_id
+        - owner_user_id
+        - mode
+        - driver
+        - name
+        - save_password
       properties:
         id:
           type: string
+          format: uuid
+          description: The unique identifier of the connection.
+        parent_id:
+          type: string
+          format: uuid
+          description: The unique identifier of the parent resource in the catalog.
+
+        owner_user_id:
+          type: string
+          format: uuid
+          description: The unique identifier of the user that owns the connection.
+
+        driver:
+          type: string
+          description: The name of the driver used to connect to the datasource.
+
+        name:
+          type: string
+          description: The name of the connection.
+
+        alias:
+          type: string
+          format: identifier
+          description: The alias of the connection.
+
+        description:
+          type: string
+          description: The description of the connection.
+
+        mode:
+          $ref: "#/components/schemas/ConnectionMode"
+
+        host:
+          type: string
+          description: The host of the connection.if the connection mode is "host".
+
+        port:
+          type: integer
+          format: int16
+          minimum: 0
+          description: The port of the connection.if the connection mode is "host".
+
+        socket:
+          type: string
+          description: The socket of the connection.if the connection mode is "socket".
+
+        file:
+          type: string
+          description: The file of the connection.if the connection mode is "file".
+
+        connection_string:
+          type: string
+          description: The connection string of the connection.if the connection mode is "connection_string".
+
+        uri:
+          type: string
+          description: The URI of the connection.if the connection mode is "uri".
+
+        username:
+          type: string
+          description: The username for authentication.
+
+        password:
+          type: string
+          description: The password for authentication.
+
+        save_password:
+          type: boolean
+          description: Whether the password should be saved.
+
+        datasource:
+          type: string
+          description: The name of the default datasource to use.
+
+    ConnectionMode:
+      description: The mode of a connection.
+      type: string
+      oneOf:
+        - title: host
+          description: The connection is a host-based connection.
+        - title: socket
+          description: The connection is a socket-based connection.
+        - title: file
+          description: The connection is a file-based connection.
+        - title: connection_string
+          description: The connection is a connection string-based connection.
+        - title: uri
+          description: The connection is a URI-based connection.
 
     Error:
       type: object
@@ -487,7 +581,7 @@ components:
       properties:
         status:
           description: The HTTP status code
-          type: number
+          type: integer
         code:
           description: A machine readable error code such as `invalid_parameter`.
           type: string
@@ -575,7 +669,7 @@ components:
           type: string
         expires_in:
           description: The number of seconds after which the access token will expire.
-          type: number
+          type: integer
           format: int32
           minimum: 0
         user_id:
@@ -621,11 +715,11 @@ components:
         message:
           type: string
         line:
-          type: number
+          type: integer
           format: int32
           minimum: 0
         column:
-          type: number
+          type: integer
           format: int32
           minimum: 0
 
@@ -655,7 +749,7 @@ components:
             query execution is updated. Because the client receive updates of the query execution via different channels
             (HTTP and WebSocket) there is no guarantee that the last update received is the most recent. By using the
             revision number the client can avoid overwriting a more recent update with an older one.
-          type: number
+          type: integer
           format: int32
           minimum: 0
         connection_id:
@@ -704,7 +798,7 @@ components:
           format: date-time
         affected_rows:
           description: The number of rows affected by the query.
-          type: number
+          type: integer
           format: int64
           minimum: 0
         execution_time:
@@ -902,7 +996,7 @@ components:
           format: uuid
         version:
           description: The version of the dataframe schema.
-          type: number
+          type: integer
           format: int32
           minimum: 1
         attributes:

@@ -46,6 +46,8 @@ type {{ name | pascal_case }} = {{ ts_type(schema) }};
 {% macro ts_type(prop) %}
   {%- if prop.format == "date-time" -%}
     Date
+  {%- elif prop.format == "int16" or prop.format == "int32" or prop.format == "int64"-%}
+    number
   {%- elif prop["$ref"] -%}
     {{ ref_name(prop) }}
   {%- elif prop.type == "array" and prop.items["$ref"] is defined -%}

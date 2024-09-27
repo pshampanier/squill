@@ -32,17 +32,17 @@ pub type {{ name | pascal_case }} = {{ rust_type(schema) }};
     uuid::Uuid
   {%- elif field.format == "date-time" -%}
     chrono::DateTime<chrono::Utc>
-  {%- elif field.format == "int64" and field.type == "number" and field.minimum == 0 -%}
+  {%- elif field.format == "int64" and field.type == "integer" and field.minimum == 0 -%}
     u64
-  {%- elif field.format == "int64" and field.type == "number" -%}
+  {%- elif field.format == "int64" and field.type == "integer" -%}
     i64
-  {%- elif field.format == "int32" and field.type == "number" and field.minimum == 0 -%}
+  {%- elif field.format == "int32" and field.type == "integer" and field.minimum == 0 -%}
     u32
-  {%- elif field.format == "int32" and field.type == "number" -%}
+  {%- elif field.format == "int32" and field.type == "integer" -%}
     i32
-  {%- elif field.format == "int16" and field.type == "number" and field.minimum == 0 -%}
+  {%- elif field.format == "int16" and field.type == "integer" and field.minimum == 0 -%}
     u16
-  {%- elif field.format == "int16" and field.type == "number" -%}
+  {%- elif field.format == "int16" and field.type == "integer" -%}
     i16
   {%- elif field.format == "float" -%}
     f32

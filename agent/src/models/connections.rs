@@ -1,65 +1,92 @@
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
-use super::datasources::Datasource;
-
-#[derive(Serialize, Deserialize, Default)]
+/// The mode of a connection.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ConnectionMode {
-    #[default]
+    /// The connection is a host-based connection.
     Host,
+
+    /// The connection is a socket-based connection.
     Socket,
+
+    /// The connection is a file-based connection.
     File,
+
+    /// The connection is a connection string-based connection.
     ConnectionString,
+
+    /// The connection is a URI-based connection.
+    Uri,
 }
 
-#[derive(Serialize, Deserialize, Default)]
+/// Description of a connection to a datasource.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Connection {
-    pub id: Uuid,
-
-    pub parent_id: Uuid,
-
-    pub owner_user_id: Uuid,
-
-    #[serde(skip_serializing_if = "String::is_empty")]
-    pub driver: String,
-    pub name: String,
+    /// The alias of the connection.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub alias: String,
 
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub description: String,
-
-    pub mode: ConnectionMode,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub host: String,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub port: Option<u16>,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub socket: String,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub file: String,
-
+    /// The connection string of the connection.if the connection mode is "connection_string".
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub connection_string: String,
 
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub username: String,
-
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub password: String,
-
-    #[serde(default)]
-    pub save_password: bool,
-
-    /// The default datasource to use.
+    /// The name of the default datasource to use.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub datasource: String,
 
-    /// Datasources available through this connection.
-    #[serde(default)]
-    pub datasources: Vec<Datasource>,
+    /// The description of the connection.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub description: String,
+
+    /// The name of the driver used to connect to the datasource.
+    pub driver: String,
+
+    /// The file of the connection.if the connection mode is "file".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub file: String,
+
+    /// The host of the connection.if the connection mode is "host".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub host: String,
+
+    /// The unique identifier of the connection.
+    pub id: uuid::Uuid,
+
+    pub mode: ConnectionMode,
+
+    /// The name of the connection.
+    pub name: String,
+
+    /// The unique identifier of the user that owns the connection.
+    pub owner_user_id: uuid::Uuid,
+
+    /// The unique identifier of the parent resource in the catalog.
+    pub parent_id: uuid::Uuid,
+
+    /// The password for authentication.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub password: String,
+
+    /// The port of the connection.if the connection mode is "host".
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<u16>,
+
+    /// Whether the password should be saved.
+    pub save_password: bool,
+
+    /// The socket of the connection.if the connection mode is "socket".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub socket: String,
+
+    /// The URI of the connection.if the connection mode is "uri".
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub uri: String,
+
+    /// The username for authentication.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub username: String,
 }

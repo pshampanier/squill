@@ -39,6 +39,12 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
       return Connections.get(connectionId);
     },
     retry: (failureCount: number, error: Error) => {
+      console.error("Loading connection failed.", {
+        id: connectionId,
+        error: error.message,
+        failureCount: failureCount,
+        stack: error.stack,
+      });
       return !(error instanceof AuthenticationError) && failureCount < 2;
     },
     retryDelay: 2000,

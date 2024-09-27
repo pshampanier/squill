@@ -1,0 +1,8 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+
+{{ enum("ConnectionMode", components.schemas.ConnectionMode) }}
+{{ struct("Connection", components.schemas.Connection) }}
