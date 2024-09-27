@@ -1,5 +1,0 @@
-{% if (mode == "connection_string" ) -%}
-{{driver}}:{{connection_string}}
-{% else %}
-{{ exceptions.raise_compiler_error(mode ~ " is not supported.") }}
-{% endif -%}

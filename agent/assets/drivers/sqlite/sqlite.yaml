@@ -10,5 +10,5 @@ capabilities:
   - connect_uri
   - read_only
 defaults:
-  CONNECTION_STRING: ":memory:"
+  URI: "file::memory:?cache=shared"
   CONNECTION_MODE: file

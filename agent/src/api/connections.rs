@@ -109,8 +109,9 @@ async fn execute_buffer(
 /// POST /connections/test
 ///
 /// Test if the connection is valid (can connect to the datasource).
-async fn test_connection(Json(conn): Json<Connection>) -> ServerResult<()> {
-    let uri = conn.to_uri()?;
+async fn test_connection(state: State<ServerState>, Json(conn): Json<Connection>) -> ServerResult<()> {
+    let jinja_env = state.get_jinja_env(&conn.driver);
+    let uri = jinja_env.render_template("uri", &conn)?;
     match DriverConnection::open(uri).await {
         Ok(_) => Ok(()),
         Err(e) => Err(UserError::InvalidParameter(e.to_string()).into()),

@@ -8,6 +8,7 @@ import {
   DRIVER_HOST,
   DRIVER_PORT,
   DRIVER_SOCKET,
+  DRIVER_URI,
   DRIVER_USER,
 } from "@/models/drivers";
 import Modal from "@/components/Modal";
@@ -80,6 +81,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
         host: driver.defaults[DRIVER_HOST],
         port: parseInt(driver.defaults[DRIVER_PORT]),
         socket: driver.defaults[DRIVER_SOCKET],
+        uri: driver.defaults[DRIVER_URI],
         connectionString: driver.defaults[DRIVER_CONNECTION_STRING],
       }),
     );

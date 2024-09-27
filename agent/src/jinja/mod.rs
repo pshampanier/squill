@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{debug, error, info, warn};
 
+const JINJA_FILE_EXTENSION: &str = "j2";
+
 type JinjaResult<T> = std::result::Result<T, jinja::Error>;
 
 pub struct JinjaEnvironment<'a> {
@@ -22,7 +24,7 @@ impl JinjaEnvironment<'_> {
     pub fn set_template_directory(&mut self, directory: PathBuf) {
         self.inner.set_loader(move |name| {
             let mut path = directory.join(name);
-            path.set_extension("jinja");
+            path.set_extension(JINJA_FILE_EXTENSION);
             debug!("Loading template: {:?}", path);
             if path.exists() {
                 match std::fs::read_to_string(&path) {

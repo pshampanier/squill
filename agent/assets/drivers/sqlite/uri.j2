@@ -1,0 +1,34 @@
+{%- macro uri_base(uri) %}
+  {{- uri | split('?') | list | first -}}
+{%- endmacro %}
+
+{%- macro uri_parameters(uri) %}
+  {%- set query_part = uri | split('?') | list -%}
+  {%- if query_part | length == 2 %}
+    {{- query_part | last -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{%- macro replace_scheme(uri) -%}
+  {%- if uri is startingwith('file:') -%}
+    {{- uri | replace('file:', 'sqlite:') -}}
+  {%- else -%}
+    {{- 'sqlite:' ~ uri -}}
+  {%- endif -%}
+{%- endmacro %}
+
+{%- if mode == "uri" -%}
+    {% set uri = replace_scheme(uri) %}
+{%- elif mode == "file" -%}
+  {%- set uri = 'sqlite:' ~ file | urlencode -%}
+{%- else -%}
+  {{ exceptions.raise_compiler_error(mode ~ " is not supported.") }}
+{%- endif -%}
+
+{%- set params = [uri_parameters(uri)] -%}
+
+{%- if readonly is true -%}
+  {% set params = params + ["mode=ro"] -%}
+{%- endif -%}
+
+{{- uri_base(uri) ~ '?' ~ params | join("&") -}}

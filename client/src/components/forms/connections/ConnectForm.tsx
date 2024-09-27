@@ -1,6 +1,13 @@
 import cx from "classix";
 import { Connection, ConnectionMode } from "@/models/connections";
-import { DRIVER_CONNECTION_STRING, DRIVER_HOST, DRIVER_PORT, DRIVER_SOCKET, Driver } from "@/models/drivers";
+import {
+  DRIVER_CONNECTION_STRING,
+  DRIVER_HOST,
+  DRIVER_PORT,
+  DRIVER_SOCKET,
+  DRIVER_URI,
+  Driver,
+} from "@/models/drivers";
 import { forwardRef } from "react";
 import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
@@ -37,6 +44,7 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
           {driver.capabilities.includes("connect_string") && (
             <ButtonGroup.Item label="Connection String" name="connection_string" />
           )}
+          {driver.capabilities.includes("connect_uri") && <ButtonGroup.Item label="URI" name="uri" />}
         </ButtonGroup>
       </div>
       {connection.mode === "host" && (
@@ -83,6 +91,18 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
           label="Connection String"
           defaultValue={connection.connectionString}
           placeholder={driver.defaults[DRIVER_CONNECTION_STRING]}
+          className="grow"
+          required
+          onChange={(e) => onChange({ connectionString: e.target.value })}
+        />
+      )}
+      {connection.mode === "uri" && (
+        <Input
+          type="text"
+          name="uri"
+          label="URI"
+          defaultValue={connection.uri}
+          placeholder={driver.defaults[DRIVER_URI]}
           className="grow"
           required
           onChange={(e) => onChange({ connectionString: e.target.value })}

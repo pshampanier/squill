@@ -1,9 +1,7 @@
-use crate::err_param;
 use crate::models::connections::{Connection, ConnectionMode};
 use crate::models::ResourceType;
 use crate::resources::Resource;
 use anyhow::Result;
-use squill_drivers::sqlite::{IN_MEMORY_SPECIAL_FILENAME, IN_MEMORY_URI};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
@@ -74,14 +72,6 @@ impl Connection {
             name,
             save_password: false,
             ..Default::default()
-        }
-    }
-
-    pub fn to_uri(&self) -> Result<String> {
-        match self.driver.as_str() {
-            "postgresql" => self.to_postgres_uri(),
-            "sqlite" => self.to_sqlite_uri(),
-            _ => Err(anyhow::anyhow!("Unsupported driver: {}", self.driver)),
         }
     }
 
@@ -175,121 +165,5 @@ impl Connection {
             map.into_iter().map(|(key, value)| format!("{}={}", key, escape(&value))).collect::<Vec<_>>().join(" ");
 
         Ok(connection_string)
-    }
-
-    // TODO: Implement this method
-    fn to_sqlite_uri(&self) -> Result<String> {
-        match self.mode {
-            ConnectionMode::File => {
-                // SQLite uses a file path as connection string
-                Ok(self.file.clone())
-            }
-            ConnectionMode::ConnectionString => {
-                // The connection string is expected to be a URI (https://www.sqlite.org/uri.html)
-                let uri = self.connection_string.trim();
-                if uri == IN_MEMORY_SPECIAL_FILENAME {
-                    Ok(IN_MEMORY_URI.to_owned())
-                } else if uri.starts_with("file:") {
-                    // we need to replace the file scheme by the sqlite scheme
-                    Ok(uri.replacen("file:", "sqlite:", 1))
-                } else {
-                    Err(err_param!("Invalid connection string: '{}'", self.connection_string))
-                }
-            }
-            _ => {
-                // SQLite does not support host mode
-                Err(anyhow::anyhow!("Connection mode is not supported by SQLite"))
-            }
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_to_postgres_uri() {
-        // Host mode
-        assert_eq!(
-            (Connection {
-                driver: "postgresql".to_string(),
-                mode: ConnectionMode::Host,
-                host: "localhost".to_string(),
-                port: Some(5432),
-                username: "postgres".to_string(),
-                password: "pass".to_string(),
-                ..Default::default()
-            })
-            .to_uri()
-            .unwrap(),
-            "host=localhost password=pass port=5432 user=postgres"
-        );
-
-        // Using an URI
-        assert_eq!(
-            (Connection {
-                driver: "postgresql".to_string(),
-                mode: ConnectionMode::ConnectionString,
-                connection_string: "postgresql://localhost:5432".to_string(),
-                username: "postgres".to_string(),
-                password: "pass?".to_string(),
-                ..Default::default()
-            })
-            .to_uri()
-            .unwrap(),
-            "postgresql://localhost:5432?password=pass%3F&user=postgres"
-        );
-
-        assert_eq!(
-            (Connection {
-                driver: "postgresql".to_string(),
-                mode: ConnectionMode::ConnectionString,
-                connection_string: "postgresql://localhost?sslmode=require".to_string(),
-                username: "postgres".to_string(),
-                ..Default::default()
-            })
-            .to_uri()
-            .unwrap(),
-            "postgresql://localhost?sslmode=require&user=postgres"
-        );
-
-        // Using a connection string
-        assert_eq!(
-            (Connection {
-                driver: "postgresql".to_string(),
-                mode: ConnectionMode::ConnectionString,
-                connection_string: "host=localhost port=5432 dbname=db connect_timeout=10".to_string(),
-                username: "postgres".to_string(),
-                password: "pa'ss".to_string(),
-                ..Default::default()
-            })
-            .to_uri()
-            .unwrap(),
-            "host=localhost port=5432 dbname=db connect_timeout=10 password=pa\\'ss user=postgres"
-        );
-
-        // Socket mode
-        assert_eq!(
-            (Connection {
-                driver: "postgresql".to_string(),
-                mode: ConnectionMode::Socket,
-                socket: "/var/run/postgres/.s.PGSQL.5432".to_string(),
-                ..Default::default()
-            })
-            .to_uri()
-            .unwrap(),
-            "host=/var/run/postgres/.s.PGSQL.5432"
-        );
-
-        // File mode (not supported)
-        assert!((Connection {
-            driver: "postgresql".to_string(),
-            mode: ConnectionMode::File,
-            file: "/tmp/file".to_string(),
-            ..Default::default()
-        })
-        .to_uri()
-        .is_err());
     }
 }

@@ -20,10 +20,9 @@ const DriverForm = forwardRef<HTMLFormElement, DriverFormProps>((props, ref) => 
 
   const classes = cx(
     "font-medium select-none w-full",
-    "divide-y my-1",
+    "grid grid-cols-2 gap-4",
     "overflow-hidden",
-    colors("background", "text", "border", "divide"),
-    "rounded-md",
+    colors("background", "text", "border"),
     "focus:outline-none",
   );
 
@@ -62,22 +61,25 @@ function DriverRadio({ driver, onChange, defaultChecked }: DriverRadioProps) {
   const id = `driver-${driver.name}`;
   return (
     <div className="py-1">
-      <div className={cx("rounded flex flex-row space-x-4 p-4", colors("hover:ghost-background", "hover:ghost-text"))}>
-        <label htmlFor={id} className="flex flex-row space-x-4 grow">
-          <div className="flex w-16 h-16 p-3 flex-shrink-0 rounded-full bg-gray-50 dark:bg-gray-700 items-center">
+      <label
+        htmlFor={id}
+        className={cx(
+          "rounded flex flex-row space-x-4 p-4 border",
+          colors("hover:ghost-background", "hover:ghost-text"),
+        )}
+      >
+        <div className="flex flex-row space-x-4 grow align-center items-center">
+          <div className="flex w-10 h-10 p-2 flex-shrink-0 rounded-full bg-gray-50 dark:bg-gray-700 items-center">
             <img
               src={`/icons/drivers/${driver.icon}`}
               alt={driver.name}
-              className="aspect-square w-10 h-10 object-cover"
+              className="aspect-square w-6 h-6 object-cover"
             />
           </div>
-          <div className="flex flex-col">
-            <span className="flex font-semibold">{driver.label}</span>
-            <span className="flex text-xs">{driver.description}</span>
-          </div>
-        </label>
+          <div className="flex flex-col font-semibold">{driver.label}</div>
+        </div>
         <Radio id={id} name="driver" value={driver.name} onChange={onChange} defaultChecked={defaultChecked} required />
-      </div>
+      </label>
     </div>
   );
 }
