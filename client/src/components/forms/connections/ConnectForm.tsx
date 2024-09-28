@@ -13,6 +13,7 @@ import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
 import ButtonGroup from "@/components/core/ButtonGroup";
 import Switch from "@/components/core/Switch";
+import FileInput from "@/components/core/FileInput";
 
 type ConnectFormProps = {
   name?: string;
@@ -110,14 +111,14 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
         />
       )}
       {connection.mode === "file" && (
-        <Input
-          type="text"
+        <FileInput
           name="file"
           label="File"
+          mode="input"
           defaultValue={connection.file}
           className="grow"
           required
-          onChange={(e) => onChange({ file: e.target.value })}
+          onChange={(_e, value) => onChange({ file: value })}
         />
       )}
       {driver.capabilities.includes("read_only") && (

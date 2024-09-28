@@ -33,6 +33,7 @@ import QueryTerminalPreview from "./query/QueryTerminal.preview";
 import QueryPromptPreview from "./query/QueryPrompt.preview";
 import LoadingContainerPreview from "./core/LoadingContainer.preview";
 import QueryHistoryTimelinePreview from "./query/QueryHistoryTimelinePreview";
+import FileInputPreview from "./core/FileInput.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -48,6 +49,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Buttons" />
           <PreviewSidebarItem view="Code" />
           <PreviewSidebarItem view="Dropdown" />
+          <PreviewSidebarItem view="FileInput" />
           <PreviewSidebarItem view="QueryInput" />
           <PreviewSidebarItem view="QueryOutput" />
           <PreviewSidebarItem view="QueryPrompt" />
@@ -85,6 +87,7 @@ export function PreviewsApp() {
           {view === "Buttons" && <ButtonsPreview />}
           {view === "Code" && <CodePreview />}
           {view === "Dropdown" && <DropdownPreview />}
+          {view === "FileInput" && <FileInputPreview />}
           {view === "QueryHistoryTimeline" && <QueryHistoryTimelinePreview />}
           {view === "QueryInput" && <QueryInputPreview />}
           {view === "QueryOutput" && <QueryOutputPreview />}

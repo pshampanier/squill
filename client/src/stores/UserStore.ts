@@ -163,7 +163,7 @@ export const useUserStore = create<State & Actions>((set, get) => {
         ...state,
         catalog: mergeAndMutateCatalog(state.catalog, [resourceRef], resourceRef.parentId, (parent) => ({
           ...parent,
-          children: [...parent.children, resourceRef],
+          children: [...(parent.children || []), resourceRef],
         })),
       }));
     },

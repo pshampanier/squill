@@ -1,5 +1,5 @@
 import cx from "classix";
-import React, { ChangeEvent, SyntheticEvent, useEffect, useState } from "react";
+import React, { ChangeEvent, SyntheticEvent, KeyboardEvent, useEffect, useState } from "react";
 
 type InputProps = {
   type: "text" | "password" | "number";
@@ -44,6 +44,12 @@ type InputProps = {
    */
   step?: number;
 
+  /**
+   * If true, the input will be focused when the component is mounted.
+   */
+  autoFocus?: boolean;
+
+  onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (event: SyntheticEvent) => void;
   disabled?: boolean;
@@ -82,7 +88,7 @@ function getHelperText(validityState: ValidityState): string {
 }
 
 export default function Input(props: InputProps) {
-  const { type, size = "auto", label, onBlur, prefix, suffix, className } = props;
+  const { type, size = "auto", label, onBlur, prefix, suffix, autoFocus = false, className } = props;
 
   // State for validation
   //
@@ -107,6 +113,7 @@ export default function Input(props: InputProps) {
     min: props.min,
     max: props.max,
     onChange: props.onChange,
+    onKeyDown: props.onKeyDown,
   };
 
   const handleValidation = (event: React.FormEvent<HTMLInputElement>) => {
@@ -138,6 +145,9 @@ export default function Input(props: InputProps) {
         const suffixWidth = htmlSuffix.getBoundingClientRect().width;
         inputRef.current.style.paddingRight = `${suffixWidth}px`;
       }
+      if (autoFocus) {
+        inputRef.current.focus();
+      }
     }
   });
 
@@ -147,7 +157,7 @@ export default function Input(props: InputProps) {
       size === "sm" && "w-32",
       size === "md" && "w-56",
       size === "lg" && "w-80",
-      className
+      className,
     ),
     label: cx("flex flex-row space-x-1 mb-2 text-sm font-medium items-center"),
     helper: cx("flex text-xs rounded-sm px-1 py-0.5", "bg-red-100 text-red-600 dark:bg-red-600 dark:text-red-100"),
@@ -156,7 +166,7 @@ export default function Input(props: InputProps) {
       "focus:outline-none focus:ring focus:valid:ring-blue-500 focus:valid:border-blue-500 dark:focus:ring-blue-500 dark:focus:valid:border-blue-500",
       "border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
       validityState &&
-        "invalid:border-red-600 focus:invalid:ring-red-600 dark:invalid:border-red-600 dark:focus:invalid:ring-red-600"
+        "invalid:border-red-600 focus:invalid:ring-red-600 dark:invalid:border-red-600 dark:focus:invalid:ring-red-600",
     ),
   };
 

@@ -119,3 +119,23 @@
 }
 
 @import (less) "timeline.less";
+
+/**
+ * Line clamp
+ * 
+ * Restrict the number of lines of text in an element. If the text exceeds the specified number of lines, it will be 
+ * truncated with an ellipsis "…").
+ *
+ * https://css-tricks.com/line-clampin/
+ */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invalid-file-input:has(button:focus) {
+  @apply ring ring-red-600 dark:ring-red-600;
+}

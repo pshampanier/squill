@@ -14,8 +14,8 @@ pub const DRIVERS_DIRNAME: &str = "drivers";
 // Environment variables
 //
 
-/// Name of the environment variable used to specify the log level.
-pub const ENV_VAR_LOG_LEVEL: &str = "SQUILL_LOG_LEVEL";
+/// Name of the environment variable used to specify the log level for the different components.
+pub const ENV_VAR_LOG: &str = "SQUILL_LOG";
 
 /// Windows reserved names.
 /// Source: <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file>

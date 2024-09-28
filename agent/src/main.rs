@@ -21,7 +21,7 @@ use tracing::{error, Subscriber};
 use tracing_appender::rolling;
 use tracing_subscriber::{self, filter::EnvFilter};
 use tracing_subscriber::{prelude::*, Registry};
-use utils::constants::ENV_VAR_LOG_LEVEL;
+use utils::constants::ENV_VAR_LOG;
 use utils::validators::sanitize_username;
 
 /// Include the generated build information from the module built
@@ -52,7 +52,7 @@ fn get_tracing_filter(args: Option<&commandline::Args>) -> EnvFilter {
         }
         None => LevelFilter::INFO,
     };
-    EnvFilter::builder().with_default_directive(default_level.into()).with_env_var(ENV_VAR_LOG_LEVEL).from_env_lossy()
+    EnvFilter::builder().with_default_directive(default_level.into()).with_env_var(ENV_VAR_LOG).from_env_lossy()
 }
 
 /// Initialize the tracing system.

@@ -2,6 +2,7 @@ import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import Input from "@/components/core/Input";
 import Icon from "@/icons/user.svg?react";
+import FileInput from "@/components/core/FileInput";
 
 export default function InputsPreview() {
   return (
@@ -82,7 +83,7 @@ export default function InputsPreview() {
       </Preview>
 
       {/*
-       * Validation
+       * Types
        */}
       <Preview>
         <Preview.Title>Types</Preview.Title>
@@ -94,6 +95,7 @@ export default function InputsPreview() {
             <Input type="text" label="Text" placeholder="Enter a text" />
             <Input type="password" label="Password" placeholder="Enter your password" />
             <Input type="number" label="Number" placeholder="5432" min={0} max={65535} />
+            <FileInput name="file" label="File" help="PNG, JPG or PDF, smaller than 15MB" mode="input" />
           </div>
         </PreviewBox>
       </Preview>
