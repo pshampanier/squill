@@ -160,10 +160,10 @@ export default function NotificationIconButton({
                 <Toast
                   key={Math.random()}
                   variant="info"
-                  message="No notifications"
+                  message="No new notifications"
                   onDismiss={() => toggleOpen()}
                   onDisplayed={() => toggleOpen()}
-                  icon={false}
+                  icon={BellIcon}
                   displaySeconds={SHORT_AUTO_DISMISS_SECONDS}
                 />
               ) : (

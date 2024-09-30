@@ -118,7 +118,7 @@ export default function Toast({
       className,
     ),
     icon: cx(
-      "flex shrink-0 w-8 h-8 rounded",
+      "flex shrink-0 w-6 h-6",
       variant === "info" && colors("info:text"),
       variant === "success" && colors("success:text"),
       variant === "warning" && colors("warning:text"),
