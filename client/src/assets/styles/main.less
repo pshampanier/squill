@@ -139,3 +139,51 @@
 .invalid-file-input:has(button:focus) {
   @apply ring ring-red-600 dark:ring-red-600;
 }
+
+/**
+ * Toast
+ **/
+
+@keyframes slide-in-from-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.slide-in {
+  animation: slide-in-from-right 0.5s ease-out forwards;
+}
+
+.toast {
+  transition:
+    height 0.2s linear,
+    margin 0.2s linear,
+    border 0.2s linear,
+    padding 0.2s linear,
+    opacity 0.2s ease-out;
+  overflow: hidden; /* Ensure overflow is hidden to transition height smoothly */
+}
+
+/* Style for when the child is being removed */
+.toast.closing {
+  height: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  border: 0;
+  opacity: 0;
+}
+
+/**
+ * Notification Popup
+ **/
+#notification-popup {
+  position: fixed;
+  z-index: 10001;
+}

@@ -10,6 +10,7 @@ import SidebarSection from "@/components/sidebar/SidebarSection";
 import PagesTabs from "@/components/titlebar/PagesTabs";
 import Editor from "@/components/Editor";
 import UserSpaceCommandManager from "@/components/spaces/UserSpaceCommandManager";
+import UserNotificationIconButton from "@/components/user-store/UserNotificationIconButton";
 
 export default function UserSpace(props: SpaceProps) {
   console.debug("Rendering UserSpace");
@@ -25,6 +26,7 @@ export default function UserSpace(props: SpaceProps) {
           <Titlebar.AppName />
           <PagesTabs />
           <Toolbar>
+            <UserNotificationIconButton />
             <CommandButton command="settings.open" />
           </Toolbar>
         </Titlebar>

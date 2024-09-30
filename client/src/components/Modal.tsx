@@ -13,18 +13,28 @@ export default function Modal({ onClose, onCancel, children, className }: ModalP
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    if (dialogRef.current) {
-      dialogRef.current.showModal();
+    dialogRef.current?.showModal();
+    // IMPORTANT: The following code is a hack to make the notification popup appear in front of the dialog.
+    // This code implies that the root element of the application is the element with the id "root" and the
+    // notification popup is the element with the id "notification-popup".
+    // When the modal is closed, the notification popup is moved back to root element in the DOM.
+    const notificationPopup = document.getElementById("notification-popup");
+    if (notificationPopup) {
+      dialogRef.current?.appendChild(notificationPopup);
     }
+    return () => {
+      if (notificationPopup) {
+        document.getElementById("root").appendChild(notificationPopup);
+      }
+    };
   });
 
   const classes = cx(
-    "relative inline-block px-4 pt-5 pb-4 overflow-hidden",
+    "inline-block px-4 pt-5 pb-4 overflow-hidden",
     "text-left align-middle bg-white rounded-lg shadow-xl",
     "outline-none",
-    "backdrop:bg-gray-900/50",
     colors("text", "background"),
-    className
+    className,
   );
 
   return (

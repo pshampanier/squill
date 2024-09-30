@@ -8,6 +8,7 @@ import { METADATA_CONTENT_TYPE } from "@/utils/constants";
 import { ContentType } from "@/models/folders";
 import { QueryExecution } from "@/models/queries";
 import Connections from "@/resources/connections";
+import { Notification } from "@/components/core/NotificationInbox";
 
 export type CatalogItem = ResourceRef & {
   children?: CatalogItem[];
@@ -36,6 +37,13 @@ export type State = {
    * All query executions are stored in the history, regardless of the component that initiated the query.
    */
   history: Map<string, QueryExecution>;
+
+  /**
+   * A list of notifications to be displayed to the user.
+   *
+   * FIXME: Notifications should be stored in the local storage to be persistent until the user dismisses them.
+   */
+  notifications: Notification[];
 };
 
 export type Actions = {
@@ -82,6 +90,16 @@ export type Actions = {
    * and the the identifier of each query execution is returned.
    */
   executeBuffer: (connectionId: string, buffer: string) => Promise<string[]>;
+
+  /**
+   * Add a notification.
+   */
+  addNotification: (notification: Notification) => void;
+
+  /**
+   * Remove a notification.
+   */
+  removeNotification: (id: string) => void;
 };
 
 const initialState: State = {
@@ -89,6 +107,7 @@ const initialState: State = {
   catalogSections: [],
   catalog: new Map<string, CatalogItem>(),
   history: new Map<string, QueryExecution>(),
+  notifications: [],
 };
 
 export const useUserStore = create<State & Actions>((set, get) => {
@@ -199,6 +218,26 @@ export const useUserStore = create<State & Actions>((set, get) => {
         return entry.metadata?.[METADATA_CONTENT_TYPE] === contentType;
       });
       return get().catalog.get(id);
+    },
+
+    /**
+     * Add a notification.
+     */
+    addNotification(notification: Notification) {
+      set((state) => ({
+        ...state,
+        notifications: [...state.notifications, notification],
+      }));
+    },
+
+    /**
+     * Remove a notification.
+     */
+    removeNotification(id: string) {
+      set((state) => ({
+        ...state,
+        notifications: state.notifications.filter((notification) => notification.id !== id),
+      }));
     },
   };
 });

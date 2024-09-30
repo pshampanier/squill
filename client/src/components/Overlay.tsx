@@ -47,13 +47,13 @@ export default function LoadingOverlay({ delay, children, position = "fixed", cl
     colors("text"),
     !visible && "bg-white/50 dark:bg-gray-800/50",
     visible && "bg-white/90 dark:bg-gray-800/90",
-    "z-50 flex flex-col items-center justify-center space-y-4",
+    "flex flex-col items-center justify-center space-y-4",
     "outline-none focus:ring-0 focus:outline-none",
     "select-none",
     "transition-color duration-300",
     position === "fixed" && "fixed inset-0",
     position === "absolute" && "absolute top-0 left-0 w-full h-full",
-    className
+    className,
   );
   return (
     <div ref={overlayRef} className={classes} onClick={handleClick} onKeyDown={handleKeyDown} tabIndex={-1}>

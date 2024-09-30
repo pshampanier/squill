@@ -25,7 +25,6 @@ import Overlay from "@/components/Overlay";
 import { useTaskEffect } from "@/hooks/use-task-effect";
 import Connections from "@/resources/connections";
 import Spinner from "@/components/core/Spinner";
-import ErrorMessage from "@/components/core/ErrorMessage";
 import { useUserStore } from "@/stores/UserStore";
 
 type NewConnectionDialogProps = {
@@ -57,6 +56,19 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
 
   // The creation of the connection is performed by the UserStore which will reflect the changes in the UI.
   const createResource = useUserStore((state) => state.createResource);
+
+  // Any error that occurs during the connection creation will be displayed as a notification.
+  const addNotification = useUserStore((state) => state.addNotification);
+
+  if (taskStatus === "error") {
+    addNotification({
+      id: crypto.randomUUID(),
+      variant: "error",
+      message: message instanceof Error ? message.message : message,
+      autoDismiss: true,
+    });
+    setTaskStatus("pending");
+  }
 
   const handleClose = () => {
     setMessage("Testing the connection...");
@@ -178,15 +190,6 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
           <Overlay delay={1000} position="absolute">
             <Spinner size="lg" />
             <p className="text-xs font-semibold">{message.toString()}</p>
-          </Overlay>
-        )}
-        {taskStatus === "error" && (
-          <Overlay position="absolute">
-            <ErrorMessage
-              message={message}
-              onClose={() => setTaskStatus("pending")}
-              className="w-3/4 backdrop-blur-xl"
-            />
           </Overlay>
         )}
       </div>

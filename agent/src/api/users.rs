@@ -1,5 +1,6 @@
 use crate::api::error::Error;
 use crate::api::error::ServerResult;
+use crate::err_conflict;
 use crate::err_forbidden;
 use crate::err_param;
 use crate::models;
@@ -122,7 +123,15 @@ async fn create_user_catalog_resource(
             return Err(err_forbidden!("You are not allowed to create this resource."));
         }
         sanitize_catalog_name(resource.name())?;
-        catalog::add(conn, &resource).await
+        match catalog::add(conn, &resource).await {
+            Ok(resource_ref) => Ok(resource_ref),
+            Err(err) => match err.downcast_ref::<squill_drivers::Error>() {
+                Some(squill_drivers::Error::ConstraintViolation { error: _ }) => {
+                    Err(err_conflict!("'{}' already exists.", resource.name()))
+                }
+                _ => Err(err),
+            },
+        }
     }
     let user_session = context.get_user_session_with_username(&username)?;
     let conn = state.get_agentdb_connection().await?;

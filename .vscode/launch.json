@@ -13,7 +13,7 @@
       },
       "args": ["--verbose", "start", "--dev"],
       "env": {
-        "SQUILL_LOG_LEVEL": "trace"
+        "SQUILL_LOG": "trace,tower_http=debug"
       },
       "cwd": "${workspaceFolder}"
     },

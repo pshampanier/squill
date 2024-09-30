@@ -19,9 +19,11 @@ export default {
     extend: {
       fontSize: {
         "2xs": ".65rem",
+        "3xs": ".45rem",
       },
       fontFamily: {
         comfortaa: ["Comfortaa"],
+        sans: ["Inter", "sans-serif"],
       },
       fontWeight: {
         thin: 100,

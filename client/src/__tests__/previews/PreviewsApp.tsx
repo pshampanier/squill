@@ -1,5 +1,4 @@
 import { usePreviewsStore } from "./previewsStore";
-
 import Page from "@/components/Page";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
@@ -14,7 +13,6 @@ import SwitchPreview from "./core/Switch.preview";
 import ButtonGroupPreview from "./core/ButtonGroup.preview";
 import ButtonsPreview from "./core/Buttons.preview";
 import ButtonGroup from "@/components/core/ButtonGroup";
-
 import ThemeLightIcon from "@/icons/theme-light.svg?react";
 import ThemeDarkIcon from "@/icons/theme-dark.svg?react";
 import MenuPreview from "./core/Menu.preview";
@@ -34,6 +32,7 @@ import QueryPromptPreview from "./query/QueryPrompt.preview";
 import LoadingContainerPreview from "./core/LoadingContainer.preview";
 import QueryHistoryTimelinePreview from "./query/QueryHistoryTimelinePreview";
 import FileInputPreview from "./core/FileInput.preview";
+import NotificationPreview from "./core/Notifications.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -64,6 +63,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Sidebar" />
           <PreviewSidebarItem view="TableView" />
           <PreviewSidebarItem view="Timeline" />
+          <PreviewSidebarItem view="Notification" />
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
         <SidebarSection label="layouts">
@@ -107,6 +107,7 @@ export function PreviewsApp() {
           {view === "Switch" && <SwitchPreview />}
           {view === "TableView" && <TableViewPreview />}
           {view === "Timeline" && <TimelinePreview />}
+          {view === "Notification" && <NotificationPreview />}
           {view === "Tooltip" && <TooltipPreview />}
         </div>
       </Page>
