@@ -4,7 +4,7 @@
 # - arch = The base CPU architecture, for example x86_64, i686, arm, thumb, mips, etc.
 # - sys = The operating system, for example linux, windows, macos, ios, android, etc.
 # - vendor = The vendor, for example unknown, apple, pc, nvidia, etc.
-local target=$(rustc -Vv | grep host | cut -f2 -d' ')
+target=$(rustc -Vv | grep host | cut -f2 -d' ')
 
 BUILD_DIR=${PWD}/build
 export SQUILL_APP_DIR=${BUILD_DIR}/app_dir
