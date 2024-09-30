@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
   libayatana-appindicator3-dev \
   librsvg2-dev
 
+RUN rustup component add rustfmt
 RUN cargo install cargo-tarpaulin
 RUN cargo install cargo-audit
 
