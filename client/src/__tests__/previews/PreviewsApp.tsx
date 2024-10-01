@@ -33,6 +33,7 @@ import LoadingContainerPreview from "./core/LoadingContainer.preview";
 import QueryHistoryTimelinePreview from "./query/QueryHistoryTimelinePreview";
 import FileInputPreview from "./core/FileInput.preview";
 import NotificationPreview from "./core/Notifications.preview";
+import TreeViewPreview from "./core/TreeView.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -63,6 +64,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Sidebar" />
           <PreviewSidebarItem view="TableView" />
           <PreviewSidebarItem view="Timeline" />
+          <PreviewSidebarItem view="TreeView" />
           <PreviewSidebarItem view="Notification" />
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
@@ -107,6 +109,7 @@ export function PreviewsApp() {
           {view === "Switch" && <SwitchPreview />}
           {view === "TableView" && <TableViewPreview />}
           {view === "Timeline" && <TimelinePreview />}
+          {view === "TreeView" && <TreeViewPreview />}
           {view === "Notification" && <NotificationPreview />}
           {view === "Tooltip" && <TooltipPreview />}
         </div>
