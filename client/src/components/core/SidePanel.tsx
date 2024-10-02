@@ -1,9 +1,9 @@
 import cx from "classix";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { primary, ColorsFunction } from "@/utils/colors";
-import ResizeHandle, { ResizeProps, ResizeHandleProps } from "@/components/core/ResizeHandle";
+import { useResizable, ResizableProps } from "@/hooks/use-resizable";
 
-export type SidePanelProps = ResizeProps & {
+export type SidePanelProps = Partial<ResizableProps> & {
   /**
    * Additional class names to apply to the root element of the component.
    */
@@ -187,7 +187,7 @@ function findVisibleSibling(element: Element, iterator: (e: Element) => Element 
 
 type SidePanelResizeHandleProps = {
   colors: ColorsFunction;
-} & ResizeHandleProps;
+} & ResizableProps;
 
 /**
  * A resize handle for the side panel.
@@ -201,6 +201,14 @@ function SidePanelResizeHandle({
   onResize,
   onResizeEnd,
 }: SidePanelResizeHandleProps) {
+  const { onPointerDown, onPointerMove, onPointerUp } = useResizable({
+    size,
+    minSize,
+    maxSize,
+    position,
+    onResize,
+    onResizeEnd,
+  });
   const classes = cx(
     "fixed top-0 w-1 h-full z-10",
     position === "right" && "right-0 border-r",
@@ -211,14 +219,11 @@ function SidePanelResizeHandle({
     colors("border"),
   );
   return (
-    <ResizeHandle
+    <div
       className={classes}
-      position={position}
-      size={size}
-      minSize={minSize}
-      maxSize={maxSize}
-      onResize={onResize}
-      onResizeEnd={onResizeEnd}
-    ></ResizeHandle>
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+    ></div>
   );
 }

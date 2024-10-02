@@ -1,20 +1,25 @@
 import { useCallback, useEffect, useRef } from "react";
 
-export type ResizeProps = {
+export type ResizableProps = {
+  /**
+   * The position of the handle relative to the element it resizes.
+   */
+  position: "left" | "right";
+
   /**
    * The size of the side panel (optional)
    */
-  size?: number;
+  size: number;
 
   /**
    * The minimum size of the side panel (optional)
    */
-  minSize?: number;
+  minSize: number;
 
   /**
    * The maximum size of the side panel (optional)
    */
-  maxSize?: number;
+  maxSize: number;
 
   /**
    * A callback function called when the size changes.
@@ -27,36 +32,26 @@ export type ResizeProps = {
   onResizeEnd?: (event: React.PointerEvent<HTMLDivElement>, size: number) => void;
 };
 
-export type ResizeHandleProps = ResizeProps & {
-  /**
-   * Additional class names to apply to the root element of the component.
-   */
-  className?: string;
+/**
+ * A hook that provides the necessary logic to make an element resizable by dragging a handle.
+ */
+export function useResizable({ size, minSize, maxSize, position, onResize, onResizeEnd }: ResizableProps) {
+  // True if the element is currently being resized.
+  const resizing = useRef<boolean>();
 
-  /**
-   * The position of the handle relative to the element it resizes.
-   */
-  position: "left" | "right";
-};
+  // The position of the mouse when the resizing started (or when the size was suggested by calling onResize).
+  const resizingStartAt = useRef<number>();
 
-export default function ResizeHandle({
-  className,
-  size,
-  minSize,
-  maxSize,
-  position,
-  onResize,
-  onResizeEnd,
-}: ResizeHandleProps) {
-  const dragging = useRef<boolean>();
-  const dragStartAt = useRef<number>();
+  // The last size that was suggested by calling onResize.
   const lastResize = useRef<number>();
+
+  // The last clientX value of the pointer.
   const lastClientX = useRef<number>();
 
-  // Every time the size changes, we need to update the dragStartAt value which is the position of the mouse when that
+  // Every time the size changes, we need to update the resizingStartAt value which is the position of the mouse when that
   // size was suggested by calling onResize.
   useEffect(() => {
-    dragStartAt.current = lastClientX.current;
+    resizingStartAt.current = lastClientX.current;
   }, [size]);
 
   const getUpdates = useCallback(
@@ -65,9 +60,9 @@ export default function ResizeHandle({
       let resize: number;
       let cursor: string;
       if (position === "left") {
-        offset = dragStartAt.current - event.clientX;
+        offset = resizingStartAt.current - event.clientX;
       } else {
-        offset = event.clientX - dragStartAt.current;
+        offset = event.clientX - resizingStartAt.current;
       }
       resize = size + offset;
       if (minSize && resize < minSize) {
@@ -84,15 +79,15 @@ export default function ResizeHandle({
     [position, size, minSize, maxSize],
   );
 
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    dragging.current = true;
-    dragStartAt.current = event.clientX;
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    resizing.current = true;
+    resizingStartAt.current = event.clientX;
     lastResize.current = size;
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (dragging.current) {
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (resizing.current) {
       const updates = getUpdates(event);
       event.currentTarget.style.cursor = updates.cursor;
       lastClientX.current = event.clientX;
@@ -104,9 +99,9 @@ export default function ResizeHandle({
     }
   };
 
-  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (dragging.current) {
-      dragging.current = false;
+  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (resizing.current) {
+      resizing.current = false;
       event.currentTarget.style.cursor = "col-resize";
       event.currentTarget.releasePointerCapture(event.pointerId);
       const updates = getUpdates(event);
@@ -115,12 +110,9 @@ export default function ResizeHandle({
     }
   };
 
-  return (
-    <div
-      className={className}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-    ></div>
-  );
+  return {
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+  };
 }
