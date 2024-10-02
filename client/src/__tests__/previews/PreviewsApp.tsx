@@ -34,6 +34,7 @@ import QueryHistoryTimelinePreview from "./query/QueryHistoryTimelinePreview";
 import FileInputPreview from "./core/FileInput.preview";
 import NotificationPreview from "./core/Notifications.preview";
 import TreeViewPreview from "./core/TreeView.preview";
+import SidePanelPreview from "./core/SidePanel.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -62,6 +63,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Menu" />
           <PreviewSidebarItem view="Radio" />
           <PreviewSidebarItem view="Sidebar" />
+          <PreviewSidebarItem view="SidePanel" />
           <PreviewSidebarItem view="TableView" />
           <PreviewSidebarItem view="Timeline" />
           <PreviewSidebarItem view="TreeView" />
@@ -103,6 +105,7 @@ export function PreviewsApp() {
           {view === "Modal" && <ModalPreview />}
           {view === "Radio" && <RadioPreview />}
           {view === "Sidebar" && <SidebarPreview />}
+          {view === "SidePanel" && <SidePanelPreview />}
           {view === "Space" && <SpacePreview />}
           {view === "Stepper" && <StepperPreview />}
           {view === "Syntax Highlighting" && <SyntaxHighlightingPreview />}

@@ -96,13 +96,19 @@ type TreeViewItemProps = {
 /**
  * A hierarchical item in a TreeView.
  *
+ * An item can have a label, an icon, a status, and can be collapsible.
+ * The visual representation of an item is as follows:
+ *
  * ```
- * Icon
- * │ Label         Status
- * │ │             │
- * ▼ ▼             ▼
- * ⛁ Databases     ⏷
+ *                Icon
+ *                │ Label         Status
+ *                │ │             │
+ *                ▼ ▼             ▼
+ *                ⛁ Databases     ⏷
  * ```
+ *
+ * The item can be collapsible, meaning that it can be opened or closed which will be indicated by a chevron icon in the
+ * status section. Other status can be displayed in the status section such as "loading" or "error".
  */
 TreeView.Item = function TreeViewItem({
   className,
