@@ -35,7 +35,17 @@ export default function InputsPreview() {
           <form className="flex flex-col space-y-2">
             <Input size="lg" type="text" label="First Name" placeholder="Enter your name" required />
             <Input size="lg" type="text" label="Last Name" placeholder="Enter your name" required />
-            <input type="submit" className="text-center p-3 rounded bg-blue-500 text-white cursor-pointer" />
+            <div>
+              <p className="text-xs opacity-60 mb-1">
+                The validity status is always displayed <br />
+                on the top right corner, regardless if <br />
+                there is a label or not.
+              </p>
+              <Input size="lg" type="text" placeholder="Enter your email" required />
+            </div>
+            <div>
+              <input type="submit" className="w-48 text-center p-3 rounded bg-blue-500 text-white cursor-pointer" />
+            </div>
           </form>
         </PreviewBox>
       </Preview>

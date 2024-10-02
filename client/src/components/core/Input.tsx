@@ -49,6 +49,11 @@ type InputProps = {
    */
   autoFocus?: boolean;
 
+  /**
+   * The density/size of the input (`compact` or `normal`).
+   */
+  density?: "compact" | "comfortable";
+
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (event: SyntheticEvent) => void;
@@ -88,7 +93,17 @@ function getHelperText(validityState: ValidityState): string {
 }
 
 export default function Input(props: InputProps) {
-  const { type, size = "auto", label, onBlur, prefix, suffix, autoFocus = false, className } = props;
+  const {
+    type,
+    size = "auto",
+    label,
+    onBlur,
+    prefix,
+    suffix,
+    autoFocus = false,
+    className,
+    density = "comfortable",
+  } = props;
 
   // State for validation
   //
@@ -153,18 +168,29 @@ export default function Input(props: InputProps) {
 
   const classes = {
     container: cx(
-      "flex flex-col",
+      "relative flex flex-col",
       size === "sm" && "w-32",
       size === "md" && "w-56",
       size === "lg" && "w-80",
       className,
     ),
     label: cx("flex flex-row space-x-1 mb-2 text-sm font-medium items-center"),
-    helper: cx("flex text-xs rounded-sm px-1 py-0.5", "bg-red-100 text-red-600 dark:bg-red-600 dark:text-red-100"),
+    helper: cx(
+      "flex text-xs rounded-sm px-1 py-0.5",
+      "bg-red-100 text-red-600 dark:bg-red-600 dark:text-red-100",
+      "absolute -top-6 end-0 h-5",
+    ),
+    prefix: cx(
+      "absolute inset-y-0 start-0 flex items-center pointer-events-none",
+      density === "compact" && "pl-1 pr-2",
+      density === "comfortable" && "p-3",
+    ),
     input: cx(
       "block shadow-sm bg-transparent",
       "focus:outline-none focus:ring focus:valid:ring-blue-500 focus:valid:border-blue-500 dark:focus:ring-blue-500 dark:focus:valid:border-blue-500",
-      "border border-gray-300 text-gray-900 text-sm rounded block w-full p-2.5 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
+      "border border-gray-300 text-gray-900 rounded block w-full dark:border-gray-600 dark:placeholder-gray-400 dark:text-white",
+      density === "compact" && "text-xs p-1",
+      density === "comfortable" && "text-sm p-2.5",
       validityState &&
         "invalid:border-red-600 focus:invalid:ring-red-600 dark:invalid:border-red-600 dark:focus:invalid:ring-red-600",
     ),
@@ -175,15 +201,10 @@ export default function Input(props: InputProps) {
       {label && (
         <label htmlFor={inputProperties.id} className={classes.label}>
           <p className="flex grow">{label}</p>
-          {validityState && !validityState.valid && (
-            <span className={classes.helper}>{getHelperText(validityState)}</span>
-          )}
         </label>
       )}
       <div className="relative">
-        {prefix && (
-          <div className="absolute inset-y-0 start-0 flex items-center px-3 pointer-events-none">{prefix}</div>
-        )}
+        {prefix && <div className={classes.prefix}>{prefix}</div>}
         <input
           ref={inputRef}
           type={type}
@@ -193,6 +214,9 @@ export default function Input(props: InputProps) {
           onInvalid={handleValidation}
           onBlur={handleBlur}
         />
+        {validityState && !validityState.valid && (
+          <span className={classes.helper}>{getHelperText(validityState)}</span>
+        )}
         {suffix && <div className="absolute inset-y-0 end-0 flex items-center px-3 pointer-events-none">{suffix}</div>}
       </div>
     </div>

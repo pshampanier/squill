@@ -1,6 +1,8 @@
 import TreeView, { TreeViewStatus } from "@/components/core/TreeView";
 import FolderIcon from "@/icons/folder.svg?react";
 import UserIcon from "@/icons/user.svg?react";
+import { secondary } from "@/utils/colors";
+import cx from "classix";
 import React from "react";
 
 type FolderOrUser = {
@@ -24,11 +26,36 @@ const ITEMS: FolderOrUser[] = [
   },
 ];
 
-function TreeItem({ item }: { item: FolderOrUser }) {
+function TreeItem({
+  item,
+  onChange,
+  onSelect,
+  selectedId,
+}: {
+  item: FolderOrUser;
+  onChange?: (id: string, label: string) => void;
+  onSelect?: (id: string) => void;
+  selectedId: string | null;
+}) {
+  const handleKeyDown = (
+    event: React.KeyboardEvent<HTMLElement>,
+    setStatus: React.Dispatch<React.SetStateAction<TreeViewStatus>>,
+  ) => {
+    if (event.key === "Enter") {
+      // If already editing it will apply the defaut dehavior of Enter key (validation), otherwise it will start editing
+      setStatus("editing");
+    }
+  };
+
   const handleClick = (
     event: React.MouseEvent<HTMLElement>,
     setStatus: React.Dispatch<React.SetStateAction<TreeViewStatus>>,
   ) => {
+    // We are only allowing leaf nodes to be selected
+    if (item.children === undefined) {
+      onSelect?.(item.id);
+    }
+
     if (item.id === "7") {
       event.preventDefault();
       setStatus((prev) => {
@@ -49,24 +76,79 @@ function TreeItem({ item }: { item: FolderOrUser }) {
     }
   };
 
+  const handleEditBlur = (
+    event: React.FocusEvent<HTMLInputElement>,
+    setStatus: React.Dispatch<React.SetStateAction<TreeViewStatus>>,
+  ) => {
+    if (event.target.checkValidity()) {
+      onChange?.(item.id, event.target.value);
+      setStatus((prev) => (prev === "editing" ? "closed" : prev));
+    } else {
+      // If the input is invalid, focus it again
+      event.target.focus();
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
   if (item.children !== undefined) {
     return (
-      <TreeView.Item icon={FolderIcon} label={item.name} onClick={handleClick} collapsible>
+      <TreeView.Item
+        icon={FolderIcon}
+        label={item.name}
+        onClick={handleClick}
+        collapsible
+        selected={item.id === selectedId}
+      >
         {item.children.map((child) => (
-          <TreeItem key={child.id} item={child} />
+          <TreeItem key={child.id} item={child} selectedId={selectedId} />
         ))}
       </TreeView.Item>
     );
   } else {
-    return <TreeView.Item icon={UserIcon} label={item.name} onClick={handleClick} />;
+    return (
+      <TreeView.Item
+        icon={UserIcon}
+        label={item.name}
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        onEditBlur={handleEditBlur}
+        selected={item.id === selectedId}
+      />
+    );
   }
 }
 
 export default function TreeviewStaticPreview() {
+  const [items, setItems] = React.useState(ITEMS);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+
+  const handleOnChange = (id: string, label: string) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.id === id) {
+          return { ...item, name: label };
+        } else {
+          return item;
+        }
+      }),
+    );
+  };
+
+  const handleOnSelect = (id: string) => {
+    setSelectedId(id);
+  };
+
   return (
-    <TreeView className="w-60 h-96 border border-dashed rounded">
-      {ITEMS.map((item) => (
-        <TreeItem key={item.id} item={item} />
+    <TreeView className={cx("w-60 h-96 border border-dashed rounded", secondary("background"))} colors={secondary}>
+      {items.map((item) => (
+        <TreeItem
+          key={item.id}
+          item={item}
+          onChange={handleOnChange}
+          selectedId={selectedId}
+          onSelect={handleOnSelect}
+        />
       ))}
     </TreeView>
   );
