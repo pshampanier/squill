@@ -1,6 +1,5 @@
 import cx from "classix";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { primary, ColorsFunction } from "@/utils/colors";
 import { useResizable, ResizableProps } from "@/hooks/use-resizable";
 
 export type SidePanelProps = Partial<ResizableProps> & {
@@ -27,11 +26,6 @@ export type SidePanelProps = Partial<ResizableProps> & {
   resizable?: boolean;
 
   /**
-   * The color palette to use for the resize handle (default is `primary`, only used if the side panel is resizable).
-   */
-  colors?: ColorsFunction;
-
-  /**
    * The children of the side panel.
    */
   children?: ReactNode;
@@ -53,7 +47,6 @@ export default function SidePanel({
   size: defaultSize,
   minSize,
   maxSize,
-  colors = primary,
   children,
   onResize,
   onResizeEnd,
@@ -126,6 +119,9 @@ export default function SidePanel({
     [onResize, onResizeEnd],
   );
 
+  // The transition used to show/hide the side panel is a `cubic-bezier(0, 0, 0.2, 1) 500ms`. Because we need to also
+  /// apply the same transition to the sibling element next to the side panel, we need to make sure both transitions are
+  // using the same timing function and duration (see the `useEffect` above).
   const classes = cx(
     "relative", // Required for the resize handle to be positioned correctly
     "transition-transform duration-500 transform-gpu ease-out",
@@ -149,7 +145,6 @@ export default function SidePanel({
   const ResizeHandle = resizable && (
     <SidePanelResizeHandle
       position={variant === "left" ? "right" : "left"}
-      colors={colors}
       minSize={minSize}
       maxSize={maxSize}
       size={size}
@@ -185,22 +180,10 @@ function findVisibleSibling(element: Element, iterator: (e: Element) => Element 
   return null;
 }
 
-type SidePanelResizeHandleProps = {
-  colors: ColorsFunction;
-} & ResizableProps;
-
 /**
  * A resize handle for the side panel.
  */
-function SidePanelResizeHandle({
-  colors,
-  position,
-  size,
-  minSize,
-  maxSize,
-  onResize,
-  onResizeEnd,
-}: SidePanelResizeHandleProps) {
+function SidePanelResizeHandle({ position, size, minSize, maxSize, onResize, onResizeEnd }: ResizableProps) {
   const { onPointerDown, onPointerMove, onPointerUp } = useResizable({
     size,
     minSize,
@@ -211,12 +194,11 @@ function SidePanelResizeHandle({
   });
   const classes = cx(
     "fixed top-0 w-1 h-full z-10",
-    position === "right" && "right-0 border-r",
-    position === "left" && "left-0 border-l",
+    position === "right" && "right-0",
+    position === "left" && "left-0",
     "bg-transparent",
     "hover:bg-blue-500 hover:border-blue-500 hover:cursor-col-resize hover:transition-colors hover:delay-100 transition-all",
     "dark:hover:bg-blue-800 dark:hover:border-blue-800",
-    colors("border"),
   );
   return (
     <div
