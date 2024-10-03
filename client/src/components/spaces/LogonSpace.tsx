@@ -1,6 +1,6 @@
 import { User } from "@/models/users";
 import { Agent } from "@/resources/agent.ts";
-import Users from "@/resources/users";
+import { Users } from "@/resources/users";
 import { env } from "@/utils/env";
 import { Authentication } from "@/models/auth";
 import { useAppStore } from "@/stores/AppStore";
@@ -13,7 +13,7 @@ import LoadingContainer from "@/components/core/LoadingContainer";
 /**
  * This is the space that is displayed while the application is connecting to the agent.
  */
-export default function ConnectionSpace(props: SpaceProps) {
+export default function LogonSpace(props: SpaceProps) {
   const setActiveSpace = useAppStore((state) => state.setActiveSpace);
   const reset = useUserStore((state) => state.reset);
   const loadCatalog = useUserStore((state) => state.loadCatalog);

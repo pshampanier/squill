@@ -1,29 +1,13 @@
 import { cx } from "classix";
-import { registerCommand, registerAction, unregisterAction } from "@/utils/commands";
-import { ReactNode, useEffect, useRef, useState } from "react";
+import { ReactNode, useRef, useState } from "react";
 
 import ResizePanel from "@/components/core/ResizePanel";
-import SidebarIcon from "@/icons/sidebar.svg?react";
 import { secondary as colors } from "@/utils/colors";
 
 // Default values for the sidebar width (in pixels)
 export const DEFAULT_WIDTH = 256;
 export const DEFAULT_MIN_WIDTH = 200;
 export const DEFAULT_MAX_WIDTH = 400;
-
-registerCommand(
-  {
-    name: "sidebar.toggle",
-    description: "Toggle the sidebar",
-    icon: SidebarIcon,
-    shortcut: ["Meta+B", "Ctrl+B"],
-  },
-  {
-    name: "sidebar.rename",
-    description: "Rename the selection",
-    shortcut: "Enter",
-  }
-);
 
 type SidebarProps = {
   width?: number;
@@ -52,7 +36,7 @@ export default function Sidebar({
     setSidebarWidth(width);
   };
 
-  const toggleSidebar = () => {
+  const _toggleSidebar = () => {
     setVisible(!visible);
     onVisibilityChange && onVisibilityChange(!visible);
   };
@@ -76,20 +60,13 @@ export default function Sidebar({
     }
   }
 
-  useEffect(() => {
-    registerAction("sidebar.toggle", toggleSidebar);
-    return () => {
-      unregisterAction("sidebar.toggle", toggleSidebar);
-    };
-  }, [visible]);
-
   const asideClasses = cx(
     "flex flex-row flex-none overflow-y-hidden overflow-x-hidden",
     "text-sm",
     "transition-transform duration-500 transform-gpu",
     colors("background", "text"),
     visible ? "translate-x-0" : "-translate-x-full",
-    className
+    className,
   );
   const resizePanelClasses = cx(visible ? "block" : "hidden");
 

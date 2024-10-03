@@ -2,13 +2,17 @@
  * The global store of the application.
  */
 import { create } from "zustand";
-import { DEFAULT_WIDTH as DEFAULT_SIDEBAR_WIDTH } from "@/components/sidebar/Sidebar";
 import { calculateColorScheme } from "@/utils/colors";
 import { Editor, editors } from "@/resources/editors";
-import { EDITOR_USER_BLANK } from "@/utils/constants";
 import { raise } from "@/utils/telemetry";
+import { DEFAULT_PRIMARY_SIDEBAR_WIDTH, EDITOR_USER_BLANK } from "@/utils/constants";
 
-type ApplicationSpace = "connection" | "logon" | "user" | "workspace";
+/**
+ * A name of a pages/sections in the settings.
+ */
+export type SettingsPageName = "general" | "text-editor" | "table-view";
+
+export type ApplicationSpace = "logon" | "user" | "workspace";
 
 export type Page = {
   id: string;
@@ -34,9 +38,29 @@ type State = {
   colorScheme: "light" | "dark";
 
   /**
-   * The size of the sidebar in pixels.
+   * The size of the primary sidebar in pixels.
    */
   sidebarWidth: number;
+
+  /**
+   * The visibility state of the primary sidebar (default: `true`).
+   */
+  sidebarVisibility: boolean;
+
+  /**
+   * State of the settings .
+   */
+  settings: {
+    /**
+     * Whether the settings are open or not.
+     */
+    open: boolean;
+
+    /**
+     * The last active page in the settings.
+     */
+    selectedPage: SettingsPageName;
+  };
 
   /**
    * The current active space.
@@ -65,9 +89,34 @@ type State = {
 };
 
 type Actions = {
+  /**
+   * Set the primary sidebar width.
+   */
   setSidebarWidth: (width: number) => void;
-  setActiveSpace: (activeSpace: ApplicationSpace) => void;
+
+  /**
+   * Change the visibility of the primary sidebar.
+   */
+  toggleSidebarVisibility: () => void;
+
   setColorScheme: (colorScheme: "light" | "dark") => void;
+
+  /**
+   * Show the settings.
+   */
+  openSettings: () => void;
+
+  /**
+   * Close the settings.
+   */
+  closeSettings: () => void;
+
+  /**
+   * Select a page in the settings.
+   */
+  selectSettingsPage: (page: SettingsPageName) => void;
+
+  setActiveSpace: (activeSpace: ApplicationSpace) => void;
 
   /**
    * Change the current active item.
@@ -141,14 +190,30 @@ export const useAppStore = create<State & Actions>((set, get) => {
   };
 
   return {
-    sidebarWidth: DEFAULT_SIDEBAR_WIDTH,
+    sidebarWidth: DEFAULT_PRIMARY_SIDEBAR_WIDTH,
+    sidebarVisibility: true,
     colorScheme: calculateColorScheme("auto"),
-    activeSpace: "connection",
+    activeSpace: "logon",
     pages: [],
     activePageId: undefined,
 
+    settings: {
+      open: false,
+      selectedPage: "general",
+    },
+
+    /**
+     * Set the primary sidebar width.
+     */
     setSidebarWidth(width: number) {
       set((state) => ({ ...state, sidebarWidth: width }));
+    },
+
+    /**
+     * Change the visibility of the primary sidebar.
+     */
+    toggleSidebarVisibility() {
+      set((state) => ({ ...state, sidebarVisibility: !state.sidebarVisibility }));
     },
 
     setActiveSpace(activeSpace: ApplicationSpace) {
@@ -167,8 +232,7 @@ export const useAppStore = create<State & Actions>((set, get) => {
           }));
           break;
         }
-        case "logon":
-        case "connection": {
+        case "logon": {
           set((state) => ({ ...state, pages: [], activeId: undefined, activePageId: undefined, activeSpace }));
           break;
         }
@@ -177,6 +241,27 @@ export const useAppStore = create<State & Actions>((set, get) => {
 
     setColorScheme(colorScheme: "light" | "dark") {
       set((state) => ({ ...state, colorScheme: colorScheme }));
+    },
+
+    /**
+     * Show the settings.
+     */
+    openSettings() {
+      set((state) => ({ ...state, settings: { ...state.settings, open: true } }));
+    },
+
+    /**
+     * Close the settings.
+     */
+    closeSettings() {
+      set((state) => ({ ...state, settings: { ...state.settings, open: false } }));
+    },
+
+    /**
+     * Select a page in the settings.
+     */
+    selectSettingsPage(page: SettingsPageName) {
+      set((state) => ({ ...state, settings: { ...state.settings, selectedPage: page } }));
     },
 
     /**

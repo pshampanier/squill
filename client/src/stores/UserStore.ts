@@ -1,4 +1,4 @@
-import Users from "@/resources/users";
+import { Users } from "@/resources/users";
 import { UserSettings } from "@/models/users";
 import { useAppStore } from "@/stores/AppStore";
 import { produce } from "immer";
@@ -98,6 +98,7 @@ export type Actions = {
 
   /**
    * Remove a notification.
+   * Typically called when the user dismisses a notification.
    */
   removeNotification: (id: string) => void;
 };

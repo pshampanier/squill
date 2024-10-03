@@ -31,7 +31,7 @@ export type TreeViewProps = {
 function TreeView({ className, children, colors = primary }: TreeViewProps) {
   return (
     <ColorsContext.Provider value={colors}>
-      <nav data-type="tree-view" className={cx("flex flex-col flex-grow space-y-1.5 overflow-y-scroll", className)}>
+      <nav data-type="tree-view" className={cx("flex flex-col flex-grow space-y-1 overflow-y-scroll", className)}>
         {children}
       </nav>
     </ColorsContext.Provider>

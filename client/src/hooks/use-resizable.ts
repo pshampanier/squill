@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
 
+/**
+ * The properties of a resizable component.
+ */
 export type ResizableProps = {
-  /**
-   * The position of the handle relative to the element it resizes.
-   */
-  position: "left" | "right";
-
   /**
    * The size of the side panel (optional)
    */
@@ -23,19 +21,33 @@ export type ResizableProps = {
 
   /**
    * A callback function called when the size changes.
+   *
+   * There is no need to call `event.preventDefault()` or `event.stopPropagation()` in this callback.
    */
   onResize?: (event: React.PointerEvent<HTMLDivElement>, size: number) => void;
 
   /**
    * A callback function called when the resizing ends.
+   *
+   * There is no need to call `event.preventDefault()` or `event.stopPropagation()` in this callback.
    */
   onResizeEnd?: (event: React.PointerEvent<HTMLDivElement>, size: number) => void;
 };
 
 /**
+ * The properties of the resizable hook.
+ */
+export type ResizableHookProps = ResizableProps & {
+  /**
+   * The position of the handle relative to the element it resizes.
+   */
+  position: "left" | "right";
+};
+
+/**
  * A hook that provides the necessary logic to make an element resizable by dragging a handle.
  */
-export function useResizable({ size, minSize, maxSize, position, onResize, onResizeEnd }: ResizableProps) {
+export function useResizable({ size, minSize, maxSize, position, onResize, onResizeEnd }: ResizableHookProps) {
   // True if the element is currently being resized.
   const resizing = useRef<boolean>();
 
@@ -95,6 +107,8 @@ export function useResizable({ size, minSize, maxSize, position, onResize, onRes
         console.debug("Resizing", { size, resize: updates.resize, offset: updates.offset, minSize, maxSize });
         lastResize.current = updates.resize;
         onResize?.(event, updates.resize);
+        event.preventDefault();
+        event.stopPropagation();
       }
     }
   };
@@ -107,6 +121,8 @@ export function useResizable({ size, minSize, maxSize, position, onResize, onRes
       const updates = getUpdates(event);
       console.debug("Resizing", { resize: updates.resize, offset: updates.offset, minSize, maxSize });
       onResizeEnd?.(event, updates.resize);
+      event.preventDefault();
+      event.stopPropagation();
     }
   };
 

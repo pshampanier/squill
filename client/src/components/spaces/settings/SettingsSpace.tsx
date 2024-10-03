@@ -1,18 +1,16 @@
-import { createContext, useState } from "react";
-import { DeepPartial, SVGIcon } from "@/utils/types";
-import { primary as colors } from "@/utils/colors";
 import equal from "deep-equal";
 import cx from "classix";
-import { produce } from "immer";
 import merge from "lodash/merge";
+import { Users } from "@/resources/users";
+import { createContext, useState } from "react";
+import { DeepPartial, SVGIcon } from "@/utils/types";
+import { primary as colors, secondary } from "@/utils/colors";
+import { produce } from "immer";
 import { UserSettings } from "@/models/users";
-import Users from "@/resources/users";
 import { NO_ICON } from "@/utils/constants";
-import { executeCommand } from "@/utils/commands";
+import { dispatchCommand } from "@/utils/commands";
 import { useUserStore } from "@/stores/UserStore";
-
-import SidebarSection from "@/components/sidebar/SidebarSection";
-import SidebarItem from "@/components/sidebar/SidebarItem";
+import { SettingsPageName, useAppStore } from "@/stores/AppStore";
 import Titlebar from "@/components/titlebar/Titlebar";
 import Space from "@/components/spaces/Space";
 import Main from "@/components/Main";
@@ -21,11 +19,13 @@ import EditIcon from "@/icons/edit.svg?react";
 import TableIcon from "@/icons/table.svg?react";
 import Button from "@/components/core/Button";
 import CommandButton from "@/components/core/CommandButton";
-import SpaceSidebar from "@/components/spaces/SpaceSidebar";
 import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGeneral";
 import SettingsPageEditor from "@/components/spaces/settings/SettingsPageEditor";
 import SettingsPageTableView from "@/components/spaces/settings/SettingsPageTableView";
 import SettingsIcon from "@/icons/settings.svg?react";
+import PrimarySidebar from "@/components/sidebar/PrimarySidebar";
+import TreeView from "@/components/core/TreeView";
+import UserNotificationIconButton from "@/components/user-store/UserNotificationIconButton";
 
 type UserSettingsContext = {
   userSettings: Readonly<UserSettings>;
@@ -33,8 +33,6 @@ type UserSettingsContext = {
 };
 
 export const SettingsContext = createContext<UserSettingsContext>(null);
-
-type SettingsPageName = "general" | "text-editor" | "table-view";
 
 type SettingsPage = {
   name: SettingsPageName;
@@ -45,10 +43,13 @@ type SettingsPage = {
 export default function SettingsSpace() {
   console.debug("Rendering SettingsSpace");
 
-  const [selectedPage, selectPage] = useState<SettingsPageName>("general");
+  const selectedPage = useAppStore((state) => state.settings.selectedPage);
+  const selectPage = useAppStore((state) => state.selectSettingsPage);
+
   const [userSettings, setUserSettings] = useState<UserSettings>(produce(Users.current.settings, () => {}));
   const [modified, setModified] = useState<boolean>(false);
   const resetSettings = useUserStore((state) => state.resetSettings);
+  const addNotification = useUserStore((state) => state.addNotification);
 
   const handleSelectPage = (page: SettingsPageName) => {
     selectPage(page);
@@ -56,9 +57,19 @@ export default function SettingsSpace() {
   };
 
   const applySettings = async () => {
-    await Users.saveSettings(userSettings);
-    resetSettings();
-    executeCommand("settings.close");
+    try {
+      await Users.saveSettings(userSettings);
+      resetSettings();
+      dispatchCommand("settings.close");
+    } catch (error: unknown) {
+      addNotification({
+        id: crypto.randomUUID(),
+        variant: "error",
+        message: "Failed to save settings",
+        description: error,
+        autoDismiss: true,
+      });
+    }
   };
 
   const updateUserSettings = (settings: DeepPartial<UserSettings>) => {
@@ -80,19 +91,20 @@ export default function SettingsSpace() {
       <Space>
         <Titlebar>
           <Toolbar className="flex-none">
-            <CommandButton command="sidebar.toggle" />
+            <CommandButton command="sidebar.primary.toggle" />
           </Toolbar>
           <Titlebar.AppName className="grow" />
           <Toolbar className="flex-none">
+            <UserNotificationIconButton />
             <CommandButton command="settings.close" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
-          <SpaceSidebar>
-            <SidebarSection label="Settings">
+          <PrimarySidebar>
+            <TreeView colors={secondary}>
               {pages.map((page) => {
                 return (
-                  <SidebarItem
+                  <TreeView.Item
                     key={page.name}
                     label={page.label}
                     icon={page.icon}
@@ -101,8 +113,8 @@ export default function SettingsSpace() {
                   />
                 );
               })}
-            </SidebarSection>
-          </SpaceSidebar>
+            </TreeView>
+          </PrimarySidebar>
           <Main className={colors("background", "text")}>
             <div className="flex flex-col items-center w-full">
               <div className="flex flex-col w-3/4 p-8 min-w-[600px] h-full">

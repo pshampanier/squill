@@ -1,43 +1,45 @@
 import "@/components/editors/index.tsx";
-import { useEffect, useRef, useState } from "react";
-import { registerAction, unregisterAction } from "@/utils/commands";
+import { useCallback, useRef } from "react";
+import { useAppStore } from "@/stores/AppStore";
+import { CommandEvent } from "@/utils/commands";
+import { useCommand } from "@/hooks/use-commands";
+import LogonSpace from "@/components/spaces/LogonSpace";
 import UserSpace from "@/components/spaces/UserSpace";
 import SettingsSpace from "@/components/spaces/settings/SettingsSpace";
 import ApplySystemPreferences from "@/components/ApplySystemPreferences";
-import ConnectionSpace from "@/components/spaces/ConnectionSpace";
-import { useAppStore } from "@/stores/AppStore";
 import CommandManager from "@/components/CommandManager";
 
 export function App() {
+  const refApp = useRef<HTMLDivElement>(null);
   const activeSpace = useAppStore((state) => state.activeSpace);
-  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const settingsOpen = useAppStore((state) => state.settings.open);
+  const openSettings = useAppStore((state) => state.openSettings);
+  const closeSettings = useAppStore((state) => state.closeSettings);
+  const toggleSidebarVisibility = useAppStore((state) => state.toggleSidebarVisibility);
 
-  const closeSettings = useRef(() => {
-    console.log("Closing settings");
-    setSettingsOpen(false);
-    unregisterAction("settings.close", closeSettings.current);
-  });
+  const handleCommand = useCallback((event: CommandEvent) => {
+    switch (event.detail.name) {
+      case "settings.open":
+        openSettings();
+        break;
+      case "settings.close":
+        closeSettings();
+        break;
+      case "sidebar.primary.toggle":
+        toggleSidebarVisibility();
+        break;
+    }
+  }, []);
 
-  const openSettings = () => {
-    console.log("Opening settings");
-    setSettingsOpen(true);
-    registerAction("settings.close", closeSettings.current);
-  };
-
-  useEffect(() => {
-    registerAction("settings.open", openSettings);
-    return () => {
-      unregisterAction("settings.open", openSettings);
-    };
-  });
+  useCommand({ ref: refApp, onCommand: handleCommand });
 
   return (
-    <>
+    <div ref={refApp} data-component="app" className="w-full h-full">
       <ApplySystemPreferences />
       <CommandManager />
       {settingsOpen && <SettingsSpace />}
-      {activeSpace === "connection" && <ConnectionSpace />}
+      {activeSpace === "logon" && <LogonSpace />}
       {activeSpace === "user" && <UserSpace className={settingsOpen && "hidden"} />}
-    </>
+    </div>
   );
 }

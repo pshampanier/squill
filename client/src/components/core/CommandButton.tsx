@@ -1,4 +1,4 @@
-import { executeCommand, getCommand } from "@/utils/commands";
+import { dispatchCommand, getCommand } from "@/utils/commands";
 import { ColorsFunction } from "@/utils/colors";
 import Button, { ButtonVariant } from "@/components/core/Button";
 import { SVGIcon } from "@/utils/types";
@@ -24,7 +24,7 @@ export default function CommandButton({
 }: CommandButtonProps) {
   const cmd = getCommand(command);
   const handleClick = () => {
-    executeCommand(cmd.name);
+    dispatchCommand(cmd.name);
   };
   return (
     <Button

@@ -11,7 +11,7 @@ import { HTTP_HEADER_X_RESOURCE_TYPE } from "@/utils/constants";
  * Once the logon method is called, the current user is stored in the Users object and can be accessed using the
  * `current` property.
  */
-const Users = {
+export const Users = {
   _current: User,
 
   /**
@@ -65,5 +65,3 @@ const Users = {
     return this.current.settings;
   },
 };
-
-export default Users;

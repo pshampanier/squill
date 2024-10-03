@@ -9,7 +9,7 @@ test("todo", () => {
  * 
 import { useUserStore } from "@/stores/UserStore";
 import { beforeEach, afterEach, expect, test, vi } from "vitest";
-import Users from "@/resources/users";
+import { Users } from "@/resources/users";
 import { Connection } from "@/models/connections";
 
 beforeEach(() => {

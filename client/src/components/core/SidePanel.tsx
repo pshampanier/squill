@@ -1,6 +1,6 @@
 import cx from "classix";
 import { ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { useResizable, ResizableProps } from "@/hooks/use-resizable";
+import { useResizable, ResizableProps, ResizableHookProps } from "@/hooks/use-resizable";
 
 export type SidePanelProps = Partial<ResizableProps> & {
   /**
@@ -104,6 +104,10 @@ export default function SidePanel({
     }
   }, [visible]);
 
+  useEffect(() => {
+    setSize(defaultSize);
+  }, [defaultSize]);
+
   // If the panel is `resizable` and the parent component did not provide any of onResize or onResizeEnd, then the panel
   // will control the resizing by itself by using the `size` state.
   const handleResize = useCallback(
@@ -153,7 +157,7 @@ export default function SidePanel({
     />
   );
 
-  console.debug("Rendering SidePanel", { visibility, visible, classes });
+  console.debug("Rendering SidePanel", { visibility, visible, classes, styles });
   return (
     <aside ref={refPanel} className={classes} onTransitionEnd={handleOnTransitionEnd} style={styles}>
       {resizable && variant === "left" && ResizeHandle}
@@ -183,7 +187,7 @@ function findVisibleSibling(element: Element, iterator: (e: Element) => Element 
 /**
  * A resize handle for the side panel.
  */
-function SidePanelResizeHandle({ position, size, minSize, maxSize, onResize, onResizeEnd }: ResizableProps) {
+function SidePanelResizeHandle({ position, size, minSize, maxSize, onResize, onResizeEnd }: ResizableHookProps) {
   const { onPointerDown, onPointerMove, onPointerUp } = useResizable({
     size,
     minSize,

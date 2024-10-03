@@ -263,7 +263,45 @@ registerCommand(
   { name: "clipboard.paste", label: "Paste", description: "Paste text", shortcut: ["Meta+V", "Ctrl+V"] },
   { name: "clipboard.cut", label: "Cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
   { name: "settings.open", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon },
-  { name: "settings.close", description: "Close", shortcut: "Escape", icon: CloseIcon }
+  { name: "settings.close", description: "Close", shortcut: "Escape", icon: CloseIcon },
 );
 
 registerGlobalKeyListeners();
+
+/**
+ * The detail of a command event.
+ *
+ * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CustomEvent/detail)
+ */
+export type CommandEventDetail = {
+  name: string;
+  target: HTMLElement;
+};
+
+/**
+ * A custom command event suitable for the DOM `dispatchEvent()` method.
+ *
+ * [MDN Reference](https://developer.mozilla.org/docs/Web/API/CustomEvent)
+ * [MDN Reference](https://developer.mozilla.org/docs/Web/API/EventTarget/dispatchEvent)
+ */
+export type CommandEvent = CustomEvent<CommandEventDetail>;
+
+/**
+ * Dispatch a command event from the given command name.
+ *
+ * The command event is dispatched on the active element.
+ *
+ * @param name - The name of the command to dispatch.
+ * @throws An error if there is no active element to dispatch the command.
+ */
+export function dispatchCommand(name: string) {
+  const target = document.activeElement as HTMLElement | null;
+  if (target) {
+    const command = getCommand(name);
+    const detail: CommandEventDetail = { name: command.name, target };
+    const event = new CustomEvent("command", { bubbles: true, detail });
+    target.dispatchEvent(event);
+  } else {
+    raise(`No active element to dispatch command '${name}'`);
+  }
+}
