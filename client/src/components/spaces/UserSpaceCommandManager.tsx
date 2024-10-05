@@ -6,7 +6,7 @@ import { useUserStore } from "@/stores/UserStore";
 
 export default function UserSpaceCommandManager() {
   const [Dialog, setDialog] = useState<React.ReactNode>(null);
-  const getDefaultResourceFolder = useUserStore((state) => state.getDefaultResourceFolder);
+  const getDefaultCatalogFolder = useUserStore((state) => state.getDefaultCatalogFolder);
 
   const handleCancel = () => {
     setDialog(null);
@@ -21,7 +21,7 @@ export default function UserSpaceCommandManager() {
         };
 
         // FIXME: This should be the current active item in the sidebar if compatible with the resource type.
-        const parentId = getDefaultResourceFolder("connections")?.id;
+        const parentId = getDefaultCatalogFolder("connections")?.id;
         setDialog(<NewConnectionDialog parentId={parentId} onCancel={handleCancel} onClose={handleClose} />);
         break;
       }

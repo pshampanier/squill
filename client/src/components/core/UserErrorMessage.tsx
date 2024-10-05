@@ -9,7 +9,7 @@ type Props = {
   /**
    * The error that occurred.
    */
-  error: Error;
+  error?: Error;
 
   /**
    * The fallback message to display when the error is not a UserError.

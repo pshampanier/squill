@@ -129,9 +129,9 @@ test("createCatalogEntry", async () => {
   expect(catalog.get("1000")?.children[1].id).toBe("5");
 });
 
-test("renameCatalogEntry", async () => {
-  const loadCatalog = useUserStore.getState().loadCatalog;
-  const renameCatalogEntry = useUserStore.getState().renameCatalogEntry;
+test("renameCatalogItem", async () => {
+  const loadCatalogChildren = useUserStore.getState().loadCatalogChildren;
+  const renameCatalogItem = useUserStore.getState().renameCatalogItem;
 
   vi.spyOn(Users, "readCatalog").mockResolvedValue([
     new CollectionItem<"connection">("Conn 1", {
@@ -140,17 +140,17 @@ test("renameCatalogEntry", async () => {
       children: [],
     }),
   ]);
-  vi.spyOn(Users, "renameCatalogEntry").mockResolvedValue(undefined);
+  vi.spyOn(Users, "renameCatalogItem").mockResolvedValue(undefined);
 
   // First load the catalog with a single item, then rename it.
-  await loadCatalog("connections");
-  await renameCatalogEntry("1", "connections/Conn 1", "My connection");
+  await loadCatalogChildren("connections");
+  await renameCatalogItem("1", "connections/Conn 1", "My connection");
 
   const conn = useUserStore.getState().catalog.get("1");
   expect(conn?.name).toBe("My connection");
 });
 
-test("loadCatalog", async () => {
+test("loadCatalogChildren", async () => {
   // Adding 2 items to the catalog under the path "connections".
   const spy = vi.spyOn(Users, "readCatalog").mockResolvedValue([
     new CollectionItem<"connection">("Folder", {
@@ -164,8 +164,8 @@ test("loadCatalog", async () => {
       children: [],
     }),
   ]);
-  const loadCatalog = useUserStore.getState().loadCatalog;
-  await loadCatalog("connections", undefined);
+  const loadCatalogChildren = useUserStore.getState().loadCatalogChildren;
+  await loadCatalogChildren("connections", undefined);
   let connections = useUserStore.getState().connections;
   let catalog = useUserStore.getState().catalog;
 
@@ -192,7 +192,7 @@ test("loadCatalog", async () => {
       children: [],
     }),
   ]);
-  await loadCatalog("connections/Conn 1", "1");
+  await loadCatalogChildren("connections/Conn 1", "1");
   connections = useUserStore.getState().connections;
   catalog = useUserStore.getState().catalog;
 

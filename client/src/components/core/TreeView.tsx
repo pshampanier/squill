@@ -1,7 +1,7 @@
 import { ColorsFunction, primary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
 import cx from "classix";
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import Spinner from "@/components/core/Spinner";
 import Input from "@/components/core/Input";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
@@ -31,7 +31,10 @@ export type TreeViewProps = {
 function TreeView({ className, children, colors = primary }: TreeViewProps) {
   return (
     <ColorsContext.Provider value={colors}>
-      <nav data-type="tree-view" className={cx("flex flex-col flex-grow space-y-1 overflow-y-scroll", className)}>
+      <nav
+        data-type="tree-view"
+        className={cx("flex flex-col flex-grow space-y-0.5 overflow-y-scroll px-0.5", className)}
+      >
         {children}
       </nav>
     </ColorsContext.Provider>
@@ -68,7 +71,30 @@ type TreeViewItemProps = {
   selected?: boolean;
 
   /**
-   * The initial status of the item (default is "closed").
+   * The status of the item (default is undefined).
+   *
+   * When you use the `status` prop, you are creating a controlled component. This means that the status of the
+   * component is controlled by the parent component. The parent component is responsible for updating the status of the
+   * item when the user interacts with it.
+   *
+   * NOTES:
+   * - If you use the `status` prop, you should also provide an `onClick` or `onKeyDown` callback to handle the user
+   *   interactions.
+   * - This prop is mutually exclusive with the `defaultStatus` prop.
+   * - If you provide neither the `status` nor the `defaultStatus` prop, the component will de facto act as an
+   *   uncontrolled component since `defaultStatus` as a default value "closed".
+   * - If you provide both the `status` and the `defaultStatus` prop, the `status` prop will take precedence and so
+   *   `defaultStatus` will be ignored.
+   */
+  status?: TreeViewStatus;
+
+  /**
+   * The default status of the item (default is "closed").
+   *
+   * When you use the `defaultStatus` prop, you are creating an uncontrolled component. This means that the status of
+   * the component is controlled by component itself. That being said, the parent component still has an option to
+   * change the status of the component by providing callbacks such `onClick` or `onKeyDown` props which are given
+   * the setState() function as argument.
    */
   defaultStatus?: TreeViewStatus;
 
@@ -123,12 +149,15 @@ type TreeViewItemProps = {
  *
  * The item can be collapsible, meaning that it can be opened or closed which will be indicated by a chevron icon in the
  * status section. Other status can be displayed in the status section such as "loading" or "error".
+ *
+ * The item can be "controlled" by the parent component by providing a `defaultStatus` and an `onClick` callback.
  */
 TreeView.Item = function TreeViewItem({
   className,
   label,
   icon: Icon,
   collapsible = false,
+  status: controlledStatus,
   defaultStatus = "closed",
   selected = false,
   onClick,
@@ -139,7 +168,7 @@ TreeView.Item = function TreeViewItem({
   const colors = React.useContext(ColorsContext);
 
   // The current status of the item.
-  const [status, setStatus] = React.useState<TreeViewStatus>(defaultStatus);
+  const [status, setStatus] = React.useState<TreeViewStatus>(controlledStatus || defaultStatus);
 
   // The status of the item when it is being edited.
   const editStatus = React.useRef<TreeViewStatus>(null);
@@ -147,6 +176,13 @@ TreeView.Item = function TreeViewItem({
   // A reference to the button element of the item.
   // This is used to give back the focus to the button when the input editing the item loses focus.
   const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    // The component is used as a controlled component. We need to synchronize the status state with the status prop.
+    if (controlledStatus) {
+      setStatus(controlledStatus);
+    }
+  }, [controlledStatus]);
 
   // Keep the edit status in sync with the status.
   // While we are editing, we want to keep the edit status unchanged.

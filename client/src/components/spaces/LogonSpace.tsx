@@ -16,7 +16,6 @@ import LoadingContainer from "@/components/core/LoadingContainer";
 export default function LogonSpace(props: SpaceProps) {
   const setActiveSpace = useAppStore((state) => state.setActiveSpace);
   const reset = useUserStore((state) => state.reset);
-  const loadCatalog = useUserStore((state) => state.loadCatalog);
 
   const { status, refetch, error } = useQuery<boolean, Error>({
     queryKey: ["agent-connect"],
@@ -41,9 +40,6 @@ export default function LogonSpace(props: SpaceProps) {
 
         // Connected with the agent and logged in the user, reset the user store and set the active space to 'user'
         reset();
-
-        // load the user's catalog (the root of the catalog only)
-        await loadCatalog();
 
         setActiveSpace("user");
         return true; // Not used but required by useQuery...

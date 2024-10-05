@@ -1,4 +1,4 @@
-import { Users } from "@/resources/users";
+import { ROOT_CATALOG_ID, Users } from "@/resources/users";
 import { UserSettings } from "@/models/users";
 import { useAppStore } from "@/stores/AppStore";
 import { produce } from "immer";
@@ -10,18 +10,30 @@ import { QueryExecution } from "@/models/queries";
 import Connections from "@/resources/connections";
 import { Notification } from "@/components/core/NotificationInbox";
 
+/**
+ * The loading status of a catalog's item children.
+ *
+ * - `pending`: No attempt has been made to load the children of the item.
+ * - `loading`: An attempt is being made to load the children of the item.
+ * - `ready`: The children of the item have been loaded.
+ * - `error`: An error occurred while loading the children of the item.
+ */
+export type CatalogItemLoadingStatus = "loading" | "ready" | "error";
+
 export type CatalogItem = ResourceRef & {
+  /**
+   * The children of the catalog item (if applicable).
+   */
   children?: CatalogItem[];
+
+  /**
+   * The loading status of the children (if applicable).
+   */
+  status?: CatalogItemLoadingStatus;
 };
 
 export type State = {
   settings: UserSettings | null;
-
-  /**
-   * The ids of all resources located at the root of the catalog.
-   * They are all expected to be folders.
-   */
-  catalogSections: string[];
 
   /**
    * A map of catalog entries.
@@ -58,30 +70,33 @@ export type Actions = {
   resetSettings: () => void;
 
   /**
-   * Load the children resources from the catalog for the given resource identifier.
+   * Load the children item from the catalog for the given catalog item identifier.
    *
-   * The resources are added to the store.
-   * If the resource identifier is `undefined`, the resources are added to the root of the catalog.
+   * The children catalog items are not return by this function but added to the store when they become
+   * available.
+   *
+   * @param id The identifier of the catalog item to load the children for.
+   * @param reload If true, the children are reloaded even if they are already loaded (default is `false`).
    */
-  loadCatalog: (id?: string) => Promise<void>;
+  loadCatalogChildren: (id: string, reload?: boolean) => Promise<void>;
 
   /**
-   * Rename an entry in the catalog.
+   * Rename an item in the catalog.
    *
    * The entry is first renamed on the server and then the store is updated if the server operation is successful,
    * otherwise a exception is thrown.
    */
-  renameCatalogEntry: (id: string, newName: string) => Promise<void>;
+  renameCatalogItem: (id: string, newName: string) => Promise<void>;
 
   /**
    * Create a new resource in the catalog.
    */
-  createResource: (resourceType: ResourceType, resource: object) => Promise<void>;
+  createCatalogResource: (resourceType: ResourceType, resource: object) => Promise<void>;
 
   /**
-   * The the default resource folder for the given resource type.
+   * The the default folder for the given resource type.
    */
-  getDefaultResourceFolder: (contentType: ContentType) => ResourceRef;
+  getDefaultCatalogFolder: (contentType: ContentType) => CatalogItem | undefined;
 
   /**
    * Execute a buffer on a connection.
@@ -105,13 +120,25 @@ export type Actions = {
 
 const initialState: State = {
   settings: null,
-  catalogSections: [],
-  catalog: new Map<string, CatalogItem>(),
+  catalog: new Map<string, CatalogItem>([
+    [
+      "root-catalog-id",
+      {
+        id: "root-catalog-id",
+        name: "Catalog",
+        type: "folder",
+        parentId: null,
+        metadata: {},
+      },
+    ],
+  ]),
   history: new Map<string, QueryExecution>(),
   notifications: [],
 };
 
-export const useUserStore = create<State & Actions>((set, get) => {
+type UserStore = State & Actions;
+
+export const useUserStore = create<UserStore>((set, get) => {
   return {
     ...initialState,
 
@@ -140,34 +167,58 @@ export const useUserStore = create<State & Actions>((set, get) => {
     /**
      * Load the catalog for the given path and add it to the store.
      */
-    async loadCatalog(id?: string) {
-      const entries = await Users.readCatalog(id);
-      entries.sort((a, b) => a.name.localeCompare(b.name));
-      if (id === undefined) {
-        // This is a root of the catalog.
-        // - add the entries's id to the root of the catalog.
-        // - add the entries to `catalog`.
-        set((state) => ({
-          ...state,
-          catalogSections: entries.map((entry) => entry.id),
-          catalog: mergeCatalog(state.catalog, entries),
-        }));
+    async loadCatalogChildren(id: string, reload: boolean = false) {
+      const catalogItem = get().catalog.get(id);
+      if (!catalogItem) {
+        // The item does not exist in the catalog.
+        console.error(`Catalog item with id '${id}' not found.`);
+        return;
+      } else if (catalogItem.status === "loading") {
+        // The children of the item are already being loaded.
+        console.debug("Catalog item is already loading.", { id, name: catalogItem.name });
+        return;
+      } else if (catalogItem.status === "ready" && !reload) {
+        // The children of the item are already loaded and we don't want to reload them.
+        console.debug("Catalog item already loaded.", { id, name: catalogItem.name });
+        return;
       } else {
-        // This is a folder in the catalog.
-        // - add the children to the folder's entry identified with `id` in `catalog`.
-        // - add the entries to `catalog`
         set((state) => ({
           ...state,
-          catalog: mergeAndMutateCatalog(state.catalog, entries, id, (entry) => ({ ...entry, children: entries })),
+          catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, status: "loading" })),
         }));
+        console.debug("Loading catalog item...", { id, name: catalogItem.name, state: get() });
+        try {
+          const entries = await Users.readCatalog(id);
+          entries.sort((a, b) => a.name.localeCompare(b.name));
+          set((state) => ({
+            ...state,
+            catalog: mergeAndMutateCatalog(state.catalog, entries, id, (entry) => ({
+              ...entry,
+              children: entries,
+              status: "ready",
+            })),
+          }));
+          console.debug("Catalog item loaded...", { id, name: catalogItem.name, state: get() });
+        } catch (error) {
+          set((state) => ({
+            ...state,
+            catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, status: "error" })),
+          }));
+          get().addNotification({
+            id: crypto.randomUUID(),
+            variant: "error",
+            message: `Failed to load '${catalogItem.name}'`,
+            description: error,
+          });
+        }
       }
     },
 
     /**
-     * Rename an entry in the catalog.
+     * Rename an item in the catalog.
      */
-    async renameCatalogEntry(id: string, newName: string) {
-      await Users.renameCatalogEntry(id, newName);
+    async renameCatalogItem(id: string, newName: string) {
+      await Users.renameCatalogItem(id, newName);
       set((state) => ({
         ...state,
         catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, name: newName })),
@@ -175,7 +226,7 @@ export const useUserStore = create<State & Actions>((set, get) => {
       useAppStore.getState().renamePages(id, newName);
     },
 
-    async createResource<T extends object>(resourceType: ResourceType, resource: T) {
+    async createCatalogResource<T extends object>(resourceType: ResourceType, resource: T) {
       const resourceRef = await Users.createCatalogResource<T>(resourceType, resource);
       // Adding an entry to a folder in the catalog.
       // We need to add the entry to the folder's children.
@@ -213,12 +264,12 @@ export const useUserStore = create<State & Actions>((set, get) => {
      * The default resource folder is expected to be the first folder of the given resource type at the root of
      * the catalog.
      */
-    getDefaultResourceFolder(contentType: ContentType) {
-      const id = get().catalogSections.find((section) => {
-        const entry = get().catalog.get(section);
-        return entry.metadata?.[METADATA_CONTENT_TYPE] === contentType;
-      });
-      return get().catalog.get(id);
+    getDefaultCatalogFolder(contentType: ContentType): CatalogItem | undefined {
+      return get()
+        .catalog.get(ROOT_CATALOG_ID)
+        ?.children.find((catalogItem) => {
+          return catalogItem.metadata?.[METADATA_CONTENT_TYPE] === contentType;
+        });
     },
 
     /**
@@ -243,15 +294,6 @@ export const useUserStore = create<State & Actions>((set, get) => {
   };
 });
 
-//
-function mergeCatalog(catalog: Map<string, ResourceRef>, entries: ResourceRef[]) {
-  const newCatalog = new Map(catalog);
-  for (const entry of entries) {
-    newCatalog.set(entry.id, entry);
-  }
-  return newCatalog;
-}
-
 function mutateCatalog(catalog: Map<string, CatalogItem>, id: string, mutator: (entry: CatalogItem) => CatalogItem) {
   const newCatalog = new Map(catalog);
   const item = newCatalog.get(id);
@@ -272,8 +314,8 @@ function mutateCatalog(catalog: Map<string, CatalogItem>, id: string, mutator: (
  * @returns The new catalog.
  */
 function mergeAndMutateCatalog(
-  catalog: Map<string, ResourceRef>,
-  items: CatalogItem[],
+  catalog: Map<string, CatalogItem>,
+  items: ResourceRef[],
   id: string,
   mutator: (entry: CatalogItem) => CatalogItem,
 ) {

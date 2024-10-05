@@ -24,7 +24,7 @@ type LoadingContainerProps = {
   /**
    * The error that occurred if the status is "error".
    */
-  error: Error;
+  error?: Error;
 
   /**
    * A fallback message to display when the `error` is not a `UserError`.
@@ -35,6 +35,11 @@ type LoadingContainerProps = {
    * A function to be called when the user clicks the retry button.
    */
   onRetry: () => void;
+
+  /**
+   * The size of container.
+   */
+  size?: "sm" | "md" | "lg" | "xl";
 };
 
 /**
@@ -50,6 +55,7 @@ export default function LoadingContainer({
   error,
   errorFallback,
   onRetry,
+  size = "xl",
 }: LoadingContainerProps) {
   // Show the message after 1 second
   const [showMessage, setShowMessage] = useState(false);
@@ -61,6 +67,14 @@ export default function LoadingContainer({
   }, []);
 
   const classes = {
+    self: cx(
+      "bg-transparent w-full h-full",
+      size === "sm" && "text-2xs",
+      size === "md" && "text-xs",
+      size === "lg" && "text-sm",
+      size === "xl" && "text-md",
+      className,
+    ),
     pending: cx(
       "flex flex-col bg-transparent w-full h-full items-center  justify-center",
       status !== "pending" && "hidden",
@@ -73,11 +87,11 @@ export default function LoadingContainer({
   };
 
   return (
-    <div className={cx("bg-transparent w-full h-full", className)}>
+    <div className={classes.self}>
       {status === "pending" && (
         <div className={classes.pending}>
-          <Spinner size="xl" delay={200} />
-          <div className="flex text-xs h-8 w-full items-center justify-center">
+          <Spinner size={size} delay={200} />
+          <div className="flex h-8 w-full items-center justify-center">
             <span className={cx("transition-opacity duration-500", showMessage ? "opacity-100" : "opacity-0")}>
               {message}
             </span>
@@ -86,7 +100,7 @@ export default function LoadingContainer({
       )}
       <div className={classes.error}>
         <CrashedImage className="w-40 h-40 opacity-20" />
-        <div className="flex flex-col text-sm font-semibold w-full items-center space-y-3">
+        <div className="flex flex-col font-semibold w-full items-center space-y-3">
           <UserErrorMessage error={error} fallback={errorFallback} />
           <Button onClick={onRetry} variant="outline" text="Retry" className="flex px-8 justify-center" />
         </div>

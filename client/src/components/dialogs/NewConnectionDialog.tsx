@@ -55,7 +55,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
   );
 
   // The creation of the connection is performed by the UserStore which will reflect the changes in the UI.
-  const createResource = useUserStore((state) => state.createResource);
+  const createCatalogResource = useUserStore((state) => state.createCatalogResource);
 
   // Any error that occurs during the connection creation will be displayed as a notification.
   const addNotification = useUserStore((state) => state.addNotification);
@@ -74,7 +74,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
     setMessage("Testing the connection...");
     const task = async () => {
       await Connections.test(connection);
-      await createResource("connection", connection);
+      await createCatalogResource("connection", connection);
       onClose(connection);
     };
     setTask(task);

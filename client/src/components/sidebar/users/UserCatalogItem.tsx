@@ -13,8 +13,8 @@ type Props = {
 export default function UserCatalogItem({ id }: Props) {
   /// Get the catalog entry from the store.
   const entry = useUserStore((state) => state.catalog.get(id));
-  const renameCatalogEntry = useUserStore((state) => state.renameCatalogEntry);
-  const loadCatalog = useUserStore((state) => state.loadCatalog);
+  const renameCatalogItem = useUserStore((state) => state.renameCatalogItem);
+  const loadCatalogChildren = useUserStore((state) => state.loadCatalogChildren);
   const selected = useAppStore((state) => state.activeId === id);
 
   /// Check if the new name for the catalog entry is valid while the user is editing it.
@@ -42,12 +42,12 @@ export default function UserCatalogItem({ id }: Props) {
     if (value.length === 0) {
       throw new Error("The name cannot be empty.");
     } else {
-      return renameCatalogEntry(id, value);
+      return renameCatalogItem(id, value);
     }
   };
 
   const handleLoadFolder = async () => {
-    return loadCatalog(id);
+    return loadCatalogChildren(id);
   };
 
   const props: SidebarItemProps = {

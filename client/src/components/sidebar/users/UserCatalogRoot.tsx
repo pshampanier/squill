@@ -18,7 +18,7 @@ type Props = {
 
 export default function UserCatalogRoot({ catalogId }: Props) {
   const resourceRef = useUserStore((state) => state.catalog.get(catalogId));
-  const loadCatalog = useUserStore((state) => state.loadCatalog);
+  const loadCatalogChildren = useUserStore((state) => state.loadCatalogChildren);
 
   const label = resourceRef.name;
   const icon: SVGIcon = FOLDER_ICONS[resourceRef.metadata?.[METADATA_CONTENT_TYPE]];
@@ -28,7 +28,7 @@ export default function UserCatalogRoot({ catalogId }: Props) {
   };
 
   const handleLoad = async () => {
-    return loadCatalog(catalogId);
+    return loadCatalogChildren(catalogId);
   };
 
   return (

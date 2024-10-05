@@ -22,6 +22,6 @@ export const EDITOR_USER_BLANK = "UserBlank";
 export const METADATA_CONTENT_TYPE = "content_type";
 
 // UI constants & defaults
-export const MIN_PRIMARY_SIDEBAR_WIDTH = 200;
-export const MAX_PRIMARY_SIDEBAR_WIDTH = 400;
+export const MIN_PRIMARY_SIDEBAR_WIDTH = 250;
+export const MAX_PRIMARY_SIDEBAR_WIDTH = 500;
 export const DEFAULT_PRIMARY_SIDEBAR_WIDTH = 256;

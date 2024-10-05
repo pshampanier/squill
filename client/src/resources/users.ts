@@ -4,6 +4,13 @@ import { User, UserSettings } from "@/models/users";
 import { agent } from "@/resources/agent";
 import { HTTP_HEADER_X_RESOURCE_TYPE } from "@/utils/constants";
 
+/**A pseudo-identifier of the root of the catalog.
+ *
+ * This identifier is used to retrieve the root of the catalog, it's only used by the client, the agent doesn't know
+ * about it.
+ */
+export const ROOT_CATALOG_ID: string = "root-catalog-id";
+
 /**
  * User resources
  *
@@ -35,11 +42,11 @@ export const Users = {
 
   async readCatalog(parentId?: string): Promise<ResourceRef[]> {
     const encodedUsername = encodeURIComponent(this.current.username);
-    const catalogPath = parentId ? `catalog/${encodeURIComponent(parentId)}/list` : `catalog/list`;
+    const catalogPath = parentId !== ROOT_CATALOG_ID ? `catalog/${encodeURIComponent(parentId)}/list` : `catalog/list`;
     return (await agent().get<ResourceRef>(`/users/${encodedUsername}/${catalogPath}`)).asArray(ResourceRef);
   },
 
-  async renameCatalogEntry(resourceId: string, newName: string): Promise<void> {
+  async renameCatalogItem(resourceId: string, newName: string): Promise<void> {
     const encodedUsername = encodeURIComponent(this.current.username);
     const encodedResourceId = encodeURIComponent(resourceId);
     await agent().post(`/users/${encodedUsername}/catalog/${encodedResourceId}/rename?path=`, { new_name: newName });
