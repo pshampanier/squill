@@ -1,3 +1,4 @@
+import cx from "classix";
 import * as monaco from "monaco-editor";
 import React, { useCallback, useEffect, useRef } from "react";
 import ReactDOM from "react-dom/client";
@@ -432,7 +433,8 @@ export default function QueryInput({
     };
   }, []);
 
-  return <div ref={containerRef} className={className} />;
+  const classes = cx(mode === "terminal" && "query-terminal pl-6", className);
+  return <div ref={containerRef} className={classes} />;
 }
 
 /**
