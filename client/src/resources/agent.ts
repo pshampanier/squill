@@ -1,4 +1,4 @@
-import { Resource } from "@/resources/resource";
+import { SerializedResource } from "@/resources/resources";
 import { serializable, serialize } from "@/utils/serializable";
 import { AuthenticationMethod, AUTHENTICATION_METHOD_VALUES, Authentication, RefreshToken } from "@/models/auth";
 import { SecurityTokens } from "@/models/auth";
@@ -90,7 +90,9 @@ export class Agent {
     });
     if (response.ok) {
       const contentType = response.headers.get(HTTP_HEADER_CONTENT_TYPE) || MEDIA_TYPE_PLAIN_TEXT;
-      this.setSecurityTokens(new Resource<SecurityTokens>(contentType, await response.text()).as(SecurityTokens));
+      this.setSecurityTokens(
+        new SerializedResource<SecurityTokens>(contentType, await response.text()).as(SecurityTokens),
+      );
     } else {
       this.securityTokens = null;
       this.accessTokenExpiresAt = 0;
@@ -112,7 +114,11 @@ export class Agent {
     };
   }
 
-  private async fetch<T extends object>(path: string, method: string, options?: FetchOptions): Promise<Resource<T>> {
+  private async fetch<T extends object>(
+    path: string,
+    method: string,
+    options?: FetchOptions,
+  ): Promise<SerializedResource<T>> {
     try {
       let url = this.url + API_PATH + path;
 
@@ -140,7 +146,7 @@ export class Agent {
       });
       if (response.ok) {
         const contentType = response.headers.get(HTTP_HEADER_CONTENT_TYPE) || MEDIA_TYPE_PLAIN_TEXT;
-        return new Resource<T>(contentType, await response.text());
+        return new SerializedResource<T>(contentType, await response.text());
       } else if (response.headers.get(HTTP_HEADER_CONTENT_TYPE) === MEDIA_TYPE_APPLICATION_JSON) {
         // The server returned a JSON error message.
         throw new UserError({
@@ -161,11 +167,15 @@ export class Agent {
     }
   }
 
-  async get<T extends object>(path: string, options?: FetchOptions): Promise<Resource<T>> {
+  async get<T extends object>(path: string, options?: FetchOptions): Promise<SerializedResource<T>> {
     return this.fetch(path, "GET", options);
   }
 
-  async put<B extends object, R extends object>(path: string, body: B, options?: FetchOptions): Promise<Resource<R>> {
+  async put<B extends object, R extends object>(
+    path: string,
+    body: B,
+    options?: FetchOptions,
+  ): Promise<SerializedResource<R>> {
     return this.fetch<R>(path, "PUT", { ...options, body: JSON.stringify(serialize<B>(body)) });
   }
 
@@ -173,7 +183,7 @@ export class Agent {
     path: string,
     body: B,
     options?: FetchOptions,
-  ): Promise<Resource<R>> {
+  ): Promise<SerializedResource<R>> {
     if (typeof body === "object" && typeof body !== "string") {
       return this.fetch<R>(path, "POST", { ...options, body: JSON.stringify(serialize(body)) });
     } else {
@@ -219,7 +229,7 @@ export class Agent {
 
     this.websocket.addEventListener("message", (event) => {
       console.debug("WebSocket message received:", event.data);
-      const message = new Resource<PushMessage>("application/json", event.data).as(PushMessage);
+      const message = new SerializedResource<PushMessage>("application/json", event.data).as(PushMessage);
       const subscriptions = this.pushSubscriptions[message.type];
       for (const handler of subscriptions) {
         handler(message);
