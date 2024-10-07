@@ -63,7 +63,7 @@ export default function UserCatalogItem({ id }: Props) {
       return <ConnectionSidebarItem {...props} id={id} />;
     case "environment":
       return <SidebarItem {...props} icon={ServerIcon} editable />;
-    case "folder": {
+    case "collection": {
       return (
         <SidebarItem {...props} loaderfn={handleLoadFolder} icon={FolderIcon} collapsible editable>
           {entry.children?.map((child: CatalogItem) => {

@@ -260,7 +260,7 @@ paths:
             enum:
               - connection
               - environment
-              - folder
+              - collection
       requestBody:
         required: true
         content:
@@ -622,42 +622,55 @@ components:
 
     ResourceType:
       type: string
-      enum:
-        - connection
-        - environment
-        - folder
-        - user
+      oneOf:
+        - title: connection
+          description: A connection to a datasource.
+        - title: environment
+          description: An environment that can be used to group connections.
+        - title: collection
+          description: A collection of resources.
+        - title: user
+          description: A user.
 
     ResourceRef:
-      description: A reference to a resource.
+      description: |
+        A reference to a resource.
+
+        A resource reference is a lightweight object that contains the unique identifier of the resource, and some
+        additional properties of the resource that are useful to use the resource without having to load it.
       type: object
       properties:
         id:
+          description: Unique identifier of the resource.
           type: string
           format: uuid
         parent_id:
+          description: Unique identifier of the parent resource.
           type: string
           format: uuid
         owner_user_id:
+          description: Unique identifier of the user who own the resource.
           type: string
           format: uuid
         name:
+          description: Name of the resource.
           type: string
-        resource_type:
-          type: string
-          enum:
-            - connection
-            - environment
-            - folder
-            - user
+        type:
+          x-rust-name: resource_type
+          $ref: "#/components/schemas/ResourceType"
         metadata:
+          description: |
+            Additional metadata of the resource.
+
+            Metadata are key-value pairs that provide additional information without having to load the resource itself.
+            For example, the content type of a `collection`, or the driver of a `connection`.
           type: object
           additionalProperties:
             type: string
       required:
         - id
-        - owner_user_id
         - name
+        - type
 
     SecurityTokens:
       description: A security token used for authentication.
@@ -966,6 +979,17 @@ components:
         missing:
           description: The number of missing values in the attribute.
           type: number
+        max_length:
+          description: The maximum length of the attribute for `text` attributes.
+          type: integer
+          format: int32
+          minimum: 0
+        max_precision:
+          description: |
+            The maximum precision of the attribute if the attribute is a floating point number.
+          type: integer
+          format: int8
+          minimum: 0
 
     DataframeAttribute:
       description: |
@@ -1017,6 +1041,47 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DataframeAttribute"
+
+    SpecialCollection:
+      description: A special collection in the catalog.
+      type: string
+      oneOf:
+        - title: favorites
+          description: The collection of favorite resources in the catalog for a given user.
+        - title: trash
+          description: The trash collection of the catalog for a given user.
+
+    Collection:
+      description: A collection resources stored in the catalog.
+      type: object
+      required:
+        - collection_id
+        - owner_user_id
+        - name
+      properties:
+        collection_id:
+          description: The unique identifier of the collection.
+          type: string
+          format: uuid
+        owner_user_id:
+          description: The unique identifier of the user that owns the collection.
+          type: string
+          format: uuid
+        name:
+          description: The name of the collection.
+          type: string
+        parent_id:
+          description: The unique identifier of the parent resource in the catalog.
+          type: string
+          format: uuid
+        resources_type:
+          description: |
+            The type of resources in the collection.
+            If empty the collection can contain any type of resources.
+          $ref: "#/components/schemas/ResourceType"
+        special:
+          description: The special collection type.
+          $ref: "#/components/schemas/SpecialCollection"
 
   securitySchemes:
     ApiKeyAuth:

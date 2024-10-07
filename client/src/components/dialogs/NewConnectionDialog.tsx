@@ -28,7 +28,7 @@ import Spinner from "@/components/core/Spinner";
 import { useUserStore } from "@/stores/UserStore";
 
 type NewConnectionDialogProps = {
-  /// The identifier of the parent resource (could be a generic folder, a connection or an environment).
+  /// The identifier of the parent resource (could be a collection or an environment).
   parentId: string;
   onClose?: (connection: Connection) => void;
   onCancel?: () => void;

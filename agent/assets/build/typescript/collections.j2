@@ -1,0 +1,16 @@
+{% from "typescript/macros" import enum, object -%}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ ********************************************************************/
+import { formatRegExp, serializable } from "@/utils/serializable";
+import * as resources from "@/models/resources";
+import { RESOURCE_TYPE_VALUES } from "@/models/resources";
+
+/**
+ * A type referenced in a decorated signature must be imported with 'import type' or a namespace import when 
+ * 'isolatedModules' and 'emitDecoratorMetadata' are enabled.
+ */
+type ResourceType = resources.ResourceType;
+
+{{ enum("SpecialCollection", components.schemas.SpecialCollection) }}
+{{ object("Collection", components.schemas.Collection) }}

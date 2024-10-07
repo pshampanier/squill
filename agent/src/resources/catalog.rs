@@ -14,18 +14,18 @@ use uuid::Uuid;
 /// The catalog is a collection of resources that can be stored in the agent database and organized in a tree-like
 /// structure.
 ///
-/// The catalog is used to store resources such as connections, environments, and folders. Each resource is identified
-/// by a unique identifier and can have a parent resource. The catalog is owned by a user and can only be accessed by
-/// the owner.
+/// The catalog is used to store resources such as connections, environments, and collections. Each resource is
+/// identified by a unique identifier and can have a parent resource. The catalog is owned by a user and can only be
+/// accessed by the owner.
 ///
 /// The catalog is stored in the `catalog` table in the agent database. The table has the following structure:
 ///
 /// ```text
-/// catalog_id    ...  type    parent_catalog_id  owner_user_id ...  name          data           ...  metadata
-/// -----------------  ------  -----------------  -----------------  ------------  ------------------  ----------------
-/// ae439beb-fd17-...  folder                     b578dc4d-87d2-...  Connections   {"folder_id":"a...  {"content_typ...
-/// eefc7b1b-3659-...  folder                     b578dc4d-87d2-...  Environments  {"folder_id":"e...  {"content_typ...
-/// 8ae677c1-934e-...  folder                     b578dc4d-87d2-...  Favorites     {"folder_id":"8...  {"content_typ...
+/// catalog_id ...  type        parent_catalog_id  owner_user_id ...  name          data ...  metadata            ...
+/// --------------  ----------  -----------------  -----------------  ------------  --------  -----------------------
+/// 6d7d727b-c5...  collection                     dd81802d-a9e2-...  Connections   {"col...  {"resources_type":"c...
+/// 61f2e45e-b6...  collection                     dd81802d-a9e2-...  Environments  {"col...  {"resources_type":"e...
+/// 2fa7e1bd-b4...  collection                     dd81802d-a9e2-...  Favorites     {"col...  {"special":"favorite...
 /// ```
 
 /// Create a new catalog item for a user resource.
@@ -47,9 +47,9 @@ pub async fn add<T: Resource>(conn: &Connection, resource: &T) -> Result<Resourc
             resource.owner_user_id(),
             resource.name(),
             serde_json::to_string(&resource)?,
-            match resource.metadata() {
-                Some(metadata) => Some(serde_json::to_string(&metadata)?),
-                None => None::<String>,
+            match resource.metadata().is_empty() {
+                false => Some(serde_json::to_string(&resource.metadata())?),
+                true => None::<String>,
             }
         ),
     )
@@ -143,7 +143,7 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> 
             id: catalog_id,
             parent_id: parent_catalog_id,
             owner_user_id: user_id,
-            resource_type: ResourceType::from_str(row.try_get::<_, String>("type")?.as_str())?,
+            resource_type: ResourceType::try_from(row.try_get::<_, String>("type")?.as_str())?,
             name: row.try_get("name")?,
             metadata: row
                 .try_get_nullable::<_, String>("metadata")?
@@ -153,7 +153,8 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> 
                         format!("Invalid metadata: (catalog_id: '{}', metadata: '{}').", catalog_id, metadata)
                     }),
                 })
-                .transpose()?,
+                .transpose()?
+                .unwrap_or_default(),
         };
         resources.push(catalog_resource);
     }
@@ -162,7 +163,7 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> 
 
 #[cfg(test)]
 mod tests {
-    use crate::models::{folders::ContentType, Folder};
+    use crate::models::{Collection, ResourceType};
     use crate::resources::catalog;
     use crate::resources::catalog::Resource;
     use crate::resources::users::{self, local_username};
@@ -176,16 +177,26 @@ mod tests {
         let conn = conn_pool.get().await.unwrap();
         let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
         // create a root catalog entries
-        let root_folder = Folder::new(Uuid::nil(), "New Folder", local_user.user_id, ContentType::Connections);
-        let folder_dup_id = Folder { name: "another_name".to_string(), ..root_folder.clone() };
-        assert_ok!(catalog::add(&conn, &root_folder).await);
-        assert_err!(catalog::add(&conn, &folder_dup_id).await);
+        let root_collection = Collection {
+            name: "New Collection".to_string(),
+            owner_user_id: local_user.user_id,
+            resources_type: Some(ResourceType::Connection),
+            ..Default::default()
+        };
+        let collection_dup_id = Collection { name: "another_name".to_string(), ..root_collection.clone() };
+        assert_ok!(catalog::add(&conn, &root_collection).await);
+        assert_err!(catalog::add(&conn, &collection_dup_id).await);
 
-        let sub_folder = Folder::new(root_folder.id(), "New Folder", local_user.user_id, ContentType::Connections);
-        let sub_folder_dup_name =
-            Folder::new(sub_folder.parent_id(), &sub_folder.name, local_user.user_id, ContentType::Connections);
-        assert_ok!(catalog::add(&conn, &sub_folder).await);
-        assert_err!(catalog::add(&conn, &sub_folder_dup_name).await);
+        let sub_collection = Collection {
+            name: "Sub Collection".to_string(),
+            parent_id: root_collection.id(),
+            owner_user_id: local_user.user_id,
+            ..Default::default()
+        };
+        let sub_collection_dup_name = Collection { collection_id: Uuid::new_v4(), ..sub_collection.clone() };
+
+        assert_ok!(catalog::add(&conn, &sub_collection).await);
+        assert_err!(catalog::add(&conn, &sub_collection_dup_name).await);
     }
 
     #[tokio::test]
@@ -194,13 +205,18 @@ mod tests {
         let conn = conn_pool.get().await.unwrap();
         let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
 
-        // We are listing the root catalog entries for the user, which should only contain the default folders.
-        // Then we are adding a new folder at the root level and listing the root catalog entries again.
+        // We are listing the root catalog entries for the user, which should only contain the default collections.
+        // Then we are adding a new collection at the root level and listing the root catalog entries again.
         let default_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, Uuid::nil()).await);
-        let new_folder = assert_ok!(
+        let new_collection = assert_ok!(
             catalog::add(
                 &conn,
-                &Folder::new(Uuid::nil(), "Another folder", local_user.user_id, ContentType::Connections)
+                &Collection {
+                    name: "Another collection".to_string(),
+                    owner_user_id: local_user.user_id,
+                    resources_type: Some(ResourceType::Connection),
+                    ..Default::default()
+                }
             )
             .await
         );
@@ -209,19 +225,25 @@ mod tests {
             default_catalog.len() + 1
         );
 
-        // Now adding a sub-folder to the newly created folder.
-        let sub_folder = assert_ok!(
+        // Now adding a sub-collection to the newly created collection.
+        let sub_collection = assert_ok!(
             catalog::add(
                 &conn,
-                &Folder::new(new_folder.id, &"Sub-folder".to_string(), local_user.user_id, ContentType::Connections)
+                &Collection {
+                    name: "Sub-collection".to_string(),
+                    parent_id: new_collection.id,
+                    owner_user_id: local_user.user_id,
+                    resources_type: Some(ResourceType::Connection),
+                    ..Default::default()
+                }
             )
             .await
         );
-        let new_folder_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, new_folder.id).await);
-        assert_eq!(new_folder_catalog.len(), 1);
-        assert_eq!(new_folder_catalog[0].name, sub_folder.name);
-        assert_eq!(new_folder_catalog[0].parent_id, new_folder.id);
-        assert_eq!(new_folder_catalog[0].owner_user_id, local_user.user_id);
-        assert_eq!(new_folder_catalog[0].resource_type, sub_folder.resource_type);
+        let new_collection_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, new_collection.id).await);
+        assert_eq!(new_collection_catalog.len(), 1);
+        assert_eq!(new_collection_catalog[0].name, sub_collection.name);
+        assert_eq!(new_collection_catalog[0].parent_id, new_collection.id);
+        assert_eq!(new_collection_catalog[0].owner_user_id, local_user.user_id);
+        assert_eq!(new_collection_catalog[0].resource_type, sub_collection.resource_type);
     }
 }

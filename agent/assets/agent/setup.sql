@@ -16,7 +16,7 @@ CREATE TABLE catalog (
 	catalog_id UUID PRIMARY KEY,
 
 	-- The catalog item type.
-	type TEXT NOT NULL CHECK (type IN ('folder', 'environment', 'connection')),
+	type TEXT NOT NULL CHECK (type IN ('collection', 'environment', 'connection')),
 
 	-- The parent catalog item, if any.
 	-- NULL if this is a root catalog item.

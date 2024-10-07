@@ -1,0 +1,10 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+use crate::models::ResourceType;
+
+{{ enum("SpecialCollection", components.schemas.SpecialCollection) }}
+{{ struct("Collection", components.schemas.Collection) }}
+

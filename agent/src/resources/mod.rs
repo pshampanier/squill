@@ -9,27 +9,44 @@ use uuid::Uuid;
 
 pub mod agent;
 pub mod catalog;
+pub mod collections;
 pub mod connections;
 pub mod environments;
-pub mod folders;
 pub mod users;
 
 /// The type of a resource.
 impl ResourceType {
+    #[inline]
     pub fn as_str(&self) -> &str {
+        self.as_ref()
+    }
+}
+
+impl AsRef<str> for ResourceType {
+    fn as_ref(&self) -> &str {
         match self {
             ResourceType::User => "user",
             ResourceType::Connection => "connection",
-            ResourceType::Folder => "folder",
+            ResourceType::Collection => "collection",
             ResourceType::Environment => "environment",
         }
     }
+}
 
-    pub fn from_str(s: &str) -> Result<ResourceType> {
+impl std::fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+impl TryFrom<&str> for ResourceType {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<ResourceType> {
         match s {
             "user" => Ok(ResourceType::User),
             "connection" => Ok(ResourceType::Connection),
-            "folder" => Ok(ResourceType::Folder),
+            "collection" => Ok(ResourceType::Collection),
             "environment" => Ok(ResourceType::Environment),
             _ => Err(anyhow::anyhow!("Unknown resource type: {}", s)),
         }
@@ -59,7 +76,7 @@ where
     fn resource_type(&self) -> ResourceType;
 
     /// A map of key-value pairs containing additional meta data.
-    fn metadata(&self) -> Option<HashMap<String, String>>;
+    fn metadata(&self) -> HashMap<String, String>;
 
     /// Create a new instance of the resource from a persistent storage.
     ///
@@ -93,6 +110,6 @@ impl ResourceRef {
     /// Get a metadata value by key.
     #[allow(dead_code)]
     pub fn get_metadata(&self, key: &str) -> Option<&str> {
-        self.metadata.as_ref().and_then(|metadata| metadata.get(key).map(|s| s.as_str()))
+        self.metadata.get(key).map(|s| s.as_str())
     }
 }

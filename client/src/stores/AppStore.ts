@@ -72,8 +72,8 @@ type State = {
    *
    * - This is the item that is currently selected in the sidebar, multiple pages can be open for the same item so it's
    *   important to track the active item separately from the active page.
-   * - This id does not necessarily correspond to the id of the active page, for example if a folder or an environment
-   *   is selected in the sidebar, the active id will be id of the folder or the environment.
+   * - This id does not necessarily correspond to the id of the active page, for example if a connection or an
+   *   environment is selected in the sidebar, the active id will be id of the connection or the environment.
    */
   activeId?: string;
 

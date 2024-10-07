@@ -98,7 +98,7 @@ async fn rename_user_catalog_resource(
 }
 
 /// POST /users/:username/catalog
-/// X-Resource-Type: "connection" | "environment" | "folder"
+/// X-Resource-Type: "connection" | "environment" | "collection"
 ///
 /// { "id": "xxx-xxxx...", "name": "a new name", "parent_id": "a parent id", ... }
 ///
@@ -142,7 +142,7 @@ async fn create_user_catalog_resource(
             header_value.to_str().map_err(|_| Error::BadRequest("Invalid 'X-Resource-Type' header".to_string()))
         })?;
 
-    let resource_ref = match ResourceType::from_str(resource_type) {
+    let resource_ref = match ResourceType::try_from(resource_type) {
         Ok(ResourceType::Connection) => {
             inner_create_user_catalog_resource(
                 &conn,
@@ -159,11 +159,11 @@ async fn create_user_catalog_resource(
             )
             .await
         }
-        Ok(ResourceType::Folder) => {
+        Ok(ResourceType::Collection) => {
             inner_create_user_catalog_resource(
                 &conn,
                 user_session.get_user_id(),
-                serde_json::from_value::<models::Folder>(request_body)?,
+                serde_json::from_value::<models::Collection>(request_body)?,
             )
             .await
         }
@@ -212,13 +212,13 @@ pub fn authenticated_routes(state: ServerState) -> Router {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::resources::folders::METADATA_CONTENT_TYPE;
+    use crate::resources::collections::METADATA_RESOURCES_TYPE;
     use crate::resources::users;
     use crate::server::state::ServerState;
     use crate::utils::tests;
     use crate::utils::user_error::UserError;
     use crate::utils::validators::Username;
-    use models::folders::ContentType;
+    use models::SpecialCollection;
     use tokio_test::assert_ok;
 
     #[tokio::test]
@@ -265,10 +265,10 @@ mod tests {
         let marty_mcfly = users::create(&conn, &username).await.unwrap();
         let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
-        let root_folders = catalog::list(&conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
-        let environments_folder = root_folders
+        let root_collection = catalog::list(&conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
+        let envs_collection = root_collection
             .iter()
-            .find(|f| f.get_metadata(METADATA_CONTENT_TYPE) == Some(ContentType::Environments.as_ref()))
+            .find(|f| f.get_metadata(METADATA_RESOURCES_TYPE) == Some(ResourceType::Environment.as_ref()))
             .unwrap();
         let mut context = RequestContext::new(Uuid::nil());
         context.add_user_session(state.get_user_session_from_token(&security_tokens.access_token).unwrap());
@@ -287,7 +287,7 @@ mod tests {
                         driver: "mock".to_string(),
                         name: "New connection".to_string(),
                         owner_user_id: marty_mcfly.user_id,
-                        parent_id: environments_folder.id,
+                        parent_id: envs_collection.id,
                         ..Default::default()
                     })
                     .unwrap()
@@ -296,9 +296,9 @@ mod tests {
             .await
         );
 
-        // 2) valid folder
+        // 2) valid collection
         let mut http_headers = HeaderMap::new();
-        http_headers.insert(X_RESOURCE_TYPE, ResourceType::Folder.as_str().parse().unwrap());
+        http_headers.insert(X_RESOURCE_TYPE, ResourceType::Collection.as_str().parse().unwrap());
         let _ = assert_ok!(
             create_user_catalog_resource(
                 State(state.clone()),
@@ -306,12 +306,12 @@ mod tests {
                 http_headers.clone(),
                 Path(username.to_string()),
                 Json(
-                    serde_json::to_value(models::Folder {
-                        folder_id: Uuid::new_v4(),
-                        name: "New folder".to_string(),
+                    serde_json::to_value(models::Collection {
+                        name: "New collection".to_string(),
                         owner_user_id: marty_mcfly.user_id,
-                        parent_id: environments_folder.id,
-                        content_type: ContentType::Favorites,
+                        parent_id: envs_collection.id,
+                        special: Some(SpecialCollection::Favorites),
+                        ..Default::default()
                     })
                     .unwrap()
                 ),
@@ -327,12 +327,12 @@ mod tests {
                 http_headers.clone(),
                 Path(username.to_string()),
                 Json(
-                    serde_json::to_value(models::Folder {
-                        folder_id: Uuid::new_v4(),
-                        name: "New / folder".to_string(),
+                    serde_json::to_value(models::Collection {
+                        name: "New / collection".to_string(),
                         owner_user_id: marty_mcfly.user_id,
-                        parent_id: environments_folder.id,
-                        content_type: ContentType::Favorites,
+                        parent_id: envs_collection.id,
+                        special: Some(SpecialCollection::Favorites),
+                        ..Default::default()
                     })
                     .unwrap()
                 ),
@@ -341,7 +341,7 @@ mod tests {
             Err(Error::UserError(UserError::InvalidParameter(_)))
         ));
 
-        // 3) cannot create root folder (parent_id is nil) via the REST API
+        // 3) cannot create root collection (parent_id is nil) via the REST API
         assert!(matches!(
             create_user_catalog_resource(
                 State(state.clone()),
@@ -349,12 +349,12 @@ mod tests {
                 http_headers.clone(),
                 Path(username.to_string()),
                 Json(
-                    serde_json::to_value(models::Folder {
-                        folder_id: Uuid::new_v4(),
-                        name: "New folder (2)".to_string(),
+                    serde_json::to_value(models::Collection {
+                        name: "New collection (2)".to_string(),
                         owner_user_id: marty_mcfly.user_id,
                         parent_id: Uuid::nil(),
-                        content_type: ContentType::Favorites,
+                        special: Some(SpecialCollection::Favorites),
+                        ..Default::default()
                     })
                     .unwrap()
                 ),

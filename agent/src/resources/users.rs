@@ -1,6 +1,5 @@
-use crate::models::folders::ContentType;
 use crate::models::users::{User, UserSettings};
-use crate::models::Folder;
+use crate::models::{Collection, ResourceType, SpecialCollection};
 use crate::resources::catalog;
 use crate::utils::constants::USER_HISTORY_DIRNAME;
 use crate::utils::validators::{sanitize_username, Username};
@@ -75,14 +74,28 @@ pub async fn create(conn: &Connection, username: &Username) -> Result<User> {
     )
     .await?;
 
-    // 3. Create the default root folders for the `local` user.
-    let default_folders = vec![
-        Folder::new(Uuid::nil(), "Connections", user.user_id, ContentType::Connections),
-        Folder::new(Uuid::nil(), "Environments", user.user_id, ContentType::Environments),
-        Folder::new(Uuid::nil(), "Favorites", user.user_id, ContentType::Favorites),
-    ];
-    for folder in default_folders {
-        catalog::add(conn, &folder).await?;
+    // 3. Create the default collections at the root for the `local` user's catalog.
+    for collection in vec![
+        Collection {
+            name: "Connections".to_string(),
+            owner_user_id: user.user_id,
+            resources_type: Some(ResourceType::Connection),
+            ..Default::default()
+        },
+        Collection {
+            name: "Environments".to_string(),
+            owner_user_id: user.user_id,
+            resources_type: Some(ResourceType::Environment),
+            ..Default::default()
+        },
+        Collection {
+            name: "Favorites".to_string(),
+            owner_user_id: user.user_id,
+            special: Some(SpecialCollection::Favorites),
+            ..Default::default()
+        },
+    ] {
+        catalog::add(conn, &collection).await?;
     }
 
     Ok(user)

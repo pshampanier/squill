@@ -25,8 +25,8 @@ impl Resource for Environment {
         ResourceType::Environment
     }
 
-    fn metadata(&self) -> Option<HashMap<String, String>> {
-        None
+    fn metadata(&self) -> HashMap<String, String> {
+        HashMap::new()
     }
 
     fn from_storage(parent_id: Uuid, name: String, resource: serde_json::Value) -> anyhow::Result<Self>

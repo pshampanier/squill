@@ -4,11 +4,10 @@ import { useAppStore } from "@/stores/AppStore";
 import { produce } from "immer";
 import { create } from "zustand";
 import { ResourceRef, ResourceType } from "@/models/resources";
-import { METADATA_CONTENT_TYPE } from "@/utils/constants";
-import { ContentType } from "@/models/folders";
 import { QueryExecution } from "@/models/queries";
 import Connections from "@/resources/connections";
 import { Notification } from "@/components/core/NotificationInbox";
+import { METADATA_RESOURCES_TYPE } from "@/utils/constants";
 
 /**
  * The loading status of a catalog's item children.
@@ -94,9 +93,9 @@ export type Actions = {
   createCatalogResource: (resourceType: ResourceType, resource: object) => Promise<void>;
 
   /**
-   * The the default folder for the given resource type.
+   * The the default collection for the given resource type.
    */
-  getDefaultCatalogFolder: (contentType: ContentType) => CatalogItem | undefined;
+  getDefaultCatalogCollection: (resourceType: ResourceType) => CatalogItem | undefined;
 
   /**
    * Execute a buffer on a connection.
@@ -126,7 +125,7 @@ const initialState: State = {
       {
         id: "root-catalog-id",
         name: "Catalog",
-        type: "folder",
+        type: "collection",
         parentId: null,
         metadata: {},
       },
@@ -228,8 +227,6 @@ export const useUserStore = create<UserStore>((set, get) => {
 
     async createCatalogResource<T extends object>(resourceType: ResourceType, resource: T) {
       const resourceRef = await Users.createCatalogResource<T>(resourceType, resource);
-      // Adding an entry to a folder in the catalog.
-      // We need to add the entry to the folder's children.
       set((state) => ({
         ...state,
         catalog: mergeAndMutateCatalog(state.catalog, [resourceRef], resourceRef.parentId, (parent) => ({
@@ -259,16 +256,16 @@ export const useUserStore = create<UserStore>((set, get) => {
     },
 
     /**
-     * The the default resource folder for the given resource type.
+     * The the default collection for the given resource type.
      *
-     * The default resource folder is expected to be the first folder of the given resource type at the root of
+     * The default collection is expected to be the first collection of the given resource type at the root of
      * the catalog.
      */
-    getDefaultCatalogFolder(contentType: ContentType): CatalogItem | undefined {
+    getDefaultCatalogCollection(resourceType: ResourceType): CatalogItem | undefined {
       return get()
         .catalog.get(ROOT_CATALOG_ID)
         ?.children.find((catalogItem) => {
-          return catalogItem.metadata?.[METADATA_CONTENT_TYPE] === contentType;
+          return catalogItem.metadata?.[METADATA_RESOURCES_TYPE] === resourceType;
         });
     },
 

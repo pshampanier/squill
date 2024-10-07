@@ -7,11 +7,13 @@ import ServerIcon from "@/icons/server.svg?react";
 import StarIcon from "@/icons/star.svg?react";
 import PlugIcon from "@/icons/plug.svg?react";
 import FolderIcon from "@/icons/folder.svg?react";
-import { METADATA_CONTENT_TYPE } from "@/utils/constants";
 import { create, StoreApi, UseBoundStore } from "zustand";
 import { useCallback, useEffect, useRef } from "react";
 import LoadingContainer from "@/components/core/LoadingContainer";
 import cx from "classix";
+import { METADATA_RESOURCES_TYPE, METADATA_SPECIAL } from "@/utils/constants";
+import { ResourceType } from "@/models/resources";
+import { SpecialCollection } from "@/models/collections";
 
 type CatalogViewStoreState = {
   openItems: Set<string>;
@@ -112,7 +114,7 @@ export default function CatalogView({ className, catalogId = ROOT_CATALOG_ID }: 
   );
 
   useEffect(() => {
-    // When the component is mounted, we need to load the children of all the folders in the catalog which are
+    // When the component is mounted, we need to load the children of all the items which are
     // in the 'open' state.
     store.current?.getState().openItems.forEach((catalogId) => {
       useUserStore.getState().loadCatalogChildren(catalogId);
@@ -135,13 +137,13 @@ export default function CatalogView({ className, catalogId = ROOT_CATALOG_ID }: 
   } else {
     return (
       <TreeView className={cx(className, "select-none")} colors={colors}>
-        <CatalogViewFolder catalogId={catalogId} useViewStore={store.current} root />
+        <CatalogViewCollection catalogId={catalogId} useViewStore={store.current} root />
       </TreeView>
     );
   }
 }
 
-type CatalogViewFolderProps = CommonCatalogViewProps & {
+type CatalogViewCollectionProps = CommonCatalogViewProps & {
   /**
    * True if the item is the root of the view (default: false).
    * The root of the view is a special item that is not displayed in the view, only its children are displayed.
@@ -149,16 +151,22 @@ type CatalogViewFolderProps = CommonCatalogViewProps & {
   root?: boolean;
 };
 
-const FOLDER_ICONS: Record<string, SVGIcon> = {
-  connections: ServerIcon,
+const RESOURCE_TYPE_ICONS: Record<ResourceType, SVGIcon> = {
+  connection: ServerIcon,
+  environment: ServerIcon,
+  collection: FolderIcon,
+  user: undefined,
+};
+
+const SPECIAL_COLLECTION_ICONS: Record<SpecialCollection, SVGIcon> = {
   favorites: StarIcon,
-  environments: ServerIcon,
+  trash: undefined,
 };
 
 /**
- * A Folder in the catalog view.
+ * A Collection of resources in the catalog view.
  */
-function CatalogViewFolder({ catalogId, useViewStore, root }: CatalogViewFolderProps) {
+function CatalogViewCollection({ catalogId, useViewStore, root }: CatalogViewCollectionProps) {
   //
   // States & Refs
   //
@@ -180,11 +188,11 @@ function CatalogViewFolder({ catalogId, useViewStore, root }: CatalogViewFolderP
   //
   // Rendering
   //
-  console.debug("Rendering CatalogViewFolder", { catalogId, name: catalogItem?.name, viewStatus });
+  console.debug("Rendering CatalogViewCollection", { catalogId, name: catalogItem?.name, viewStatus });
   const children = (catalogItem?.children || []).map((child: CatalogItem) => {
     switch (child.type) {
-      case "folder":
-        return <CatalogViewFolder key={child.id} catalogId={child.id} useViewStore={useViewStore} />;
+      case "collection":
+        return <CatalogViewCollection key={child.id} catalogId={child.id} useViewStore={useViewStore} />;
       case "connection":
         return <ConnectionViewItem key={child.id} catalogId={child.id} useViewStore={useViewStore} />;
       default:
@@ -192,8 +200,11 @@ function CatalogViewFolder({ catalogId, useViewStore, root }: CatalogViewFolderP
     }
   });
 
-  // The icon associated to the folder depends on the content type of the folder.
-  const icon: SVGIcon = FOLDER_ICONS[catalogItem?.metadata?.[METADATA_CONTENT_TYPE]] || FolderIcon;
+  // The icon associated to the collection depends on the type of resource .
+  const icon: SVGIcon =
+    SPECIAL_COLLECTION_ICONS[catalogItem?.metadata?.[METADATA_SPECIAL] as SpecialCollection] ||
+    RESOURCE_TYPE_ICONS[catalogItem?.metadata?.[METADATA_RESOURCES_TYPE] as ResourceType] ||
+    FolderIcon;
 
   if (root) {
     return <>{children}</>;
@@ -225,7 +236,7 @@ function ConnectionViewItem({ catalogId: connId, useViewStore }: ConnectionViewI
   //
   // Rendering
   //
-  console.debug("Rendering CatalogViewFolder", { connId, name: catalogItem?.name, viewStatus });
+  console.debug("Rendering CatalogViewCollection", { connId, name: catalogItem?.name, viewStatus });
   return (
     <TreeView.Item
       key={connId}
