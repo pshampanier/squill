@@ -13,6 +13,8 @@ import QueryHistoryTimeline, { QueryHistoryAction } from "@/components/query/Que
 import { AuthenticationError } from "@/utils/errors";
 import { PushMessage } from "@/models/push-notifications";
 import { agent } from "@/resources/agent";
+import { useUserStore } from "@/stores/UserStore";
+import { getResourceHandler } from "@/resources/handlers";
 
 /**
  * The page displayed when the user is using a Connection from the sidebar.
@@ -21,12 +23,15 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   const colorScheme = useAppStore((state) => state.colorScheme);
   const page = useAppStore((state) => state.pages.find((page) => page.id === pageId));
   const connectionId = page?.itemId; // UUID of the connection.
+  const catalogItem = useUserStore((state) => state.catalog.get(connectionId));
 
   // Children components can subscribe to the history of query executions.
   const queryEventHandler = useRef<Dispatch<QueryHistoryAction>>(null);
   const registerQueryEventHandler = (dispatcher: Dispatch<QueryHistoryAction>) => {
     queryEventHandler.current = dispatcher;
   };
+
+  const resourceHandler = getResourceHandler(catalogItem?.type);
 
   const {
     status,
@@ -78,7 +83,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
     <div className="w-full h-full px-2">
       {status !== "success" && (
         <LoadingContainer
-          message={`Opening '${page.title}'...`}
+          message={`Opening '${resourceHandler?.title(catalogItem)}'...`}
           status={status}
           error={error}
           errorFallback="Oops, cannot open the connection..."

@@ -112,7 +112,7 @@ function TreeItem({
         label={item.name}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
-        onEditBlur={handleEditBlur}
+        onEditingBlur={handleEditBlur}
         selected={item.id === selectedId}
       />
     );

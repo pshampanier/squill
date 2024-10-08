@@ -1,8 +1,6 @@
 import { KeyboardShortcut, SVGIcon } from "@/utils/types";
 import { env } from "@/utils/env";
 import { raise } from "@/utils/telemetry";
-import SettingsIcon from "@/icons/settings.svg?react";
-import CloseIcon from "@/icons/close.svg?react";
 
 type CommandAction = (command: string) => void;
 
@@ -24,13 +22,14 @@ type CommandWithActions = Command & {
 const commands: { [name: string]: CommandWithActions } = {};
 
 /**
- * Register a command.
+ * Register one or more commands.
  *
- * A command can be registered only once, if a command with the same name is already registered, an error is thrown.
+ * A command can be registered only once, if a command with the same name is already registered, a warning is logged.
  *
  * @param command The command to register.
+ * @returns A function to unregister the commands.
  */
-export function registerCommand(...command: Command[]) {
+export function registerCommand(...command: Command[]): () => void {
   command.forEach((c) => {
     if (commands[c.name]) {
       // When a command is registered twice, it means that the command is registered in two different places (which is
@@ -50,6 +49,11 @@ export function registerCommand(...command: Command[]) {
       commands[c.name] = { ...c, shortcut: shortcut, actions: [] };
     }
   });
+  return () => {
+    command.forEach((c) => {
+      delete commands[c.name];
+    });
+  };
 }
 
 /**
@@ -130,11 +134,8 @@ export function registerGlobalKeyListeners() {
     const shortcut = getShortcut(event);
     if (shortcut) {
       const command = Object.values(commands).find((c) => c.shortcut === shortcut);
-      if (command && command.actions.length > 0) {
-        event.preventDefault();
-        event.stopPropagation();
-        console.debug(`Executing command '${command.name}'`);
-        executeActions(command, command.actions);
+      if (command) {
+        dispatchCommand(command.name, event);
       }
     }
   });
@@ -262,8 +263,6 @@ registerCommand(
   { name: "clipboard.copy", label: "Copy", description: "Copy selected text", shortcut: ["Meta+C", "Ctrl+C"] },
   { name: "clipboard.paste", label: "Paste", description: "Paste text", shortcut: ["Meta+V", "Ctrl+V"] },
   { name: "clipboard.cut", label: "Cut", description: "Cut selected text", shortcut: ["Meta+X", "Ctrl+X"] },
-  { name: "settings.open", description: "Open settings", shortcut: ["Meta+,", "Ctrl+,"], icon: SettingsIcon },
-  { name: "settings.close", description: "Close", shortcut: "Escape", icon: CloseIcon },
 );
 
 registerGlobalKeyListeners();
@@ -275,7 +274,6 @@ registerGlobalKeyListeners();
  */
 export type CommandEventDetail = {
   name: string;
-  target: HTMLElement;
 };
 
 /**
@@ -294,14 +292,45 @@ export type CommandEvent = CustomEvent<CommandEventDetail>;
  * @param name - The name of the command to dispatch.
  * @throws An error if there is no active element to dispatch the command.
  */
-export function dispatchCommand(name: string) {
-  const target = document.activeElement as HTMLElement | null;
+export function dispatchCommand(name: string, event?: Event) {
+  const target = findCommandTarget(event?.target || document.activeElement);
   if (target) {
     const command = getCommand(name);
-    const detail: CommandEventDetail = { name: command.name, target };
-    const event = new CustomEvent("command", { bubbles: true, detail });
-    target.dispatchEvent(event);
+    console.debug("Dispatching command", { name, target });
+    const detail: CommandEventDetail = { name: command.name };
+    const commandEvent = new CustomEvent("command", { bubbles: true, detail });
+    target.dispatchEvent(commandEvent);
+    if (commandEvent.defaultPrevented) {
+      event?.preventDefault();
+      event?.stopPropagation();
+    }
   } else {
     raise(`No active element to dispatch command '${name}'`);
   }
+}
+
+/**
+ * Find a valid command target in the given target and its children.
+ *
+ * A valid command target is an element that can take the focus is not hidden.
+ */
+function findCommandTarget(target: EventTarget): EventTarget {
+  while (target && target instanceof HTMLElement) {
+    if (target.tabIndex !== -1) {
+      const computedStyle = window.getComputedStyle(target);
+      if (computedStyle.display !== "none" && computedStyle.visibility !== "hidden") {
+        return target;
+      }
+    } else if (target.children.length) {
+      for (const child of target.children) {
+        target = findCommandTarget(child);
+        if (target) {
+          break;
+        }
+      }
+    } else {
+      target = null;
+    }
+  }
+  return target;
 }

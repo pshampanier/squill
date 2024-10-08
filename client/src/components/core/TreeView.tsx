@@ -1,7 +1,7 @@
 import { ColorsFunction, primary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
 import cx from "classix";
-import React, { useCallback, useEffect } from "react";
+import React, { forwardRef, useCallback, useEffect } from "react";
 import Spinner from "@/components/core/Spinner";
 import Input from "@/components/core/Input";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
@@ -41,6 +41,9 @@ function TreeView({ className, children, colors = primary }: TreeViewProps) {
   );
 }
 
+/**
+ * The status of an item in the `TreeView`.
+ */
 export type TreeViewStatus = "open" | "closed" | "loading" | "error" | "editing";
 
 type TreeViewItemProps = {
@@ -71,13 +74,36 @@ type TreeViewItemProps = {
   selected?: boolean;
 
   /**
+   * The [pattern][MDN Reference] attribute for editing validation.
+   *
+   * When specified, is a regular expression which the input's value must match for the value to pass
+   * [constraint validation][MDN Reference].
+   *
+   * *Note*: The pattern attribute only used while the status is `editing`.
+   *
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/pattern
+   */
+  pattern?: string;
+
+  /**
+   * The [required][MDN Reference] attribute for editing validation.
+   *
+   * If present, indicates that the user must specify a value for the input before the editing can end.
+   *
+   * *Note*: The pattern attribute only used while the status is `editing`.
+   *
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required
+   */
+  required?: boolean;
+
+  /**
    * The status of the item (default is undefined).
    *
    * When you use the `status` prop, you are creating a controlled component. This means that the status of the
    * component is controlled by the parent component. The parent component is responsible for updating the status of the
    * item when the user interacts with it.
    *
-   * NOTES:
+   * *Notes*:
    * - If you use the `status` prop, you should also provide an `onClick` or `onKeyDown` callback to handle the user
    *   interactions.
    * - This prop is mutually exclusive with the `defaultStatus` prop.
@@ -99,12 +125,34 @@ type TreeViewItemProps = {
   defaultStatus?: TreeViewStatus;
 
   /**
-   * A callback function that is called when the item is clicked.
+   * A callback fired when the item is clicked.
+   *
+   * **Default behaviors**:
+   * - `uncontrolled component`, if the item is collapsible, the status of the item will be toggled from "open" to
+   *   "closed" and vice versa.
    */
   onClick?: (
     event: React.MouseEvent<HTMLElement>,
     setStatus: React.Dispatch<React.SetStateAction<TreeViewStatus>>,
   ) => void;
+
+  /**
+   * A callback function fired when the user expands or collapses the item.
+   *
+   * This callback is called before the status of the item is changed. It could be fired when the item is clicked or
+   * when the SPACE key is pressed while the item is focused. By default will be called on click whatever if the click
+   * originated from the collapse icon or the label, to force the `onToggle` to be called only when a click occurs on
+   * the collapse icon, `event.preventDefault()` must be called on the click event, then the onToggle callback will be
+   * called only from an explicit click on the collapse icon.
+   *
+   * **Default behaviors**:
+   * - `uncontrolled component`, the status of the item will be toggled from "open" to "closed" and vice versa.
+   * - `controlled component`, the next status of the item is expected to be provided by the parent. There is no default
+   *  behavior.
+   *
+   * @param event The event can either originated from a click or a key press.
+   */
+  onToggle?: (event: React.SyntheticEvent<HTMLElement>) => void;
 
   /**
    * A callback function that is called when a key is pressed while the item is focused.
@@ -115,16 +163,37 @@ type TreeViewItemProps = {
   ) => void;
 
   /**
-   * A callback function that is called when the item is focused.
+   * A callback function when the input used to edit the name loose focus.
    *
    * @param event The focus event.
    * @param setStatus A React dispatch function to set the status of the item.
    * @returns
    */
-  onEditBlur?: (
+  onEditingBlur?: (
     event: React.FocusEvent<HTMLInputElement>,
     setStatus: React.Dispatch<React.SetStateAction<TreeViewStatus>>,
   ) => void;
+
+  /**
+   * A callback function when the input used to edit the name changes.
+   *
+   * @param event The change event.
+   * @param setStatus A React dispatch function to set the status of the item.
+   * @returns
+   */
+  onEditingChange?: (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setStatus: React.Dispatch<React.SetStateAction<TreeViewStatus>>,
+  ) => void;
+
+  /**
+   * A callback function that is called when a key is pressed while the editing is in progress.
+   *
+   * **Default behaviors**:
+   * - `ENTER`: Restore the status of the item before the start of the edition and to give back the focus to the item.
+   * - `ESCAPE`: Restore the status of the item before the start of the edition and to give back the focus to the item.
+   */
+  onEditingKeyDown?: (event: React.KeyboardEvent<HTMLElement>) => void;
 
   /**
    * The content of the item.
@@ -152,19 +221,25 @@ type TreeViewItemProps = {
  *
  * The item can be "controlled" by the parent component by providing a `defaultStatus` and an `onClick` callback.
  */
-TreeView.Item = function TreeViewItem({
-  className,
-  label,
-  icon: Icon,
-  collapsible = false,
-  status: controlledStatus,
-  defaultStatus = "closed",
-  selected = false,
-  onClick,
-  onKeyDown,
-  onEditBlur,
-  children,
-}: TreeViewItemProps) {
+TreeView.Item = forwardRef<HTMLElement, TreeViewItemProps>((props, ref) => {
+  const {
+    className,
+    label,
+    icon: Icon,
+    collapsible = false,
+    status: controlledStatus,
+    defaultStatus = "closed",
+    selected = false,
+    pattern,
+    required,
+    onClick,
+    onKeyDown,
+    onEditingBlur,
+    onEditingChange,
+    onEditingKeyDown,
+    onToggle,
+    children,
+  } = props;
   const colors = React.useContext(ColorsContext);
 
   // The current status of the item.
@@ -190,22 +265,42 @@ TreeView.Item = function TreeViewItem({
     editStatus.current = status;
   }
 
-  // When a collapsible item is clicked, the default behavior is to toggle the status of the item.
-  const handleClick = useCallback((event: React.MouseEvent<HTMLElement>) => {
-    // First let's try to set the focus on the button, if for any reason are are prevented to do so we'll not process
-    // this event.
-    buttonRef.current?.focus();
-    if (document.activeElement === buttonRef.current) {
-      onClick?.(event, setStatus);
-      if (!event.defaultPrevented && collapsible) {
-        event.preventDefault();
-        setStatus((prev) => (prev === "open" ? "closed" : "open"));
+  // Toggle the status (open/close) for collapsible items.
+  const handleToggle = useCallback(
+    (event: React.SyntheticEvent<HTMLElement>) => {
+      onToggle?.(event);
+      if (!event.defaultPrevented || !controlledStatus) {
+        setStatus((prev) => {
+          if (prev === "open" || prev === "closed") {
+            return prev === "open" ? "closed" : "open";
+          } else {
+            return prev;
+          }
+        });
       }
-      // We need to stop the propagation otherwise the click event can be caught by the parent item which will trigger the
-      // parent item to open/close.
-      event.stopPropagation();
-    }
-  }, []);
+    },
+    [controlledStatus],
+  );
+
+  // When a collapsible item is clicked, the default behavior is to toggle the status of the item.
+  const handleClick = useCallback(
+    (event: React.MouseEvent<HTMLElement>) => {
+      // First let's try to set the focus on the button, if for any reason are are prevented to do so we'll not process
+      // this event.
+      buttonRef.current?.focus();
+      if (document.activeElement === buttonRef.current) {
+        onClick?.(event, setStatus);
+        const target = event.target as HTMLElement;
+        if (collapsible && (!event.defaultPrevented || target.dataset.component === "tree-view-item-toggle")) {
+          handleToggle(event);
+        }
+        // We need to stop the propagation otherwise the click event can be caught by the parent item which will trigger the
+        // parent item to open/close.
+        event.stopPropagation();
+      }
+    },
+    [controlledStatus],
+  );
 
   // When a collapsible item is focused, the default behavior is to toggle the status of the item if the user presses Space
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
@@ -214,19 +309,26 @@ TreeView.Item = function TreeViewItem({
 
   // Called when the input editing the item loses focus.
   // The default behavior is to restore the status of the item to the one before editing.
-  const handleEditBlur = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
-    onEditBlur?.(event, setStatus);
+  const handleInputBlur = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
+    onEditingBlur?.(event, setStatus);
     if (!event.defaultPrevented) {
       setStatus(editStatus.current);
     }
   }, []);
 
-  const handleEditKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
-    onKeyDown?.(event, setStatus);
+  // Called when the input editing the item changes.
+  // The default behavior is to restore the status of the item to the one before editing.
+  const handleInputChange = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
+    onEditingChange?.(event, setStatus);
+  }, []);
+
+  const handleEditingKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+    onEditingKeyDown?.(event);
     if (!event.defaultPrevented) {
       if (event.key === "Enter") {
         // Try to put the focus back on the button, it will trigger the onEditBlur callback.
         buttonRef.current?.focus();
+        setStatus(editStatus.current);
         event.preventDefault();
         event.stopPropagation();
       } else if (event.key === "Escape") {
@@ -238,6 +340,9 @@ TreeView.Item = function TreeViewItem({
         buttonRef.current?.focus();
         event.preventDefault();
         event.stopPropagation();
+      } else if (event.key === "Space" && collapsible) {
+        // The Space key is used to toggle collapsible items.
+        handleToggle(event);
       }
     }
   }, []);
@@ -259,18 +364,28 @@ TreeView.Item = function TreeViewItem({
     children: "flex flex-row w-full",
   };
 
+  console.debug("TreeView.Item.render", { label, status, controlledStatus });
+
   return (
-    <nav data-type="tree-view-item" className={classes.self} onKeyDown={handleKeyDown} onClick={handleClick}>
+    <nav
+      ref={ref}
+      data-component="tree-view-item"
+      className={classes.self}
+      onKeyDown={handleKeyDown}
+      onClick={handleClick}
+    >
       <div className="relative h-9 w-full">
         <button ref={buttonRef} className={classes.button}>
-          {Icon && <Icon className={classes.icon} data-type="icon" />}
+          {Icon && <Icon className={classes.icon} data-component="tree-view-item-icon" />}
           <span className={classes.label} data-type="label">
             {status !== "editing" && label}
           </span>
-          <span className={classes.status} data-type="status">
+          <span className={classes.status} data-component="tree-view-item-status">
             {status === "loading" && <Spinner size="sm" />}
             {status === "error" && <ErrorIcon className="text-red-400 w-4 h-4" />}
-            {collapsible && (status === "open" || status === "closed") && <ChevronIcon className={classes.chevron} />}
+            {collapsible && (status === "open" || status === "closed") && (
+              <ChevronIcon data-component="tree-view-item-toggle" className={classes.chevron} />
+            )}
           </span>
         </button>
         {
@@ -280,19 +395,29 @@ TreeView.Item = function TreeViewItem({
            * the focus to the button when the input is blurred.
            */
           status === "editing" && (
-            <TreeViewInput label={label} icon={!!Icon} onBlur={handleEditBlur} onKeyDown={handleEditKeyDown} />
+            <TreeViewInput
+              label={label}
+              icon={!!Icon}
+              onBlur={handleInputBlur}
+              onChange={handleInputChange}
+              onKeyDown={handleEditingKeyDown}
+              pattern={pattern}
+              required={required}
+            />
           )
         }
       </div>
       {status === "open" && (
         <nav data-type="tree-view-children" className={classes.children}>
-          <div className="flex-grow-0 w-3"></div>
+          <div className="flex-grow-0 flex-shrink-0 w-3"></div>
           <div className="flex-grow flex-col">{children}</div>
         </nav>
       )}
     </nav>
   );
-};
+});
+
+TreeView.Item.displayName = "TreeViewItem";
 
 type TreeViewInputProps = {
   /**
@@ -307,9 +432,26 @@ type TreeViewInputProps = {
   icon: boolean;
 
   /**
+   * The pattern attribute for editing validation.
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/pattern
+   */
+  pattern?: string;
+
+  /**
+   * The [required][MDN Reference] attribute for editing validation.
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required
+   */
+  required?: boolean;
+
+  /**
    * A callback function that is called when the input loses focus.
    */
   onBlur: (event: React.FocusEvent<HTMLInputElement>) => void;
+
+  /**
+   * A callback function that is called when the input change.
+   */
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 
   /**
    * A callback function that is called when a key is pressed while the input is focused.
@@ -320,17 +462,19 @@ type TreeViewInputProps = {
 /**
  * The input used to edit the label of a TreeViewItem.
  */
-function TreeViewInput({ label, icon, onBlur, onKeyDown }: TreeViewInputProps) {
+function TreeViewInput({ label, icon, required, pattern, onBlur, onChange, onKeyDown }: TreeViewInputProps) {
   return (
     <Input
       className="fixed z-10 -top-9 left-0 ml-1 mr-1 mt-1.5 h-9"
       density="compact"
-      required
+      required={required}
+      pattern={pattern}
       autoFocus
       defaultValue={label}
       type="text"
       prefix={icon && <TransparentIcon className="w-5 h-5" />}
       onBlur={onBlur}
+      onChange={onChange}
       onKeyDown={onKeyDown}
     />
   );

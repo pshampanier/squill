@@ -9,7 +9,7 @@ export type Editor = {
   /**
    * Specifies the file which the editor can open.
    */
-  readonly selector: RegExp;
+  readonly selector?: RegExp;
 
   /**
    * The icon to be used for files associated with this editor.

@@ -19,7 +19,7 @@ export const EDITOR_CONNECTION = "Connection";
 export const EDITOR_USER_BLANK = "UserBlank";
 
 // List of metadata keys used by ResourceRef
-export const METADATA_RESOURCES_TYPE = "collection_type";
+export const METADATA_RESOURCES_TYPE = "resources_type";
 export const METADATA_SPECIAL = "special";
 
 // UI constants & defaults

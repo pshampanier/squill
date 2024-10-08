@@ -7,19 +7,12 @@ import { secondary as colors } from "@/utils/colors";
 import SidebarIcon from "@/icons/sidebar.svg?react";
 import SidePanel from "@/components/core/SidePanel";
 
-registerCommand(
-  {
-    name: "sidebar.primary.toggle",
-    description: "Toggle the sidebar",
-    icon: SidebarIcon,
-    shortcut: ["Meta+B", "Ctrl+B"],
-  },
-  {
-    name: "sidebar.rename",
-    description: "Rename...",
-    shortcut: "Enter",
-  },
-);
+registerCommand({
+  name: "sidebar.primary.toggle",
+  description: "Toggle the sidebar",
+  icon: SidebarIcon,
+  shortcut: ["Meta+B", "Ctrl+B"],
+});
 
 type PrimarySidebarProps = {
   /**
@@ -43,12 +36,11 @@ export default function PrimarySidebar({ children }: PrimarySidebarProps) {
   }, []);
 
   const classes = cx(
-    "flex flex-col flex-grow-0 h-full space-y-1 p-4 overflow-y-scroll border-r",
+    "flex flex-col flex-none h-full space-y-1 p-4 overflow-y-scroll border-r",
     colors("background", "border"),
   );
 
   console.debug("Rendering PrimarySidebar", { visible, width });
-
   return (
     <SidePanel
       className={classes}

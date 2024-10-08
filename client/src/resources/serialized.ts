@@ -1,6 +1,9 @@
 import { ObjectFactory } from "@/utils/types";
 import { deserialize } from "@/utils/serializable";
 
+/**
+ * A serialized resource.
+ */
 export class SerializedResource<T extends object> {
   private readonly contentType: string;
   private readonly value?: T | string;

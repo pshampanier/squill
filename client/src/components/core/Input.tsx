@@ -37,14 +37,6 @@ type InputProps = {
   size?: "sm" | "md" | "lg" | "auto";
 
   /**
-   * The step attribute works with the number type input field.
-   * It indicates the precision of the number field.
-   *
-   * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/number#step
-   */
-  step?: number;
-
-  /**
    * If true, the input will be focused when the component is mounted.
    */
   autoFocus?: boolean;
@@ -53,6 +45,42 @@ type InputProps = {
    * The density/size of the input (`compact` or `normal`).
    */
   density?: "compact" | "comfortable";
+
+  /**
+   * The [pattern][MDN Reference] attribute for constraint validation.
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/pattern
+   */
+  pattern?: string;
+
+  /**
+   * The [required][MDN Reference] attribute for constraint validation.
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/required
+   */
+  required?: boolean;
+
+  /**
+   * The [readonly][MDN Reference] attribute, when present, makes the element not mutable.
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/readonly
+   */
+  readonly?: boolean;
+
+  /**
+   * The [min][MDN Reference] attribute defines the minimum value that is acceptable and valid
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/min
+   */
+  min?: number;
+
+  /**
+   * The [max][MDN Reference] attribute defines the maximum value that is acceptable and valid
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/max
+   */
+  max?: number;
+
+  /**
+   * The [step][MDN Reference] attribute is a number that specifies the granularity that the value must adhere to.
+   * [MDN Reference]: https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/step
+   */
+  step?: number;
 
   onKeyDown?: (event: KeyboardEvent<HTMLInputElement>) => void;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -63,16 +91,12 @@ type InputProps = {
   prefix?: React.ReactNode;
   suffix?: React.ReactNode;
   className?: string;
-  readonly?: boolean;
-  required?: boolean;
-  min?: number;
-  max?: number;
 };
 
 function getHelperText(validityState: ValidityState): string {
   if (validityState.valueMissing) {
     return "Required";
-  } else if (validityState.typeMismatch) {
+  } else if (validityState.typeMismatch || validityState.patternMismatch || validityState.stepMismatch) {
     return "Invalid";
   } else if (validityState.tooShort) {
     return "Too short";
@@ -82,8 +106,6 @@ function getHelperText(validityState: ValidityState): string {
     return "Too small";
   } else if (validityState.rangeOverflow) {
     return "Too big";
-  } else if (validityState.stepMismatch) {
-    return "Invalid";
   } else if (validityState.badInput) {
     return "Bad input";
   } else if (validityState.customError) {
@@ -124,6 +146,7 @@ export default function Input(props: InputProps) {
     disabled: props.disabled,
     readOnly: props.readonly,
     required: props.required,
+    pattern: props.pattern,
     step: props.step,
     min: props.min,
     max: props.max,

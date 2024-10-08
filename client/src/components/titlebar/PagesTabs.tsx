@@ -1,31 +1,22 @@
 import cx from "classix";
 import { tertiary } from "@/utils/colors";
 import { useUserStore } from "@/stores/UserStore";
-import { Page, useAppStore } from "@/stores/AppStore";
+import { BLANK_PAGE_ITEM_ID, useAppStore } from "@/stores/AppStore";
 import PlusIcon from "@/icons/plus.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
 import CloseCircleIcon from "@/icons/close-circle.svg?react";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { getResourceHandler } from "@/resources/handlers";
 
 function PagesTabs() {
   const pages = useAppStore((state) => state.pages);
-  const activePageId = useAppStore((state) => state.activePageId);
-  const setActivePage = useAppStore((state) => state.setActivePage);
-  const closePage = useAppStore((state) => state.closePage);
-
-  const handleClosePage = (pageId: string) => {
-    closePage(pageId);
-  };
-
-  const handleSelectPage = (pageId: string) => {
-    setActivePage(pageId);
-  };
+  const addPage = useAppStore((state) => state.addPage);
 
   // Add a new blank page when the "+" button is clicked
   const handleAddBlankPage = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    useAppStore.getState().addBlankPage();
+    addPage(BLANK_PAGE_ITEM_ID);
   };
 
   const classes = {
@@ -36,15 +27,7 @@ function PagesTabs() {
     <>
       <div className="flex flex-row space-x-1 no-scrollbar overflow-x-auto overflow-y-visible h-10 items-center">
         {pages.map((page) => {
-          return (
-            <Tab
-              key={`tab-${page.id}`}
-              page={page}
-              selected={page.id === activePageId}
-              onSelect={handleSelectPage}
-              onClose={handleClosePage}
-            />
-          );
+          return <Tab key={`tab-${page.id}`} pageId={page.id} />;
         })}
       </div>
       {pages.length > 0 && (
@@ -61,31 +44,37 @@ function PagesTabs() {
 }
 
 type TabProps = {
-  page: Page;
-  selected: boolean;
-  onSelect: (pageId: string) => void;
-  onClose: (pageId: string) => void;
+  pageId: string;
 };
 
-function Tab({ page, selected, onSelect, onClose }: TabProps) {
+function Tab({ pageId }: TabProps) {
+  //
+  // States & Refs
+  //
   const refButton = useRef<HTMLButtonElement>(null);
-  const showFileExtensions = useUserStore((state) => state.settings.showFileExtensions);
+  const page = useAppStore((state) => state.pages.find((page) => page.id === pageId));
+  const selected = useAppStore((state) => state.activePageId === pageId);
+  const catalogItem = useUserStore((state) => state.catalog.get(page?.itemId));
 
-  const Icon = page.editor.icon;
-  const CloseButtonIcon = page.modified ? CloseCircleIcon : CloseIcon;
+  //
+  // Logic
+  //
+  const setActivePage = useAppStore((state) => state.setActivePage);
+  const closePage = useAppStore((state) => state.closePage);
+  const resourceHandler = getResourceHandler(catalogItem?.type);
+  const Icon = resourceHandler.icon(catalogItem);
+  const CloseButtonIcon = catalogItem?.modified ? CloseCircleIcon : CloseIcon;
+  const title = resourceHandler.title(catalogItem);
 
-  const classes = {
-    tab: cx(
-      "flex items-center h-9 px-4 rounded w-48",
-      selected && "shadow-sm shadow-blue-800 dark:shadow-blue-900",
-      selected ? "bg-blue-400 dark:bg-blue-900" : tertiary("background", "hover:background"),
-    ),
-    title: "mx-2 text-xs font-medium text-left whitespace-nowrap overflow-hidden overflow-ellipsis",
-    closeButton: cx(
-      "flex ml-auto min-w-fit rounded",
-      selected ? "hover:bg-blue-500 dark:hover:bg-blue-800" : "hover:bg-blue-800 dark:hover:bg-blue-700",
-    ),
-  };
+  // Select the page when the tab is clicked
+  const handleClick = useCallback((pageId: string) => {
+    setActivePage(pageId);
+  }, []);
+
+  // Close the page when the close button is clicked
+  const onClose = useCallback((pageId: string) => {
+    closePage(pageId);
+  }, []);
 
   useEffect(() => {
     // Scroll the tab into view if it is selected
@@ -98,15 +87,27 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
     }
   }, [selected]);
 
-  // Showing the file extension only if the setting is enabled
-  const title = showFileExtensions ? page.title : page.title.replace(/\.[^/.]+$/, "");
-
+  //
+  // Rendering
+  //
+  const classes = {
+    tab: cx(
+      "flex items-center h-9 px-4 rounded w-48",
+      selected && "shadow-sm shadow-blue-800 dark:shadow-blue-900",
+      selected ? "bg-blue-400 dark:bg-blue-900" : tertiary("background", "hover:background"),
+    ),
+    title: "mx-2 text-xs font-medium text-left whitespace-nowrap overflow-hidden overflow-ellipsis",
+    closeButton: cx(
+      "flex ml-auto min-w-fit rounded",
+      selected ? "hover:bg-blue-500 dark:hover:bg-blue-800" : "hover:bg-blue-800 dark:hover:bg-blue-700",
+    ),
+  };
   return (
     <button
       ref={refButton}
       className={classes.tab}
       onClick={() => {
-        onSelect(page.id);
+        handleClick(page.id);
       }}
     >
       <Icon className="flex-shrink-0 w-5 h-5" />
@@ -115,8 +116,8 @@ function Tab({ page, selected, onSelect, onClose }: TabProps) {
         <CloseButtonIcon
           className={`w-6 h-6 px-1 bg-transparent`}
           onClick={(event) => {
-            event.stopPropagation();
             onClose(page.id);
+            event.stopPropagation();
           }}
         />
       </a>

@@ -1,4 +1,4 @@
-import { SerializedResource } from "@/resources/resources";
+import { SerializedResource } from "@/resources/serialized";
 import { serializable, serialize } from "@/utils/serializable";
 import { AuthenticationMethod, AUTHENTICATION_METHOD_VALUES, Authentication, RefreshToken } from "@/models/auth";
 import { SecurityTokens } from "@/models/auth";

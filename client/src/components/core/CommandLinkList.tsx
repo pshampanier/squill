@@ -1,4 +1,4 @@
-import { executeCommand, getCommand } from "@/utils/commands";
+import { dispatchCommand, getCommand } from "@/utils/commands";
 import Kbd from "@/components/core/Kbd";
 
 type CommandLinksProps = {
@@ -8,7 +8,7 @@ type CommandLinksProps = {
 /**
  * A list of command links.
  */
-const CommandLinks = ({ children }: CommandLinksProps) => {
+const CommandLinkList = ({ children }: CommandLinksProps) => {
   return <div className="mt-2">{children}</div>;
 };
 
@@ -22,13 +22,13 @@ type CommandLinkProps = {
 /**
  * A link associated with a command.
  */
-function CommandLink(props: CommandLinkProps) {
+function Link(props: CommandLinkProps) {
   const command = getCommand(props.command);
 
   const handleClick = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    executeCommand(command.name);
+    dispatchCommand(command.name, event.nativeEvent);
   };
 
   return (
@@ -45,5 +45,5 @@ function CommandLink(props: CommandLinkProps) {
   );
 }
 
-CommandLinks.Link = CommandLink;
-export default CommandLinks;
+CommandLinkList.Link = Link;
+export default CommandLinkList;

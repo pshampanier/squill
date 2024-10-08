@@ -25,9 +25,10 @@ export function useCommand({ ref, onCommand }: CommandHookProps) {
       if (event.defaultPrevented) return;
     };
 
-    ref.current.addEventListener("command", handleCommandEvent);
+    const htmlElement: HTMLElement = ref.current;
+    htmlElement.addEventListener("command", handleCommandEvent);
     return () => {
-      ref.current.removeEventListener("command", handleCommandEvent);
+      htmlElement.removeEventListener("command", handleCommandEvent);
     };
   }, []);
 }

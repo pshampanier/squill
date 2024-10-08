@@ -40,9 +40,10 @@ export const Users = {
     return this._current;
   },
 
-  async readCatalog(parentId?: string): Promise<ResourceRef[]> {
-    const encodedUsername = encodeURIComponent(this.current.username);
-    const catalogPath = parentId !== ROOT_CATALOG_ID ? `catalog/${encodeURIComponent(parentId)}/list` : `catalog/list`;
+  async listCatalog(catalogId?: string): Promise<ResourceRef[]> {
+    const encodedUsername = encodeURIComponent(this.current?.username);
+    const catalogPath =
+      catalogId !== ROOT_CATALOG_ID ? `catalog/${encodeURIComponent(catalogId)}/list` : `catalog/list`;
     return (await agent().get<ResourceRef>(`/users/${encodedUsername}/${catalogPath}`)).asArray(ResourceRef);
   },
 

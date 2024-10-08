@@ -1,4 +1,4 @@
-import { SerializedResource } from "@/resources/resources";
+import { SerializedResource } from "@/resources/serialized";
 import { test, expect, describe } from "vitest";
 import { serializable } from "@/utils/serializable";
 

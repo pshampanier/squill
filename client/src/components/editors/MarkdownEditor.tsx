@@ -5,7 +5,6 @@ import React, { useState, useRef } from "react";
 import MonacoEditor from "react-monaco-editor";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import PageLoader from "@/components/PageLoader";
 import MarkdownIcon from "@/icons/markdown-file.svg?react";
 import EditCommandIcon from "@/icons/edit.svg?react";
 import PreviewCommandIcon from "@/icons/preview.svg?react";
@@ -52,22 +51,8 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId: _
     }
   };
 
-  /*
-  useEffect(() => {
-    if (mode === "loading") {
-      console.log("MarkdownEditor: useEffect");
-      setMode("loading");
-      workspace.loadCollectionItem(page.itemId).then(([resource]) => {
-        initialContent.current = resource.asText();
-        setContent(initialContent.current);
-        setMode("preview");
-      });
-    }
-  }, [mode, workspace, page.itemId]);
-  */
-
   if (mode === "loading") {
-    return <PageLoader />;
+    return null;
   } else {
     return (
       <>

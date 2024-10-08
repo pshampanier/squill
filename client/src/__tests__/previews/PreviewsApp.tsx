@@ -1,5 +1,4 @@
 import { usePreviewsStore } from "./previewsStore";
-import Page from "@/components/Page";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import PreviewSidebarItem from "./PreviewSidebarItem";
@@ -78,7 +77,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Syntax Highlighting" />
         </SidebarSection>
       </Sidebar>
-      <Page className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll">
+      <div className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll w-full">
         <header className="flex grid-flow-row w-full mb-4 justify-end">
           <ButtonGroup defaultValue={colorScheme} size="xs" onChange={setColorScheme}>
             <ButtonGroup.Item name="light" icon={ThemeLightIcon} />
@@ -116,7 +115,7 @@ export function PreviewsApp() {
           {view === "Notification" && <NotificationPreview />}
           {view === "Tooltip" && <TooltipPreview />}
         </div>
-      </Page>
+      </div>
     </>
   );
 }

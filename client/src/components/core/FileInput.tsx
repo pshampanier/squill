@@ -199,7 +199,7 @@ export default function FileInput({
                   </div>
                 </div>
               )}
-              <Button variant="solid" text="Choose File" />
+              <Button variant="outline" text="Choose File" />
             </label>
           </div>
         )

@@ -3,7 +3,7 @@ import { primary as colors } from "@/utils/colors";
 import cx from "classix";
 import Kbd from "@/components/core/Kbd";
 import { registerCommand } from "@/utils/commands";
-import CommandLinks from "@/components/CommandLinks";
+import CommandLinkList from "@/components/core/CommandLinkList";
 import AutoHide from "@/components/core/AutoHide";
 
 registerCommand(
@@ -65,11 +65,11 @@ export default function QueryTerminal({ colorScheme, onValidate, prompt, classNa
     <div className={classes.self}>
       <div className="flex flex-col flex-grow w-full overflow-auto">
         <AutoHide className="flex w-full grow items-center justify-center opacity-70">
-          <CommandLinks>
-            <CommandLinks.Link command="terminal.clear" />
-            <CommandLinks.Link command="terminal.history.clear" />
-            <CommandLinks.Link command="terminal.history.search" />
-          </CommandLinks>
+          <CommandLinkList>
+            <CommandLinkList.Link command="terminal.clear" />
+            <CommandLinkList.Link command="terminal.history.clear" />
+            <CommandLinkList.Link command="terminal.history.search" />
+          </CommandLinkList>
         </AutoHide>
         {/**
          * The history of the terminal

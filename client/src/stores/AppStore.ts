@@ -1,32 +1,32 @@
-/**
- * The global store of the application.
- */
 import { create } from "zustand";
 import { calculateColorScheme } from "@/utils/colors";
-import { Editor, editors } from "@/resources/editors";
-import { raise } from "@/utils/telemetry";
-import { DEFAULT_PRIMARY_SIDEBAR_WIDTH, EDITOR_USER_BLANK } from "@/utils/constants";
+import { DEFAULT_PRIMARY_SIDEBAR_WIDTH } from "@/utils/constants";
+import { ApplicationSpace } from "@/utils/types";
 
 /**
  * A name of a pages/sections in the settings.
  */
 export type SettingsPageName = "general" | "text-editor" | "table-view";
 
-export type ApplicationSpace = "logon" | "user" | "workspace";
+/**
+ * The id of an item that represents a blank page.
+ */
+export const BLANK_PAGE_ITEM_ID = "blank";
 
 export type Page = {
   id: string;
   itemId: string;
-  title: string;
-  editor: Editor;
-  modified: boolean;
-  readOnly: boolean;
-
-  /**
-   * Whether the page is a file or not.
-   */
-  readonly file: boolean;
 };
+
+/**
+ * A helper function to create a new blank page.
+ */
+function createBlankPage(): Page {
+  return {
+    id: crypto.randomUUID(),
+    itemId: BLANK_PAGE_ITEM_ID,
+  };
+}
 
 type State = {
   /**
@@ -72,8 +72,7 @@ type State = {
    *
    * - This is the item that is currently selected in the sidebar, multiple pages can be open for the same item so it's
    *   important to track the active item separately from the active page.
-   * - This id does not necessarily correspond to the id of the active page, for example if a connection or an
-   *   environment is selected in the sidebar, the active id will be id of the connection or the environment.
+   * - This id does not necessarily correspond to the id of the active page.
    */
   activeId?: string;
 
@@ -121,27 +120,22 @@ type Actions = {
   /**
    * Change the current active item.
    */
-  setActiveItem: (id: string, title: string, editor: Editor) => void;
+  setActiveItem: (id: string) => void;
 
   /**
-   * Select the active page.
+   * Make the given page the active one.
    */
   setActivePage: (pageId: string) => void;
 
   /**
-   * Add a new empty page and make it the active one.
-   *
-   * The new page will depends on the current active space.
-   * This method is used to create a new page when the user clicks on a new item in the sidebar.
-   *
-   * @throws If the active space does not support pages.
+   * Change the item of the given page.
    */
-  addBlankPage: () => void;
+  replacePage: (pageId: string, itemId: string) => void;
 
   /**
-   * Add a new empty page and make it the active one.
+   * Add a new page for the given item and make it the active one.
    */
-  addPage: (page: Partial<Page>) => void;
+  addPage: (itemId: string) => void;
 
   /**
    * Close the page with the given id.
@@ -150,45 +144,12 @@ type Actions = {
    * When closing the last remaining page, a new default page is created.
    */
   closePage: (pageId: string) => void;
-
-  /**
-   * Change the title all pages opened for the item with the given id.
-   */
-  renamePages: (pageId: string, title: string) => void;
 };
 
 /**
  * The global store of the application.
  */
-export const useAppStore = create<State & Actions>((set, get) => {
-  /**
-   * An utility function to create a new page with the given defaults.
-   */
-  const createPage = (defaults: Partial<Page>): Page => {
-    const editor = defaults.editor || editors.getEditorByFilename(defaults.title);
-    return {
-      id: crypto.randomUUID(),
-      itemId: crypto.randomUUID(),
-      title: "Untitled",
-      editor: editor,
-      modified: false,
-      readOnly: false,
-      file: !!editor.selector,
-      ...defaults,
-    };
-  };
-
-  const getDefaultEditor = (appSpace: ApplicationSpace) => {
-    switch (appSpace) {
-      case "user": {
-        return editors.getEditorByName(EDITOR_USER_BLANK);
-      }
-      default: {
-        raise(`No default editor for "${appSpace}".`);
-      }
-    }
-  };
-
+export const useAppStore = create<State & Actions>((set, _get) => {
   return {
     sidebarWidth: DEFAULT_PRIMARY_SIDEBAR_WIDTH,
     sidebarVisibility: true,
@@ -218,11 +179,9 @@ export const useAppStore = create<State & Actions>((set, get) => {
 
     setActiveSpace(activeSpace: ApplicationSpace) {
       switch (activeSpace) {
-        case "user":
-        case "workspace": {
-          const defaultPage = createPage({
-            editor: getDefaultEditor(activeSpace),
-          });
+        case "user": {
+          // TODO: We should load the active items from the local storage.
+          const defaultPage = createBlankPage();
           set((state) => ({
             ...state,
             pages: [defaultPage],
@@ -266,32 +225,16 @@ export const useAppStore = create<State & Actions>((set, get) => {
 
     /**
      * Change the current active item.
+     *
+     * This will also change the active page to the first page that is open for the item. If there are no pages open for
+     * the item, the active page is not changed.
      */
-    setActiveItem(id: string, title: string, editor: Editor) {
-      // Check if the page is already open on that item, if so just activate it, otherwise open a new page.
-      const pageId = get().pages.find((page) => page.itemId === id);
-      if (pageId) {
-        set((state) => ({ ...state, activePageId: pageId.id }));
-      } else {
-        const activePageId = get().activePageId;
-        const activePage = get().pages.find((page) => page.id === activePageId);
-        const newPage = createPage({ itemId: id, title, editor });
-        const pages = [...get().pages];
-        // If the active page is not modified, replace it with the new page.
-        // Otherwise, add the new page.
-        if (!activePage.modified) {
-          const activePageIndex = get().pages.findIndex((page) => page.id === activePageId);
-          pages[activePageIndex] = newPage;
-        } else {
-          pages.push(newPage);
-        }
-        set((state) => ({
-          ...state,
-          pages,
-          activePageId: newPage.id,
-          activeId: newPage.itemId,
-        }));
-      }
+    setActiveItem(id: string) {
+      set((state) => ({
+        ...state,
+        activeId: id,
+        activePageId: state.pages.find((p) => p.itemId === id)?.id || state.activePageId,
+      }));
     },
 
     /**
@@ -306,10 +249,13 @@ export const useAppStore = create<State & Actions>((set, get) => {
     },
 
     /**
-     * Add a new empty page and make it the active one.
+     * Add a new empty page for the given item and make it the active one.
      */
-    addPage(page: Partial<Page>) {
-      const newPage = createPage(page);
+    addPage(itemId: string) {
+      const newPage: Page = {
+        id: crypto.randomUUID(),
+        itemId,
+      };
       set((state) => ({
         ...state,
         pages: [...state.pages, newPage],
@@ -319,21 +265,12 @@ export const useAppStore = create<State & Actions>((set, get) => {
     },
 
     /**
-     * Add a new empty page and make it the active one.
+     * Change the item of the given page.
      */
-    addBlankPage() {
-      this.addPage({
-        editor: getDefaultEditor(get().activeSpace),
-      });
-    },
-
-    /**
-     * Change the title all pages opened for the item with the given id.
-     */
-    renamePages(itemId: string, title: string) {
+    replacePage(pageId: string, itemId: string) {
       set((state) => ({
         ...state,
-        pages: state.pages.map((page) => (page.itemId === itemId ? { ...page, title } : page)),
+        pages: state.pages.map((page) => (page.id === pageId ? { ...page, itemId } : page)),
       }));
     },
 
@@ -353,15 +290,13 @@ export const useAppStore = create<State & Actions>((set, get) => {
             activeId: pages[activePageIndex].itemId,
           };
         } else {
-          // Create a new default page for the current active space.
-          const defaultPage = createPage({
-            editor: getDefaultEditor(state.activeSpace),
-          });
+          // Closing the last page, create a new blank page for the current active space.
+          const blankPage = createBlankPage();
           return {
             ...state,
-            pages: [defaultPage],
-            activePageId: defaultPage.id,
-            activeId: defaultPage.itemId,
+            pages: [blankPage],
+            activePageId: blankPage.id,
+            activeId: blankPage.itemId,
           };
         }
       });

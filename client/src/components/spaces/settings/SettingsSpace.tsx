@@ -23,7 +23,7 @@ import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGenera
 import SettingsPageEditor from "@/components/spaces/settings/SettingsPageEditor";
 import SettingsPageTableView from "@/components/spaces/settings/SettingsPageTableView";
 import SettingsIcon from "@/icons/settings.svg?react";
-import PrimarySidebar from "@/components/sidebar/PrimarySidebar";
+import PrimarySidebar from "@/components/layout/PrimarySidebar";
 import TreeView from "@/components/core/TreeView";
 import UserNotificationIconButton from "@/components/user-store/UserNotificationIconButton";
 

@@ -1,6 +1,5 @@
 import { ROOT_CATALOG_ID, Users } from "@/resources/users";
 import { UserSettings } from "@/models/users";
-import { useAppStore } from "@/stores/AppStore";
 import { produce } from "immer";
 import { create } from "zustand";
 import { ResourceRef, ResourceType } from "@/models/resources";
@@ -8,27 +7,44 @@ import { QueryExecution } from "@/models/queries";
 import Connections from "@/resources/connections";
 import { Notification } from "@/components/core/NotificationInbox";
 import { METADATA_RESOURCES_TYPE } from "@/utils/constants";
+import { getResourceHandler } from "@/resources/handlers";
+import { Connection } from "@/models/connections";
+import { Environment } from "@/models/environments";
 
 /**
- * The loading status of a catalog's item children.
+ * The status of either the resource or the children.
  *
- * - `pending`: No attempt has been made to load the children of the item.
- * - `loading`: An attempt is being made to load the children of the item.
+ * - `fetching`: An operation is in progress.
  * - `ready`: The children of the item have been loaded.
  * - `error`: An error occurred while loading the children of the item.
  */
-export type CatalogItemLoadingStatus = "loading" | "ready" | "error";
+export type CatalogItemStatus = "fetching" | "ready" | "error";
 
 export type CatalogItem = ResourceRef & {
+  /**
+   * The resource referenced by the catalog item.
+ . */
+  resource?: Connection | Environment;
+
   /**
    * The children of the catalog item (if applicable).
    */
   children?: CatalogItem[];
 
   /**
-   * The loading status of the children (if applicable).
+   * The last error that occurred on that item.
    */
-  status?: CatalogItemLoadingStatus;
+  lastError?: Error;
+
+  /**
+   * The current status of the item.
+   */
+  status?: CatalogItemStatus;
+
+  /**
+   * Indicate if the resource is modified and need to be saved.
+   */
+  modified?: boolean;
 };
 
 export type State = {
@@ -67,6 +83,11 @@ export type Actions = {
    * Reset the store when user settings have been modified.
    */
   resetSettings: () => void;
+
+  /**
+   * Change the status of a catalog item.
+   */
+  setCatalogItemStatus: (id: string, status: CatalogItemStatus, error?: Error) => void;
 
   /**
    * Load the children item from the catalog for the given catalog item identifier.
@@ -171,23 +192,21 @@ export const useUserStore = create<UserStore>((set, get) => {
       if (!catalogItem) {
         // The item does not exist in the catalog.
         console.error(`Catalog item with id '${id}' not found.`);
-        return;
-      } else if (catalogItem.status === "loading") {
+      } else if (catalogItem.status === "fetching") {
         // The children of the item are already being loaded.
-        console.debug("Catalog item is already loading.", { id, name: catalogItem.name });
-        return;
-      } else if (catalogItem.status === "ready" && !reload) {
+        console.debug("Catalog item is already processing a request.", { id, name: catalogItem.name });
+      } else if (catalogItem.children && !reload) {
         // The children of the item are already loaded and we don't want to reload them.
-        console.debug("Catalog item already loaded.", { id, name: catalogItem.name });
-        return;
+        console.debug("Catalog item children already loaded.", { id, name: catalogItem.name });
       } else {
+        // We can load the children of the item.
         set((state) => ({
           ...state,
-          catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, status: "loading" })),
+          catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, status: "fetching" })),
         }));
-        console.debug("Loading catalog item...", { id, name: catalogItem.name, state: get() });
+        console.debug("Loading catalog item children...", { id, name: catalogItem.name, state: get() });
         try {
-          const entries = await Users.readCatalog(id);
+          const entries = await getResourceHandler(catalogItem.type).list(catalogItem);
           entries.sort((a, b) => a.name.localeCompare(b.name));
           set((state) => ({
             ...state,
@@ -195,34 +214,60 @@ export const useUserStore = create<UserStore>((set, get) => {
               ...entry,
               children: entries,
               status: "ready",
+              lastError: undefined,
             })),
           }));
           console.debug("Catalog item loaded...", { id, name: catalogItem.name, state: get() });
         } catch (error) {
-          set((state) => ({
-            ...state,
-            catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, status: "error" })),
-          }));
-          get().addNotification({
+          get().setCatalogItemStatus(id, "error", error);
+        }
+      }
+    },
+
+    /**
+     * Change the status of a catalog item.
+     */
+    setCatalogItemStatus(id: string, status: CatalogItemStatus, error?: Error) {
+      set((state) => {
+        if (error) {
+          state.addNotification({
             id: crypto.randomUUID(),
             variant: "error",
-            message: `Failed to load '${catalogItem.name}'`,
+            message: error?.message,
+            autoDismiss: true,
             description: error,
           });
         }
-      }
+        return {
+          ...state,
+          catalog: mutateCatalog(state.catalog, id, (entry) => ({
+            ...entry,
+            status,
+            lastError: error,
+          })),
+        };
+      });
     },
 
     /**
      * Rename an item in the catalog.
      */
     async renameCatalogItem(id: string, newName: string) {
-      await Users.renameCatalogItem(id, newName);
-      set((state) => ({
-        ...state,
-        catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, name: newName })),
-      }));
-      useAppStore.getState().renamePages(id, newName);
+      get().setCatalogItemStatus(id, "fetching");
+      try {
+        await Users.renameCatalogItem(id, newName);
+        set((state) => ({
+          ...state,
+          catalog: mutateCatalog(state.catalog, id, (entry) => ({
+            ...entry,
+            name: newName,
+            lastError: undefined,
+            status: entry.resource ? "ready" : undefined,
+          })),
+        }));
+      } catch (error) {
+        get().setCatalogItemStatus(id, "error", error);
+      }
     },
 
     async createCatalogResource<T extends object>(resourceType: ResourceType, resource: T) {

@@ -3,10 +3,15 @@ import { primary as colors } from "@/utils/colors";
 
 export type SpaceProps = {
   className?: string;
+  forwardRef?: React.RefObject<HTMLDivElement>;
   children?: React.ReactNode;
 };
 
-export default function Space({ className, children }: SpaceProps) {
+export default function Space({ forwardRef, className, children }: SpaceProps) {
   const classes = cx("flex flex-col h-full w-full", colors("background", "text"), className);
-  return <div className={classes}>{children}</div>;
+  return (
+    <div ref={forwardRef} className={classes} tabIndex={0}>
+      {children}
+    </div>
+  );
 }
