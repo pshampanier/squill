@@ -14,7 +14,6 @@ import { AuthenticationError } from "@/utils/errors";
 import { PushMessage } from "@/models/push-notifications";
 import { agent } from "@/resources/agent";
 import { useUserStore } from "@/stores/UserStore";
-import { getResourceHandler } from "@/resources/handlers";
 
 /**
  * The page displayed when the user is using a Connection from the sidebar.
@@ -30,8 +29,6 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   const registerQueryEventHandler = (dispatcher: Dispatch<QueryHistoryAction>) => {
     queryEventHandler.current = dispatcher;
   };
-
-  const resourceHandler = getResourceHandler(catalogItem?.type);
 
   const {
     status,
@@ -83,7 +80,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
     <div className="w-full h-full px-2">
       {status !== "success" && (
         <LoadingContainer
-          message={`Opening '${resourceHandler?.title(catalogItem)}'...`}
+          message={`Opening '${catalogItem.title}'...`}
           status={status}
           error={error}
           errorFallback="Oops, cannot open the connection..."

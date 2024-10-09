@@ -1,5 +1,5 @@
 import cx from "classix";
-import CrashedImage from "@/assets/images/crashed.svg?react";
+import CrashedImage from "@/icons/crashed.svg?react";
 import UserErrorMessage from "@/components/core/UserErrorMessage";
 import Spinner from "@/components/core/Spinner";
 import Button from "@/components/core/Button";

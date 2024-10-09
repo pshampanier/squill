@@ -1,17 +1,12 @@
 import { create } from "zustand";
 import { calculateColorScheme } from "@/utils/colors";
-import { DEFAULT_PRIMARY_SIDEBAR_WIDTH } from "@/utils/constants";
+import { BLANK_PAGE_ITEM_ID, DEFAULT_PRIMARY_SIDEBAR_WIDTH } from "@/utils/constants";
 import { ApplicationSpace } from "@/utils/types";
 
 /**
  * A name of a pages/sections in the settings.
  */
 export type SettingsPageName = "general" | "text-editor" | "table-view";
-
-/**
- * The id of an item that represents a blank page.
- */
-export const BLANK_PAGE_ITEM_ID = "blank";
 
 export type Page = {
   id: string;

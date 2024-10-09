@@ -26,3 +26,18 @@ export const METADATA_SPECIAL = "special";
 export const MIN_PRIMARY_SIDEBAR_WIDTH = 250;
 export const MAX_PRIMARY_SIDEBAR_WIDTH = 500;
 export const DEFAULT_PRIMARY_SIDEBAR_WIDTH = 256;
+
+/**
+ * A catalog id associated to the root catalog.
+ */
+export const ROOT_CATALOG_ID = "root-catalog-id";
+
+/**
+ * A catalog id associated to a blank page.
+ */
+export const BLANK_PAGE_ITEM_ID = "blank";
+
+/**
+ * A catalog id associated to an item not found.
+ */
+export const NOT_FOUND_ITEM_ID = "not-found";

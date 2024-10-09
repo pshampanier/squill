@@ -199,7 +199,7 @@ function CatalogViewCollection({ catalogId, useViewStore, root }: CatalogViewCol
   // States & Refs
   //
 
-  const catalogItem = useUserStore((state) => state.catalog.get(catalogId));
+  const catalogItem = useUserStore((state) => state.getCatalogItem(catalogId));
   const viewStatus = useViewStore((state) => state.getViewStatus(catalogId, catalogItem));
 
   //
@@ -215,10 +215,11 @@ function CatalogViewCollection({ catalogId, useViewStore, root }: CatalogViewCol
   //
   // Rendering
   //
-  console.debug("Rendering CatalogViewCollection", { catalogId, name: catalogItem?.name, viewStatus });
+  console.debug("Rendering CatalogViewCollection", { catalogId, name: catalogItem.name, viewStatus });
   const children = ((): React.ReactNode => {
-    if (viewStatus === "open" && catalogItem?.children?.length) {
-      return catalogItem.children.map((child: CatalogItem) => {
+    if (viewStatus === "open" && catalogItem.children?.length) {
+      return catalogItem.children.map((childId: string) => {
+        const child = useUserStore.getState().getCatalogItem(childId);
         switch (child.type) {
           case "collection":
             return <CatalogViewCollection key={child.id} catalogId={child.id} useViewStore={useViewStore} />;
@@ -237,8 +238,8 @@ function CatalogViewCollection({ catalogId, useViewStore, root }: CatalogViewCol
 
   // The icon associated to the collection depends on the type of resource .
   const icon: SVGIcon =
-    SPECIAL_COLLECTION_ICONS[catalogItem?.metadata?.[METADATA_SPECIAL] as SpecialCollection] ||
-    RESOURCE_TYPE_ICONS[catalogItem?.metadata?.[METADATA_RESOURCES_TYPE] as ResourceType] ||
+    SPECIAL_COLLECTION_ICONS[catalogItem.metadata?.[METADATA_SPECIAL] as SpecialCollection] ||
+    RESOURCE_TYPE_ICONS[catalogItem.metadata?.[METADATA_RESOURCES_TYPE] as ResourceType] ||
     FolderIcon;
 
   if (root) {
@@ -247,7 +248,7 @@ function CatalogViewCollection({ catalogId, useViewStore, root }: CatalogViewCol
     return (
       <TreeView.Item
         key={catalogId}
-        label={catalogItem?.name}
+        label={catalogItem.name}
         icon={icon}
         status={viewStatus}
         onToggle={handleToggle}
@@ -296,7 +297,7 @@ function ConnectionViewItem({ catalogId: connId, useViewStore }: ConnectionViewI
   // States & Refs
   //
   const [editing, setEditing] = useState(false);
-  const catalogItem = useUserStore((state) => state.catalog.get(connId));
+  const catalogItem = useUserStore((state) => state.getCatalogItem(connId));
   const getViewStatus = useViewStore((state) => state.getViewStatus);
   const selected = useAppStore((state) => state.activeId === connId);
   const refUserTipDisplayed = useRef<boolean>(false);
@@ -375,12 +376,12 @@ function ConnectionViewItem({ catalogId: connId, useViewStore }: ConnectionViewI
   //
   // Rendering
   //
-  console.debug("Rendering CatalogViewCollection", { connId, name: catalogItem?.name, viewStatus });
+  console.debug("Rendering CatalogViewCollection", { connId, name: catalogItem.name, viewStatus });
   return (
     <TreeView.Item
       ref={refItem}
       key={connId}
-      label={catalogItem?.name}
+      label={catalogItem.name}
       icon={PlugIcon}
       status={viewStatus}
       onClick={handleClick}

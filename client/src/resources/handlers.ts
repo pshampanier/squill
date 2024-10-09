@@ -1,14 +1,17 @@
-import { ResourceRef, ResourceType } from "@/models/resources";
+import { ResourceRef } from "@/models/resources";
 import { SVGIcon } from "@/utils/types";
 import { Users } from "@/resources/users";
 import Connections from "@/resources/connections";
 import ConnectionEditor from "@/components/editors/ConnectionEditor";
 import BlankPageIcon from "@/icons/app-logo.svg?react";
+import NotFoundIcon from "@/icons/crashed.svg?react";
 import PlugIcon from "@/icons/plug.svg?react";
 import { ApplicationSpace } from "@/utils/types";
 import UserBlankEditor from "@/components/editors/UserBlankEditor";
+import { BLANK_PAGE_ITEM_ID, NOT_FOUND_ITEM_ID } from "@/utils/constants";
 
-const BLANK_PAGE_TITLE = "Untitled";
+export const BLANK_PAGE_TITLE = "Untitled";
+export const NOT_FOUND_PAGE_TITLE = "Not Found";
 
 export interface ResourceHandler {
   /**
@@ -38,7 +41,10 @@ export interface ResourceHandler {
   editor(ref: ResourceRef, space: ApplicationSpace): React.FunctionComponent<{ pageId: string }>;
 }
 
-const Blank: ResourceHandler = {
+/**
+ * A resource handler for pseudo resources that are not backed by a real resource (e.g. blank page, not found page).
+ */
+const NonResource: ResourceHandler = {
   /**
    * Get the resource identified by the given reference.
    */
@@ -56,16 +62,30 @@ const Blank: ResourceHandler = {
   /**
    * Get the icon of the resource identified by the given reference.
    */
-  icon(_ref: ResourceRef): SVGIcon {
-    return BlankPageIcon;
+  icon(ref: ResourceRef): SVGIcon {
+    switch (ref.id) {
+      case BLANK_PAGE_ITEM_ID: {
+        return BlankPageIcon;
+      }
+      case NOT_FOUND_ITEM_ID: {
+        return NotFoundIcon;
+      }
+    }
   },
 
   /**
    * Get the title of the resource identified by the given reference.
    * This is used in the UI to display the name of the resource, it may be different from the name of the resource.
    */
-  title(_ref: ResourceRef): string {
-    return BLANK_PAGE_TITLE;
+  title(ref: ResourceRef): string {
+    switch (ref.id) {
+      case BLANK_PAGE_ITEM_ID: {
+        return BLANK_PAGE_TITLE;
+      }
+      case NOT_FOUND_ITEM_ID: {
+        return NOT_FOUND_PAGE_TITLE;
+      }
+    }
   },
 
   /**
@@ -143,18 +163,19 @@ const Catalog: ResourceHandler = {
 /**
  * Get the resource handler for the given resource type.
  */
-export const getResourceHandler = function (type: ResourceType): ResourceHandler {
-  switch (type) {
-    case undefined: {
-      return Blank;
-    }
-    case "connection":
-    case "environment":
-    case "collection": {
-      return Catalog;
-    }
-    default: {
-      throw new Error("Not implemented");
+export const getResourceHandler = function (ref: ResourceRef): ResourceHandler {
+  if (ref.id === BLANK_PAGE_ITEM_ID || ref.id === NOT_FOUND_ITEM_ID) {
+    return NonResource;
+  } else {
+    switch (ref.type) {
+      case "connection":
+      case "environment":
+      case "collection": {
+        return Catalog;
+      }
+      default: {
+        throw new Error("Not implemented: getResourceHandler for type " + ref.type);
+      }
     }
   }
 };

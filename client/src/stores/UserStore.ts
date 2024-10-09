@@ -6,10 +6,11 @@ import { ResourceRef, ResourceType } from "@/models/resources";
 import { QueryExecution } from "@/models/queries";
 import Connections from "@/resources/connections";
 import { Notification } from "@/components/core/NotificationInbox";
-import { METADATA_RESOURCES_TYPE } from "@/utils/constants";
-import { getResourceHandler } from "@/resources/handlers";
+import { BLANK_PAGE_ITEM_ID, METADATA_RESOURCES_TYPE, NOT_FOUND_ITEM_ID } from "@/utils/constants";
+import { getResourceHandler, ResourceHandler } from "@/resources/handlers";
 import { Connection } from "@/models/connections";
 import { Environment } from "@/models/environments";
+import { ApplicationSpace, SVGIcon } from "@/utils/types";
 
 /**
  * The status of either the resource or the children.
@@ -20,16 +21,32 @@ import { Environment } from "@/models/environments";
  */
 export type CatalogItemStatus = "fetching" | "ready" | "error";
 
-export type CatalogItem = ResourceRef & {
+export class CatalogItem extends ResourceRef {
+  /**
+   * The resource handler for the item.
+   * Will be set at first use.
+   */
+  private _handler?: ResourceHandler;
+
+  /**
+   * Access the resource handler for the item.
+   */
+  private get handler(): ResourceHandler {
+    if (!this._handler) {
+      this._handler = getResourceHandler(this);
+    }
+    return this._handler;
+  }
+
   /**
    * The resource referenced by the catalog item.
  . */
   resource?: Connection | Environment;
 
   /**
-   * The children of the catalog item (if applicable).
+   * The children's ids of the catalog item (if applicable).
    */
-  children?: CatalogItem[];
+  children?: string[];
 
   /**
    * The last error that occurred on that item.
@@ -45,7 +62,48 @@ export type CatalogItem = ResourceRef & {
    * Indicate if the resource is modified and need to be saved.
    */
   modified?: boolean;
-};
+
+  /**
+   * The title of the item.
+   * This is the name of the item by default but can be overridden by the resource handler.
+   */
+  get title(): string {
+    return this.handler?.title(this);
+  }
+
+  /**
+   * The icon associated to the item.
+   */
+  get icon(): SVGIcon {
+    return this.handler?.icon(this);
+  }
+
+  /**
+   * Get the editor for the item and the given space.
+   */
+  editor(space: ApplicationSpace): React.FunctionComponent<{ pageId: string }> {
+    return this.handler.editor(this, space);
+  }
+
+  /**
+   * Get the resource identified by the given reference.
+   */
+  async get<T extends object>(): Promise<T> {
+    return this.handler.get(this);
+  }
+
+  /**
+   * List the content of the resource identified by the given reference.
+   */
+  async list(): Promise<ResourceRef[]> {
+    return this.handler.list(this);
+  }
+
+  constructor(props: Partial<CatalogItem>) {
+    super(undefined);
+    Object.assign(this, props);
+  }
+}
 
 export type State = {
   settings: UserSettings | null;
@@ -88,6 +146,14 @@ export type Actions = {
    * Change the status of a catalog item.
    */
   setCatalogItemStatus: (id: string, status: CatalogItemStatus, error?: Error) => void;
+
+  /**
+   * Get a catalog item by its identifier.
+   *
+   * This method is guaranteed to return a catalog item, if the requested item is not found, the special `not-found`
+   * catalog item is returned.
+   */
+  getCatalogItem: (id: string) => CatalogItem;
 
   /**
    * Load the children item from the catalog for the given catalog item identifier.
@@ -142,14 +208,26 @@ const initialState: State = {
   settings: null,
   catalog: new Map<string, CatalogItem>([
     [
-      "root-catalog-id",
-      {
-        id: "root-catalog-id",
+      ROOT_CATALOG_ID,
+      new CatalogItem({
+        id: ROOT_CATALOG_ID,
         name: "Catalog",
         type: "collection",
         parentId: null,
         metadata: {},
-      },
+      }),
+    ],
+    [
+      BLANK_PAGE_ITEM_ID,
+      new CatalogItem({
+        id: BLANK_PAGE_ITEM_ID,
+      }),
+    ],
+    [
+      NOT_FOUND_ITEM_ID,
+      new CatalogItem({
+        id: NOT_FOUND_ITEM_ID,
+      }),
     ],
   ]),
   history: new Map<string, QueryExecution>(),
@@ -185,6 +263,16 @@ export const useUserStore = create<UserStore>((set, get) => {
     },
 
     /**
+     * Get a catalog item by its identifier.
+     *
+     * This method is guaranteed to return a catalog item, if the requested item is not found, the special `not-found`
+     * catalog item is returned.
+     */
+    getCatalogItem(id: string): CatalogItem {
+      return get().catalog.get(id) || get().catalog.get(NOT_FOUND_ITEM_ID);
+    },
+
+    /**
      * Load the catalog for the given path and add it to the store.
      */
     async loadCatalogChildren(id: string, reload: boolean = false) {
@@ -202,20 +290,26 @@ export const useUserStore = create<UserStore>((set, get) => {
         // We can load the children of the item.
         set((state) => ({
           ...state,
-          catalog: mutateCatalog(state.catalog, id, (entry) => ({ ...entry, status: "fetching" })),
+          catalog: mutateCatalog(state.catalog, id, (entry) => new CatalogItem({ ...entry, status: "fetching" })),
         }));
         console.debug("Loading catalog item children...", { id, name: catalogItem.name, state: get() });
         try {
-          const entries = await getResourceHandler(catalogItem.type).list(catalogItem);
+          const entries = await catalogItem.list();
           entries.sort((a, b) => a.name.localeCompare(b.name));
           set((state) => ({
             ...state,
-            catalog: mergeAndMutateCatalog(state.catalog, entries, id, (entry) => ({
-              ...entry,
-              children: entries,
-              status: "ready",
-              lastError: undefined,
-            })),
+            catalog: mergeAndMutateCatalog(
+              state.catalog,
+              entries,
+              id,
+              (entry) =>
+                new CatalogItem({
+                  ...entry,
+                  children: entries.map((ref) => ref.id),
+                  status: "ready",
+                  lastError: undefined,
+                }),
+            ),
           }));
           console.debug("Catalog item loaded...", { id, name: catalogItem.name, state: get() });
         } catch (error) {
@@ -240,11 +334,16 @@ export const useUserStore = create<UserStore>((set, get) => {
         }
         return {
           ...state,
-          catalog: mutateCatalog(state.catalog, id, (entry) => ({
-            ...entry,
-            status,
-            lastError: error,
-          })),
+          catalog: mutateCatalog(
+            state.catalog,
+            id,
+            (entry) =>
+              new CatalogItem({
+                ...entry,
+                status,
+                lastError: error,
+              }),
+          ),
         };
       });
     },
@@ -258,12 +357,17 @@ export const useUserStore = create<UserStore>((set, get) => {
         await Users.renameCatalogItem(id, newName);
         set((state) => ({
           ...state,
-          catalog: mutateCatalog(state.catalog, id, (entry) => ({
-            ...entry,
-            name: newName,
-            lastError: undefined,
-            status: entry.resource ? "ready" : undefined,
-          })),
+          catalog: mutateCatalog(
+            state.catalog,
+            id,
+            (entry) =>
+              new CatalogItem({
+                ...entry,
+                name: newName,
+                lastError: undefined,
+                status: entry.resource ? "ready" : undefined,
+              }),
+          ),
         }));
       } catch (error) {
         get().setCatalogItemStatus(id, "error", error);
@@ -274,10 +378,16 @@ export const useUserStore = create<UserStore>((set, get) => {
       const resourceRef = await Users.createCatalogResource<T>(resourceType, resource);
       set((state) => ({
         ...state,
-        catalog: mergeAndMutateCatalog(state.catalog, [resourceRef], resourceRef.parentId, (parent) => ({
-          ...parent,
-          children: [...(parent.children || []), resourceRef],
-        })),
+        catalog: mergeAndMutateCatalog(
+          state.catalog,
+          [resourceRef],
+          resourceRef.parentId,
+          (parent) =>
+            new CatalogItem({
+              ...parent,
+              children: [...(parent.children || []), resourceRef.id],
+            }),
+        ),
       }));
     },
 
@@ -307,11 +417,13 @@ export const useUserStore = create<UserStore>((set, get) => {
      * the catalog.
      */
     getDefaultCatalogCollection(resourceType: ResourceType): CatalogItem | undefined {
-      return get()
-        .catalog.get(ROOT_CATALOG_ID)
-        ?.children.find((catalogItem) => {
-          return catalogItem.metadata?.[METADATA_RESOURCES_TYPE] === resourceType;
-        });
+      const state = get();
+      for (const childId of state.catalog.get(ROOT_CATALOG_ID)?.children || []) {
+        const child = state.catalog.get(childId);
+        if (child?.metadata?.[METADATA_RESOURCES_TYPE] === resourceType) {
+          return child;
+        }
+      }
     },
 
     /**
@@ -360,11 +472,11 @@ function mergeAndMutateCatalog(
   items: ResourceRef[],
   id: string,
   mutator: (entry: CatalogItem) => CatalogItem,
-) {
+): Map<string, CatalogItem> {
   const newCatalog = new Map(catalog);
   // add/replace items present in `items`
   for (const item of items) {
-    newCatalog.set(item.id, item);
+    newCatalog.set(item.id, new CatalogItem(item));
   }
   // replace the item with id `id` with the mutated item
   const item = newCatalog.get(id);

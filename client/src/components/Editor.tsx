@@ -1,7 +1,6 @@
 import { useAppStore } from "@/stores/AppStore";
 import Page from "@/components/layout/Page";
 import { useUserStore } from "@/stores/UserStore";
-import { getResourceHandler } from "@/resources/handlers";
 import { useEffect } from "react";
 
 export default function Editor() {
@@ -25,7 +24,7 @@ export default function Editor() {
         if (activePage?.itemId !== state.activeId) {
           // The active item is not the same as the active page.
           // If the active page is not modified, we can reuse it for the active item.
-          const modified = useUserStore.getState().catalog.get(activePage?.itemId)?.modified;
+          const modified = useUserStore.getState().getCatalogItem(activePage?.itemId)?.modified;
           if (!modified) {
             // We can reuse the active page for the active item.
             state.replacePage(state.activePageId, state.activeId);
@@ -46,9 +45,8 @@ export default function Editor() {
   // Rendering
   //
   return pages.map((page) => {
-    const catalogItem = useUserStore.getState().catalog.get(page.itemId);
-    const resourceHandler = getResourceHandler(catalogItem?.type);
-    const EditorComponent = resourceHandler.editor(catalogItem, activeSpace);
+    const catalogItem = useUserStore.getState().getCatalogItem(page.itemId);
+    const EditorComponent = catalogItem.editor(activeSpace);
     return (
       <Page key={"page-" + page.id} pageId={page.id}>
         <EditorComponent key={"editor-" + page.id} pageId={page.id} />

@@ -1,12 +1,12 @@
 import cx from "classix";
 import { tertiary } from "@/utils/colors";
 import { useUserStore } from "@/stores/UserStore";
-import { BLANK_PAGE_ITEM_ID, useAppStore } from "@/stores/AppStore";
+import { useAppStore } from "@/stores/AppStore";
 import PlusIcon from "@/icons/plus.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
 import CloseCircleIcon from "@/icons/close-circle.svg?react";
 import { useCallback, useEffect, useRef } from "react";
-import { getResourceHandler } from "@/resources/handlers";
+import { BLANK_PAGE_ITEM_ID } from "@/utils/constants";
 
 function PagesTabs() {
   const pages = useAppStore((state) => state.pages);
@@ -54,17 +54,15 @@ function Tab({ pageId }: TabProps) {
   const refButton = useRef<HTMLButtonElement>(null);
   const page = useAppStore((state) => state.pages.find((page) => page.id === pageId));
   const selected = useAppStore((state) => state.activePageId === pageId);
-  const catalogItem = useUserStore((state) => state.catalog.get(page?.itemId));
+  const catalogItem = useUserStore((state) => state.getCatalogItem(page?.itemId));
 
   //
   // Logic
   //
   const setActivePage = useAppStore((state) => state.setActivePage);
   const closePage = useAppStore((state) => state.closePage);
-  const resourceHandler = getResourceHandler(catalogItem?.type);
-  const Icon = resourceHandler.icon(catalogItem);
   const CloseButtonIcon = catalogItem?.modified ? CloseCircleIcon : CloseIcon;
-  const title = resourceHandler.title(catalogItem);
+  const Icon = catalogItem.icon;
 
   // Select the page when the tab is clicked
   const handleClick = useCallback((pageId: string) => {
@@ -111,7 +109,7 @@ function Tab({ pageId }: TabProps) {
       }}
     >
       <Icon className="flex-shrink-0 w-5 h-5" />
-      <span className={classes.title}>{title}</span>
+      <span className={classes.title}>{catalogItem.title}</span>
       <a href="#" className={classes.closeButton}>
         <CloseButtonIcon
           className={`w-6 h-6 px-1 bg-transparent`}

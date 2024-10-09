@@ -14,7 +14,8 @@ import { useCommand } from "@/hooks/use-commands";
 import { CommandEvent, registerCommand } from "@/utils/commands";
 import { useUserStore } from "@/stores/UserStore";
 import { Connection } from "@/models/connections";
-import { BLANK_PAGE_ITEM_ID, useAppStore } from "@/stores/AppStore";
+import { useAppStore } from "@/stores/AppStore";
+import { BLANK_PAGE_ITEM_ID } from "@/utils/constants";
 
 registerCommand(
   {
