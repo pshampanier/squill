@@ -108,6 +108,18 @@ export class QueryExecution {
   isResultSetQuery?: boolean;
   
   /**
+   * The origin of the query execution.
+   * 
+   * The query can be originated from different origins like a terminal or a worksheet. In order to track the
+   * history of each of origin independently, the origin is stored in the query execution.
+   * 
+   * Examples of origins are: `terminal`, `worksheet`, `e7ee76db-8758-4da4-bbce-242c8d1f3d63`, etc.
+   * 
+   **/
+  @serializable("string", { required: true })
+  origin!: string;
+  
+  /**
    * The query that was executed.
    **/
   @serializable("string", { required: true })

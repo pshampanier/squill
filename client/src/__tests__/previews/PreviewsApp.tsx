@@ -1,4 +1,5 @@
 import { usePreviewsStore } from "./previewsStore";
+import { primary as colors } from "@/utils/colors";
 import Sidebar from "@/components/sidebar/Sidebar";
 import SidebarSection from "@/components/sidebar/SidebarSection";
 import PreviewSidebarItem from "./PreviewSidebarItem";
@@ -34,6 +35,8 @@ import FileInputPreview from "./core/FileInput.preview";
 import NotificationPreview from "./core/Notifications.preview";
 import TreeViewPreview from "./core/TreeView.preview";
 import SidePanelPreview from "./core/SidePanel.preview";
+import QueryHistoryPreview from "./query/QueryHistoryPreview";
+import cx from "classix";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -55,6 +58,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="QueryPrompt" />
           <PreviewSidebarItem view="QueryTerminal" />
           <PreviewSidebarItem view="QueryHistoryTimeline" />
+          <PreviewSidebarItem view="QueryHistory" />
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
           <PreviewSidebarItem view="Kbd" />
@@ -77,14 +81,19 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Syntax Highlighting" />
         </SidebarSection>
       </Sidebar>
-      <div className="flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll w-full">
+      <div
+        className={cx(
+          "flex flex-col items-center text-sm text-gray-600 dark:text-gray-400 p-2 overflow-y-scroll w-full",
+          colors("background"),
+        )}
+      >
         <header className="flex grid-flow-row w-full mb-4 justify-end">
           <ButtonGroup defaultValue={colorScheme} size="xs" onChange={setColorScheme}>
             <ButtonGroup.Item name="light" icon={ThemeLightIcon} />
             <ButtonGroup.Item name="dark" icon={ThemeDarkIcon} />
           </ButtonGroup>
         </header>
-        <div className="flex flex-col space-y-10 w-3/4 h-full py-2">
+        <div className={"flex flex-col space-y-10 w-3/4 h-full py-2"}>
           {view === "Alert" && <AlertPreview />}
           {view === "ButtonGroup" && <ButtonGroupPreview />}
           {view === "Buttons" && <ButtonsPreview />}
@@ -92,6 +101,7 @@ export function PreviewsApp() {
           {view === "Dropdown" && <DropdownPreview />}
           {view === "FileInput" && <FileInputPreview />}
           {view === "QueryHistoryTimeline" && <QueryHistoryTimelinePreview />}
+          {view === "QueryHistory" && <QueryHistoryPreview />}
           {view === "QueryInput" && <QueryInputPreview />}
           {view === "QueryOutput" && <QueryOutputPreview />}
           {view === "QueryPrompt" && <QueryPromptPreview />}

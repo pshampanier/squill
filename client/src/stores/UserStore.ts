@@ -4,7 +4,6 @@ import { produce } from "immer";
 import { create } from "zustand";
 import { ResourceRef, ResourceType } from "@/models/resources";
 import { QueryExecution } from "@/models/queries";
-import Connections from "@/resources/connections";
 import { Notification } from "@/components/core/NotificationInbox";
 import { BLANK_PAGE_ITEM_ID, METADATA_RESOURCES_TYPE, NOT_FOUND_ITEM_ID } from "@/utils/constants";
 import { getResourceHandler, ResourceHandler } from "@/resources/handlers";
@@ -183,14 +182,6 @@ export type Actions = {
    * The the default collection for the given resource type.
    */
   getDefaultCatalogCollection: (resourceType: ResourceType) => CatalogItem | undefined;
-
-  /**
-   * Execute a buffer on a connection.
-   *
-   * The buffer is may contain 0 or more queries. For each query, a query execution is created and added to the history
-   * and the the identifier of each query execution is returned.
-   */
-  executeBuffer: (connectionId: string, buffer: string) => Promise<string[]>;
 
   /**
    * Add a notification.
@@ -389,25 +380,6 @@ export const useUserStore = create<UserStore>((set, get) => {
             }),
         ),
       }));
-    },
-
-    /**
-     * Execute a buffer on a connection.
-     *
-     * The buffer is may contain 0 or more queries. For each query, a query execution is created and added to the history
-     * and the the identifier of each query execution is returned.
-     */
-    async executeBuffer(connectionId: string, buffer: string) {
-      const queryExecutions = await Connections.execute(connectionId, buffer);
-      const additionalItems = queryExecutions.reduce((map, qe) => {
-        map.set(qe.id, qe);
-        return map;
-      }, new Map<string, QueryExecution>());
-      set((state) => ({
-        ...state,
-        history: new Map([...state.history, ...additionalItems]),
-      }));
-      return queryExecutions.map((qe) => qe.id);
     },
 
     /**

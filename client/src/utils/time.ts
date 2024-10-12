@@ -107,6 +107,7 @@ export type FormatDurationOptions = {
   style?: FormatDurationStyle;
   locale?: Locale;
   precision?: FormatDurationPrecision;
+  truncate?: 1 | 2 | 3 | 4 | 5 | 6;
 };
 
 /**
@@ -281,7 +282,7 @@ export function formatDuration(
   if (result.text.length === 0) {
     return [locales[options.locale].lessThan[options.precision], result.precision];
   } else {
-    return [result.text.join(" "), result.precision];
+    return [result.text.slice(0, options?.truncate || 7).join(" "), result.precision];
   }
 }
 
@@ -431,6 +432,7 @@ export function generateDateClassifier(
           return truncDate(today, "month");
         case "last_month":
           return addTime(truncDate(today, "month"), -1, "month");
+        case "this_year":
         case "last_january":
           return new Date(today.getFullYear(), 0, 1);
         case "last_february":
@@ -495,6 +497,7 @@ export const DATE_CLASSIFICATIONS = [
   "last_march",
   "last_february",
   "last_january",
+  "this_year",
   "last_year",
   "before_last_year",
 ] as const;
@@ -557,6 +560,7 @@ export function formatDateClassification(
       return new Intl.DateTimeFormat(options.locale, { month: "long" }).format(new Date(2000, 2, 1)).toLowerCase();
     case "last_february":
       return new Intl.DateTimeFormat(options.locale, { month: "long" }).format(new Date(2000, 1, 1)).toLowerCase();
+    case "this_year":
     case "last_january":
       return new Intl.DateTimeFormat(options.locale, { month: "long" }).format(new Date(2000, 0, 1)).toLowerCase();
     case "last_year":

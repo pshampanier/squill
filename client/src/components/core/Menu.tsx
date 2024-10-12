@@ -123,7 +123,7 @@ function MenuItem({ className, icon, label, children, disabled, onClick, command
       {Icon && <Icon className="flex-none w-5 h-5" />}
       {children}
       {label && <span className="flex grow whitespace-nowrap overflow-hidden truncate">{label}</span>}
-      {shortcut && <Kbd className="ml-auto" shortcut={shortcut} />}
+      {shortcut && <Kbd size="sm" className="ml-auto" shortcut={shortcut} />}
     </a>
   );
 }

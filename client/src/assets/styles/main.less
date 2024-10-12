@@ -143,15 +143,12 @@
 /**
  * Toast
  **/
-
 @keyframes slide-in-from-right {
   0% {
     transform: translateX(100%);
-    opacity: 0;
   }
   100% {
     transform: translateX(0);
-    opacity: 1;
   }
 }
 
@@ -164,9 +161,10 @@
     height 0.2s linear,
     margin 0.2s linear,
     border 0.2s linear,
-    padding 0.2s linear,
-    opacity 0.2s ease-out;
-  overflow: hidden; /* Ensure overflow is hidden to transition height smoothly */
+    padding 0.2s linear;
+
+  /* Ensure overflow is hidden to transition height smoothly */
+  overflow: hidden;
 }
 
 /* Style for when the child is being removed */
@@ -177,7 +175,6 @@
   padding-top: 0;
   padding-bottom: 0;
   border: 0;
-  opacity: 0;
 }
 
 /**
@@ -188,14 +185,30 @@
   z-index: 10001;
 }
 
-.query-terminal {
-  position: relative; /* Allows precise positioning of the pseudo-element */
-}
+.query-header {
+  .status {
+    @apply relative flex z-0 h-5 items-center transition-all duration-300 delay-500 ease-in-out rounded-full select-none;
+    @apply ring-1 ring-gray-50 dark:ring-gray-700; // Apply ring to the main element.
+    &::before {
+      content: "";
+      @apply absolute -inset-0  dark:bg-gray-800 rounded-full; // Background with opacity.
+      z-index: -1; // Ensure it’s behind both the ring and content.
+    }
+  }
 
-.query-terminal::before {
-  content: "";
-  @apply absolute left-0 top-0 inline-block w-6 h-6;
-  background: url('data:image/svg+xml;utf8,<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"></path></svg>')
-    no-repeat center;
-  background-size: 20px 20px;
+  .status-icon {
+    @apply h-5 w-5 flex items-center justify-center;
+  }
+
+  .status-text {
+    @apply text-xs font-semibold ml-0 opacity-0 whitespace-nowrap transition-all duration-300 delay-500 ease-in-out max-w-0;
+  }
+
+  .status:hover {
+    @apply rounded-full pr-4;
+  }
+
+  .status:hover .status-text {
+    @apply ml-3 opacity-100 max-w-96;
+  }
 }

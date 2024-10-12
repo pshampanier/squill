@@ -48,7 +48,9 @@ export default function Editor() {
     const catalogItem = useUserStore.getState().getCatalogItem(page.itemId);
     const EditorComponent = catalogItem.editor(activeSpace);
     return (
-      <Page key={"page-" + page.id} pageId={page.id}>
+      // We need to use the page id + itemId as the key to force the unmounting of the editor for the previous item and
+      // mounting of the editor for the new item.
+      <Page key={"page-" + page.id + "-" + page.itemId} pageId={page.id}>
         <EditorComponent key={"editor-" + page.id} pageId={page.id} />
       </Page>
     );

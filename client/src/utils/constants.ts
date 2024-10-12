@@ -9,6 +9,7 @@ export const HTTP_HEADER_AUTHORIZATION = "Authorization";
 export const HTTP_HEADER_X_API_KEY = "X-Api-Key";
 export const HTTP_HEADER_X_REQUEST_ID = "X-Request-ID";
 export const HTTP_HEADER_X_RESOURCE_TYPE = "X-Resource-Type";
+export const HTTP_HEADER_X_ORIGIN = "X-Origin";
 
 // List of media type
 export const MEDIA_TYPE_APPLICATION_JSON = "application/json";

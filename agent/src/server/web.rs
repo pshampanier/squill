@@ -10,7 +10,7 @@ use axum::http::{self, HeaderValue, Method};
 use axum::middleware::{from_fn, from_fn_with_state, Next};
 use axum::{extract::Request, response::Response, Router};
 use common::constants::{
-    QUERY_PARAM_API_KEY, QUERY_PARAM_TOKEN, X_API_KEY_HEADER, X_REQUEST_ID_HEADER, X_RESOURCE_TYPE,
+    QUERY_PARAM_API_KEY, QUERY_PARAM_TOKEN, X_API_KEY_HEADER, X_REQUEST_ID_HEADER, X_REQUEST_ORIGIN, X_RESOURCE_TYPE,
 };
 use common::pid_file::{delete_pid_file, get_agent_status, load_pid_file, save_pid_file, AgentStatus, PID_FILENAME};
 use http::header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE};
@@ -181,6 +181,7 @@ fn get_cors_layer() -> Result<CorsLayer> {
             http::HeaderName::from_str(X_API_KEY_HEADER).unwrap(),
             http::HeaderName::from_str(X_REQUEST_ID_HEADER).unwrap(),
             http::HeaderName::from_str(X_RESOURCE_TYPE).unwrap(),
+            http::HeaderName::from_str(X_REQUEST_ORIGIN).unwrap(),
         ])
         .max_age(settings::get_cors_max_age())
         .expose_headers([http::HeaderName::from_str(X_REQUEST_ID_HEADER).unwrap()]);

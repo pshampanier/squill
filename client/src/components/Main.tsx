@@ -13,5 +13,9 @@ export default function Main({ className, children }: MainProps) {
     "transition-all duration-500" /* used by the sidebar when showing or hiding */,
     className,
   );
-  return <main className={classes}>{children}</main>;
+  return (
+    <main data-component="main" className={classes}>
+      {children}
+    </main>
+  );
 }

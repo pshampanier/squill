@@ -48,7 +48,7 @@ function Alert({
       border == "accent" && "border-l-4 border-solid",
       border != "accent" && "rounded",
       variant == "solid" && colors(`${severity}:background`),
-      variant == "ghost" && colors("background"),
+      variant == "ghost" && "bg-transparent",
       colors(`${severity}:text`, `${severity}:border`),
       className,
     ),

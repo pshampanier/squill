@@ -333,9 +333,9 @@ async fn update_query_history(
                                     error = COALESCE(error, ?),
                                     execution_time = COALESCE(execution_time, ?),
                                     affected_rows = COALESCE(?, affected_rows)
-                              WHERE query_history_id=?
+                              WHERE query_history_id=? AND connection_id=?
                           RETURNING executed_at"#,
-            params!(query.status.as_str(), error, execution_time, affected_rows, query.id),
+            params!(query.status.as_str(), error, execution_time, affected_rows, query.id, query.connection_id),
             |row| Ok(QueryExecution { revision: query.revision + 1, executed_at: Some(row.try_get(0)?), ..query }),
         )
         .await

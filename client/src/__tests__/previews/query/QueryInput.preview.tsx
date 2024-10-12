@@ -43,6 +43,18 @@ const HISTORY = [
   }),
 ];
 
+const PLACEHOLDER = (
+  <span className="flex h-6 -mt-1">
+    <span className="flex whitespace-nowrap items-center text-xs">
+      <span>Press</span>
+      <Kbd className="mt-0.5" size="xs" shortcut={["Meta+[Enter]", "Ctrl+[Enter]"]} />
+      <span>to execute or just</span>
+      <Kbd className="mt-0.5" size="xs" shortcut={"[Enter]"} />
+      <span>after a semicolon</span>
+    </span>
+  </span>
+);
+
 export default function QueryPromptPreview() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
   const { suggestions, addQueryToHistory, getSuggestion } = useQuerySuggestion(HISTORY);
@@ -61,13 +73,6 @@ export default function QueryPromptPreview() {
     event.setSuggestion(suggestion);
   };
 
-  const placeHolder = (
-    <>
-      Press <Kbd shortcut={"[Enter]"} /> after a semicolon or use
-      <Kbd shortcut={"Shift+[Enter]"} /> to prevent execution
-    </>
-  );
-
   return (
     <>
       {/*
@@ -76,9 +81,11 @@ export default function QueryPromptPreview() {
       <Preview>
         <Preview.Title>Terminal</Preview.Title>
         <Preview.Description>
-          With <code className="text-xs">mode=&quot;terminal&quot;</code> the input is in terminal mode, validation is
-          called when the user hits <Kbd shortcut={["Meta+[Enter]", "Ctrl+[Enter]"]} /> or just{" "}
-          <Kbd shortcut={"[Enter]"} /> when the input ends with a semicolon.
+          <span className="inline-flex items-center">
+            With <code className="text-xs">mode=&quot;terminal&quot;</code> the input is in terminal mode, validation is
+            called when the user hits <Kbd size="sm" shortcut={["Meta+[Enter]", "Ctrl+[Enter]"]} /> or just{" "}
+            <Kbd size="sm" shortcut={"[Enter]"} /> when the input ends with a semicolon.
+          </span>
         </Preview.Description>
         <PreviewBox className="items-center h-60">
           <QueryInput
@@ -88,7 +95,7 @@ export default function QueryPromptPreview() {
             rows={4}
             onValidate={handleValidate}
             onSuggest={handleSuggestions}
-            placeholder={placeHolder}
+            placeholder={PLACEHOLDER}
           />
           <QuerySuggestionMenu suggestions={suggestions} />
         </PreviewBox>
@@ -102,7 +109,7 @@ export default function QueryPromptPreview() {
           With <code className="text-xs">mode=&quot;editor&quot;</code> the input is in editor mode.
         </Preview.Description>
         <PreviewBox className="items-center h-96">
-          <QueryInput className="w-full h-full" mode="editor" colorScheme={colorScheme} />
+          <QueryInput className="w-full h-full" mode="editor" colorScheme={colorScheme} placeholder={PLACEHOLDER} />
           <QuerySuggestionMenu suggestions={suggestions} />
         </PreviewBox>
       </Preview>

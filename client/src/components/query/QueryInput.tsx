@@ -1,7 +1,8 @@
 import cx from "classix";
 import * as monaco from "monaco-editor";
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom/client";
+import ChevronIcon from "@/icons/chevron-right.svg?react";
 
 type IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 type IEditorOptions = monaco.editor.IEditorOptions;
@@ -51,6 +52,13 @@ const DEFAULT_MONACO_OPTIONS: { editor: IEditorOptions; terminal: IEditorOptions
     quickSuggestions: false,
   },
 };
+
+export interface QueryEditorInstance {
+  /**
+   * Set the focus to the editor.
+   */
+  focus(): void;
+}
 
 /**
  * Themes used by the monaco editor.
@@ -122,6 +130,11 @@ type QueryInputProps = {
    * accommodate the placeholder height (using className="min-h-[height]").
    */
   placeholder?: React.ReactNode;
+
+  /**
+   * A callback fired when the editor is mounted.
+   */
+  onMount?: (editor: QueryEditorInstance) => void;
 };
 
 /**
@@ -153,8 +166,9 @@ export default function QueryInput({
   onValidate,
   onSuggest,
   onChange,
+  onMount,
   mode = "editor",
-  rows = 10,
+  rows,
   colorScheme = "light",
   placeholder,
 }: QueryInputProps) {
@@ -179,6 +193,15 @@ export default function QueryInput({
     });
   }
 
+  // The public API exposed to the parent component
+  const editorInstance: QueryEditorInstance = useMemo(() => {
+    return {
+      focus() {
+        editorRef.current?.focus();
+      },
+    };
+  }, []);
+
   /**
    * Resize the editor.
    *
@@ -189,14 +212,18 @@ export default function QueryInput({
     const editor = editorRef.current;
     if (!editor) return;
     const parentElement = containerRef.current;
-    const width = parentElement.clientWidth;
+    let width = parentElement.clientWidth;
     let height = parentElement.clientHeight;
-    if (rows) {
+    if (mode === "terminal") {
       const minHeight = parseInt(window.getComputedStyle(parentElement).minHeight);
-      height = Math.min(editor.getContentHeight(), rows * editor.getOption(monaco.editor.EditorOption.lineHeight));
+      height = Math.min(
+        editor.getContentHeight(),
+        rows ? rows * editor.getOption(monaco.editor.EditorOption.lineHeight) : Number.MAX_VALUE,
+      );
       if (!Number.isNaN(minHeight) && height < minHeight) {
         height = minHeight;
       }
+      width = Math.max(0, width - 24); // pl-6=24px is the padding of the editor in terminal mode
     }
     editor.layout({ width, height });
   }, [rows]);
@@ -335,6 +362,8 @@ export default function QueryInput({
       applyWithoutTriggeringSuggestion(() => {
         suggestionRef.current = clearSuggestions(editor, suggestionRef.current);
       });
+    } else {
+      console.log("Key code: ", e.keyCode);
     }
   };
 
@@ -417,6 +446,9 @@ export default function QueryInput({
       showPlaceholder(model.getValue().length === 0);
     }
 
+    // Notify the parent component that the editor is mounted
+    onMount?.(editorInstance);
+
     // Set the initial layout
     updateLayout();
 
@@ -433,8 +465,15 @@ export default function QueryInput({
     };
   }, []);
 
-  const classes = cx(mode === "terminal" && "query-terminal pl-6", className);
-  return <div ref={containerRef} className={classes} />;
+  //
+  // Rendering
+  //
+  const classes = cx("relative", mode === "terminal" && "query-terminal pl-6", className);
+  return (
+    <div ref={containerRef} className={classes} data-component="query-input">
+      {mode === "terminal" && <ChevronIcon className="absolute left-0 top-1 inline-block w-4 h-4" />}
+    </div>
+  );
 }
 
 /**
@@ -498,7 +537,7 @@ function setSuggestion(editor: IStandaloneCodeEditor, content: string): EditorSu
 
 function clearSuggestions(editor: IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits): null {
   if (!suggestions) return;
-  console.log("Clear suggestions");
+  console.debug("Clear suggestions");
   const model = editor.getModel();
   model.applyEdits(suggestions.undoEdits);
   model.deltaDecorations(suggestions.decorationIds, []);

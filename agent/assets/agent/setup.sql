@@ -58,6 +58,9 @@ CREATE TABLE query_history (
 	-- The query that was executed.
 	query TEXT NOT NULL,
 
+	-- The origin of the query.
+	origin TEXT NOT NULL,
+
 	-- The time when the query was executed.
 	executed_at TIMESTAMP,
 
@@ -83,4 +86,6 @@ CREATE TABLE query_history (
 	metadata TEXT DEFAULT NULL
 );
 
-CREATE INDEX query_history_connection_id ON query_history(connection_id);
+-- A index used both for fetching the query history but also to speed up updates of a given query.
+-- In order to leverage this index, update/delete queries should include the `connection_id`.
+CREATE INDEX query_history_connection_id ON query_history(connection_id, query_history_id);

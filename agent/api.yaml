@@ -253,6 +253,12 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
+        - name: x-origin
+          description: The origin of the request ('terminal', 'worksheet', etc).
+          in: header
+          required: true
+          schema:
+            type: string
         - name: x-resource-type
           in: header
           required: true
@@ -762,6 +768,7 @@ components:
         - created_at
         - affected_rows
         - execution_time
+        - origin
       properties:
         id:
           description: The unique identifier of the query execution.
@@ -839,6 +846,15 @@ components:
           type: number
           format: double
           minimum: 0
+        origin:
+          description: |
+            The origin of the query execution.
+
+            The query can be originated from different origins like a terminal or a worksheet. In order to track the
+            history of each of origin independently, the origin is stored in the query execution.
+
+            Examples of origins are: `terminal`, `worksheet`, `e7ee76db-8758-4da4-bbce-242c8d1f3d63`, etc.
+          type: string
 
     TokenType:
       type: string

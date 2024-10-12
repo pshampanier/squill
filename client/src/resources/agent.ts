@@ -20,6 +20,13 @@ const API_PATH = "/api/v1";
  */
 export type PushNotificationHandler = (message: PushMessage) => void;
 
+export type PushNotificationFilter = (message: PushMessage) => boolean;
+
+type PushNotificationSubscription = {
+  filter?: PushNotificationFilter;
+  handler: PushNotificationHandler;
+};
+
 type FetchOptions = {
   headers?: Record<string, string>;
   query?: Record<string, string>;
@@ -52,10 +59,7 @@ export class Agent {
   @serializable("array", { items: { type: "object", options: { factory: Driver } } })
   readonly drivers!: Driver[];
 
-  readonly pushSubscriptions: {
-    log: PushNotificationHandler[];
-    query: PushNotificationHandler[];
-  };
+  pushSubscriptions: PushNotificationSubscription[];
 
   /// The security token used to authenticate the client.
   private securityTokens: SecurityTokens = null;
@@ -108,10 +112,7 @@ export class Agent {
     this.url = url?.endsWith("/") ? url.slice(0, url.length - 1) : url;
     this.apiKey = apiKey;
     this.clientId = crypto.randomUUID();
-    this.pushSubscriptions = {
-      log: [],
-      query: [],
-    };
+    this.pushSubscriptions = [];
   }
 
   private async fetch<T extends object>(
@@ -204,15 +205,15 @@ export class Agent {
    * Subscribe to push notifications of a given type.
    * The same handler can be used to subscribe to multiple types of notifications.
    */
-  subscribeToPushNotifications(type: PushMessageType, handler: PushNotificationHandler): void {
-    this.pushSubscriptions[type].push(handler);
+  subscribeToPushNotifications(handler: PushNotificationHandler, filter?: PushNotificationFilter): void {
+    this.pushSubscriptions.push({ handler, filter });
   }
 
   /**
    * Unsubscribe from push notifications of a given type.
    */
   unsubscribeFromPushNotifications(type: PushMessageType, handler: PushNotificationHandler): void {
-    this.pushSubscriptions[type] = this.pushSubscriptions[type].filter((h) => h !== handler);
+    this.pushSubscriptions = this.pushSubscriptions.filter((s) => s.handler !== handler);
   }
 
   static async connect(url: string, apiKey: string): Promise<Agent> {
@@ -230,9 +231,12 @@ export class Agent {
     this.websocket.addEventListener("message", (event) => {
       console.debug("WebSocket message received:", event.data);
       const message = new SerializedResource<PushMessage>("application/json", event.data).as(PushMessage);
-      const subscriptions = this.pushSubscriptions[message.type];
-      for (const handler of subscriptions) {
-        handler(message);
+      const subscriptions = this.pushSubscriptions;
+      for (const subscription of subscriptions) {
+        if (subscription.filter && !subscription.filter(message)) {
+          continue;
+        }
+        subscription.handler(message);
       }
     });
 

@@ -2,6 +2,7 @@ import cx from "classix";
 import { useEffect, useRef, useState } from "react";
 
 type AutoHideProps = {
+  onClick?: (event: React.MouseEvent<HTMLElement>) => void;
   children: React.ReactNode;
   className?: string;
 };
@@ -9,32 +10,34 @@ type AutoHideProps = {
 /**
  * A React component that hides its content if there is no enough vertical space to display it.
  */
-export default function AutoHide({ children, className }: AutoHideProps) {
+export default function AutoHide({ children, onClick, className }: AutoHideProps) {
   const autoHideRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [hidden, setHidden] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setHidden(entry.contentRect.height < contentRef.current.clientHeight);
-        console.log(entry.contentRect.height, contentRef.current.clientHeight);
+    console.debug("AutoHide", {
+      visible,
+      parentHeight: autoHideRef.current?.clientHeight,
+      contentHeight: contentRef.current?.clientHeight,
+    });
+    const observer = new ResizeObserver(() => {
+      const newVisible = contentRef.current.clientHeight <= autoHideRef.current.clientHeight;
+      if (newVisible !== visible) {
+        setVisible(newVisible);
       }
     });
     observer.observe(autoHideRef.current);
     return () => observer.disconnect();
-  }, [hidden]);
+  }, [visible]);
 
-  className = cx("overflow-hidden", className);
+  const classes = {
+    root: cx("overflow-hidden border border-red-100", className),
+    content: cx(visible ? "opacity-100" : "opacity-0", "transition-opacity duration-300 ease-out"),
+  };
   return (
-    <div ref={autoHideRef} className={className}>
-      <div
-        ref={contentRef}
-        style={{
-          visibility: hidden ? "hidden" : "visible",
-          position: hidden ? "absolute" : "static",
-        }}
-      >
+    <div ref={autoHideRef} className={className} onClick={onClick}>
+      <div ref={contentRef} className={classes.content}>
         {children}
       </div>
     </div>

@@ -1,5 +1,6 @@
 use crate::api::error::ServerResult;
 use crate::err_forbidden;
+use crate::err_param;
 use crate::models;
 use crate::models::QueryExecution;
 use crate::models::QueryExecutionStatus;
@@ -10,10 +11,13 @@ use crate::tasks::execute_queries_task;
 use crate::{models::Connection, utils::user_error::UserError};
 use axum::extract::Path;
 use axum::extract::State;
+use axum::http::HeaderMap;
+use axum::http::HeaderName;
 use axum::{
     routing::{get, post},
     Json, Router,
 };
+use common::constants::X_REQUEST_ORIGIN;
 use squill_drivers::futures::Connection as DriverConnection;
 use squill_drivers::params;
 use uuid::Uuid;
@@ -47,6 +51,7 @@ async fn execute_buffer(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
+    headers: HeaderMap,
     buffer: String,
 ) -> ServerResult<Json<Vec<models::QueryExecution>>> {
     let user_session = context?.get_user_session()?;
@@ -55,6 +60,14 @@ async fn execute_buffer(
     if connection.owner_user_id != user_session.get_user_id() {
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
+    let origin = match headers
+        .get(HeaderName::from_static(X_REQUEST_ORIGIN))
+        .and_then(|o| o.to_str().ok())
+        .filter(|o| !o.is_empty())
+    {
+        Some(o) => Ok::<_, UserError>(o.to_string()),
+        None => Err(err_param!("HTTP header '{}' is missing.", X_REQUEST_ORIGIN)),
+    }?;
 
     let mut queries: Vec<models::QueryExecution> = Vec::new();
 
@@ -63,12 +76,13 @@ async fn execute_buffer(
     for statement in statements {
         match conn
             .query_map_row(
-                r#"INSERT INTO query_history(query_history_id, connection_id, user_id, query)
-                           VALUES(?, ?, ?, ?) RETURNING query_history_id, created_at"#,
-                params!(Uuid::new_v4(), id, user_session.get_user_id(), statement.sql()),
+                r#"INSERT INTO query_history(query_history_id, connection_id, user_id, origin, query)
+                           VALUES(?, ?, ?, ?, ?) RETURNING query_history_id, created_at"#,
+                params!(Uuid::new_v4(), id, user_session.get_user_id(), &origin, statement.sql()),
                 |row| {
                     Ok(QueryExecution {
                         id: row.try_get(0)?,
+                        origin: origin.clone(),
                         revision: 0,
                         connection_id: id,
                         user_id: user_session.get_user_id(),

@@ -88,6 +88,14 @@ pub struct QueryExecution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub is_result_set_query: Option<bool>,
 
+    /// The origin of the query execution.
+    ///
+    /// The query can be originated from different origins like a terminal or a worksheet. In order to track the
+    /// history of each of origin independently, the origin is stored in the query execution.
+    ///
+    /// Examples of origins are: `terminal`, `worksheet`, `e7ee76db-8758-4da4-bbce-242c8d1f3d63`, etc.
+    pub origin: String,
+
     /// The query that was executed.
     pub query: String,
 
