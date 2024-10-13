@@ -58,6 +58,36 @@ export interface QueryEditorInstance {
    * Set the focus to the editor.
    */
   focus(): void;
+
+  /**
+   * Force the validation.
+   */
+  validate(): void;
+
+  /**
+   * Set the current value of the editor.
+   */
+  setValue(value: string): void;
+
+  /**
+   * Get the query associated to the current cursor position.
+   */
+  getCursorQuery(): string;
+
+  /**
+   * Set the inline suggestion.
+   */
+  setInlineSuggestion(content: string): void;
+
+  /**
+   * Dismiss the inline suggestion currently displayed in the editor.
+   */
+  dismissInlineSuggestion(): void;
+
+  /**
+   * Apply the inline suggestion currently displayed in the editor.
+   */
+  applyInlineSuggestion(): void;
 }
 
 /**
@@ -70,7 +100,7 @@ const MONACO_THEMES = { light: "app-light-theme", dark: "app-dark-theme" };
 export interface QuerySuggestionEvent {
   readonly keyboardEvent?: KeyboardEvent;
   readonly currentQuery: string;
-  setSuggestion: (content: string) => void;
+  setInlineSuggestion: (content: string) => void;
   preventDefault(): void;
 }
 
@@ -138,9 +168,9 @@ type QueryInputProps = {
 };
 
 /**
- * Edits and decorations used to display suggestions in the editor.
+ * Edits and decorations used to display the inline suggestion in the editor.
  */
-type EditorSuggestionsEdits = {
+type EditorInlineSuggestionEdits = {
   decorationIds: string[];
   undoEdits: IValidEditOperation[];
 };
@@ -149,16 +179,15 @@ type EditorSuggestionsEdits = {
  * A prompt for entering queries.
  *
  * This component provides a simple editor for entering queries.
- * It supports basic query validation and suggestions.
+ * It supports basic query validation and suggestion.
  *
  * Validations:
  * [Enter] => Validate the query if the query if terminated by a semicolon, otherwise enter a new line.
- * [Meta + Enter] => Validate the query (regardless if the query is terminated by a semicolon or not).
  * [Shift + Enter] => Enter a new line without validating the query.
  *
- * Suggestions:
- * [Escape] => Remove the current suggestion.
- * [Tab] => Accept the current suggestion.
+ * Inline Suggestions:
+ * [Escape] => Dismiss the current inline suggestion.
+ * [Tab] => Accept the current inline suggestion.
  */
 export default function QueryInput({
   className,
@@ -174,8 +203,8 @@ export default function QueryInput({
 }: QueryInputProps) {
   const editorRef = useRef<IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const suggestionRef = useRef<EditorSuggestionsEdits>(null);
-  const preventSuggestion = useRef(false);
+  const inlineSuggestionRef = useRef<EditorInlineSuggestionEdits>(null);
+  const preventInlineSuggestion = useRef(false);
 
   // The placeholder is an overlay widget that is displayed in the editor when the editor is empty.
   // It's created once during the useEffect and is shown/hidden when the editor content changes.
@@ -192,15 +221,6 @@ export default function QueryInput({
       theme: MONACO_THEMES[colorScheme],
     });
   }
-
-  // The public API exposed to the parent component
-  const editorInstance: QueryEditorInstance = useMemo(() => {
-    return {
-      focus() {
-        editorRef.current?.focus();
-      },
-    };
-  }, []);
 
   /**
    * Resize the editor.
@@ -242,21 +262,156 @@ export default function QueryInput({
   }, []);
 
   /**
-   * Execute a function without triggering a suggestion if the content of the model changes.
+   * Get the query associated to the current cursor position.
    *
-   * This function is useful when we want to update the editor content with a suggestion or clear a suggestion but don't
-   * want to trigger a new suggestion.
+   * This function does not return the query if the editor contains multiple selections.
+   * This function returns the query associated to the current cursor position. The query is the text between the cursor
+   * position and the end of the line.
+   */
+  const getCursorQuery = useCallback((): string => {
+    const editor = editorRef.current;
+    if (!editor || editor.getSelections().length > 1) return "";
+    const cursor = editor?.getPosition();
+    return editor
+      ?.getModel()
+      .getValueInRange(new monaco.Range(1, 1, cursor.lineNumber, cursor.column))
+      .trimStart();
+  }, []);
+
+  /**
+   * Execute a function without triggering an inline suggestion if the content of the model changes.
+   *
+   * This function is useful when we want to update the editor content with an inline suggestion or dismiss the inline
+   * suggestion but don't want to trigger a new inline suggestion.
    *
    * @param fn the function to execute.
    */
-  const applyWithoutTriggeringSuggestion = (fn: () => void) => {
+  const applyWithoutTriggeringSuggestion = useCallback((fn: () => void) => {
     try {
-      preventSuggestion.current = true;
+      preventInlineSuggestion.current = true;
       fn();
     } finally {
-      preventSuggestion.current = false;
+      preventInlineSuggestion.current = false;
     }
-  };
+  }, []);
+
+  /**
+   * Dismiss the inline suggestion currently displayed in the editor.
+   */
+  const dismissInlineSuggestion = useCallback(() => {
+    const suggestion = inlineSuggestionRef.current;
+    if (!suggestion) return;
+    console.debug("Clear suggestion");
+    const model = editorRef.current?.getModel();
+    model?.applyEdits(suggestion.undoEdits);
+    model?.deltaDecorations(suggestion.decorationIds, []);
+    inlineSuggestionRef.current = null;
+  }, []);
+
+  /**
+   * Accept the inline suggestion currently displayed in the editor.
+   */
+  const applyInlineSuggestion = useCallback(() => {
+    const suggestion = inlineSuggestionRef.current;
+    if (!suggestion) return;
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    // 1. Get the content of the suggestion (stored as decorations in the editor)
+    const decorations = model?.getAllDecorations().filter((d) => suggestion.decorationIds.includes(d.id));
+    const content = decorations?.map((d) => {
+      return d.options.after?.content ?? d.options.before?.content ?? "";
+    });
+
+    // 2. Clear the suggestion from the editor
+    dismissInlineSuggestion();
+
+    // 3. Apply the edits
+    const cursor = editor.getPosition();
+    model.pushEditOperations(
+      [],
+      [
+        {
+          range: new monaco.Range(cursor.lineNumber, cursor.column, cursor.lineNumber, cursor.column),
+          text: content.join(model.getEOL()),
+          forceMoveMarkers: true,
+        },
+      ],
+      () => null,
+    );
+
+    // 4. Move the cursor to the end of the suggestion
+    editor.revealPosition(editor.getPosition());
+    console.log("Accept inline suggestion: ", content);
+  }, []);
+
+  /**
+   * Set the inline suggestion.
+   *
+   * @param content the content of the suggestion.
+   */
+  const setInlineSuggestion = useCallback((content: string) => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    console.debug("Set inline suggestion: ", content);
+    const model = editor.getModel();
+    const cursor = editor.getPosition();
+    const decorations: IModelDeltaDecoration[] = [];
+    const edits: IIdentifiedSingleEditOperation[] = [];
+    const lines = content.split("\n");
+    let text = "";
+    lines.forEach((line, index) => {
+      text += " " + model.getEOL();
+      if (index === 0) {
+        // The suggestion is on the same line as the cursor, we only need a decoration
+        decorations.push({
+          range: new monaco.Range(cursor.lineNumber, cursor.column - 1, cursor.lineNumber, cursor.column),
+          options: {
+            after: {
+              content: line,
+              inlineClassName: "suggestion",
+            },
+          },
+        });
+      } else {
+        decorations.push({
+          range: new monaco.Range(cursor.lineNumber + index, 2, cursor.lineNumber + index, 1),
+          options: {
+            before: {
+              content: line,
+              inlineClassName: "suggestion",
+            },
+          },
+        });
+      }
+    });
+
+    if (lines.length > 1) {
+      edits.push({
+        range: new monaco.Range(cursor.lineNumber + 1, 1, cursor.lineNumber + 1, 1),
+        text,
+      });
+    }
+
+    // Apply the edits and decorations
+    inlineSuggestionRef.current = {
+      undoEdits: model.applyEdits(edits, true),
+      decorationIds: model.deltaDecorations([], decorations),
+    };
+
+    editor.setPosition(cursor);
+  }, []);
+
+  /**
+   * Validate the content the editor (terminal mode only).
+   */
+  const validate = useCallback(() => {
+    const editor = editorRef.current;
+    applyWithoutTriggeringSuggestion(() => {
+      dismissInlineSuggestion();
+      onValidate?.(editor.getModel().getValue());
+      editor.getModel().setValue("");
+    });
+  }, []);
 
   /**
    * Creates a suggestion event object.
@@ -267,10 +422,10 @@ export default function QueryInput({
     return {
       keyboardEvent: properties.keyboardEvent,
       currentQuery: properties.currentQuery,
-      setSuggestion: (content) => {
+      setInlineSuggestion: (content) => {
         if (content) {
           applyWithoutTriggeringSuggestion(() => {
-            suggestionRef.current = setSuggestion(editorRef.current, content);
+            setInlineSuggestion(content);
           });
         }
       },
@@ -291,44 +446,33 @@ export default function QueryInput({
       !e.ctrlKey &&
       !e.altKey &&
       !e.metaKey &&
-      suggestionRef.current
+      inlineSuggestionRef.current
     ) {
       //
-      // [Tab] Accept the current suggestion
+      // [Tab] Accept the current inline suggestion
       //
       applyWithoutTriggeringSuggestion(() => {
-        acceptSuggestions(editor, suggestionRef.current);
-        suggestionRef.current = null;
+        applyInlineSuggestion();
       });
       onSuggest?.(
         makeSuggestionEvent({
-          currentQuery: getCurrentQuery(editor),
+          currentQuery: getCursorQuery(),
         }),
       );
       e.preventDefault();
       e.stopPropagation();
     } else if (e.keyCode === monaco.KeyCode.Escape && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
       //
-      // [Escape] => Remove the suggestion
+      // [Escape] => Remove the inline suggestion
       //
       applyWithoutTriggeringSuggestion(() => {
-        suggestionRef.current = clearSuggestions(editor, suggestionRef.current);
+        dismissInlineSuggestion();
       });
-      e.preventDefault();
-      e.stopPropagation();
-    } else if (e.keyCode === monaco.KeyCode.Enter && e.metaKey && !e.shiftKey && !e.ctrlKey && !e.altKey) {
-      //
-      // [Enter] => Validate the query
-      //
-      applyWithoutTriggeringSuggestion(() => {
-        acceptSuggestions(editor, suggestionRef.current);
-        onValidate?.(getCurrentQuery(editor));
-      });
-      editor.getModel().setValue("");
       e.preventDefault();
       e.stopPropagation();
     } else if (
       mode == "terminal" &&
+      editor.getSelections().length === 1 &&
       e.keyCode === monaco.KeyCode.Enter &&
       !e.shiftKey &&
       !e.ctrlKey &&
@@ -341,26 +485,32 @@ export default function QueryInput({
       //
       const lastLineNumber = editor.getModel().getLineCount();
       const cursor = editor.getPosition();
+      const textAfterCursor = editor
+        .getModel()
+        .getValueInRange(
+          new monaco.Range(
+            cursor.lineNumber,
+            cursor.column,
+            lastLineNumber,
+            editor.getModel().getLineMaxColumn(lastLineNumber),
+          ),
+        );
       const value = editor.getModel().getValue();
-      if (cursor.lineNumber === lastLineNumber && value.trim().endsWith(";")) {
-        applyWithoutTriggeringSuggestion(() => {
-          acceptSuggestions(editor, suggestionRef.current);
-          onValidate?.(getCurrentQuery(editor));
-        });
-        editor.getModel().setValue("");
+      if (textAfterCursor.trim().length === 0 && value.trim().endsWith(";")) {
+        validate();
         e.preventDefault();
         e.stopPropagation();
       } else {
         applyWithoutTriggeringSuggestion(() => {
-          suggestionRef.current = clearSuggestions(editor, suggestionRef.current);
+          dismissInlineSuggestion();
         });
       }
     } else if (!MODIFIER_KEYS.includes(e.keyCode)) {
       //
-      // [Any key other than a modifier] => clear the suggestion
+      // [Any key other than a modifier] => dismiss the inline suggestion
       //
       applyWithoutTriggeringSuggestion(() => {
-        suggestionRef.current = clearSuggestions(editor, suggestionRef.current);
+        dismissInlineSuggestion();
       });
     } else {
       console.log("Key code: ", e.keyCode);
@@ -368,11 +518,11 @@ export default function QueryInput({
   };
 
   /**
-   * A click anywhere in the editor will remove the suggestion.
+   * A click anywhere in the editor will dismiss the inline suggestion.
    */
   const handleMouseDown = (_e: IEditorMouseEvent) => {
     applyWithoutTriggeringSuggestion(() => {
-      suggestionRef.current = clearSuggestions(editorRef.current, suggestionRef.current);
+      dismissInlineSuggestion();
     });
   };
 
@@ -381,7 +531,7 @@ export default function QueryInput({
    */
   const handleDidChangeModelContent = (_e: IModelContentChangedEvent) => {
     const editor = editorRef.current;
-    if (!preventSuggestion.current) {
+    if (!preventInlineSuggestion.current) {
       // Trigger the suggest event if the cursor is at the end of the line
       applyWithoutTriggeringSuggestion(() => {
         const model = editor.getModel();
@@ -394,7 +544,7 @@ export default function QueryInput({
             model?.getLineMaxColumn(cursor.lineNumber),
           ),
         );
-        const currentQuery = getCurrentQuery(editor);
+        const currentQuery = getCursorQuery();
         if (endOfLine.trim().length === 0 && currentQuery.length > 0) {
           onSuggest?.(
             makeSuggestionEvent({
@@ -417,6 +567,38 @@ export default function QueryInput({
     updateLayout();
   };
 
+  // The public API exposed to the parent component
+  const editorInstance: QueryEditorInstance = useMemo(() => {
+    return {
+      focus() {
+        editorRef.current?.focus();
+      },
+      validate,
+      getCursorQuery,
+      setValue(value: string) {
+        applyWithoutTriggeringSuggestion(() => {
+          dismissInlineSuggestion();
+          editorRef.current?.getModel().setValue(value);
+        });
+      },
+      setInlineSuggestion(content: string) {
+        applyWithoutTriggeringSuggestion(() => {
+          setInlineSuggestion(content);
+        });
+      },
+      dismissInlineSuggestion() {
+        applyWithoutTriggeringSuggestion(() => {
+          dismissInlineSuggestion();
+        });
+      },
+      applyInlineSuggestion() {
+        applyWithoutTriggeringSuggestion(() => {
+          applyInlineSuggestion();
+        });
+      },
+    };
+  }, []);
+
   useEffect(() => {
     const editor = monaco.editor.create(containerRef.current, {
       theme: MONACO_THEMES[colorScheme],
@@ -430,7 +612,7 @@ export default function QueryInput({
     editor.focus();
     editorRef.current = editor;
 
-    if (placeholder) {
+    if (placeholder && mode === "terminal") {
       const root = document.createElement("div");
       root.className = "flex text-xs items-center select-none opacity-50 pointer-events-none";
       ReactDOM.createRoot(root).render(placeholder);
@@ -474,117 +656,4 @@ export default function QueryInput({
       {mode === "terminal" && <ChevronIcon className="absolute left-0 top-1 inline-block w-4 h-4" />}
     </div>
   );
-}
-
-/**
- * Set the suggestion in the editor.
- *
- * @param editor the monaco editor instance.
- * @param prevSuggestions the list of previous suggestions ids.
- * @param content the content of the suggestion.
- * @returns the list of new suggestions ids.
- */
-function setSuggestion(editor: IStandaloneCodeEditor, content: string): EditorSuggestionsEdits {
-  console.log("Set suggestion: ", content);
-  const cursor = editor.getPosition();
-  const model = editor.getModel();
-  const decorations: IModelDeltaDecoration[] = [];
-  const edits: IIdentifiedSingleEditOperation[] = [];
-  const lines = content.split("\n");
-  let text = "";
-  lines.forEach((line, index) => {
-    text += " " + model.getEOL();
-    if (index === 0) {
-      // The suggestion is on the same line as the cursor, we only need a decoration
-      decorations.push({
-        range: new monaco.Range(cursor.lineNumber, cursor.column - 1, cursor.lineNumber, cursor.column),
-        options: {
-          after: {
-            content: line,
-            inlineClassName: "suggestion",
-          },
-        },
-      });
-    } else {
-      decorations.push({
-        range: new monaco.Range(cursor.lineNumber + index, 2, cursor.lineNumber + index, 1),
-        options: {
-          before: {
-            content: line,
-            inlineClassName: "suggestion",
-          },
-        },
-      });
-    }
-  });
-
-  if (lines.length > 1) {
-    edits.push({
-      range: new monaco.Range(cursor.lineNumber + 1, 1, cursor.lineNumber + 1, 1),
-      text,
-    });
-  }
-
-  // Apply the edits and decorations
-  const suggestionEdits: EditorSuggestionsEdits = {
-    undoEdits: model.applyEdits(edits, true),
-    decorationIds: model.deltaDecorations([], decorations),
-  };
-
-  editor.setPosition(cursor);
-  return suggestionEdits;
-}
-
-function clearSuggestions(editor: IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits): null {
-  if (!suggestions) return;
-  console.debug("Clear suggestions");
-  const model = editor.getModel();
-  model.applyEdits(suggestions.undoEdits);
-  model.deltaDecorations(suggestions.decorationIds, []);
-  return null;
-}
-
-/**
- * Accept the suggestions currently displayed in the editor.
- */
-function acceptSuggestions(editor: IStandaloneCodeEditor, suggestions: EditorSuggestionsEdits) {
-  if (!suggestions) return;
-  console.log("Accept suggestions");
-  // 1. Get the content of the suggestion (stored as decorations in the editor)
-  const model = editor.getModel();
-  const decorations = model.getAllDecorations().filter((d) => suggestions.decorationIds.includes(d.id));
-  const content = decorations.map((d) => {
-    return d.options.after?.content ?? d.options.before?.content ?? "";
-  });
-
-  // 2. Clear the suggestion from the editor
-  clearSuggestions(editor, suggestions);
-
-  // 3. Apply the edits
-  const cursor = editor.getPosition();
-  model.pushEditOperations(
-    [],
-    [
-      {
-        range: new monaco.Range(cursor.lineNumber, cursor.column, cursor.lineNumber, cursor.column),
-        text: content.join(editor.getModel().getEOL()),
-        forceMoveMarkers: true,
-      },
-    ],
-    () => null,
-  );
-
-  // 4. Move the cursor to the end of the suggestion
-  editor.revealPosition(editor.getPosition());
-}
-
-/**
- * Get the query currently edited.
- */
-function getCurrentQuery(editor: IStandaloneCodeEditor): string {
-  const cursor = editor.getPosition();
-  return editor
-    .getModel()
-    .getValueInRange(new monaco.Range(1, 1, cursor.lineNumber, cursor.column))
-    .trimStart();
 }

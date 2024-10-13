@@ -2,13 +2,9 @@ import React, { Dispatch, useCallback, useEffect, useRef } from "react";
 import { EDITOR_CONNECTION } from "@/utils/constants";
 import { useAppStore } from "@/stores/AppStore";
 import { editors } from "@/resources/editors";
-import { useQuery } from "@tanstack/react-query";
-import { Connection } from "@/models/connections";
 import Connections from "@/resources/connections";
 import ConnectionIcon from "@/icons/plug.svg?react";
 import QueryTerminal from "@/components/query/QueryTerminal";
-import LoadingContainer from "@/components/core/LoadingContainer";
-import { AuthenticationError } from "@/utils/errors";
 import { PushMessage } from "@/models/push-notifications";
 import { agent } from "@/resources/agent";
 import { useUserStore } from "@/stores/UserStore";
@@ -35,29 +31,6 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   const handleHistoryDidMount = (dispatcher: Dispatch<QueryHistoryAction>) => {
     queryEventHandler.current = dispatcher;
   };
-
-  const {
-    status,
-    refetch,
-    error,
-    data: _connection,
-  } = useQuery<Connection, Error>({
-    queryKey: ["connection-editor"],
-    queryFn: async () => {
-      return Connections.get(connId);
-    },
-    retry: (failureCount: number, error: Error) => {
-      console.error("Loading connection failed.", {
-        id: connId,
-        error: error.message,
-        failureCount: failureCount,
-        stack: error.stack,
-      });
-      return !(error instanceof AuthenticationError) && failureCount < 2;
-    },
-    retryDelay: 2000,
-    refetchOnWindowFocus: false,
-  });
 
   const handleValidate = useCallback((origin: string, value: string) => {
     Connections.execute(connId, origin, value)
@@ -97,42 +70,29 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
 
   return (
     <div className="w-full h-full" data-component="connection-editor">
-      {status !== "success" && (
-        <LoadingContainer
-          message={`Opening '${catalogItem.title}'...`}
-          status={status}
-          error={error}
-          errorFallback="Oops, cannot open the connection..."
-          onRetry={() => refetch()}
-        />
-      )}
-      {status === "success" && (
-        <>
-          <div className="flex text-xs p-5 select-none">
-            <Breadcrumb className="flex-none">
-              <span>
-                <CatalogItemTitle id={catalogItem.parentId} />
-              </span>
-              <span>
-                <CatalogItemTitle id={catalogItem.id} />
-              </span>
-            </Breadcrumb>
-            <div className="flex flex-grow">
-              <div className="ml-auto flex-none">
-                <ButtonGroup defaultValue="terminal" size="sm">
-                  <ButtonGroup.Item name="terminal" label="Terminal" />
-                  <ButtonGroup.Item name="worksheets" label="Worksheets" disabled />
-                </ButtonGroup>
-              </div>
-            </div>
+      <div className="flex text-xs p-5 select-none">
+        <Breadcrumb className="flex-none">
+          <span>
+            <CatalogItemTitle id={catalogItem.parentId} />
+          </span>
+          <span>
+            <CatalogItemTitle id={catalogItem.id} />
+          </span>
+        </Breadcrumb>
+        <div className="flex flex-grow">
+          <div className="ml-auto flex-none">
+            <ButtonGroup defaultValue="terminal" size="sm">
+              <ButtonGroup.Item name="terminal" label="Terminal" />
+              <ButtonGroup.Item name="worksheets" label="Worksheets" disabled />
+            </ButtonGroup>
           </div>
-          <QueryTerminal
-            colorScheme={colorScheme}
-            onHistoryMount={handleHistoryDidMount}
-            onValidate={(value: string) => handleValidate(TERMINAL_ORIGIN, value)}
-          />
-        </>
-      )}
+        </div>
+      </div>
+      <QueryTerminal
+        colorScheme={colorScheme}
+        onHistoryMount={handleHistoryDidMount}
+        onValidate={(value: string) => handleValidate(TERMINAL_ORIGIN, value)}
+      />
     </div>
   );
 };

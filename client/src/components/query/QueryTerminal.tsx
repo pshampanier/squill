@@ -28,6 +28,11 @@ registerCommand(
     description: "Search History",
     shortcut: "Ctrl+R",
   },
+  {
+    name: "terminal.execute",
+    description: "Execute",
+    shortcut: "F5",
+  },
 );
 
 type QueryTerminalProps = {
@@ -76,6 +81,9 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         break;
       case "terminal.history.search":
         // TODO: Implement search
+        break;
+      case "terminal.execute":
+        editorRef.current?.validate();
         break;
     }
   }, []);

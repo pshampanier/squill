@@ -70,7 +70,7 @@ export default function QueryPromptPreview() {
 
   const handleSuggestions = (event: QuerySuggestionEvent) => {
     const suggestion = getSuggestion(event.currentQuery);
-    event.setSuggestion(suggestion);
+    event.setInlineSuggestion(suggestion);
   };
 
   return (

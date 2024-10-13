@@ -6,9 +6,7 @@ import { ResourceRef, ResourceType } from "@/models/resources";
 import { QueryExecution } from "@/models/queries";
 import { Notification } from "@/components/core/NotificationInbox";
 import { BLANK_PAGE_ITEM_ID, METADATA_RESOURCES_TYPE, NOT_FOUND_ITEM_ID } from "@/utils/constants";
-import { getResourceHandler, ResourceHandler } from "@/resources/handlers";
-import { Connection } from "@/models/connections";
-import { Environment } from "@/models/environments";
+import { AnyResource, getResourceHandler, ResourceHandler } from "@/resources/handlers";
 import { ApplicationSpace, SVGIcon } from "@/utils/types";
 
 /**
@@ -40,7 +38,7 @@ export class CatalogItem extends ResourceRef {
   /**
    * The resource referenced by the catalog item.
  . */
-  resource?: Connection | Environment;
+  resource?: AnyResource;
 
   /**
    * The children's ids of the catalog item (if applicable).
@@ -87,7 +85,7 @@ export class CatalogItem extends ResourceRef {
   /**
    * Get the resource identified by the given reference.
    */
-  async get<T extends object>(): Promise<T> {
+  async get(): Promise<AnyResource> {
     return this.handler.get(this);
   }
 
@@ -164,6 +162,17 @@ export type Actions = {
    * @param reload If true, the children are reloaded even if they are already loaded (default is `false`).
    */
   loadCatalogChildren: (id: string, reload?: boolean) => Promise<void>;
+
+  /**
+   * Load a catalog resource from its identifier.
+   *
+   * The resource must be known as a catalog item already present in the store.
+   *
+   * @param id The identifier of the catalog item to load the resource for.
+   * @param reload If true, the resource is reloaded even if already loaded (default is `false`).
+   *
+   */
+  loadCatalogResource: (id: string, reload?: boolean) => Promise<void>;
 
   /**
    * Rename an item in the catalog.
@@ -283,7 +292,7 @@ export const useUserStore = create<UserStore>((set, get) => {
           ...state,
           catalog: mutateCatalog(state.catalog, id, (entry) => new CatalogItem({ ...entry, status: "fetching" })),
         }));
-        console.debug("Loading catalog item children...", { id, name: catalogItem.name, state: get() });
+        console.debug("Loading catalog item children...", { id, name: catalogItem.name });
         try {
           const entries = await catalogItem.list();
           entries.sort((a, b) => a.name.localeCompare(b.name));
@@ -303,6 +312,43 @@ export const useUserStore = create<UserStore>((set, get) => {
             ),
           }));
           console.debug("Catalog item loaded...", { id, name: catalogItem.name, state: get() });
+        } catch (error) {
+          get().setCatalogItemStatus(id, "error", error);
+        }
+      }
+    },
+
+    /**
+     * Load a catalog resource from its identifier.
+     *
+     * The resource must be known as a catalog item already present in the store.
+     */
+    async loadCatalogResource(id: string, reload: boolean = false): Promise<void> {
+      const catalogItem = get().catalog.get(id);
+      if (!catalogItem) {
+        // The item does not exist in the catalog.
+        console.error(`Catalog item with id '${id}' not found.`);
+      } else if (catalogItem.resource && !reload) {
+        // The resource is already loaded and we don't want to reload it.
+        console.debug("Catalog item resource already loaded.", { id, name: catalogItem.name });
+      } else {
+        // We can load the children of the item.
+        set((state) => ({
+          ...state,
+          catalog: mutateCatalog(state.catalog, id, (entry) => new CatalogItem({ ...entry, status: "fetching" })),
+        }));
+        console.debug("Loading catalog item resource...", { id, name: catalogItem.name });
+        try {
+          const resource = await catalogItem.get();
+          set((state) => ({
+            ...state,
+            catalog: mutateCatalog(
+              state.catalog,
+              id,
+              (entry) => new CatalogItem({ ...entry, resource, status: "ready", lastError: undefined }),
+            ),
+          }));
+          console.debug("Catalog item resource loaded...", { id, name: catalogItem.name, resource });
         } catch (error) {
           get().setCatalogItemStatus(id, "error", error);
         }

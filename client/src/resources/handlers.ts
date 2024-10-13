@@ -9,15 +9,19 @@ import PlugIcon from "@/icons/plug.svg?react";
 import { ApplicationSpace } from "@/utils/types";
 import UserBlankEditor from "@/components/editors/UserBlankEditor";
 import { BLANK_PAGE_ITEM_ID, NOT_FOUND_ITEM_ID } from "@/utils/constants";
+import { Connection } from "@/models/connections";
+import { Environment } from "@/models/environments";
 
 export const BLANK_PAGE_TITLE = "Untitled";
 export const NOT_FOUND_PAGE_TITLE = "Not Found";
+
+export type AnyResource = Connection | Environment;
 
 export interface ResourceHandler {
   /**
    * Get the resource identified by the given reference.
    */
-  get<T extends object>(ref: ResourceRef): Promise<T>;
+  get(ref: ResourceRef): Promise<AnyResource>;
 
   /**
    * List the content of the resource identified by the given reference.
