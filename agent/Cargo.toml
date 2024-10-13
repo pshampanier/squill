@@ -59,3 +59,7 @@ tokio-test = "0.4"
 built = { version = "0.7.4", features = ["git2"] }
 openapi-codegen = { git = "https://github.com/pshampanier/openapi-codegen-rs.git", branch = "main", version = "0.2" }
 yaml-rust = "0.4.5"
+
+[features]
+default = []
+bundled = ["squill-drivers/duckdb-bundled"]

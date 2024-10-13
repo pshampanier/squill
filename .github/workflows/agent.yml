@@ -40,7 +40,7 @@ jobs:
           VITE_AGENT_API_KEY: x-dev-api-key
         run: |
           chmod -R a+rw .
-          su ci --command="cargo tarpaulin --target-dir=build --timeout 120 --out xml"
+          su ci --command="cargo tarpaulin --features 'agent/bundled' --target-dir=build --timeout 120 --out xml"
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
