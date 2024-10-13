@@ -1,0 +1,4 @@
+{#- SQLite version 3.43.2 -#}
+{%- macro server_info() %}
+SELECT 'SQLite version ' || sqlite_version()
+{%- endmacro %}

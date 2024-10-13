@@ -1,0 +1,4 @@
+{#- Server version: 9.0.1 MySQL Community Server - GPL -#}
+{%- macro server_info() %}
+SELECT CONCAT('Server version: ', VERSION(), ' ', @@version_comment)
+{%- endmacro %}

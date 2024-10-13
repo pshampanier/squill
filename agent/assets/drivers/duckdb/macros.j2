@@ -1,0 +1,4 @@
+{#- DuckDb version 3.43.2 -#}
+{%- macro server_info() %}
+SELECT 'DuckDB ' || version()
+{%- endmacro %}
