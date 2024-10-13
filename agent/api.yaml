@@ -100,6 +100,41 @@ paths:
         "401":
           description: Unauthorized
 
+  /connections/describe:
+    get:
+      summary: Get the description of the connection.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDescription"
+
+        "401":
+          description: Unauthorized
+
+  /connections/describe/datasources:
+    get:
+      summary: List the datasources available for the connection.
+      security:
+        - ApiKeyAuth: []
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionDescription"
+
+        "401":
+          description: Unauthorized
+
+        "404":
+          description: Connection not found"
+
   /connections/{id}:
     get:
       summary: Get a connection from its identifier.
@@ -474,6 +509,18 @@ components:
           description: The default connection settings of the driver.
           additionalProperties:
             type: string
+
+    ConnectionDescription:
+      description: Description of a connection to a datasource.
+      type: object
+      properties:
+        description:
+          type: string
+          description: |
+            The description of the connection (e.g. "Server version: 9.0.1 MySQL Community Server - GPL").
+        server_version:
+          type: string
+          description: The version of the server (e.g. "9.0.1").
 
     Connection:
       description: Description of a connection to a datasource.
