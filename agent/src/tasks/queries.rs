@@ -164,7 +164,7 @@ async fn execute_result_set_query(
     let (tx, rx) = mpsc::channel::<QueryPipelineMessage>(settings::get_max_task_queue_size());
 
     // Spawn a task to write the result set into parquet files & send a notifications to the client
-    let writer_task = tokio::task::spawn(write_query_result(state.clone(), session_id, rx, query.id));
+    let writer_task = tokio::task::spawn(write_query_result(state.clone(), session_id, rx, query.clone()));
 
     // Read the record batches from the stream and send then to the stats collector task
     match {
@@ -212,8 +212,10 @@ async fn write_query_result(
     state: ServerState,
     session_id: Uuid,
     mut rx: mpsc::Receiver<QueryPipelineMessage>,
-    query_id: Uuid,
+    query: QueryExecution,
 ) -> Result<()> {
+    let mut query = query;
+
     // The number of rows that are expected to be processed.
     // This is used to detect when all the rows have been processed and will be known when the message variant
     // `AffectedRows` is received.
@@ -247,7 +249,7 @@ async fn write_query_result(
 
     let mut record_batch_writer = RecordBatchWriter::new(
         WriterProperties::builder().set_compression(Compression::SNAPPY).build(),
-        history_dir.join(query_id.to_string()),
+        history_dir.join(query.id.to_string()),
         settings::get_initial_query_fetch_size(),
         settings::get_max_rows_per_history_file(),
     );
@@ -281,8 +283,19 @@ async fn write_query_result(
 
                 if last_status_update.elapsed() > refresh_interval {
                     // Update the status of the query execution
-                    // update_query_history(&state, session_id, QueryExecution { status, ..query_id }).await?;
-                    last_status_update = Instant::now();
+                    if let Some(updated_query) = update_query_history(
+                        &state,
+                        session_id,
+                        QueryExecution { affected_rows: processed_rows as u64, ..query },
+                    )
+                    .await?
+                    {
+                        query = updated_query;
+                        last_status_update = Instant::now();
+                    } else {
+                        // The query execution was cancelled by the user
+                        break;
+                    }
                 }
             }
             QueryPipelineMessage::AffectedRows(affected_rows) => {
@@ -310,7 +323,7 @@ async fn write_query_result(
 ///
 /// # Returns
 /// - `Ok(Some(QueryExecution))` if the query was updated successfully.
-/// - `Ok(None)` if the query was not updated because the user deleted the query or cleared the history.
+/// - `Ok(None)` if the query was not updated either because the user deleted, cancelled the query or cleared the history.
 /// - `Err(e)` if an error occurred while updating the query.
 async fn update_query_history(
     state: &ServerState,
@@ -328,20 +341,35 @@ async fn update_query_history(
     match agentdb_conn
         .query_map_row(
             r#"UPDATE query_history 
-                                SET executed_at = COALESCE(executed_at, CURRENT_TIMESTAMP),
-                                    status = ?,
-                                    error = COALESCE(error, ?),
-                                    execution_time = COALESCE(execution_time, ?),
-                                    affected_rows = COALESCE(?, affected_rows)
-                              WHERE query_history_id=? AND connection_id=?
-                          RETURNING executed_at"#,
-            params!(query.status.as_str(), error, execution_time, affected_rows, query.id, query.connection_id),
-            |row| Ok(QueryExecution { revision: query.revision + 1, executed_at: Some(row.try_get(0)?), ..query }),
+                         SET executed_at = COALESCE(executed_at, CURRENT_TIMESTAMP),
+                             revision = revision + 1,
+                             status = ?,
+                             error = COALESCE(error, ?),
+                             execution_time = COALESCE(execution_time, ?),
+                             affected_rows = COALESCE(?, affected_rows)
+                        WHERE query_history_id=? AND connection_id=? AND status <> ?
+                    RETURNING revision, executed_at"#,
+            params!(
+                query.status.as_str(),
+                error,
+                execution_time,
+                affected_rows,
+                query.id,
+                query.connection_id,
+                QueryExecutionStatus::Cancelled.as_str()
+            ),
+            |row| {
+                Ok(QueryExecution {
+                    revision: row.try_get::<_, i64>(0)? as u32,
+                    executed_at: Some(row.try_get(1)?),
+                    ..query
+                })
+            },
         )
         .await
     {
         Ok(Some(query)) => {
-            // Send a notification to the client that the query is running
+            // Send a notification to the client with a update of the query
             state.push_notification(session_id, query.clone()).await;
             Ok(Some(query))
         }
@@ -390,7 +418,21 @@ mod tests {
         let _ = state.start().await;
         let (tx, rx) = mpsc::channel::<QueryPipelineMessage>(10);
         let session_id = Uuid::nil();
-        let query_id = Uuid::nil();
+        let query_id = QueryExecution {
+            id: Uuid::new_v4(),
+            connection_id: Uuid::nil(),
+            user_id: Uuid::nil(),
+            query: String::new(),
+            origin: String::new(),
+            created_at: chrono::Utc::now(),
+            status: QueryExecutionStatus::Running,
+            revision: 0,
+            executed_at: None,
+            execution_time: 0.0,
+            affected_rows: 0,
+            error: None,
+            is_result_set_query: Some(true),
+        };
         let writer_task = tokio::task::spawn(write_query_result(state.clone(), session_id, rx, query_id));
 
         let schema = Arc::new(Schema::new(vec![

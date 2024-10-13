@@ -49,6 +49,9 @@ CREATE TABLE query_history (
 	-- The unique identifier for the query history item.
 	query_history_id UUID PRIMARY KEY,
 
+	-- The revision of the query (incremented by 1 every time the record is updated).
+	revision INTEGER NOT NULL DEFAULT 1,
+
 	-- The connection that was used to execute the query.
 	connection_id UUID REFERENCES catalog(catalog_id),
 
