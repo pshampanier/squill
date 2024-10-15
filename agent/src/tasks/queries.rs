@@ -249,8 +249,8 @@ async fn write_query_result(
 
     let mut record_batch_writer = RecordBatchWriter::new(
         WriterProperties::builder().set_compression(Compression::SNAPPY).build(),
-        history_dir.join(query.id.to_string()),
-        settings::get_initial_query_fetch_size(),
+        history_dir,
+        query.id.to_string(),
         settings::get_max_rows_per_history_file(),
     );
 

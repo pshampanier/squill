@@ -7,28 +7,37 @@ use tokio::fs::File;
 pub struct RecordBatchWriter {
     props: WriterProperties,
     directory: PathBuf,
-    max_rows_per_file: usize,
-    max_rows_first_file: usize,
-    current_file: Option<AsyncArrowWriter<File>>,
-    current_file_offset: usize,
+    file_prefix: String,
     current_file_num_rows: usize,
+    max_rows_per_file: usize,
+    current_file: Option<AsyncArrowWriter<File>>,
+    file_part: usize,
 }
 
+/// A writer that writes record batches to parquet files.
+///
+/// Query history files are store in the directory **`app_dir/users/{username}/history`**.
+//  When a user executes a query, the result is store in the history as one or many parquet files. The maximum size of a
+// single parquet file is defined by the agent setting **`history_max_rows_per_file`** (default `1_000_000`). Once a
+// parquet file reach this limit, a new one is created to store the next records. Files are always named by the `id` of
+// the query with a suffix `.part-000x` and the file extension `.parquet`:
+/// ```txt
+/// 287d6a18-7092-4e3e-bb38-a54eaefc956a.part-0001.parquet
+/// 287d6a18-7092-4e3e-bb38-a54eaefc956a.part-0002.parquet
+/// 287d6a18-7092-4e3e-bb38-a54eaefc956a.part-0003.parquet
+/// ```
+/// If a query result contains more than one files, all the files are guaranteed to have the same number of records,
+/// except the last one.
 impl RecordBatchWriter {
-    pub fn new(
-        props: WriterProperties,
-        directory: PathBuf,
-        max_rows_first_file: usize,
-        max_rows_per_file: usize,
-    ) -> Self {
+    pub fn new(props: WriterProperties, directory: PathBuf, file_prefix: String, max_rows_per_file: usize) -> Self {
         Self {
             props,
             directory,
+            file_prefix,
             current_file: None,
-            max_rows_first_file,
             max_rows_per_file,
-            current_file_offset: 0,
             current_file_num_rows: 0,
+            file_part: 1,
         }
     }
 
@@ -38,13 +47,9 @@ impl RecordBatchWriter {
         while num_remaining_rows > 0 {
             // The next batch of rows to be written is a slice of the given batch because the given batch may be
             // larger than remaining rows allowed by the current file.
-            let length = std::cmp::min(num_remaining_rows, self.get_max_row());
+            let length = std::cmp::min(num_remaining_rows, self.max_rows_per_file);
             let next_record_batch = record_batch.slice(offset, length);
             if self.current_file.is_none() {
-                if self.current_file_offset == 0 && !self.directory.exists() {
-                    // Before creating the first file, we need to check if the directory exists.
-                    fs::create_dir_all(&self.directory)?;
-                }
                 let file = File::create(self.get_temp_file_name()).await?;
                 self.current_file = Some(AsyncArrowWriter::try_new(
                     file,
@@ -55,8 +60,9 @@ impl RecordBatchWriter {
             let current_file = self.current_file.as_mut().unwrap();
             current_file.write(&next_record_batch).await?;
             self.current_file_num_rows += length;
-            if self.current_file_num_rows >= self.get_max_row() {
+            if self.current_file_num_rows >= self.max_rows_per_file {
                 self.close_current_file().await?;
+                self.current_file_num_rows = 0;
             }
             num_remaining_rows -= length;
             offset += length;
@@ -68,26 +74,14 @@ impl RecordBatchWriter {
         self.close_current_file().await
     }
 
-    fn get_max_row(&self) -> usize {
-        if self.current_file_offset == 0 {
-            self.max_rows_first_file
-        } else {
-            self.max_rows_per_file
-        }
-    }
-
     async fn close_current_file(&mut self) -> Result<()> {
         if let Some(current_file) = self.current_file.take() {
-            let file_metadata = current_file.close().await?;
+            let _file_metadata = current_file.close().await?;
             let temp_file_name = self.get_temp_file_name();
-            let current_file_name = self.directory.join(format!(
-                "{}-{}.parquet",
-                self.current_file_offset,
-                self.current_file_offset + (file_metadata.num_rows - 1) as usize
-            ));
+            let current_file_name =
+                self.directory.join(format!("{}.part-{:#04}.parquet", self.file_prefix, self.file_part));
             tokio::fs::rename(&temp_file_name, &current_file_name).await?;
-            self.current_file_offset += file_metadata.num_rows as usize;
-            self.current_file_num_rows = 0;
+            self.file_part += 1;
         }
         Ok(())
     }
@@ -123,17 +117,18 @@ mod tests {
     #[tokio::test]
     async fn test_record_batch_writer() {
         let dir = tempdir().unwrap();
-        let mut writer = RecordBatchWriter::new(WriterProperties::builder().build(), dir.path().to_path_buf(), 2, 5);
+        let mut writer =
+            RecordBatchWriter::new(WriterProperties::builder().build(), dir.path().to_path_buf(), "query".into(), 5);
         let schema = Schema::new(vec![Field::new("a", DataType::Int32, false)]);
         let record_batch = RecordBatch::try_new(
             Arc::new(schema),
-            vec![Arc::new(Int32Array::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))],
+            vec![Arc::new(Int32Array::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))],
         )
         .unwrap();
         assert_ok!(writer.write_record_batch(&record_batch).await);
         assert_ok!(writer.close().await);
-        assert!(dir.path().join("0-1.parquet").exists());
-        assert!(dir.path().join("2-6.parquet").exists());
-        assert!(dir.path().join("7-9.parquet").exists());
+        assert!(dir.path().join("query.part-0001.parquet").exists());
+        assert!(dir.path().join("query.part-0002.parquet").exists());
+        assert!(dir.path().join("query.part-0003.parquet").exists());
     }
 }

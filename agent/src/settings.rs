@@ -47,7 +47,6 @@ settings_getters! {
     get_log_dir, log_dir: String,
     get_cors_allowed_origins, cors_allowed_origins: Vec<String>,
     get_cors_max_age, cors_max_age: std::time::Duration,
-    get_initial_query_fetch_size, initial_query_fetch_size: usize,
     get_max_rows_per_history_file, max_rows_per_history_file: usize,
     get_max_users_conn_pool_size, max_users_conn_pool_size: usize,
 }
