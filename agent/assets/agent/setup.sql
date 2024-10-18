@@ -50,13 +50,13 @@ CREATE TABLE query_history (
 	query_history_id UUID PRIMARY KEY,
 
 	-- The revision of the query (incremented by 1 every time the record is updated).
-	revision INTEGER NOT NULL DEFAULT 1,
+	revision INTEGER NOT NULL DEFAULT 0,
 
 	-- The connection that was used to execute the query.
-	connection_id UUID REFERENCES catalog(catalog_id),
+	connection_id UUID NOT NULL REFERENCES catalog(catalog_id),
 
 	-- The user that executed the query.
-	user_id UUID REFERENCES users(user_id),
+	user_id UUID NOT_NULL REFERENCES users(user_id),
 
 	-- The query that was executed.
 	query TEXT NOT NULL,
@@ -64,11 +64,11 @@ CREATE TABLE query_history (
 	-- The origin of the query.
 	origin TEXT NOT NULL,
 
+	-- The time when the query was created.
+	created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
 	-- The time when the query was executed.
 	executed_at TIMESTAMP,
-
-	-- The time when the query was created.
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
 	-- The time taken to execute the query (in seconds with a nanosecond precision).
 	execution_time REAL,
@@ -78,6 +78,12 @@ CREATE TABLE query_history (
 
 	-- The execution status of the query.	
 	status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')) DEFAULT 'pending',
+
+	-- `true` if the query return a result set (whenever the result set is empty or not).
+	with_result_set BOOLEAN DEFAULT FALSE,
+
+	--- The size in bytes of the result set on disk.
+	storage_bytes INTEGER NOT NULL DEFAULT 0,
 
 	-- Error details if the status is failed.
 	error TEXT DEFAULT NULL,

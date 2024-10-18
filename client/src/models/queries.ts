@@ -93,21 +93,6 @@ export class QueryExecution {
   id!: string;
   
   /**
-   * A flag indicating if the query is a result set returning query.
-   * 
-   * This flag is used to determine if the query execution may return the result set or not.
-   * 
-   * Examples of result set returning queries are:
-   * - `SELECT``: The primary statement that retrieves rows from one or more tables.
-   * - `SHOW``: A statement that shows information about databases, tables, or other objects.
-   * - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can 
-   *    return rows when combined with the `RETURNING` clause.
-   * 
-   **/
-  @serializable("boolean", { snakeCase: "property" })
-  isResultSetQuery?: boolean;
-  
-  /**
    * The origin of the query execution.
    * 
    * The query can be originated from different origins like a terminal or a worksheet. In order to track the
@@ -132,6 +117,7 @@ export class QueryExecution {
    * query execution is updated. Because the client receive updates of the query execution via different channels
    * (HTTP and WebSocket) there is no guarantee that the last update received is the most recent. By using the
    * revision number the client can avoid overwriting a more recent update with an older one.
+   * At creation the revision number is 0.
    * 
    **/
   @serializable("integer", { required: true, min: 0 })
@@ -144,10 +130,31 @@ export class QueryExecution {
   status!: QueryExecutionStatus;
   
   /**
+   * The size of the result set on disk in bytes.
+   **/
+  @serializable("integer", { required: true, min: 0, snakeCase: "property" })
+  storageBytes!: number;
+  
+  /**
    * The unique identifier of the user that executed the query.
    **/
   @serializable("string", { format: "uuid", required: true, snakeCase: "property" })
   userId!: string;
+  
+  /**
+   * A flag indicating if the query is a result set returning query.
+   * 
+   * This flag is used to determine if the query execution may return the result set or not.
+   * 
+   * Examples of result set returning queries are:
+   * - `SELECT``: The primary statement that retrieves rows from one or more tables.
+   * - `SHOW``: A statement that shows information about databases, tables, or other objects.
+   * - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can 
+   *    return rows when combined with the `RETURNING` clause.
+   * 
+   **/
+  @serializable("boolean", { required: true, snakeCase: "property" })
+  withResultSet!: boolean;
   
   constructor(object?: Partial<QueryExecution>) {
     Object.assign(this, object);

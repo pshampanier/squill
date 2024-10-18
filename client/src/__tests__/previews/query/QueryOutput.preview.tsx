@@ -41,7 +41,7 @@ const QUERY_SUCCESS = new QueryExecution({
  LIMIT 10;`,
   executedAt: addTime(new Date(), -5, "minute"),
   status: "completed",
-  isResultSetQuery: true,
+  withResultSet: true,
   executionTime: 32.365002,
 });
 
@@ -86,14 +86,14 @@ const QUERY_RUNNING = new QueryExecution({
   query: `SELECT * FROM hotels;`,
   executedAt: addTime(new Date(), -30, "second"),
   status: "running",
-  isResultSetQuery: true,
+  withResultSet: true,
 });
 
 const QUERY_PENDING = new QueryExecution({
   query: `SELECT name, address FROM hotels ORDER BY name;`,
   executedAt: new Date(),
   status: "pending",
-  isResultSetQuery: true,
+  withResultSet: true,
 });
 
 export default function QueryOutputPreview() {

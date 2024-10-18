@@ -3,6 +3,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 
 {{ enum("QueryExecutionStatus", components.schemas.QueryExecutionStatus) }}
 
@@ -14,6 +15,21 @@ impl QueryExecutionStatus {
             QueryExecutionStatus::Completed => "completed",
             QueryExecutionStatus::Failed => "failed",
             QueryExecutionStatus::Cancelled => "cancelled",
+        }
+    }
+}
+
+impl TryFrom<&str> for QueryExecutionStatus {
+    type Error = String;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "pending" => Ok(QueryExecutionStatus::Pending),
+            "running" => Ok(QueryExecutionStatus::Running),
+            "completed" => Ok(QueryExecutionStatus::Completed),
+            "failed" => Ok(QueryExecutionStatus::Failed),
+            "cancelled" => Ok(QueryExecutionStatus::Cancelled),
+            _ => Err(format!("Invalid status: {}", value)),
         }
     }
 }

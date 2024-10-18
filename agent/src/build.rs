@@ -1,4 +1,5 @@
 use openapi_codegen::{rustfmt, Context, Generator};
+use std::fs::read_to_string;
 use std::path::PathBuf;
 use yaml_rust::YamlLoader;
 
@@ -7,6 +8,12 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 fn save_to_file(output_file: &str, code: &str) -> Result<()> {
     let manifest_dir = env!("CARGO_MANIFEST_DIR");
     let output_file = PathBuf::from(manifest_dir).join(output_file);
+    if output_file.exists() {
+        let previous_code = read_to_string(&output_file)?;
+        if previous_code == code {
+            return Ok(());
+        }
+    }
     std::fs::write(output_file, code).map_err(|e| Box::<dyn std::error::Error>::from(e) as Box<dyn std::error::Error>)
 }
 

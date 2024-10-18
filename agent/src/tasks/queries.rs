@@ -6,7 +6,7 @@ use crate::tasks::statistics::{merge_column_stats, ColumnStats};
 use crate::utils::constants::USER_HISTORY_DIRNAME;
 use crate::utils::parquet::RecordBatchWriter;
 use crate::{models::QueryExecution, server::state::ServerState};
-use crate::{settings, Result};
+use crate::{resources, settings, Result};
 use anyhow::anyhow;
 use arrow_array::RecordBatch;
 use futures::future::BoxFuture;
@@ -14,7 +14,6 @@ use futures::StreamExt;
 use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
 use squill_drivers::futures::Connection;
-use squill_drivers::params;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tracing::{debug, error};
@@ -43,7 +42,7 @@ use uuid::Uuid;
 //                           └─────────────▶ COMPUTE STATS  │────────┘      │     DISK      │
 //                                         └────────────────┘               └───────────────┘
 //
-//                                   (3) compute_statistics_task()       (4) write_query_result()
+//                                   (3) compute_statistics_task()      (4) write_query_result_set()
 //
 
 struct PipelinedRecordBatch {
@@ -115,16 +114,16 @@ async fn execute_query(
         let conn = state.get_user_db_connection(query.connection_id).await?;
         let start_time = Instant::now(); // Record the start time of the query execution
         let query = match {
-            if query.is_result_set_query.unwrap_or(false) {
+            if query.with_result_set {
                 //
                 // The query is expected to return a result set
                 //
-                execute_result_set_query(state.clone(), session_id, &conn, query.clone()).await
+                execute_query_with_result_set(state.clone(), session_id, &conn, query.clone()).await
             } else {
                 //
                 // The query is expected to return a number of affected rows
                 //
-                execute_non_result_set_query(&conn, query.clone()).await
+                execute_query_without_result_set(&conn, query.clone()).await
             }
         } {
             Ok(query) => {
@@ -133,8 +132,7 @@ async fn execute_query(
             }
             Err(e) => QueryExecution { status: QueryExecutionStatus::Failed, error: Some(e.into()), ..query },
         };
-        update_query_history(&state, session_id, query.clone()).await?;
-        Ok(Some(query))
+        update_query_history(&state, session_id, query.clone()).await
     } else {
         Ok(None)
     }
@@ -143,12 +141,16 @@ async fn execute_query(
 /// Execute a query that is not expected to provide a result set.
 ///
 /// This function returns the updated [QueryExecution].
-async fn execute_non_result_set_query(conn: &Connection, query: QueryExecution) -> Result<QueryExecution> {
+async fn execute_query_without_result_set(conn: &Connection, query: QueryExecution) -> Result<QueryExecution> {
     let affected_rows = conn.execute(query.query.as_str(), None).await?;
     Ok(QueryExecution { status: QueryExecutionStatus::Completed, affected_rows, ..query })
 }
 
-async fn execute_result_set_query(
+/// Execute a query that is expected to provide a result set.
+///
+/// This function returns the updated [QueryExecution].
+/// The result set is written to disk in parquet format.
+async fn execute_query_with_result_set(
     state: ServerState,
     session_id: uuid::Uuid,
     conn: &Connection,
@@ -164,7 +166,7 @@ async fn execute_result_set_query(
     let (tx, rx) = mpsc::channel::<QueryPipelineMessage>(settings::get_max_task_queue_size());
 
     // Spawn a task to write the result set into parquet files & send a notifications to the client
-    let writer_task = tokio::task::spawn(write_query_result(state.clone(), session_id, rx, query.clone()));
+    let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query.clone()));
 
     // Read the record batches from the stream and send then to the stats collector task
     match {
@@ -191,8 +193,11 @@ async fn execute_result_set_query(
         Ok(affected_rows) => {
             // Wait for the writer task to complete
             // We are ignoring the result of the writer task because we are only interested in the error if any.
-            let _ = writer_task.await?;
-            Ok(QueryExecution { status: QueryExecutionStatus::Completed, affected_rows, ..query })
+            match writer_task.await? {
+                Ok(Some(query)) => Ok(QueryExecution { affected_rows, ..query }),
+                Ok(None) => Ok(query),
+                Err(e) => Err(e),
+            }
         }
         Err(e) => {
             // The query execution failed, we need to cancel the writer task
@@ -208,12 +213,12 @@ async fn execute_result_set_query(
 /// The format used to write the batch records is [parquet](https://parquet.apache.org/) and the number of files may
 /// vary on the number of batches received. The first file is expected to contains the first rows of the query result.
 /// Files are named `{query_id}.{file_index}.{first_row_num}_{last_row_num}.parquet`.
-async fn write_query_result(
+async fn write_query_result_set(
     state: ServerState,
     session_id: Uuid,
     mut rx: mpsc::Receiver<QueryPipelineMessage>,
     query: QueryExecution,
-) -> Result<()> {
+) -> Result<Option<QueryExecution>> {
     let mut query = query;
 
     // The number of rows that are expected to be processed.
@@ -286,7 +291,11 @@ async fn write_query_result(
                     if let Some(updated_query) = update_query_history(
                         &state,
                         session_id,
-                        QueryExecution { affected_rows: processed_rows as u64, ..query },
+                        QueryExecution {
+                            affected_rows: processed_rows as u64,
+                            storage_bytes: record_batch_writer.written_bytes as u64,
+                            ..query
+                        },
                     )
                     .await?
                     {
@@ -294,7 +303,7 @@ async fn write_query_result(
                         last_status_update = Instant::now();
                     } else {
                         // The query execution was cancelled by the user
-                        break;
+                        return Ok(None);
                     }
                 }
             }
@@ -314,7 +323,17 @@ async fn write_query_result(
     // Close the writer to make sure all the rows have been written to disk.
     record_batch_writer.close().await?;
 
-    Ok(())
+    // Update the query with the final values
+    update_query_history(
+        &state,
+        session_id,
+        QueryExecution {
+            affected_rows: processed_rows as u64,
+            storage_bytes: record_batch_writer.written_bytes as u64,
+            ..query
+        },
+    )
+    .await
 }
 
 /// Update the query history with given query.
@@ -330,51 +349,15 @@ async fn update_query_history(
     session_id: uuid::Uuid,
     query: QueryExecution,
 ) -> Result<Option<QueryExecution>> {
-    // The `affected_rows` is stored in memory as a `u64` but in the database it is stored as a `i64` because of sqlite
-    // limitations. It doesn't really matter since the number of affected rows should always be less than `i64::MAX`.
-    let (execution_time, affected_rows, error) = match query.status {
-        QueryExecutionStatus::Completed => (Some(query.execution_time), Some(query.affected_rows as i64), None),
-        QueryExecutionStatus::Failed => (None, None, Some(serde_json::to_string(&query.error)?)),
-        _ => (None, None, None),
-    };
     let agentdb_conn = state.get_agentdb_connection().await?;
-    match agentdb_conn
-        .query_map_row(
-            r#"UPDATE query_history 
-                         SET executed_at = COALESCE(executed_at, CURRENT_TIMESTAMP),
-                             revision = revision + 1,
-                             status = ?,
-                             error = COALESCE(error, ?),
-                             execution_time = COALESCE(execution_time, ?),
-                             affected_rows = COALESCE(?, affected_rows)
-                        WHERE query_history_id=? AND connection_id=? AND status <> ?
-                    RETURNING revision, executed_at"#,
-            params!(
-                query.status.as_str(),
-                error,
-                execution_time,
-                affected_rows,
-                query.id,
-                query.connection_id,
-                QueryExecutionStatus::Cancelled.as_str()
-            ),
-            |row| {
-                Ok(QueryExecution {
-                    revision: row.try_get::<_, i64>(0)? as u32,
-                    executed_at: Some(row.try_get(1)?),
-                    ..query
-                })
-            },
-        )
-        .await
-    {
+    match resources::queries::update(&agentdb_conn, query.clone()).await {
         Ok(Some(query)) => {
             // Send a notification to the client with a update of the query
             state.push_notification(session_id, query.clone()).await;
             Ok(Some(query))
         }
         Ok(None) => Ok(None),
-        Err(e) => Err(e.into()),
+        Err(e) => Err(e),
     }
 }
 
@@ -412,7 +395,7 @@ mod tests {
     use uuid::Uuid;
 
     #[tokio::test]
-    async fn test_write_query_result() {
+    async fn test_write_query_result_set() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
         let state = ServerState::new(conn_pool);
         let _ = state.start().await;
@@ -431,9 +414,10 @@ mod tests {
             execution_time: 0.0,
             affected_rows: 0,
             error: None,
-            is_result_set_query: Some(true),
+            with_result_set: true,
+            storage_bytes: 0,
         };
-        let writer_task = tokio::task::spawn(write_query_result(state.clone(), session_id, rx, query_id));
+        let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query_id));
 
         let schema = Arc::new(Schema::new(vec![
             Field::new("a", DataType::Int32, false),

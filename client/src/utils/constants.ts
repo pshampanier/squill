@@ -14,6 +14,7 @@ export const HTTP_HEADER_X_ORIGIN = "X-Origin";
 // List of media type
 export const MEDIA_TYPE_APPLICATION_JSON = "application/json";
 export const MEDIA_TYPE_PLAIN_TEXT = "plain/text";
+export const MEDIA_TYPE_APPLICATION_VND_APACHE_ARROW_STREAM = "application/vnd.apache.arrow.stream";
 
 // List of editor names
 export const EDITOR_CONNECTION = "Connection";

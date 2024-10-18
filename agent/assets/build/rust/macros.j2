@@ -77,7 +77,7 @@ pub type {{ name | pascal_case }} = {{ rust_type(schema) }};
 {% if schema.description %}
 /// {{ schema.description | trim | replace('\n', '\n  /// ') }}
 {%- endif %}
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct {{ name | pascal_case }} {
   {% for key in schema.properties %}
   {%- set field = schema.properties[key] %}

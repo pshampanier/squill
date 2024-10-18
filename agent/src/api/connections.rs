@@ -2,24 +2,28 @@ use crate::api::error::ServerResult;
 use crate::err_forbidden;
 use crate::err_param;
 use crate::models;
-use crate::models::QueryExecution;
-use crate::models::QueryExecutionStatus;
+use crate::models::Connection;
+use crate::resources;
 use crate::resources::catalog;
+use crate::resources::queries;
 use crate::server::contexts::RequestContext;
 use crate::server::state::ServerState;
 use crate::tasks::execute_queries_task;
-use crate::{models::Connection, utils::user_error::UserError};
-use axum::extract::Path;
-use axum::extract::State;
+use crate::utils::user_error::UserError;
+use arrow_array::RecordBatch;
+use arrow_ipc::writer::StreamWriter;
+use axum::debug_handler;
+use axum::extract::Query;
+use axum::extract::{Path, State};
 use axum::http::HeaderMap;
 use axum::http::HeaderName;
-use axum::{
-    routing::{get, post},
-    Json, Router,
-};
+use axum::response::Response;
+use axum::routing::{get, post};
+use axum::{Json, Router};
 use common::constants::X_REQUEST_ORIGIN;
+use serde::Deserialize;
 use squill_drivers::futures::Connection as DriverConnection;
-use squill_drivers::params;
+use std::io::Cursor;
 use uuid::Uuid;
 
 /// GET /connections/defaults
@@ -74,35 +78,18 @@ async fn execute_buffer(
     // Parse the SQL query
     let statements = loose_sqlparser::parse(&buffer);
     for statement in statements {
-        match conn
-            .query_map_row(
-                r#"INSERT INTO query_history(query_history_id, connection_id, user_id, origin, query)
-                           VALUES(?, ?, ?, ?, ?) RETURNING query_history_id, created_at"#,
-                params!(Uuid::new_v4(), id, user_session.get_user_id(), &origin, statement.sql()),
-                |row| {
-                    Ok(QueryExecution {
-                        id: row.try_get(0)?,
-                        origin: origin.clone(),
-                        revision: 0,
-                        connection_id: id,
-                        user_id: user_session.get_user_id(),
-                        query: statement.sql().to_string(),
-                        is_result_set_query: Some(statement.is_query()),
-                        status: QueryExecutionStatus::Pending,
-                        error: None,
-                        executed_at: None,
-                        created_at: row.try_get(1)?,
-                        affected_rows: 0,
-                        execution_time: 0.0,
-                    })
-                },
+        // Insert the query into the database
+        queries.push(
+            resources::queries::create(
+                &conn,
+                id,
+                &origin,
+                user_session.get_user_id(),
+                &statement.sql().to_string(),
+                statement.is_query(),
             )
-            .await
-        {
-            Ok(Some(query_execution)) => queries.push(query_execution),
-            Ok(None) => return Err(UserError::InternalError("Failed to insert query history".to_string()).into()),
-            Err(e) => return Err(UserError::InternalError(e.to_string()).into()),
-        }
+            .await?,
+        );
     }
 
     // Create a new task to execute the queries & push it to the task queue
@@ -132,11 +119,62 @@ async fn test_connection(state: State<ServerState>, Json(conn): Json<Connection>
     }
 }
 
+#[derive(Deserialize)]
+struct PaginationParams {
+    offset: Option<usize>,
+    limit: Option<usize>,
+}
+
+/// GET /connections/{id}/history/{query_id}/data?offset=0&limit=1000
+///
+/// Get a connection from its identifier.
+#[debug_handler]
+async fn get_history_data(
+    state: State<ServerState>,
+    Path((id, query_history_id)): Path<(Uuid, Uuid)>,
+    Query(params): Query<PaginationParams>,
+) -> ServerResult<Response> {
+    let conn = state.get_agentdb_connection().await?;
+    let record_batches = queries::read_history_data(
+        &conn,
+        id,
+        query_history_id,
+        params.offset.unwrap_or(0),
+        params.limit.unwrap_or(1000),
+    )
+    .await?;
+
+    // Serialize the RecordBatch into IPC format
+    let body = ipc_serialize(record_batches)?;
+
+    let response = Response::builder()
+        .status(axum::http::StatusCode::OK)
+        .header(axum::http::header::CONTENT_TYPE, "application/vnd.apache.arrow.stream")
+        .body(body.into());
+
+    response.map_err(|e| e.into())
+}
+
+fn ipc_serialize(record_batches: Vec<RecordBatch>) -> anyhow::Result<Vec<u8>> {
+    let mut buffer = Cursor::new(Vec::new());
+    {
+        let mut writer = StreamWriter::try_new(&mut buffer, &record_batches[0].schema())?;
+        for batch in record_batches {
+            writer.write(&batch)?;
+        }
+        writer.finish()?;
+    }
+
+    Ok(buffer.into_inner())
+}
+
 pub fn authenticated_routes(state: ServerState) -> Router {
     Router::new()
         .route("/connections/defaults", get(get_connection_defaults))
         .route("/connections/test", post(test_connection))
         .route("/connections/:id", get(get_connection))
         .route("/connections/:id/execute", post(execute_buffer))
+        //         .route("/connections/:id/history", post(list_history))
+        .route("/connections/:id/history/:query_history_id/data", get(get_history_data))
         .with_state(state)
 }

@@ -1,12 +1,3 @@
 {
-  "rust-analyzer.linkedProjects": ["./Cargo.toml"],
-  "sqltools.useNodeRuntime": true,
-  "sqltools.connections": [
-    {
-      "previewLimit": 50,
-      "driver": "SQLite",
-      "database": "${workspaceFolder:squill}/build/app_dir/agent.db",
-      "name": "agent_db"
-    }
-  ]
+  "rust-analyzer.linkedProjects": ["./Cargo.toml"]
 }

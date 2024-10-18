@@ -12,6 +12,7 @@ pub mod catalog;
 pub mod collections;
 pub mod connections;
 pub mod environments;
+pub mod queries;
 pub mod users;
 
 /// The type of a resource.

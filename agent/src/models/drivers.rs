@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 use std::collections::HashMap;
 
 /// The description of the capabilities of a driver.
@@ -40,7 +41,7 @@ pub enum DriverCapabilities {
 }
 
 /// A driver that can be used to connect to a datasource.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Driver {
     /// The capabilities of the driver.
     pub capabilities: Vec<DriverCapabilities>,

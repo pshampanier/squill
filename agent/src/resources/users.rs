@@ -169,6 +169,21 @@ pub async fn save_settings(conn: &Connection, username: &Username, user_settings
     Ok(())
 }
 
+/// Get the username of a user by their id.
+///
+/// This function will return an error if the user with the given id does not exist.
+pub async fn get_username(conn: &Connection, user_id: Uuid) -> Result<Username> {
+    match conn
+        .query_map_row("SELECT username FROM users WHERE user_id = ?", params!(user_id), |row| {
+            Ok(row.try_get::<_, String>(0)?)
+        })
+        .await?
+    {
+        Some(username) => Ok(sanitize_username(&username)?),
+        None => Err(err_not_found!("The user with id '{}' not found.", user_id)),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

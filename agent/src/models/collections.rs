@@ -3,6 +3,7 @@
  *********************************************************************/
 use crate::models::ResourceType;
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 
 /// A special collection in the catalog.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -16,7 +17,7 @@ pub enum SpecialCollection {
 }
 
 /// A collection resources stored in the catalog.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Collection {
     /// The unique identifier of the collection.
     pub collection_id: uuid::Uuid,

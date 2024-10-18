@@ -25,6 +25,7 @@ test("connect", async () => {
   expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent", {
     method: "GET",
     headers: {
+      "Content-Type": "application/json",
       "X-Api-Key": "x-test-api-key",
     },
   });
@@ -36,6 +37,7 @@ test("connect", async () => {
   expect(fetch).toHaveBeenCalledWith("http://localhost/api/v1/agent", {
     method: "GET",
     headers: {
+      "Content-Type": "application/json",
       "X-Api-Key": "x-test-api-key",
     },
   });

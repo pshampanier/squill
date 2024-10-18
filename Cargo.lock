@@ -23,6 +23,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arrow-array",
+ "arrow-ipc",
  "arrow-schema",
  "axum",
  "axum-extra",
@@ -4510,6 +4511,7 @@ dependencies = [
  "squill-async",
  "squill-core",
  "squill-duckdb",
+ "squill-serde",
  "squill-sqlite",
 ]
 
@@ -4521,6 +4523,18 @@ dependencies = [
  "duckdb",
  "squill-core",
  "url",
+]
+
+[[package]]
+name = "squill-serde"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde",
+ "serde_json",
+ "squill-core",
+ "syn 2.0.60",
 ]
 
 [[package]]

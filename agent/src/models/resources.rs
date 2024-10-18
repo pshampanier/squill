@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -24,7 +25,7 @@ pub enum ResourceType {
 ///
 /// A resource reference is a lightweight object that contains the unique identifier of the resource, and some
 /// additional properties of the resource that are useful to use the resource without having to load it.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct ResourceRef {
     /// Unique identifier of the resource.
     pub id: uuid::Uuid,

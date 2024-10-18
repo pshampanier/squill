@@ -3,6 +3,7 @@
  *********************************************************************/
 use crate::models::QueryExecution;
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 
 /// The type of a Push Notification.
 ///
@@ -25,7 +26,7 @@ pub enum LogLevel {
 }
 
 /// A log message sent by the agent to the client through the Push Notification Channel.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Log {
     pub level: LogLevel,
 
@@ -34,7 +35,7 @@ pub struct Log {
 }
 
 /// A Push Notification sent by the agent to the client through the Notification Channel.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct PushMessage {
     /// A info/warning/error log message if the type is `log`.
     #[serde(default, skip_serializing_if = "Option::is_none")]

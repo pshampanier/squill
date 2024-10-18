@@ -191,7 +191,7 @@ paths:
 
   /connections/{id}/history:
     get:
-      summary: Get the history of the connection.
+      summary: List the queries in the history of the connection.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -211,6 +211,38 @@ paths:
                   $ref: "#/components/schemas/QueryExecution"
         "401":
           description: Unauthorized
+
+  /connections/{id}/history/{query_id}/data:
+    get:
+      summary: Get the data of a query execution.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: query_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        "401":
+          description: Unauthorized
+        "404":
+          description: Query not found
 
   /connections/test:
     post:
@@ -816,6 +848,8 @@ components:
         - affected_rows
         - execution_time
         - origin
+        - with_result_set
+        - storage_bytes
       properties:
         id:
           description: The unique identifier of the query execution.
@@ -829,6 +863,7 @@ components:
             query execution is updated. Because the client receive updates of the query execution via different channels
             (HTTP and WebSocket) there is no guarantee that the last update received is the most recent. By using the
             revision number the client can avoid overwriting a more recent update with an older one.
+            At creation the revision number is 0.
           type: integer
           format: int32
           minimum: 0
@@ -843,7 +878,7 @@ components:
         query:
           description: The query that was executed.
           type: string
-        is_result_set_query:
+        with_result_set:
           description: |
             A flag indicating if the query is a result set returning query.
 
@@ -902,6 +937,11 @@ components:
 
             Examples of origins are: `terminal`, `worksheet`, `e7ee76db-8758-4da4-bbce-242c8d1f3d63`, etc.
           type: string
+        storage_bytes:
+          description: The size of the result set on disk in bytes.
+          type: integer
+          format: int64
+          minimum: 0
 
     TokenType:
       type: string

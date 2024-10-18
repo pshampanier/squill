@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
@@ -18,7 +19,7 @@ pub enum TokenType {
 /// A username
 pub type Username = String;
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Authentication {
     pub credentials: Credentials,
 
@@ -26,7 +27,7 @@ pub struct Authentication {
 }
 
 /// The credentials used to authenticate a user.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Credentials {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub password: String,
@@ -35,7 +36,7 @@ pub struct Credentials {
 }
 
 /// A security token used for authentication.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct SecurityTokens {
     /// The access token is a 256-bit random number encoded in hexadecimal.
     pub access_token: String,
@@ -67,7 +68,7 @@ pub struct SecurityTokens {
 }
 
 /// The request body of the POST /auth/refresh-token endpoint.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct RefreshToken {
     pub refresh_token: String,
 }

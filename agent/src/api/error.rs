@@ -59,6 +59,12 @@ impl From<UserError> for Error {
     }
 }
 
+impl From<axum::http::Error> for Error {
+    fn from(_err: axum::http::Error) -> Self {
+        Error::InternalServerError
+    }
+}
+
 impl IntoResponse for UserError {
     fn into_response(self) -> Response<Body> {
         let (response_error, status) = match self {

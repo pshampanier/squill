@@ -28,6 +28,7 @@ type PushNotificationSubscription = {
 };
 
 type FetchOptions = {
+  contentType?: string;
   headers?: Record<string, string>;
   query?: Record<string, string>;
   body?: string;
@@ -133,10 +134,11 @@ export class Agent {
         await this.refreshToken();
       }
 
+      // Set the headers of the request.
       const headers: Record<string, string> = {
         [HTTP_HEADER_X_API_KEY]: this.apiKey,
         ...(this.securityTokens && { Authorization: `Bearer ${this.securityTokens.accessToken}` }),
-        ...(options?.body && { [HTTP_HEADER_CONTENT_TYPE]: MEDIA_TYPE_APPLICATION_JSON }),
+        ...{ [HTTP_HEADER_CONTENT_TYPE]: options?.contentType || MEDIA_TYPE_APPLICATION_JSON },
         ...(options?.headers && options?.headers),
       };
 
@@ -147,7 +149,11 @@ export class Agent {
       });
       if (response.ok) {
         const contentType = response.headers.get(HTTP_HEADER_CONTENT_TYPE) || MEDIA_TYPE_PLAIN_TEXT;
-        return new SerializedResource<T>(contentType, await response.text());
+        if (contentType === MEDIA_TYPE_APPLICATION_JSON || contentType.startsWith("text/")) {
+          return new SerializedResource<T>(contentType, await response.text());
+        } else {
+          return new SerializedResource<T>(contentType, await response.arrayBuffer());
+        }
       } else if (response.headers.get(HTTP_HEADER_CONTENT_TYPE) === MEDIA_TYPE_APPLICATION_JSON) {
         // The server returned a JSON error message.
         throw new UserError({

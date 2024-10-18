@@ -10,13 +10,13 @@ type QueryOutputProps = {
 };
 
 export default function QueryOutput({ className, queryExecution }: QueryOutputProps) {
-  const { status, error, query, isResultSetQuery } = queryExecution;
+  const { status, error, query, withResultSet } = queryExecution;
   return (
     <div className={cx("flex flex-col min-w-full w-full space-y-1", className)}>
       <Code className="w-full max-h-90 overflow-scroll" language="sql" showLineNumbers={false}>
         {query}
       </Code>
-      {isResultSetQuery && (status === "pending" || status === "running") && (
+      {withResultSet && (status === "pending" || status === "running") && (
         <div className="flex w-full">
           <TableView dataframe={null} />
         </div>

@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 
 /// The type of a dataset attribute.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -75,7 +76,7 @@ pub enum DataframeAttributeFormatName {
 }
 
 /// The display format of a dataframe attribute.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct DataframeAttributeFormat {
     /// The name of the format.
     pub name: DataframeAttributeFormatName,
@@ -85,7 +86,7 @@ pub struct DataframeAttributeFormat {
 ///
 /// Attributes are the columns/properties of a dataframe, they have a name, a type, and a format that defines how
 /// the values should be displayed.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct DataframeAttribute {
     /// A list of attributes describing each value if the current attribute is an object.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -108,7 +109,7 @@ pub struct DataframeAttribute {
 }
 
 /// The schema of a dataframe.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct DataframeSchema {
     /// The attributes of the dataframe.
     pub attributes: Vec<DataframeAttribute>,

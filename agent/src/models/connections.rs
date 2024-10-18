@@ -2,6 +2,7 @@
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
 use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
 use std::collections::HashMap;
 
 /// The mode of a connection.
@@ -33,7 +34,7 @@ pub enum ConnectionOption {
 }
 
 /// Description of a connection to a datasource.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Connection {
     /// The alias of the connection.
     #[serde(default, skip_serializing_if = "String::is_empty")]
