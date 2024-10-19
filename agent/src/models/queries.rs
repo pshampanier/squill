@@ -1,6 +1,7 @@
 /*********************************************************************
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
+use anyhow::{anyhow, Error};
 use serde::{Deserialize, Serialize};
 use squill_drivers::serde::Decode;
 
@@ -28,7 +29,7 @@ impl QueryExecutionStatus {
 }
 
 impl TryFrom<&str> for QueryExecutionStatus {
-    type Error = String;
+    type Error = Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
@@ -37,7 +38,7 @@ impl TryFrom<&str> for QueryExecutionStatus {
             "completed" => Ok(QueryExecutionStatus::Completed),
             "failed" => Ok(QueryExecutionStatus::Failed),
             "cancelled" => Ok(QueryExecutionStatus::Cancelled),
-            _ => Err(format!("Invalid status: {}", value)),
+            _ => Err(anyhow!("Invalid query status: {}", value)),
         }
     }
 }
@@ -131,4 +132,15 @@ pub struct QueryExecution {
     /// - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can
     ///    return rows when combined with the `RETURNING` clause.
     pub with_result_set: bool,
+}
+
+/// The response of the GET /connections/{id}/history/list endpoint.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
+pub struct QueryHistoryPage {
+    /// The pagination information for the next page.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub next_page: String,
+
+    /// The list of queries in the history.
+    pub queries: Vec<QueryExecution>,
 }

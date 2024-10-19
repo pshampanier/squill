@@ -161,3 +161,27 @@ export class QueryExecution {
     this.error = object?.error && new QueryExecutionError(object.error);
   }
 }
+
+
+/**
+ * The response of the GET /connections/{id}/history/list endpoint.
+ **/
+export class QueryHistoryPage {
+  
+  /**
+   * The pagination information for the next page.
+   **/
+  @serializable("string", { snakeCase: "property" })
+  nextPage?: string;
+  
+  /**
+   * The list of queries in the history.
+   **/
+  @serializable("array", { required: true, items: { type: "object", options: { factory: QueryExecution } } })
+  queries!: QueryExecution[];
+  
+  constructor(object?: Partial<QueryHistoryPage>) {
+    Object.assign(this, object);
+    this.queries = (object?.queries || []).map((item) => new QueryExecution(item));
+  }
+}

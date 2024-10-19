@@ -23,11 +23,11 @@ const DEFAULT_PORT: u16 = 0;
 /// Default maximum number of rows per file.
 const DEFAULT_MAX_ROWS_PER_HISTORY_FILE: usize = 1_000_000;
 
-/// Default number of rows expected to be fetched immediately after a query is executed.
-const DEFAULT_INITIAL_QUERY_FETCH_SIZE: usize = 1_000;
-
 /// Default maximum number of connection pools that can be created for users.
 const DEFAULT_MAX_USERS_CONN_POOL_SIZE: usize = 100;
+
+/// Default maximum number of queries that can be fetched from the history.
+const DEFAULT_MAX_QUERY_HISTORY_FETCH_SIZE: usize = 100;
 
 /// Get the directory used by the application to store any additional data.
 pub fn get_app_dir() -> PathBuf {
@@ -49,6 +49,7 @@ settings_getters! {
     get_cors_max_age, cors_max_age: std::time::Duration,
     get_max_rows_per_history_file, max_rows_per_history_file: usize,
     get_max_users_conn_pool_size, max_users_conn_pool_size: usize,
+    get_max_query_history_fetch_size, max_query_history_fetch_size: usize,
 }
 
 pub fn get_log_level() -> tracing::Level {
@@ -81,9 +82,9 @@ impl Default for AgentSettings {
             log_level: LogLevel::Info,
             cors_allowed_origins: vec!["*".to_string()],
             cors_max_age: std::time::Duration::from_secs(86400),
-            initial_query_fetch_size: DEFAULT_INITIAL_QUERY_FETCH_SIZE,
             max_rows_per_history_file: DEFAULT_MAX_ROWS_PER_HISTORY_FILE,
             max_users_conn_pool_size: DEFAULT_MAX_USERS_CONN_POOL_SIZE,
+            max_query_history_fetch_size: DEFAULT_MAX_QUERY_HISTORY_FETCH_SIZE,
         }
     }
 }
@@ -206,15 +207,15 @@ fn make_settings(args: &commandline::Args) -> Result<AgentSettings> {
     if settings.max_user_sessions == 0 {
         return Err(anyhow!("max_user_sessions must be greater than 0"));
     }
-    if settings.initial_query_fetch_size < 100 {
-        return Err(anyhow!("initial_query_fetch_size must be at least 100"));
-    }
     if settings.max_rows_per_history_file < 10_0000 {
         // The minimum number of rows per file is 10,000 to avoid having too many small files.
         return Err(anyhow!("max_rows_per_history_file must be at least 10,000"));
     }
     if settings.max_users_conn_pool_size == 0 {
         return Err(anyhow!("max_users_conn_pool_size must be greater than 0"));
+    }
+    if settings.max_query_history_fetch_size == 0 {
+        return Err(anyhow!("max_query_history_fetch_size must be greater than 0"));
     }
 
     Ok(settings)

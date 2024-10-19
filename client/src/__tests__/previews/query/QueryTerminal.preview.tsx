@@ -34,7 +34,7 @@ export default function QueryTerminalPreview() {
       <Preview>
         <Preview.Title>A clear Terminal</Preview.Title>
         <Preview.Description>A Terminal with no entry in the timeline</Preview.Description>
-        <PreviewBox className="items-center h-[300px]">
+        <PreviewBox className="items-center h-[500px]">
           <QueryTerminal
             onValidate={handleValidate}
             colorScheme={colorScheme}

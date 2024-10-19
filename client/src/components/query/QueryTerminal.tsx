@@ -102,7 +102,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   }, []);
 
   const classes = {
-    root: cx("relative h-full overflow-hidden", className),
+    root: cx("relative w-full h-full overflow-hidden", className),
     scroll: "flex flex-col absolute inset-0 overflow-y-auto",
     history: "flex-shrink-0 px-5",
     input: "flex-shrink-0 py-1 min-h-6",

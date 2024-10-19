@@ -67,15 +67,6 @@ pub struct AgentSettings {
     /// #default: 86400
     pub cors_max_age: std::time::Duration,
 
-    /// The number of rows expected to be fetched immediately after a query is executed.
-    ///
-    /// This value is the expected number of rows that will be fetched by the client to display the result right after
-    /// executing a query. It is used by the agent to create an initial file in the query history directory that will
-    /// contains just those data and by doing so make those data available to the client as soon as possible.
-    ///
-    /// #default: 1000
-    pub initial_query_fetch_size: usize,
-
     /// The maximum number of rows per file.
     ///
     /// The maximum number of rows that can be stored in a single parquet file.
@@ -92,4 +83,12 @@ pub struct AgentSettings {
     ///
     /// #default: 100
     pub max_users_conn_pool_size: usize,
+
+    /// The maximum number of queries that can be fetch from the query history.
+    ///
+    /// This value is used to limit the number of queries that can be fetched by the client from the query history to
+    /// avoid fetching a huge amount of data.
+    ///
+    /// #default: 100
+    pub max_query_history_fetch_size: usize,
 }

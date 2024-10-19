@@ -1,6 +1,7 @@
 import { Connection } from "@/models/connections";
-import { QueryExecution } from "@/models/queries";
+import { QueryExecution, QueryHistoryPage } from "@/models/queries";
 import { agent } from "@/resources/agent";
+import { Table } from "apache-arrow";
 import { HTTP_HEADER_X_ORIGIN } from "@/utils/constants";
 
 const Connections = {
@@ -35,6 +36,28 @@ const Connections = {
         },
       })
     ).asArray(QueryExecution);
+  },
+
+  /**
+   * Get the history of query executions for the given connection and origin.
+   *
+   * API: `GET /connections/:connId/history`
+   *
+   * @param connId The identifier of the connection to get the history from.
+   * @param origin The origin of the history (e.g. `terminal`, `worksheet`, ...).
+   */
+  async list_history(connId: string, origin: string): Promise<QueryHistoryPage> {
+    return (
+      await agent().get<QueryHistoryPage>(`/connections/${connId}/history`, {
+        headers: {
+          [HTTP_HEADER_X_ORIGIN]: origin,
+        },
+      })
+    ).as(QueryHistoryPage);
+  },
+
+  async getHistoryPreview(connId: string, queryId: string): Promise<Table> {
+    return (await agent().get<QueryExecution>(`/connections/${connId}/history/${queryId}/preview`)).asTable();
   },
 };
 

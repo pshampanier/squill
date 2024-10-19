@@ -4,6 +4,7 @@
  *********************************************************************/
 use serde::{Deserialize, Serialize};
 use squill_drivers::serde::Decode;
+use anyhow::{anyhow, Error};
 
 {{ enum("QueryExecutionStatus", components.schemas.QueryExecutionStatus) }}
 
@@ -20,7 +21,7 @@ impl QueryExecutionStatus {
 }
 
 impl TryFrom<&str> for QueryExecutionStatus {
-    type Error = String;
+    type Error = Error;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         match value {
@@ -29,10 +30,11 @@ impl TryFrom<&str> for QueryExecutionStatus {
             "completed" => Ok(QueryExecutionStatus::Completed),
             "failed" => Ok(QueryExecutionStatus::Failed),
             "cancelled" => Ok(QueryExecutionStatus::Cancelled),
-            _ => Err(format!("Invalid status: {}", value)),
+            _ => Err(anyhow!("Invalid query status: {}", value)),
         }
     }
 }
 
 {{ struct("QueryExecutionError", components.schemas.QueryExecutionError) }}
 {{ struct("QueryExecution", components.schemas.QueryExecution) }}
+{{ struct("QueryHistoryPage", components.schemas.QueryHistoryPage) }}

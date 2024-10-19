@@ -1,0 +1,16 @@
+name: oracle
+label: Oracle
+icon: oracle.svg
+description: |
+  Oracle Database is a highly scalable, secure, and reliable relational database management system widely used for
+  managing large-scale enterprise data and applications.
+capabilities:
+  - sql
+  - auth_user_password
+  - connect_string
+  - connect_host
+defaults:
+  PORT: 1521
+  USER: system
+  CONNECTION_MODE: host
+  HOST: localhost

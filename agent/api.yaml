@@ -171,6 +171,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: x-origin
+          description: The origin of the request ('terminal', 'worksheet', etc).
+          in: header
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -192,6 +198,7 @@ paths:
   /connections/{id}/history:
     get:
       summary: List the queries in the history of the connection.
+      operationId: listQueryHistory
       security:
         - ApiKeyAuth: []
       parameters:
@@ -200,15 +207,27 @@ paths:
           required: true
           schema:
             type: string
+        - name: x-origin
+          description: The origin of the request ('terminal', 'worksheet', etc).
+          in: header
+          required: true
+          schema:
+            type: string
+        - name: page
+          description: |
+            The pagination information retrieved from the previous call.
+            This is used to retrieve the next page of the history if the number of queries is too large to be fulfilled
+            by the previous calls.
+          in: query
+          schema:
+            type: string
       responses:
         "200":
           description: Successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/QueryExecution"
+                $ref: "#/components/schemas/QueryHistoryPage"
         "401":
           description: Unauthorized
 
@@ -320,12 +339,6 @@ paths:
       security:
         - ApiKeyAuth: []
       parameters:
-        - name: x-origin
-          description: The origin of the request ('terminal', 'worksheet', etc).
-          in: header
-          required: true
-          schema:
-            type: string
         - name: x-resource-type
           in: header
           required: true
@@ -942,6 +955,21 @@ components:
           type: integer
           format: int64
           minimum: 0
+
+    QueryHistoryPage:
+      description: The response of the GET /connections/{id}/history/list endpoint.
+      type: object
+      required:
+        - queries
+      properties:
+        queries:
+          description: The list of queries in the history.
+          type: array
+          items:
+            $ref: "#/components/schemas/QueryExecution"
+        next_page:
+          description: The pagination information for the next page.
+          type: string
 
     TokenType:
       type: string

@@ -3,6 +3,8 @@ use crate::utils::parquet::RecordBatchReader;
 use crate::{resources, settings};
 use crate::{Result, UserError};
 use arrow_array::RecordBatch;
+use futures::StreamExt;
+use squill_drivers::Row;
 use squill_drivers::{futures::Connection, params};
 use uuid::Uuid;
 
@@ -51,29 +53,12 @@ pub async fn create<S: Into<String>>(
 /// Load a query from the history.
 pub async fn get(conn: &Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<Option<QueryExecution>> {
     conn.query_map_row(
-        r#"SELECT revision, user_id, query, origin, created_at, executed_at, execution_time, affected_rows, 
-                         status, error, with_result_set, storage_bytes
+        r#"SELECT query_history_id, connection_id, revision, user_id, query, origin, created_at, executed_at, 
+                         execution_time, affected_rows, status, error, with_result_set, storage_bytes
                    FROM query_history 
                   WHERE connection_id = ? AND query_history_id = ?"#,
         params!(connection_id, query_history_id),
-        |row| {
-            Ok(QueryExecution {
-                id: query_history_id,
-                connection_id,
-                revision: row.try_get::<_, i64>(0)? as u32,
-                user_id: row.try_get::<_, _>(1)?,
-                query: row.try_get::<_, String>(2)?,
-                origin: row.try_get::<_, String>(3)?,
-                created_at: row.try_get::<_, chrono::DateTime<chrono::Utc>>(4)?,
-                executed_at: row.try_get_nullable::<_, chrono::DateTime<chrono::Utc>>(5)?,
-                execution_time: row.try_get_nullable::<_, f64>(6)?.unwrap_or(0.0),
-                affected_rows: row.try_get::<_, i64>(7)? as u64,
-                status: QueryExecutionStatus::try_from(row.try_get::<_, String>(8)?.as_str())?,
-                error: row.try_get_nullable::<_, _>(9)?,
-                with_result_set: row.try_get::<_, _>(10)?,
-                storage_bytes: row.try_get::<_, i64>(11)? as u64,
-            })
-        },
+        |row| map_query_row(&row).map_err(|e| e.into()),
     )
     .await
     .map_err(|e| e.into())
@@ -122,6 +107,28 @@ pub async fn update(conn: &Connection, query: QueryExecution) -> Result<Option<Q
     .map_err(|e| e.into())
 }
 
+pub async fn list_history<S: Into<String>>(
+    conn: &Connection,
+    connection_id: Uuid,
+    user_id: Uuid,
+    origin: S,
+    _limit: usize,
+) -> Result<Vec<QueryExecution>> {
+    let origin: String = origin.into();
+    let mut queries = Vec::new();
+    let mut stmt = conn
+        .prepare("SELECT * FROM query_history WHERE connection_id = ? AND origin = ? and user_id = ? ORDER BY created_at DESC")
+        .await?;
+    let mut rows = conn.query_rows(&mut stmt, params!(connection_id, origin, user_id)).await?;
+    while let Some(next) = rows.next().await {
+        match next {
+            Ok(row) => queries.push(map_query_row(&row)?),
+            Err(e) => return Err(e.into()),
+        }
+    }
+    Ok(queries)
+}
+
 /// Read the history data from the query.
 pub async fn read_history_data(
     conn: &Connection,
@@ -138,6 +145,26 @@ pub async fn read_history_data(
     } else {
         Err(UserError::NotFound("Query not found".to_string()).into())
     }
+}
+
+#[inline]
+fn map_query_row(row: &Row) -> Result<QueryExecution> {
+    Ok(QueryExecution {
+        id: row.try_get::<_, _>("query_history_id")?,
+        revision: row.try_get::<_, i64>("revision")? as u32,
+        connection_id: row.try_get::<_, _>("connection_id")?,
+        user_id: row.try_get::<_, _>("user_id")?,
+        query: row.try_get::<_, String>("query")?,
+        origin: row.try_get::<_, String>("origin")?,
+        created_at: row.try_get::<_, chrono::DateTime<chrono::Utc>>("created_at")?,
+        executed_at: row.try_get_nullable::<_, chrono::DateTime<chrono::Utc>>("executed_at")?,
+        execution_time: row.try_get_nullable::<_, f64>("execution_time")?.unwrap_or(0.0),
+        affected_rows: row.try_get_nullable::<_, i64>("affected_rows")?.unwrap_or(0) as u64,
+        status: QueryExecutionStatus::try_from(row.try_get::<_, String>("status")?.as_str())?,
+        error: row.try_get_nullable::<_, _>("error")?,
+        with_result_set: row.try_get::<_, _>("with_result_set")?,
+        storage_bytes: row.try_get::<_, i64>("storage_bytes")? as u64,
+    })
 }
 
 #[cfg(test)]
@@ -210,5 +237,28 @@ mod tests {
             query.error,
             Some(QueryExecutionError { column: None, line: None, message: "Test error".to_string() })
         );
+    }
+
+    #[tokio::test]
+    async fn test_resources_queries_list_history() {
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let conn = conn_pool.get().await.unwrap();
+        let connection_id_1 = uuid::Uuid::new_v4();
+        let connection_id_2 = uuid::Uuid::new_v4();
+        let user_id_1 = uuid::Uuid::new_v4();
+        let user_id_2 = uuid::Uuid::new_v4();
+        let origin_1 = "origin1";
+        let origin_2 = "origin2";
+
+        create(&conn, connection_id_1, origin_1, user_id_1, "SELECT 1", true).await.unwrap();
+        create(&conn, connection_id_1, origin_1, user_id_1, "SELECT 2", true).await.unwrap();
+        create(&conn, connection_id_1, origin_2, user_id_1, "SELECT 3", true).await.unwrap();
+        create(&conn, connection_id_2, origin_1, user_id_1, "SELECT 4", true).await.unwrap();
+        create(&conn, connection_id_1, origin_1, user_id_2, "SELECT 5", true).await.unwrap();
+
+        let history = assert_ok!(list_history(&conn, connection_id_1, user_id_1, origin_1, 100).await);
+        assert_eq!(history.len(), 2);
+        assert!(matches!(history[0].query.as_str(), "SELECT 1" | "SELECT 2"));
+        assert!(matches!(history[1].query.as_str(), "SELECT 1" | "SELECT 2"));
     }
 }

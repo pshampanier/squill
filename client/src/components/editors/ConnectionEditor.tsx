@@ -28,8 +28,18 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   // Children components can subscribe to the history of query executions.
   const queryEventHandler = useRef<Dispatch<QueryHistoryAction>>(null);
 
-  const handleHistoryDidMount = (dispatcher: Dispatch<QueryHistoryAction>) => {
+  // This function is called when the history component mounts.
+  // We use it to store the dispatcher so we can initialize the history from the database and later on update the
+  // history when new query are added, modified or removed.
+  const handleHistoryDidMount = (origin: string, dispatcher: Dispatch<QueryHistoryAction>) => {
     queryEventHandler.current = dispatcher;
+    Connections.list_history(connId, origin).then((page) => {
+      // The dispatcher is called with an action to initialize the history.
+      queryEventHandler.current?.({
+        type: "set",
+        queries: page.queries,
+      });
+    });
   };
 
   const handleValidate = useCallback((origin: string, value: string) => {
@@ -69,7 +79,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   }, [connId]);
 
   return (
-    <div className="w-full h-full" data-component="connection-editor">
+    <div className="flex flex-col h-full" data-component="connection-editor">
       <div className="flex text-xs p-5 select-none">
         <Breadcrumb className="flex-none">
           <span>
@@ -88,11 +98,13 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
           </div>
         </div>
       </div>
-      <QueryTerminal
-        colorScheme={colorScheme}
-        onHistoryMount={handleHistoryDidMount}
-        onValidate={(value: string) => handleValidate(TERMINAL_ORIGIN, value)}
-      />
+      <div className="flex flex-grow">
+        <QueryTerminal
+          colorScheme={colorScheme}
+          onHistoryMount={(dispatcher) => handleHistoryDidMount(TERMINAL_ORIGIN, dispatcher)}
+          onValidate={(value: string) => handleValidate(TERMINAL_ORIGIN, value)}
+        />
+      </div>
     </div>
   );
 };

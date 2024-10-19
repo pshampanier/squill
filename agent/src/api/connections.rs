@@ -2,17 +2,18 @@ use crate::api::error::ServerResult;
 use crate::err_forbidden;
 use crate::err_param;
 use crate::models;
+use crate::models::queries::QueryHistoryPage;
 use crate::models::Connection;
 use crate::resources;
 use crate::resources::catalog;
 use crate::resources::queries;
 use crate::server::contexts::RequestContext;
 use crate::server::state::ServerState;
+use crate::settings;
 use crate::tasks::execute_queries_task;
 use crate::utils::user_error::UserError;
 use arrow_array::RecordBatch;
 use arrow_ipc::writer::StreamWriter;
-use axum::debug_handler;
 use axum::extract::Query;
 use axum::extract::{Path, State};
 use axum::http::HeaderMap;
@@ -51,6 +52,15 @@ async fn get_connection(
     Ok(Json(connection))
 }
 
+fn extract_header(headers: &HeaderMap, name: &'static str) -> Result<String, UserError> {
+    headers
+        .get(HeaderName::from_static(name))
+        .and_then(|o| o.to_str().ok())
+        .filter(|o| !o.is_empty())
+        .map(|o| o.to_string())
+        .ok_or_else(|| err_param!("HTTP header '{}' is missing.", name))
+}
+
 async fn execute_buffer(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
@@ -58,20 +68,13 @@ async fn execute_buffer(
     headers: HeaderMap,
     buffer: String,
 ) -> ServerResult<Json<Vec<models::QueryExecution>>> {
+    let origin = extract_header(&headers, X_REQUEST_ORIGIN)?;
     let user_session = context?.get_user_session()?;
     let conn = state.get_agentdb_connection().await?;
     let connection: models::Connection = catalog::get(&conn, id).await?;
     if connection.owner_user_id != user_session.get_user_id() {
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
-    let origin = match headers
-        .get(HeaderName::from_static(X_REQUEST_ORIGIN))
-        .and_then(|o| o.to_str().ok())
-        .filter(|o| !o.is_empty())
-    {
-        Some(o) => Ok::<_, UserError>(o.to_string()),
-        None => Err(err_param!("HTTP header '{}' is missing.", X_REQUEST_ORIGIN)),
-    }?;
 
     let mut queries: Vec<models::QueryExecution> = Vec::new();
 
@@ -120,7 +123,31 @@ async fn test_connection(state: State<ServerState>, Json(conn): Json<Connection>
 }
 
 #[derive(Deserialize)]
-struct PaginationParams {
+struct ListQueriesHistoryParams {
+    offset: Option<String>,
+}
+
+/// GET /connections/{id}/history:
+///
+/// List the history of queries executed on a connection.
+/// TODO: Implement pagination.
+async fn list_queries_history(
+    state: State<ServerState>,
+    context: ServerResult<RequestContext>,
+    Path(id): Path<Uuid>,
+    headers: HeaderMap,
+    Query(_params): Query<ListQueriesHistoryParams>,
+) -> ServerResult<Json<QueryHistoryPage>> {
+    let user_session = context?.get_user_session()?;
+    let origin = extract_header(&headers, X_REQUEST_ORIGIN)?;
+    let conn = state.get_agentdb_connection().await?;
+    let limit = settings::get_max_query_history_fetch_size();
+    let queries = queries::list_history(&conn, id, user_session.get_user_id(), origin, limit).await?;
+    Ok(Json(QueryHistoryPage { queries, next_page: String::new() }))
+}
+
+#[derive(Deserialize)]
+struct QueryHistoryDataParams {
     offset: Option<usize>,
     limit: Option<usize>,
 }
@@ -128,11 +155,10 @@ struct PaginationParams {
 /// GET /connections/{id}/history/{query_id}/data?offset=0&limit=1000
 ///
 /// Get a connection from its identifier.
-#[debug_handler]
-async fn get_history_data(
+async fn get_query_history_data(
     state: State<ServerState>,
     Path((id, query_history_id)): Path<(Uuid, Uuid)>,
-    Query(params): Query<PaginationParams>,
+    Query(params): Query<QueryHistoryDataParams>,
 ) -> ServerResult<Response> {
     let conn = state.get_agentdb_connection().await?;
     let record_batches = queries::read_history_data(
@@ -174,7 +200,7 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/connections/test", post(test_connection))
         .route("/connections/:id", get(get_connection))
         .route("/connections/:id/execute", post(execute_buffer))
-        //         .route("/connections/:id/history", post(list_history))
-        .route("/connections/:id/history/:query_history_id/data", get(get_history_data))
+        .route("/connections/:id/history", get(list_queries_history))
+        .route("/connections/:id/history/:query_history_id/data", get(get_query_history_data))
         .with_state(state)
 }

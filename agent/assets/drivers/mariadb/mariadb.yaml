@@ -1,0 +1,15 @@
+name: mariadb
+label: MariaDB
+icon: mariadb.svg
+description: MariaDB is an open-source, high-performance relational database management system that is a drop-in replacement for MySQL.
+capabilities:
+  - sql
+  - auth_user_password
+  - connect_string
+  - connect_host
+  - connect_socket
+defaults:
+  PORT: 3306
+  USER: root
+  CONNECTION_MODE: host
+  HOST: localhost
