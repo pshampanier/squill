@@ -40,6 +40,6 @@ mod tests {
     #[test]
     fn test_load_drivers() {
         let drivers = assert_ok!(load_drivers());
-        assert_eq!(drivers.len(), 4);
+        assert_eq!(drivers.len(), 6);
     }
 }
