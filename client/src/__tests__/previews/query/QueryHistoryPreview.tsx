@@ -9,7 +9,7 @@ export default function QueryHistoryPreview() {
         <Preview.Title>QueryHistory</Preview.Title>
         <Preview.Description>A QueryHistory component.</Preview.Description>
         <PreviewBox className="h-[500px]">
-          <div className="w-full h-full overflow-scroll">
+          <div className="w-full h-full">
             <QueryHistoryExample />
           </div>
         </PreviewBox>

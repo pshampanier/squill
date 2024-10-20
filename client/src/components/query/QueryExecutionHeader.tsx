@@ -48,7 +48,7 @@ export default function QueryExecutionHeader({
           dateClassifications={dateClassifications}
         />
       </li>
-      {executionTime != undefined && (
+      {status === "completed" && (
         <li className="flex text-divider items-center">
           <StopwatchIcon className="mr-1" />
           {formatDuration(executionTime * 1_000_000, { style: "short", precision: "millisecond" })[0]}
@@ -188,6 +188,9 @@ function FormattedDate({
       }, timeout);
       setDisplayValue(text);
       return () => clearTimeout(timer);
+    } else {
+      // If the date is not going to change, we don't need to schedule a refresh, we can just update the display value.
+      setDisplayValue(text);
     }
   }, [lastRefreshAt]);
   return <span data-component="formatted-date">{displayValue}</span>;

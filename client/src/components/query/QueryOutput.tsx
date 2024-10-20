@@ -11,6 +11,7 @@ type QueryOutputProps = {
 
 export default function QueryOutput({ className, queryExecution }: QueryOutputProps) {
   const { status, error, query, withResultSet } = queryExecution;
+  console.debug("QueryOutput", { status, error, query });
   return (
     <div className={cx("flex flex-col min-w-full w-full space-y-1", className)}>
       <Code className="w-full max-h-90 overflow-scroll" language="sql" showLineNumbers={false}>

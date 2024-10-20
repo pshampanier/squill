@@ -240,6 +240,18 @@ export default function QueryInput({
   }
 
   /**
+   * Get the size of the editor.
+   */
+  const getSize = useCallback(() => {
+    const containerStyle = window.getComputedStyle(containerRef.current);
+    let width = containerRef.current.clientWidth;
+    let height = containerRef.current.clientHeight;
+    width += parseInt(containerStyle.paddingLeft) + parseInt(containerStyle.paddingRight);
+    height += parseInt(containerStyle.paddingTop) + parseInt(containerStyle.paddingBottom);
+    return { width, height };
+  }, []);
+
+  /**
    * Resize the editor.
    *
    * The editor is resized to display up to the maximum number of rows specified or takes the full height and width of
@@ -266,7 +278,7 @@ export default function QueryInput({
     const currentLayout = editor.getLayoutInfo();
     if (currentLayout.width !== width || currentLayout.height !== height) {
       editor.layout({ width, height });
-      onResize?.({ width, height });
+      onResize?.(getSize());
       console.log("Query Editor layout updated: ", { width, height });
     }
   }, [rows]);
@@ -619,12 +631,7 @@ export default function QueryInput({
           applyInlineSuggestion();
         });
       },
-      getSize() {
-        return {
-          width: editorRef.current?.getContentWidth() ?? 0,
-          height: editorRef.current?.getContentHeight() ?? 0,
-        };
-      },
+      getSize,
     };
   }, []);
 
