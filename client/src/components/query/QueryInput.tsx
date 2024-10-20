@@ -88,6 +88,15 @@ export interface QueryEditorInstance {
    * Apply the inline suggestion currently displayed in the editor.
    */
   applyInlineSuggestion(): void;
+
+  /**
+   * Get the size of the editor.
+   *
+   * The width and height returned by this function are similar to the clientWidth and clientHeight properties of a DOM
+   * element in that they represent the inner dimensions of the editor, excluding borders and scrollbars but including
+   * padding
+   */
+  getSize(): { width: number; height: number };
 }
 
 /**
@@ -165,6 +174,13 @@ type QueryInputProps = {
    * A callback fired when the editor is mounted.
    */
   onMount?: (editor: QueryEditorInstance) => void;
+
+  /**
+   * A callback fired when the editor is resized.
+   *
+   * @param size with new size of the editor.
+   */
+  onResize?: (size: { width: number; height: number }) => void;
 };
 
 /**
@@ -196,6 +212,7 @@ export default function QueryInput({
   onSuggest,
   onChange,
   onMount,
+  onResize,
   mode = "editor",
   rows,
   colorScheme = "light",
@@ -245,7 +262,13 @@ export default function QueryInput({
       }
       width = Math.max(0, width - 24); // pl-6=24px is the padding of the editor in terminal mode
     }
-    editor.layout({ width, height });
+
+    const currentLayout = editor.getLayoutInfo();
+    if (currentLayout.width !== width || currentLayout.height !== height) {
+      editor.layout({ width, height });
+      onResize?.({ width, height });
+      console.log("Query Editor layout updated: ", { width, height });
+    }
   }, [rows]);
 
   /**
@@ -595,6 +618,12 @@ export default function QueryInput({
         applyWithoutTriggeringSuggestion(() => {
           applyInlineSuggestion();
         });
+      },
+      getSize() {
+        return {
+          width: editorRef.current?.getContentWidth() ?? 0,
+          height: editorRef.current?.getContentHeight() ?? 0,
+        };
       },
     };
   }, []);

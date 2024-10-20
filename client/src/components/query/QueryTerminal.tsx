@@ -66,7 +66,18 @@ const PLACEHOLDER = (
 export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate, className }: QueryTerminalProps) {
   const editorRef = React.useRef<QueryEditorInstance | null>(null);
   const refRoot = React.useRef<HTMLDivElement>(null);
+  const refHistory = React.useRef<HTMLDivElement>(null);
   const refHistoryDispatcher = React.useRef<Dispatch<QueryHistoryAction> | null>(null);
+
+  //
+  // Update the height of the history component
+  //
+  const updateLayout = useCallback((size?: { width: number; height: number }) => {
+    const queryEditorSize = size ?? editorRef.current?.getSize();
+    if (queryEditorSize && refHistory.current) {
+      refHistory.current.style.maxHeight = `calc(100% - ${queryEditorSize.height}px)`;
+    }
+  }, []);
 
   //
   // Command handling
@@ -93,42 +104,48 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   const handleEditorDidMount = useCallback((editor: QueryEditorInstance) => {
     editor.focus();
     editorRef.current = editor;
+    updateLayout();
   }, []);
 
   // The History component is mounted
   const handleHistoryDidMount = useCallback((dispatcher: Dispatch<QueryHistoryAction>) => {
+    updateLayout();
     refHistoryDispatcher.current = dispatcher;
     onHistoryMount?.(dispatcher);
   }, []);
 
+  const handleEditorResize = useCallback((size: { width: number; height: number }) => {
+    updateLayout(size);
+  }, []);
+
   const classes = {
-    root: cx("relative w-full h-full overflow-hidden", className),
-    scroll: "flex flex-col absolute inset-0 overflow-y-auto",
-    history: "flex-shrink-0 px-5",
+    root: cx("flex flex-col w-full h-full overflow-hidden", className),
+    history: "flex-col flex-shrink-0 overflow-y-hidden px-4 pb-2",
     input: "flex-shrink-0 py-1 min-h-6",
     help: "flex flex-shrink flex-grow min-h-0 overflow-hidden items-center justify-center opacity-70",
   };
 
   return (
     <div ref={refRoot} className={classes.root}>
-      <div className={classes.scroll}>
-        <QueryHistory onMount={handleHistoryDidMount} className={classes.history} />
-        <QueryInput
-          mode="terminal"
-          className={classes.input}
-          onValidate={onValidate}
-          onMount={handleEditorDidMount}
-          colorScheme={colorScheme}
-          placeholder={PLACEHOLDER}
-        />
-        <AutoHide className={classes.help} onClick={() => editorRef.current?.focus()}>
-          <CommandLinkList className="p-6">
-            <CommandLinkList.Link command="terminal.clear" />
-            <CommandLinkList.Link command="terminal.history.clear" />
-            <CommandLinkList.Link command="terminal.history.search" />
-          </CommandLinkList>
-        </AutoHide>
+      <div ref={refHistory} className={classes.history}>
+        <QueryHistory onMount={handleHistoryDidMount} />
       </div>
+      <QueryInput
+        mode="terminal"
+        className={classes.input}
+        onValidate={onValidate}
+        onMount={handleEditorDidMount}
+        onResize={handleEditorResize}
+        colorScheme={colorScheme}
+        placeholder={PLACEHOLDER}
+      />
+      <AutoHide className={classes.help} onClick={() => editorRef.current?.focus()}>
+        <CommandLinkList className="p-6">
+          <CommandLinkList.Link command="terminal.clear" />
+          <CommandLinkList.Link command="terminal.history.clear" />
+          <CommandLinkList.Link command="terminal.history.search" />
+        </CommandLinkList>
+      </AutoHide>
     </div>
   );
 }

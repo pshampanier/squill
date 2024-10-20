@@ -80,7 +80,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
 
   return (
     <div className="flex flex-col h-full" data-component="connection-editor">
-      <div className="flex text-xs p-5 select-none">
+      <div className="flex flex-shrink-0 text-xs p-5 select-none">
         <Breadcrumb className="flex-none">
           <span>
             <CatalogItemTitle id={catalogItem.parentId} />
@@ -98,7 +98,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
           </div>
         </div>
       </div>
-      <div className="flex flex-grow">
+      <div className="flex flex-grow overflow-hidden">
         <QueryTerminal
           colorScheme={colorScheme}
           onHistoryMount={(dispatcher) => handleHistoryDidMount(TERMINAL_ORIGIN, dispatcher)}
