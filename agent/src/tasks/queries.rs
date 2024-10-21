@@ -113,18 +113,16 @@ async fn execute_query(
     {
         let conn = state.get_user_db_connection(query.connection_id).await?;
         let start_time = Instant::now(); // Record the start time of the query execution
-        let query = match {
-            if query.with_result_set {
-                //
-                // The query is expected to return a result set
-                //
-                execute_query_with_result_set(state.clone(), session_id, &conn, query.clone()).await
-            } else {
-                //
-                // The query is expected to return a number of affected rows
-                //
-                execute_query_without_result_set(&conn, query.clone()).await
-            }
+        let query = match if query.with_result_set {
+            //
+            // The query is expected to return a result set
+            //
+            execute_query_with_result_set(state.clone(), session_id, &conn, query.clone()).await
+        } else {
+            //
+            // The query is expected to return a number of affected rows
+            //
+            execute_query_without_result_set(&conn, query.clone()).await
         } {
             Ok(query) => {
                 let execution_time = start_time.elapsed().as_secs_f64();
@@ -169,7 +167,7 @@ async fn execute_query_with_result_set(
     let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query.clone()));
 
     // Read the record batches from the stream and send then to the stats collector task
-    match {
+    let res = {
         let mut affected_rows: u64 = 0;
         while let Some(record_batch) = stream.next().await {
             let record_batch = record_batch?;
@@ -189,7 +187,8 @@ async fn execute_query_with_result_set(
         // in order to know when to stop writing the record batches to disk.
         tx.send(QueryPipelineMessage::AffectedRows(affected_rows as usize)).await?;
         Ok::<u64, anyhow::Error>(affected_rows)
-    } {
+    };
+    match res {
         Ok(affected_rows) => {
             // Wait for the writer task to complete
             // We are ignoring the result of the writer task because we are only interested in the error if any.
@@ -442,5 +441,20 @@ mod tests {
         tx.send(QueryPipelineMessage::AffectedRows(10)).await.unwrap();
 
         let _ = writer_task.await.unwrap();
+    }
+
+    #[test]
+    fn json_serialize_schema() {
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("column1", DataType::Int32, false),
+            Field::new("column2", DataType::Utf8, true),
+        ]));
+
+        // Convert the buffer (Vec<u8>) to a String
+        let json_value = arrow_integration_test::schema_to_json(&schema);
+        let json_string = serde_json::to_string_pretty(&json_value).unwrap();
+
+        // Print the JSON string
+        println!("Serialized RecordBatch to JSON string: {}", json_string);
     }
 }

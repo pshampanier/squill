@@ -1,4 +1,5 @@
 use crate::models::queries::{QueryExecution, QueryExecutionStatus};
+use crate::utils::constants::USER_HISTORY_DIRNAME;
 use crate::utils::parquet::RecordBatchReader;
 use crate::{resources, settings};
 use crate::{Result, UserError};
@@ -140,7 +141,10 @@ pub async fn read_history_data(
     let query = get(conn, connection_id, query_history_id).await?;
     if let Some(query) = query {
         let username = resources::users::get_username(conn, query.user_id).await?;
-        let reader = RecordBatchReader::new(settings::get_user_dir(username), query_history_id.into());
+        let reader = RecordBatchReader::new(
+            settings::get_user_dir(username).join(USER_HISTORY_DIRNAME),
+            query_history_id.into(),
+        );
         reader.read(offset, limit).await
     } else {
         Err(UserError::NotFound("Query not found".to_string()).into())

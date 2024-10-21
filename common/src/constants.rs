@@ -3,6 +3,7 @@
 /// IMPORTANT:
 /// - When adding new headers, make sure to update `get_cors_layer()` in `agent/src/server/web.rs`.
 /// - Headers MUST be in lowercase, otherwise HeaderName.from_static() will panic.
+///
 /// [HTTP Reference][https://docs.rs/http/1.1.0/http/header/struct.HeaderName.html#method.from_static]
 pub const X_API_KEY_HEADER: &str = "x-api-key";
 pub const X_REQUEST_ID_HEADER: &str = "x-request-id";

@@ -59,6 +59,19 @@ const Connections = {
   async getHistoryPreview(connId: string, queryId: string): Promise<Table> {
     return (await agent().get<QueryExecution>(`/connections/${connId}/history/${queryId}/preview`)).asTable();
   },
+
+  /**
+   * Get the data of a query execution.
+   *
+   * API: `GET /connections/{id}/history/{query_id}/data?offset={offset}&limit={limit}`
+   */
+  async getQueryExecutionData(connId: string, queryId: string, offset: number, limit: number): Promise<Table> {
+    return (
+      await agent().get<QueryExecution>(
+        `/connections/${connId}/history/${queryId}/data?offset=${offset}&limit=${limit}`,
+      )
+    ).asTable();
+  },
 };
 
 export default Connections;

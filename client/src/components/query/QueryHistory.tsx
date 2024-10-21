@@ -11,7 +11,7 @@ import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
  * Memoized version of QueryOutput
  */
 const MemoQueryOutput = memo(QueryOutput, (prev, next) => {
-  return prev.queryExecution.revision === next.queryExecution.revision;
+  return prev.query.revision === next.query.revision;
 });
 
 const QUERY_HEADER_DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yesterday", "this_year", "before_last_year"];
@@ -99,6 +99,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
 
   const virtualizer = useVirtualizer({
     count: historyItems.length,
+    gap: 2,
     getScrollElement: () => rootRef.current,
     estimateSize: (index: number) => {
       const query = historyItems[index];
@@ -109,6 +110,9 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
           layout.body.error.padding * 2 + (query.error.message?.split("\n").length ?? 0) * layout.body.error.lineHeight;
       }
       return estimateSize;
+    },
+    getItemKey(index) {
+      return historyItems[index].id;
     },
   });
 
@@ -164,7 +168,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
                 affectedRows={query.affectedRows}
                 numberFormatter={numberFormat}
               />
-              <MemoQueryOutput queryExecution={query} className={classes.output} />
+              <MemoQueryOutput query={query} className={classes.output} />
             </div>
           );
         })}

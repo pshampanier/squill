@@ -273,7 +273,7 @@ function QueryHistoryTimelineItem({
 
   return (
     <Timeline.Item {...status}>
-      <QueryOutput queryExecution={queryExecution} />
+      <QueryOutput query={queryExecution} />
     </Timeline.Item>
   );
 }

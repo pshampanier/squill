@@ -109,7 +109,7 @@ export default function QueryOutputPreview() {
           When a error occurred during the execution, line numbers are displayed along to the error message.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" queryExecution={QUERY_ERROR} />
+          <QueryOutput className="w-full" query={QUERY_ERROR} />
         </PreviewBox>
       </Preview>
       {/*
@@ -121,7 +121,7 @@ export default function QueryOutputPreview() {
           When a error occurred during the execution, line numbers are displayed along to the error message.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" queryExecution={QUERY_CANCELLED} />
+          <QueryOutput className="w-full" query={QUERY_CANCELLED} />
         </PreviewBox>
       </Preview>
 
@@ -134,7 +134,7 @@ export default function QueryOutputPreview() {
           When the query is executed successfully, the execution time is displayed along with the query.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" queryExecution={QUERY_SUCCESS} />
+          <QueryOutput className="w-full" query={QUERY_SUCCESS} />
           <TableView className="h-56" dataframe={successDataFrame} />
         </PreviewBox>
       </Preview>
@@ -148,7 +148,7 @@ export default function QueryOutputPreview() {
           every second.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" queryExecution={QUERY_RUNNING} />
+          <QueryOutput className="w-full" query={QUERY_RUNNING} />
         </PreviewBox>
       </Preview>
       {/*
@@ -161,7 +161,7 @@ export default function QueryOutputPreview() {
           every second.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" queryExecution={QUERY_PENDING} />
+          <QueryOutput className="w-full" query={QUERY_PENDING} />
         </PreviewBox>
       </Preview>
     </>

@@ -10,8 +10,8 @@ build = "src/build.rs"
 [dependencies]
 anyhow = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
-axum = { version="0.7.5", features = ["macros", "tracing", "ws"] }
-axum-extra = { version="0.9.3", features = ["typed-header"] }
+axum = { version="0.7.7", features = ["macros", "tracing", "ws"] }
+axum-extra = { version="0.9.4", features = ["typed-header"] }
 clap = { version = "4.4.18", features = ["derive"] }
 hex = "0.4.3"
 lazy_static = { workspace = true }
@@ -21,7 +21,7 @@ regex = "1.10.3"
 rust-ini = "0.20.0"
 serde = { workspace = true, features = ["derive"] }
 serde_json = "1.0.111"
-tower-http = { version = "0.5.2",  features = ["trace", "cors"] }
+tower-http = { version = "0.5.2",  features = ["trace", "cors", "util"] }
 tracing = { workspace = true }
 tracing-subscriber = { version = "0.3.18", features=["std", "env-filter"] }
 tracing-appender = "0.2.3"
@@ -37,10 +37,11 @@ flume = { version = "0.11.0", default-features = false, features = ["async", "se
 deadpool = "0.12.1"
 minijinja = { version = "2.3.1", features = ["loader", "builtins", "urlencode"] }
 num_cpus = "1.16.0"
-arrow-array = { version = "52", default-features = false, features = ["chrono-tz"] }
-arrow-ipc = { version = "52" }
-arrow-schema = { version = "52" }
-parquet = { version = "52", default-features = false, features = ["arrow","async","snap"] }
+arrow-array = { version = "53", default-features = false, features = ["chrono-tz"] }
+arrow-ipc = { version = "53" }
+arrow-schema = { version = "53" }
+arrow-integration-test = { version = "53" }
+parquet = { version = "53", default-features = false, features = ["arrow","async","snap"] }
 
 # The following dependencies are not directly used b the package but need to be forced to specific versions in order 
 # to prevent vulnerabilities.

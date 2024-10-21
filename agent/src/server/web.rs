@@ -340,7 +340,7 @@ mod tests {
     use std::io::Write;
     use tempfile::tempdir;
     use tokio::io::AsyncWriteExt;
-    use tower::ServiceExt;
+    use tower::Service;
 
     #[tokio::test]
     async fn test_check_if_running() {
@@ -472,14 +472,14 @@ mod tests {
 
         // 1. Missing API key
         let response = super::Server::api(&state)
-            .oneshot(Request::builder().uri("/api/v1/agent").body(Body::empty()).unwrap())
+            .call(Request::builder().uri("/api/v1/agent").body(Body::empty()).unwrap())
             .await
             .unwrap();
         assert_eq!(response.status(), http::StatusCode::FORBIDDEN);
 
         // 2. Invalid API key
         let response = super::Server::api(&state)
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri("/api/v1/agent")
                     .header(X_API_KEY_HEADER, "invalid_api_key")
@@ -492,7 +492,7 @@ mod tests {
 
         // 3. Valid API key
         let response = super::Server::api(&state)
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri("/api/v1/agent")
                     .header(X_API_KEY_HEADER, settings::get_api_key())
@@ -518,7 +518,7 @@ mod tests {
 
         // 1. Invalid security token
         let response = super::Server::api(&state)
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri(format!("/api/v1/users/{local_username}/user"))
                     .method("GET")
@@ -533,7 +533,7 @@ mod tests {
 
         // 2. Missing Authorization header
         let response = super::Server::api(&state)
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri(format!("/api/v1/users/{local_username}/user"))
                     .method("GET")
@@ -547,7 +547,7 @@ mod tests {
 
         // 3. Invalid Authorization header (not the expected format)
         let response = super::Server::api(&state)
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri(format!("/api/v1/users/{local_username}/user"))
                     .method("GET")
@@ -562,7 +562,7 @@ mod tests {
 
         // 4. Valid security token
         let response = super::Server::api(&state)
-            .oneshot(
+            .call(
                 Request::builder()
                     .uri(format!("/api/v1/users/{local_username}/user"))
                     .method("GET")
