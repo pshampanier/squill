@@ -131,8 +131,8 @@ impl ServerState {
             Some(pool) => pool,
             None => {
                 // connection pool not found in the cache.
-                let agent_db_conn = self.get_agentdb_connection().await?;
-                catalog::get::<crate::models::Connection>(&agent_db_conn, connection_id)
+                let mut agent_db_conn = self.get_agentdb_connection().await?;
+                catalog::get::<crate::models::Connection>(&mut agent_db_conn, connection_id)
                     .await
                     .context("Cannot get the connection from the agent database.")
                     .and_then(|conn_model| {

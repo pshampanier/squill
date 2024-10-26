@@ -39,7 +39,7 @@ pub fn local_username() -> &'static Username {
 /// ## Security
 /// The username is sanitized to make sure it will not pose security threats such as directory traversal.
 /// ```
-pub async fn create(conn: &Connection, username: &Username) -> Result<User> {
+pub async fn create(conn: &mut Connection, username: &Username) -> Result<User> {
     // First we need to sanitize the username to make sure it will not pose security threats sur as directory traversal.
     let user_dir = settings::get_user_dir(username.as_str());
     if user_dir.exists() {
@@ -105,7 +105,7 @@ pub async fn create(conn: &Connection, username: &Username) -> Result<User> {
 ///
 /// ## Security
 /// The username is sanitized to make sure it will not pose security threats such as directory traversal.
-pub async fn delete(conn: &Connection, username: &Username) -> Result<()> {
+pub async fn delete(conn: &mut Connection, username: &Username) -> Result<()> {
     let user_dir = settings::get_user_dir(username);
     if !user_dir.exists() {
         return Err(err_not_found!("The user '{}' does not exist.", username));
@@ -118,7 +118,7 @@ pub async fn delete(conn: &Connection, username: &Username) -> Result<()> {
 }
 
 /// Get the user profile.
-pub async fn get_by_username(conn: &Connection, username: &Username) -> Result<User> {
+pub async fn get_by_username(conn: &mut Connection, username: &Username) -> Result<User> {
     let username = username.as_str();
     match conn
         .query_map_row("SELECT user_id, settings FROM users WHERE username = ?", params!(username), |row| {
@@ -136,7 +136,7 @@ pub async fn get_by_username(conn: &Connection, username: &Username) -> Result<U
     }
 }
 
-pub async fn get_by_user_id(conn: &Connection, user_id: Uuid) -> Result<User> {
+pub async fn get_by_user_id(conn: &mut Connection, user_id: Uuid) -> Result<User> {
     match conn
         .query_map_row("SELECT username, settings FROM users WHERE user_id = ?", params!(user_id), |row| {
             Ok(User {
@@ -156,7 +156,7 @@ pub async fn get_by_user_id(conn: &Connection, user_id: Uuid) -> Result<User> {
 /// Save the user settings.
 ///
 /// This function will fail if the user does not exist.
-pub async fn save_settings(conn: &Connection, username: &Username, user_settings: &UserSettings) -> Result<()> {
+pub async fn save_settings(conn: &mut Connection, username: &Username, user_settings: &UserSettings) -> Result<()> {
     let affected_rows = conn
         .execute(
             "UPDATE users SET settings = ? WHERE username = ?",
@@ -172,7 +172,7 @@ pub async fn save_settings(conn: &Connection, username: &Username, user_settings
 /// Get the username of a user by their id.
 ///
 /// This function will return an error if the user with the given id does not exist.
-pub async fn get_username(conn: &Connection, user_id: Uuid) -> Result<Username> {
+pub async fn get_username(conn: &mut Connection, user_id: Uuid) -> Result<Username> {
     match conn
         .query_map_row("SELECT username FROM users WHERE user_id = ?", params!(user_id), |row| {
             Ok(row.try_get::<_, String>(0)?)
@@ -194,20 +194,20 @@ mod tests {
         // setup
         let non_existent_user: Username = "non_existent_user".into();
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
 
-        assert!(delete(&conn, local_username()).await.is_ok());
-        assert!(delete(&conn, &non_existent_user).await.is_err());
+        assert!(delete(&mut conn, local_username()).await.is_ok());
+        assert!(delete(&mut conn, &non_existent_user).await.is_err());
     }
 
     #[tokio::test]
     async fn test_users_get_by_username() {
         let non_existent_user: Username = "non_existent_user".into();
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
 
-        assert!(get_by_username(&conn, local_username()).await.is_ok());
-        assert!(get_by_username(&conn, &non_existent_user).await.is_err());
+        assert!(get_by_username(&mut conn, local_username()).await.is_ok());
+        assert!(get_by_username(&mut conn, &non_existent_user).await.is_err());
     }
 
     #[tokio::test]
@@ -215,9 +215,9 @@ mod tests {
         let non_existent_user: Username = "non_existent_user".into();
         let user_settings = UserSettings::default();
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
 
-        assert!(save_settings(&conn, local_username(), &user_settings).await.is_ok());
-        assert!(save_settings(&conn, &non_existent_user, &user_settings).await.is_err());
+        assert!(save_settings(&mut conn, local_username(), &user_settings).await.is_ok());
+        assert!(save_settings(&mut conn, &non_existent_user, &user_settings).await.is_err());
     }
 }

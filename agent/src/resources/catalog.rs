@@ -29,7 +29,7 @@ use uuid::Uuid;
 /// ```
 
 /// Create a new catalog item for a user resource.
-pub async fn add<T: Resource>(conn: &Connection, resource: &T) -> Result<ResourceRef> {
+pub async fn add<T: Resource>(conn: &mut Connection, resource: &T) -> Result<ResourceRef> {
     conn.execute(
         r#"INSERT INTO catalog (
         catalog_id,
@@ -57,7 +57,7 @@ pub async fn add<T: Resource>(conn: &Connection, resource: &T) -> Result<Resourc
     Ok(resource.into())
 }
 
-pub async fn get<T: Resource>(conn: &Connection, catalog_id: Uuid) -> Result<T> {
+pub async fn get<T: Resource>(conn: &mut Connection, catalog_id: Uuid) -> Result<T> {
     match conn
         .query_row(
             r#"SELECT name, parent_catalog_id, data
@@ -79,7 +79,7 @@ pub async fn get<T: Resource>(conn: &Connection, catalog_id: Uuid) -> Result<T> 
     // err.with_context(|| format!("Failed to get the catalog element (catalog_id: {}).", catalog_id))
 }
 
-pub async fn rename(conn: &Connection, user_id: Uuid, catalog_id: Uuid, new_name: &CatalogName) -> Result<()> {
+pub async fn rename(conn: &mut Connection, user_id: Uuid, catalog_id: Uuid, new_name: &CatalogName) -> Result<()> {
     match execute!(
         conn,
         "UPDATE catalog SET name=? WHERE catalog_id=? AND owner_user_id=?",
@@ -104,10 +104,10 @@ pub async fn rename(conn: &Connection, user_id: Uuid, catalog_id: Uuid, new_name
     }
 }
 
-pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> Result<Vec<ResourceRef>> {
-    let mut statement = match parent_catalog_id.is_nil() {
+pub async fn list(conn: &mut Connection, user_id: Uuid, parent_catalog_id: Uuid) -> Result<Vec<ResourceRef>> {
+    let (mut statement, parameters) = match parent_catalog_id.is_nil() {
         false => {
-            let mut statement = conn
+            let statement = conn
                 .prepare(
                     r#"SELECT catalog_id, type, name, metadata
                                    FROM catalog
@@ -116,11 +116,10 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> 
                                   ORDER BY name"#,
                 )
                 .await?;
-            statement.bind(params!(user_id, parent_catalog_id)).await?;
-            statement
+            (statement, params!(user_id, parent_catalog_id))
         }
         true => {
-            let mut statement = conn
+            let statement = conn
                 .prepare(
                     r#"SELECT catalog_id, type, name, metadata
                                    FROM catalog
@@ -129,13 +128,12 @@ pub async fn list(conn: &Connection, user_id: Uuid, parent_catalog_id: Uuid) -> 
                                   ORDER BY name"#,
                 )
                 .await?;
-            statement.bind(params!(user_id.to_string())).await?;
-            statement
+            (statement, params!(user_id.to_string()))
         }
     };
 
     let mut resources: Vec<ResourceRef> = Vec::new();
-    let mut rows: RowStream = statement.query().await?.into();
+    let mut rows: RowStream = statement.query(parameters).await?.into();
     while let Some(row) = rows.next().await {
         let row = row?;
         let catalog_id: Uuid = row.try_get("catalog_id")?;
@@ -174,8 +172,8 @@ mod tests {
     #[tokio::test]
     async fn test_catalog_add() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
-        let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
+        let local_user = users::get_by_username(&mut conn, local_username()).await.unwrap();
         // create a root catalog entries
         let root_collection = Collection {
             name: "New Collection".to_string(),
@@ -184,8 +182,8 @@ mod tests {
             ..Default::default()
         };
         let collection_dup_id = Collection { name: "another_name".to_string(), ..root_collection.clone() };
-        assert_ok!(catalog::add(&conn, &root_collection).await);
-        assert_err!(catalog::add(&conn, &collection_dup_id).await);
+        assert_ok!(catalog::add(&mut conn, &root_collection).await);
+        assert_err!(catalog::add(&mut conn, &collection_dup_id).await);
 
         let sub_collection = Collection {
             name: "Sub Collection".to_string(),
@@ -195,22 +193,22 @@ mod tests {
         };
         let sub_collection_dup_name = Collection { collection_id: Uuid::new_v4(), ..sub_collection.clone() };
 
-        assert_ok!(catalog::add(&conn, &sub_collection).await);
-        assert_err!(catalog::add(&conn, &sub_collection_dup_name).await);
+        assert_ok!(catalog::add(&mut conn, &sub_collection).await);
+        assert_err!(catalog::add(&mut conn, &sub_collection_dup_name).await);
     }
 
     #[tokio::test]
     async fn test_catalog_list() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
-        let local_user = users::get_by_username(&conn, local_username()).await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
+        let local_user = users::get_by_username(&mut conn, local_username()).await.unwrap();
 
         // We are listing the root catalog entries for the user, which should only contain the default collections.
         // Then we are adding a new collection at the root level and listing the root catalog entries again.
-        let default_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, Uuid::nil()).await);
+        let default_catalog = assert_ok!(catalog::list(&mut conn, local_user.user_id, Uuid::nil()).await);
         let new_collection = assert_ok!(
             catalog::add(
-                &conn,
+                &mut conn,
                 &Collection {
                     name: "Another collection".to_string(),
                     owner_user_id: local_user.user_id,
@@ -221,14 +219,14 @@ mod tests {
             .await
         );
         assert_eq!(
-            assert_ok!(catalog::list(&conn, local_user.user_id, Uuid::nil()).await).len(),
+            assert_ok!(catalog::list(&mut conn, local_user.user_id, Uuid::nil()).await).len(),
             default_catalog.len() + 1
         );
 
         // Now adding a sub-collection to the newly created collection.
         let sub_collection = assert_ok!(
             catalog::add(
-                &conn,
+                &mut conn,
                 &Collection {
                     name: "Sub-collection".to_string(),
                     parent_id: new_collection.id,
@@ -239,7 +237,7 @@ mod tests {
             )
             .await
         );
-        let new_collection_catalog = assert_ok!(catalog::list(&conn, local_user.user_id, new_collection.id).await);
+        let new_collection_catalog = assert_ok!(catalog::list(&mut conn, local_user.user_id, new_collection.id).await);
         assert_eq!(new_collection_catalog.len(), 1);
         assert_eq!(new_collection_catalog[0].name, sub_collection.name);
         assert_eq!(new_collection_catalog[0].parent_id, new_collection.id);

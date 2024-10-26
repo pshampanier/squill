@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 /// Create a new query in the history.
 pub async fn create<S: Into<String>>(
-    conn: &Connection,
+    conn: &mut Connection,
     connection_id: Uuid,
     origin: S,
     user_id: Uuid,
@@ -52,7 +52,7 @@ pub async fn create<S: Into<String>>(
 }
 
 /// Load a query from the history.
-pub async fn get(conn: &Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<Option<QueryExecution>> {
+pub async fn get(conn: &mut Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<Option<QueryExecution>> {
     conn.query_map_row(
         r#"SELECT query_history_id, connection_id, revision, user_id, query, origin, created_at, executed_at, 
                          execution_time, affected_rows, status, error, with_result_set, storage_bytes
@@ -66,7 +66,7 @@ pub async fn get(conn: &Connection, connection_id: Uuid, query_history_id: Uuid)
 }
 
 /// Update the query in the history.
-pub async fn update(conn: &Connection, query: QueryExecution) -> Result<Option<QueryExecution>> {
+pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Option<QueryExecution>> {
     // The `affected_rows` is stored in memory as a `u64` but in the database it is stored as a `i64` because of sqlite
     // limitations. It doesn't really matter since the number of affected rows should always be less than `i64::MAX`.
     let (execution_time, affected_rows, error) = match query.status {
@@ -109,7 +109,7 @@ pub async fn update(conn: &Connection, query: QueryExecution) -> Result<Option<Q
 }
 
 pub async fn list_history<S: Into<String>>(
-    conn: &Connection,
+    conn: &mut Connection,
     connection_id: Uuid,
     user_id: Uuid,
     origin: S,
@@ -120,7 +120,7 @@ pub async fn list_history<S: Into<String>>(
     let mut stmt = conn
         .prepare("SELECT * FROM query_history WHERE connection_id = ? AND origin = ? and user_id = ? ORDER BY created_at DESC")
         .await?;
-    let mut rows = conn.query_rows(&mut stmt, params!(connection_id, origin, user_id)).await?;
+    let mut rows = stmt.query_rows(params!(connection_id, origin, user_id)).await?;
     while let Some(next) = rows.next().await {
         match next {
             Ok(row) => queries.push(map_query_row(&row)?),
@@ -132,7 +132,7 @@ pub async fn list_history<S: Into<String>>(
 
 /// Read the history data from the query.
 pub async fn read_history_data(
-    conn: &Connection,
+    conn: &mut Connection,
     connection_id: Uuid,
     query_history_id: Uuid,
     offset: usize,
@@ -186,10 +186,10 @@ mod tests {
         let user_id = uuid::Uuid::new_v4();
         let origin = "test";
         let statement = "SELECT 1";
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
 
         // create
-        let initial_query = create(&conn, connection_id, origin, user_id, statement, true).await.unwrap();
+        let initial_query = create(&mut conn, connection_id, origin, user_id, statement, true).await.unwrap();
         assert_eq!(
             initial_query,
             QueryExecution {
@@ -211,19 +211,19 @@ mod tests {
         );
 
         // get
-        let mut query = assert_ok!(get(&conn, connection_id, initial_query.id).await).unwrap();
+        let mut query = assert_ok!(get(&mut conn, connection_id, initial_query.id).await).unwrap();
         assert_eq!(query, initial_query);
 
         // update to running (should set executed_at)
-        query =
-            assert_ok!(update(&conn, QueryExecution { status: QueryExecutionStatus::Running, ..query }).await).unwrap();
+        query = assert_ok!(update(&mut conn, QueryExecution { status: QueryExecutionStatus::Running, ..query }).await)
+            .unwrap();
         assert_eq!(query.revision, 1);
         assert!(query.executed_at.is_some());
 
         // update to failed
         assert_ok!(
             update(
-                &conn,
+                &mut conn,
                 QueryExecution {
                     status: QueryExecutionStatus::Failed,
                     error: Some(QueryExecutionError { column: None, line: None, message: "Test error".to_string() }),
@@ -234,7 +234,7 @@ mod tests {
         );
 
         // get again (to check the update)
-        query = assert_ok!(get(&conn, connection_id, query.id).await).unwrap();
+        query = assert_ok!(get(&mut conn, connection_id, query.id).await).unwrap();
         assert_eq!(query.revision, 2);
         assert_eq!(query.status, QueryExecutionStatus::Failed);
         assert_eq!(
@@ -246,7 +246,7 @@ mod tests {
     #[tokio::test]
     async fn test_resources_queries_list_history() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
         let connection_id_1 = uuid::Uuid::new_v4();
         let connection_id_2 = uuid::Uuid::new_v4();
         let user_id_1 = uuid::Uuid::new_v4();
@@ -254,13 +254,13 @@ mod tests {
         let origin_1 = "origin1";
         let origin_2 = "origin2";
 
-        create(&conn, connection_id_1, origin_1, user_id_1, "SELECT 1", true).await.unwrap();
-        create(&conn, connection_id_1, origin_1, user_id_1, "SELECT 2", true).await.unwrap();
-        create(&conn, connection_id_1, origin_2, user_id_1, "SELECT 3", true).await.unwrap();
-        create(&conn, connection_id_2, origin_1, user_id_1, "SELECT 4", true).await.unwrap();
-        create(&conn, connection_id_1, origin_1, user_id_2, "SELECT 5", true).await.unwrap();
+        create(&mut conn, connection_id_1, origin_1, user_id_1, "SELECT 1", true).await.unwrap();
+        create(&mut conn, connection_id_1, origin_1, user_id_1, "SELECT 2", true).await.unwrap();
+        create(&mut conn, connection_id_1, origin_2, user_id_1, "SELECT 3", true).await.unwrap();
+        create(&mut conn, connection_id_2, origin_1, user_id_1, "SELECT 4", true).await.unwrap();
+        create(&mut conn, connection_id_1, origin_1, user_id_2, "SELECT 5", true).await.unwrap();
 
-        let history = assert_ok!(list_history(&conn, connection_id_1, user_id_1, origin_1, 100).await);
+        let history = assert_ok!(list_history(&mut conn, connection_id_1, user_id_1, origin_1, 100).await);
         assert_eq!(history.len(), 2);
         assert!(matches!(history[0].query.as_str(), "SELECT 1" | "SELECT 2"));
         assert!(matches!(history[1].query.as_str(), "SELECT 1" | "SELECT 2"));

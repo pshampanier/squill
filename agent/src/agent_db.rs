@@ -37,7 +37,7 @@ pub async fn init() -> Result<Arc<ConnectionPool>> {
 
         // 1) Create the database (by opening a connection in read+write+create mode).
         let uri = uri() + "?mode=rwc";
-        let conn = squill_drivers::futures::Connection::open(&uri).await?;
+        let mut conn = squill_drivers::futures::Connection::open(&uri).await?;
 
         // 1. Setup the schema.
         let statements = loose_sqlparser::parse(SETUP_SQL_SCRIPT);
@@ -45,7 +45,7 @@ pub async fn init() -> Result<Arc<ConnectionPool>> {
             conn.execute(statement.sql(), None).await?;
         }
         // 2. Add the default `local` user.
-        users::create(&conn, users::local_username()).await?;
+        users::create(&mut conn, users::local_username()).await?;
         info!("Agent database initialized: {}", file_path().display());
     }
 

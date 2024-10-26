@@ -38,11 +38,11 @@ async fn get_user(
 ) -> ServerResult<Json<User>> {
     // First we need to sanitize the username to make sure it will not pose security threats sur as directory traversal.
     let user_session = context.get_user_session_with_username(&username)?;
-    let conn = state.get_agentdb_connection().await?;
+    let mut conn = state.get_agentdb_connection().await?;
 
     // In case the user cannot be found, we do not return a 404 error, be instead we return a 500 error because it is
     // not expected that we pass the authentication middleware if the user does not exist.
-    match users::get_by_user_id(&conn, user_session.get_user_id()).await {
+    match users::get_by_user_id(&mut conn, user_session.get_user_id()).await {
         Ok(user) => Ok(Json(user)),
         Err(_) => Err(Error::InternalServerError),
     }
@@ -60,8 +60,8 @@ async fn read_user_catalog(
 ) -> ServerResult<Json<Vec<ResourceRef>>> {
     // First we need to sanitize the username and path to make sure they will not pose security threats.
     let user_session = context.get_user_session_with_username(&username)?;
-    let conn = state.get_agentdb_connection().await?;
-    let catalog_resources = catalog::list(&conn, user_session.get_user_id(), catalog_id).await?;
+    let mut conn = state.get_agentdb_connection().await?;
+    let catalog_resources = catalog::list(&mut conn, user_session.get_user_id(), catalog_id).await?;
     Ok(Json(catalog_resources))
 }
 
@@ -93,8 +93,8 @@ async fn rename_user_catalog_resource(
     // First we need to sanitize the username and path to make sure they will not pose security threats.
     let user_session = context.get_user_session_with_username(&username)?;
     let new_name = validators::sanitize_catalog_name(args.new_name.as_str())?;
-    let conn = state.get_agentdb_connection().await?;
-    catalog::rename(&conn, user_session.get_user_id(), catalog_id, &new_name).await.map_err(|e| e.into())
+    let mut conn = state.get_agentdb_connection().await?;
+    catalog::rename(&mut conn, user_session.get_user_id(), catalog_id, &new_name).await.map_err(|e| e.into())
 }
 
 /// POST /users/:username/catalog
@@ -111,7 +111,7 @@ async fn create_user_catalog_resource(
     Json(request_body): Json<Value>,
 ) -> ServerResult<Json<ResourceRef>> {
     async fn inner_create_user_catalog_resource<T: Resource>(
-        conn: &Connection,
+        conn: &mut Connection,
         user_id: Uuid,
         resource: T,
     ) -> Result<ResourceRef> {
@@ -134,7 +134,7 @@ async fn create_user_catalog_resource(
         }
     }
     let user_session = context.get_user_session_with_username(&username)?;
-    let conn = state.get_agentdb_connection().await?;
+    let mut conn = state.get_agentdb_connection().await?;
     let resource_type = headers
         .get(X_RESOURCE_TYPE)
         .ok_or_else(|| Error::BadRequest("Missing 'X-Resource-Type' header".to_string()))
@@ -145,7 +145,7 @@ async fn create_user_catalog_resource(
     let resource_ref = match ResourceType::try_from(resource_type) {
         Ok(ResourceType::Connection) => {
             inner_create_user_catalog_resource(
-                &conn,
+                &mut conn,
                 user_session.get_user_id(),
                 serde_json::from_value::<models::Connection>(request_body)?,
             )
@@ -153,7 +153,7 @@ async fn create_user_catalog_resource(
         }
         Ok(ResourceType::Environment) => {
             inner_create_user_catalog_resource(
-                &conn,
+                &mut conn,
                 user_session.get_user_id(),
                 serde_json::from_value::<models::Environment>(request_body)?,
             )
@@ -161,7 +161,7 @@ async fn create_user_catalog_resource(
         }
         Ok(ResourceType::Collection) => {
             inner_create_user_catalog_resource(
-                &conn,
+                &mut conn,
                 user_session.get_user_id(),
                 serde_json::from_value::<models::Collection>(request_body)?,
             )
@@ -189,9 +189,9 @@ async fn save_user_settings(
         return Err(Error::Forbidden);
     }
 
-    let conn = state.get_agentdb_connection().await?;
+    let mut conn = state.get_agentdb_connection().await?;
 
-    users::save_settings(&conn, &username, &user_settings.0)
+    users::save_settings(&mut conn, &username, &user_settings.0)
         .await
         .with_context(|| format!("Unable to save the settings for the user '{}'.", username))?;
 
@@ -224,9 +224,9 @@ mod tests {
     #[tokio::test]
     async fn test_get_user() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
         let username: Username = "marty.mcfly".into();
-        let marty_mcfly = users::create(&conn, &username).await.unwrap();
+        let marty_mcfly = users::create(&mut conn, &username).await.unwrap();
         let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
 
@@ -250,7 +250,7 @@ mod tests {
         assert!(matches!(result, Err(Error::Forbidden)));
 
         // 4) failed for some reasons (e.g. user file is corrupted)
-        users::delete(&conn, &username).await.unwrap();
+        users::delete(&mut conn, &username).await.unwrap();
         let mut context = RequestContext::new(Uuid::nil());
         context.add_user_session(state.get_user_session_from_token(&security_tokens.access_token).unwrap());
         let result = get_user(State(state.clone()), context, Path(username.to_string())).await;
@@ -260,12 +260,12 @@ mod tests {
     #[tokio::test]
     async fn test_create_user_catalog_resource() {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
-        let conn = conn_pool.get().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
         let username: Username = "marty.mcfly".into();
-        let marty_mcfly = users::create(&conn, &username).await.unwrap();
+        let marty_mcfly = users::create(&mut conn, &username).await.unwrap();
         let state = ServerState::new(conn_pool);
         let security_tokens = state.add_user_session(&username, marty_mcfly.user_id);
-        let root_collection = catalog::list(&conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
+        let root_collection = catalog::list(&mut conn, marty_mcfly.user_id, Uuid::nil()).await.unwrap();
         let envs_collection = root_collection
             .iter()
             .find(|f| f.get_metadata(METADATA_RESOURCES_TYPE) == Some(ResourceType::Environment.as_ref()))
@@ -373,7 +373,7 @@ mod tests {
         let username: Username = "marty.mcfly".into();
         let state = ServerState::new();
         let security_token = state.add_user_session(&username, "user_id");
-        users::create(&conn, &username).await;
+        users::create(&mut conn, &username).await;
 
         // 1) valid user & path
         let mut context = RequestContext::new(Uuid::nil());

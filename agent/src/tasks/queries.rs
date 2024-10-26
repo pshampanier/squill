@@ -111,18 +111,18 @@ async fn execute_query(
         update_query_history(&state, session_id, QueryExecution { status: QueryExecutionStatus::Running, ..query })
             .await?
     {
-        let conn = state.get_user_db_connection(query.connection_id).await?;
+        let mut conn = state.get_user_db_connection(query.connection_id).await?;
         let start_time = Instant::now(); // Record the start time of the query execution
         let query = match if query.with_result_set {
             //
             // The query is expected to return a result set
             //
-            execute_query_with_result_set(state.clone(), session_id, &conn, query.clone()).await
+            execute_query_with_result_set(state.clone(), session_id, &mut conn, query.clone()).await
         } else {
             //
             // The query is expected to return a number of affected rows
             //
-            execute_query_without_result_set(&conn, query.clone()).await
+            execute_query_without_result_set(&mut conn, query.clone()).await
         } {
             Ok(query) => {
                 let execution_time = start_time.elapsed().as_secs_f64();
@@ -139,7 +139,7 @@ async fn execute_query(
 /// Execute a query that is not expected to provide a result set.
 ///
 /// This function returns the updated [QueryExecution].
-async fn execute_query_without_result_set(conn: &Connection, query: QueryExecution) -> Result<QueryExecution> {
+async fn execute_query_without_result_set(conn: &mut Connection, query: QueryExecution) -> Result<QueryExecution> {
     let affected_rows = conn.execute(query.query.as_str(), None).await?;
     Ok(QueryExecution { status: QueryExecutionStatus::Completed, affected_rows, ..query })
 }
@@ -151,11 +151,11 @@ async fn execute_query_without_result_set(conn: &Connection, query: QueryExecuti
 async fn execute_query_with_result_set(
     state: ServerState,
     session_id: uuid::Uuid,
-    conn: &Connection,
+    conn: &mut Connection,
     query: QueryExecution,
 ) -> Result<QueryExecution> {
     let mut stmt = conn.prepare(query.query.as_str()).await?;
-    let mut stream = stmt.query().await?;
+    let mut stream = stmt.query(None).await?;
 
     // A message channel used to send the RecordBatch with statistics of the query to the writer task.
     // The size of that queue must be at least as large as the maximum number of tasks that can be executed concurrently
@@ -348,8 +348,8 @@ async fn update_query_history(
     session_id: uuid::Uuid,
     query: QueryExecution,
 ) -> Result<Option<QueryExecution>> {
-    let agentdb_conn = state.get_agentdb_connection().await?;
-    match resources::queries::update(&agentdb_conn, query.clone()).await {
+    let mut agentdb_conn = state.get_agentdb_connection().await?;
+    match resources::queries::update(&mut agentdb_conn, query.clone()).await {
         Ok(Some(query)) => {
             // Send a notification to the client with a update of the query
             state.push_notification(session_id, query.clone()).await;

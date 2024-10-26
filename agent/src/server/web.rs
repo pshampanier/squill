@@ -512,8 +512,8 @@ mod tests {
         let (_base_dir, conn_pool) = tests::setup().await.unwrap();
         let local_username = users::local_username().as_str();
         let state = ServerState::new(conn_pool);
-        let conn = state.get_agentdb_connection().await.unwrap();
-        let user = users::get_by_username(&conn, users::local_username()).await.unwrap();
+        let mut conn = state.get_agentdb_connection().await.unwrap();
+        let user = users::get_by_username(&mut conn, users::local_username()).await.unwrap();
         let security_token = state.add_user_session(&local_username.into(), user.user_id);
 
         // 1. Invalid security token

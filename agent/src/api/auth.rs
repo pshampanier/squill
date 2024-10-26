@@ -48,8 +48,8 @@ async fn logon(State(state): State<ServerState>, auth: Json<Authentication>) -> 
                 return Err(Error::BadRequest("Password must be empty".to_string()));
             }
 
-            let conn = state.get_agentdb_connection().await?;
-            match users::get_by_username(&conn, &username).await {
+            let mut conn = state.get_agentdb_connection().await?;
+            match users::get_by_username(&mut conn, &username).await {
                 Ok(user) => {
                     let token = state.add_user_session(&username, user.user_id);
                     info!("User `{}` logged in.", &username);

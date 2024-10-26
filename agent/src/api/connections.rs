@@ -44,8 +44,8 @@ async fn get_connection(
     Path(id): Path<Uuid>,
 ) -> ServerResult<Json<Connection>> {
     let user_session = context?.get_user_session()?;
-    let conn = state.get_agentdb_connection().await?;
-    let connection: models::Connection = catalog::get(&conn, id).await?;
+    let mut conn = state.get_agentdb_connection().await?;
+    let connection: models::Connection = catalog::get(&mut conn, id).await?;
     if connection.owner_user_id != user_session.get_user_id() {
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
@@ -70,8 +70,8 @@ async fn execute_buffer(
 ) -> ServerResult<Json<Vec<models::QueryExecution>>> {
     let origin = extract_header(&headers, X_REQUEST_ORIGIN)?;
     let user_session = context?.get_user_session()?;
-    let conn = state.get_agentdb_connection().await?;
-    let connection: models::Connection = catalog::get(&conn, id).await?;
+    let mut conn = state.get_agentdb_connection().await?;
+    let connection: models::Connection = catalog::get(&mut conn, id).await?;
     if connection.owner_user_id != user_session.get_user_id() {
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
@@ -84,7 +84,7 @@ async fn execute_buffer(
         // Insert the query into the database
         queries.push(
             resources::queries::create(
-                &conn,
+                &mut conn,
                 id,
                 &origin,
                 user_session.get_user_id(),
@@ -140,9 +140,9 @@ async fn list_queries_history(
 ) -> ServerResult<Json<QueryHistoryPage>> {
     let user_session = context?.get_user_session()?;
     let origin = extract_header(&headers, X_REQUEST_ORIGIN)?;
-    let conn = state.get_agentdb_connection().await?;
+    let mut conn = state.get_agentdb_connection().await?;
     let limit = settings::get_max_query_history_fetch_size();
-    let queries = queries::list_history(&conn, id, user_session.get_user_id(), origin, limit).await?;
+    let queries = queries::list_history(&mut conn, id, user_session.get_user_id(), origin, limit).await?;
     Ok(Json(QueryHistoryPage { queries, next_page: String::new() }))
 }
 
@@ -160,9 +160,9 @@ async fn get_query_history_data(
     Path((id, query_history_id)): Path<(Uuid, Uuid)>,
     Query(params): Query<QueryHistoryDataParams>,
 ) -> ServerResult<Response> {
-    let conn = state.get_agentdb_connection().await?;
+    let mut conn = state.get_agentdb_connection().await?;
     let record_batches = queries::read_history_data(
-        &conn,
+        &mut conn,
         id,
         query_history_id,
         params.offset.unwrap_or(0),
