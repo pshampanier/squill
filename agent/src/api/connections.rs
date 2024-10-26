@@ -3,7 +3,6 @@ use crate::err_forbidden;
 use crate::err_param;
 use crate::models;
 use crate::models::queries::QueryHistoryPage;
-use crate::models::Connection;
 use crate::resources;
 use crate::resources::catalog;
 use crate::resources::queries;
@@ -23,16 +22,16 @@ use axum::routing::{get, post};
 use axum::{Json, Router};
 use common::constants::X_REQUEST_ORIGIN;
 use serde::Deserialize;
-use squill_drivers::futures::Connection as DriverConnection;
+use squill_drivers::async_conn::Connection;
 use std::io::Cursor;
 use uuid::Uuid;
 
 /// GET /connections/defaults
 ///
 /// Create an new instance of a connection.
-async fn get_connection_defaults(context: ServerResult<RequestContext>) -> ServerResult<Json<Connection>> {
+async fn get_connection_defaults(context: ServerResult<RequestContext>) -> ServerResult<Json<models::Connection>> {
     let user_session = context?.get_user_session()?;
-    Ok(Json(Connection::new(user_session.get_user_id(), "New Connection".to_string())))
+    Ok(Json(models::Connection::new(user_session.get_user_id(), "New Connection".to_string())))
 }
 
 /// GET /connections/:id
@@ -42,7 +41,7 @@ async fn get_connection(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
-) -> ServerResult<Json<Connection>> {
+) -> ServerResult<Json<models::Connection>> {
     let user_session = context?.get_user_session()?;
     let mut conn = state.get_agentdb_connection().await?;
     let connection: models::Connection = catalog::get(&mut conn, id).await?;
@@ -113,10 +112,10 @@ async fn execute_buffer(
 /// POST /connections/test
 ///
 /// Test if the connection is valid (can connect to the datasource).
-async fn test_connection(state: State<ServerState>, Json(conn): Json<Connection>) -> ServerResult<()> {
+async fn test_connection(state: State<ServerState>, Json(conn): Json<models::Connection>) -> ServerResult<()> {
     let jinja_env = state.get_jinja_env(&conn.driver);
     let uri = jinja_env.render_template("uri", &conn)?;
-    match DriverConnection::open(uri).await {
+    match Connection::open(uri).await {
         Ok(_) => Ok(()),
         Err(e) => Err(UserError::InvalidParameter(e.to_string()).into()),
     }

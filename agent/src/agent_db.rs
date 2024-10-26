@@ -37,7 +37,7 @@ pub async fn init() -> Result<Arc<ConnectionPool>> {
 
         // 1) Create the database (by opening a connection in read+write+create mode).
         let uri = uri() + "?mode=rwc";
-        let mut conn = squill_drivers::futures::Connection::open(&uri).await?;
+        let mut conn = squill_drivers::async_conn::Connection::open(&uri).await?;
 
         // 1. Setup the schema.
         let statements = loose_sqlparser::parse(SETUP_SQL_SCRIPT);

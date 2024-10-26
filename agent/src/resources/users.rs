@@ -6,7 +6,7 @@ use crate::utils::validators::{sanitize_username, Username};
 use crate::{err_not_found, settings};
 use anyhow::{anyhow, Context, Result};
 use lazy_static::lazy_static;
-use squill_drivers::futures::Connection;
+use squill_drivers::async_conn::Connection;
 use squill_drivers::{execute, params};
 use uuid::Uuid;
 

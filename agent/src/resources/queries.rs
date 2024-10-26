@@ -5,8 +5,7 @@ use crate::{resources, settings};
 use crate::{Result, UserError};
 use arrow_array::RecordBatch;
 use futures::StreamExt;
-use squill_drivers::Row;
-use squill_drivers::{futures::Connection, params};
+use squill_drivers::{async_conn::Connection, params, Row};
 use uuid::Uuid;
 
 /// Create a new query in the history.

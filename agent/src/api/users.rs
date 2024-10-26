@@ -25,7 +25,7 @@ use axum::routing::put;
 use axum::{routing::get, Json, Router};
 use common::constants::X_RESOURCE_TYPE;
 use serde_json::Value;
-use squill_drivers::futures::Connection;
+use squill_drivers::async_conn::Connection;
 use uuid::Uuid;
 
 /// GET /users/:username/user

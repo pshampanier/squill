@@ -7,7 +7,7 @@ use crate::{err_conflict, err_not_found, Result};
 use anyhow::Context;
 use futures::StreamExt;
 use serde_json::Value;
-use squill_drivers::futures::{Connection, RowStream};
+use squill_drivers::async_conn::{Connection, RowStream};
 use squill_drivers::{execute, params};
 use uuid::Uuid;
 

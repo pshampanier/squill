@@ -13,7 +13,7 @@ use futures::future::BoxFuture;
 use futures::StreamExt;
 use parquet::basic::Compression;
 use parquet::file::properties::WriterProperties;
-use squill_drivers::futures::Connection;
+use squill_drivers::async_conn::Connection;
 use std::time::{Duration, Instant};
 use tokio::sync::mpsc;
 use tracing::{debug, error};

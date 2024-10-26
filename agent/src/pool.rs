@@ -1,6 +1,6 @@
 use anyhow::Result;
 use deadpool::managed::{Manager, Metrics, Object, Pool, RecycleResult};
-use squill_drivers::futures::Connection;
+use squill_drivers::async_conn::Connection;
 
 pub type ConnectionPool = Pool<ConnectionManager>;
 pub type ConnectionGuard = Object<ConnectionManager>;
