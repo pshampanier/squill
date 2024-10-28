@@ -93,6 +93,20 @@ export class QueryExecution {
   id!: string;
   
   /**
+   * A collection of key-value pairs that provide additional information about the query execution.
+   * 
+   * - `schema`:
+   *   The schema of the result set for queries with `with_result_set` set to `true`.
+   *   The schema is a JSON representation of an Arrow schema using 
+   *   [Apache Arrow JSON test data format](https://github.com/apache/arrow/blob/master/docs/source/format/Integration.rst#json-test-data-format)
+   *   Having `with_result_set` set to `true` set to true doesn't guarantee that the schema will be present, the 
+   *   schema is only present if the query execution was successful.
+   * 
+   **/
+  @serializable("record", { items: { type: "string" } })
+  metadata?: Record<string, string>;
+  
+  /**
    * The origin of the query execution.
    * 
    * The query can be originated from different origins like a terminal or a worksheet. In order to track the

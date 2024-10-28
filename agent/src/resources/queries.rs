@@ -1,12 +1,47 @@
-use crate::models::queries::{QueryExecution, QueryExecutionStatus};
-use crate::utils::constants::USER_HISTORY_DIRNAME;
+use crate::models::queries::{QueryExecution, QueryExecutionError, QueryExecutionStatus};
+use crate::utils::constants::{QUERY_METADATA_SCHEMA, USER_HISTORY_DIRNAME};
 use crate::utils::parquet::RecordBatchReader;
 use crate::{resources, settings};
 use crate::{Result, UserError};
 use arrow_array::RecordBatch;
+use arrow_schema::Schema;
 use futures::StreamExt;
 use squill_drivers::{async_conn::Connection, params, Row};
+use std::collections::HashMap;
 use uuid::Uuid;
+
+impl QueryExecution {
+    /// Return the current metadata of the query with the given schema
+    pub fn metadata_with_schema(&self, schema: &Schema) -> Result<HashMap<String, String>> {
+        let value = arrow_integration_test::schema_to_json(schema);
+        let string = serde_json::to_string_pretty(&value)?;
+        let mut metadata = self.metadata.clone();
+        metadata.insert(QUERY_METADATA_SCHEMA.to_string(), string);
+        Ok(metadata)
+    }
+}
+
+/// Convert a `squill_drivers::Error` into a `QueryExecutionError`.
+///
+/// FIXME: This function should be improved to provide more detailed information about the error.
+/// FIXME: For example, the line and column where the error occurred.
+///
+/// - **Oracle**: `ERROR at line 1:\n ORA-00942: table or view does not exist`
+/// - **PostgreSQL**: `LINE 1: SELECT 23 FROM XX;`
+/// - **DuckDB**: `LINE 1: SELECT 23 FROM XX;`
+/// - **MySQL**: `...the right syntax to use near 'SELECT 23 FROM XX' at line 1`
+/// - **SQLite**: No line number in error message
+/// - **SQL Server**: `Msg 208, Level 16, State 1, Line 1\nInvalid object name 'XX'.`
+/// - **DB2**: `SQL0204N "XX" is an undefined name. SQLSTATE=42704 at line 1`
+/// - **MariaDB**: `You have an error in your SQL syntax; ... 'SELECT 23 FROM XX' at line 1`
+/// - **Informix**: `SQL -206: The specified table (XX) is not in the database.\nError occurs on line 1.`
+/// - **Firebird**: `Dynamic SQL Error\nSQL error code = -204\nTable unknown\nXX\nAt line 1, column 15`
+/// - **Sybase**: `SQL Anywhere Error -141: Invalid SQL syntax near 'SELECT 23 FROM XX' on line 1`
+impl From<anyhow::Error> for QueryExecutionError {
+    fn from(e: anyhow::Error) -> Self {
+        QueryExecutionError { message: e.to_string(), line: None, column: None }
+    }
+}
 
 /// Create a new query in the history.
 pub async fn create<S: Into<String>>(
@@ -40,6 +75,7 @@ pub async fn create<S: Into<String>>(
                     affected_rows: 0,
                     execution_time: 0.0,
                     storage_bytes: 0,
+                    metadata: HashMap::new(),
                 })
             },
         )
@@ -81,7 +117,8 @@ pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Opti
                         error = COALESCE(error, ?),
                         execution_time = COALESCE(execution_time, ?),
                         affected_rows = COALESCE(?, affected_rows),
-                        storage_bytes = ?
+                        storage_bytes = ?,
+                        metadata = ?
                   WHERE query_history_id=? AND connection_id=? AND status <> ?
             RETURNING revision, executed_at"#,
         params!(
@@ -91,6 +128,7 @@ pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Opti
             execution_time,
             affected_rows,
             query.storage_bytes as i64,
+            if query.metadata.is_empty() { None } else { Some(serde_json::to_string(&query.metadata)?) },
             query.id,
             query.connection_id,
             QueryExecutionStatus::Cancelled.as_str()
@@ -167,6 +205,7 @@ fn map_query_row(row: &Row) -> Result<QueryExecution> {
         error: row.try_get_nullable::<_, _>("error")?,
         with_result_set: row.try_get::<_, _>("with_result_set")?,
         storage_bytes: row.try_get::<_, i64>("storage_bytes")? as u64,
+        metadata: serde_json::from_str(row.try_get::<_, String>("metadata")?.as_str())?,
     })
 }
 
@@ -185,7 +224,7 @@ mod tests {
         let user_id = uuid::Uuid::new_v4();
         let origin = "test";
         let statement = "SELECT 1";
-        let mut conn = conn_pool.get().await.unwrap();
+        let mut conn = assert_ok!(conn_pool.get().await);
 
         // create
         let initial_query = create(&mut conn, connection_id, origin, user_id, statement, true).await.unwrap();
@@ -206,6 +245,7 @@ mod tests {
                 affected_rows: 0,
                 execution_time: 0.0,
                 storage_bytes: 0,
+                metadata: HashMap::new(),
             }
         );
 

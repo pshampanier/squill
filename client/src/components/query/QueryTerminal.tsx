@@ -122,7 +122,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
     root: cx("flex flex-col w-full h-full overflow-hidden", className),
     history: "flex-col flex-shrink-0 overflow-y-hidden px-4 pb-2",
     input: "flex-shrink-0 py-1 min-h-6",
-    help: "flex flex-shrink flex-grow min-h-0 overflow-hidden items-center justify-center opacity-70",
+    help: "flex flex-shrink flex-grow min-h-0 overflow-hidden items-center justify-center opacity-70 select-none",
   };
 
   return (

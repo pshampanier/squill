@@ -1,4 +1,3 @@
-use crate::models::queries::QueryExecutionError;
 use crate::models::QueryExecutionStatus;
 use crate::server::notification_channels::PushNotificationService;
 use crate::tasks::statistics::collect_record_batch_stats;
@@ -157,6 +156,30 @@ async fn execute_query_with_result_set(
     let mut stmt = conn.prepare(query.query.as_str()).await?;
     let mut stream = stmt.query(None).await?;
 
+    let mut next_batch = stream.next().await;
+    if next_batch.is_none() {
+        //
+        // The query did not return any data, we are just going to collect the schema and return.
+        //
+        drop(stream);
+        let schema = stmt.schema().await?;
+        return Ok(QueryExecution { affected_rows: 0, metadata: query.metadata_with_schema(&schema)?, ..query });
+    } else if let Some(Err(e)) = next_batch {
+        //
+        // The query execution failed
+        //
+        return Err(e.into());
+    }
+
+    //
+    // The query returned some data
+    //
+
+    // We need to collect the schema from the first record batch in order to create the metadata of the query.
+    // It's safe here to unwrap the option and the the result because we know that the stream is not empty.
+    let schema = next_batch.as_ref().unwrap().as_ref().unwrap().schema().clone();
+    let query = QueryExecution { metadata: query.metadata_with_schema(&schema)?, ..query };
+
     // A message channel used to send the RecordBatch with statistics of the query to the writer task.
     // The size of that queue must be at least as large as the maximum number of tasks that can be executed concurrently
     // by the agent because the agent general purpose task queue is used to execute the statistics collector task that
@@ -169,7 +192,7 @@ async fn execute_query_with_result_set(
     // Read the record batches from the stream and send then to the stats collector task
     let res = {
         let mut affected_rows: u64 = 0;
-        while let Some(record_batch) = stream.next().await {
+        while let Some(record_batch) = next_batch {
             let record_batch = record_batch?;
             let num_rows = record_batch.num_rows();
             // send the record batch to to a stats collector task which once done will send the stats and the record batch
@@ -182,6 +205,7 @@ async fn execute_query_with_result_set(
                 })
                 .await?;
             affected_rows += num_rows as u64;
+            next_batch = stream.next().await;
         }
         // The query execution was successful, we need to communicate the number of affected rows to the writer task
         // in order to know when to stop writing the record batches to disk.
@@ -360,31 +384,9 @@ async fn update_query_history(
     }
 }
 
-/// Convert a `squill_drivers::Error` into a `QueryExecutionError`.
-///
-/// FIXME: This function should be improved to provide more detailed information about the error.
-/// FIXME: For example, the line and column where the error occurred.
-///
-/// - **Oracle**: `ERROR at line 1:\n ORA-00942: table or view does not exist`
-/// - **PostgreSQL**: `LINE 1: SELECT 23 FROM XX;`
-/// - **DuckDB**: `LINE 1: SELECT 23 FROM XX;`
-/// - **MySQL**: `...the right syntax to use near 'SELECT 23 FROM XX' at line 1`
-/// - **SQLite**: No line number in error message
-/// - **SQL Server**: `Msg 208, Level 16, State 1, Line 1\nInvalid object name 'XX'.`
-/// - **DB2**: `SQL0204N "XX" is an undefined name. SQLSTATE=42704 at line 1`
-/// - **MariaDB**: `You have an error in your SQL syntax; ... 'SELECT 23 FROM XX' at line 1`
-/// - **Informix**: `SQL -206: The specified table (XX) is not in the database.\nError occurs on line 1.`
-/// - **Firebird**: `Dynamic SQL Error\nSQL error code = -204\nTable unknown\nXX\nAt line 1, column 15`
-/// - **Sybase**: `SQL Anywhere Error -141: Invalid SQL syntax near 'SELECT 23 FROM XX' on line 1`
-impl From<anyhow::Error> for QueryExecutionError {
-    fn from(e: anyhow::Error) -> Self {
-        QueryExecutionError { message: e.to_string(), line: None, column: None }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
 
     use super::*;
     use crate::{server::state::ServerState, utils::tests};
@@ -415,6 +417,7 @@ mod tests {
             error: None,
             with_result_set: true,
             storage_bytes: 0,
+            metadata: HashMap::new(),
         };
         let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query_id));
 
@@ -441,20 +444,5 @@ mod tests {
         tx.send(QueryPipelineMessage::AffectedRows(10)).await.unwrap();
 
         let _ = writer_task.await.unwrap();
-    }
-
-    #[test]
-    fn json_serialize_schema() {
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("column1", DataType::Int32, false),
-            Field::new("column2", DataType::Utf8, true),
-        ]));
-
-        // Convert the buffer (Vec<u8>) to a String
-        let json_value = arrow_integration_test::schema_to_json(&schema);
-        let json_string = serde_json::to_string_pretty(&json_value).unwrap();
-
-        // Print the JSON string
-        println!("Serialized RecordBatch to JSON string: {}", json_string);
     }
 }

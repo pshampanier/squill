@@ -119,7 +119,7 @@ function MenuItem({ className, icon, label, children, disabled, onClick, command
     className,
   );
   return (
-    <a href="#" className={classes} role="menuitem" tabIndex={-1} onClick={handleClick} draggable="false">
+    <a href="#" draggable="false" className={classes} role="menuitem" tabIndex={-1} onClick={handleClick}>
       {Icon && <Icon className="flex-none w-5 h-5" />}
       {children}
       {label && <span className="flex grow whitespace-nowrap overflow-hidden truncate">{label}</span>}

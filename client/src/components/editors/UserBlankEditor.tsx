@@ -9,7 +9,7 @@ import CommandLinkList from "@/components/core/CommandLinkList";
  */
 const UserBlankEditor: React.FunctionComponent<{ pageId: string }> = () => {
   return (
-    <div className="flex items-center justify-center w-full h-full">
+    <div className="flex items-center justify-center w-full h-full select-none">
       <div className="text-center text-gray-500 dark:text-gray-400">
         <h1 className="text-xl font-bold">No selection</h1>
         <CommandLinkList>

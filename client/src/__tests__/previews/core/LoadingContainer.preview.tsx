@@ -15,7 +15,7 @@ export default function LoadingContainerPreview() {
         <Preview.Title>Loading</Preview.Title>
         <Preview.Description>
           A placeholder container displayed while loading something is loading, click{" "}
-          <a href="#" onClick={() => setStatus("error")}>
+          <a href="#" draggable="false" onClick={() => setStatus("error")}>
             here
           </a>{" "}
           to simulate an error.

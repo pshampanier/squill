@@ -110,7 +110,7 @@ function Tab({ pageId }: TabProps) {
     >
       <Icon className="flex-shrink-0 w-5 h-5" />
       <span className={classes.title}>{catalogItem.title}</span>
-      <a href="#" className={classes.closeButton}>
+      <a href="#" draggable="false" className={classes.closeButton}>
         <CloseButtonIcon
           className={`w-6 h-6 px-1 bg-transparent`}
           onClick={(event) => {

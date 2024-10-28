@@ -4,6 +4,7 @@
 use anyhow::{anyhow, Error};
 use serde::{Deserialize, Serialize};
 use squill_drivers::serde::Decode;
+use std::collections::HashMap;
 
 /// The status of a query execution.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -92,6 +93,17 @@ pub struct QueryExecution {
 
     /// The unique identifier of the query execution.
     pub id: uuid::Uuid,
+
+    /// A collection of key-value pairs that provide additional information about the query execution.
+    ///
+    /// - `schema`:
+    ///   The schema of the result set for queries with `with_result_set` set to `true`.
+    ///   The schema is a JSON representation of an Arrow schema using
+    ///   [Apache Arrow JSON test data format](https://github.com/apache/arrow/blob/master/docs/source/format/Integration.rst#json-test-data-format)
+    ///   Having `with_result_set` set to `true` set to true doesn't guarantee that the schema will be present, the
+    ///   schema is only present if the query execution was successful.
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub metadata: HashMap<String, String>,
 
     /// The origin of the query execution.
     ///

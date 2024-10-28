@@ -955,6 +955,19 @@ components:
           type: integer
           format: int64
           minimum: 0
+        metadata:
+          description: |
+            A collection of key-value pairs that provide additional information about the query execution.
+
+            - `schema`:
+              The schema of the result set for queries with `with_result_set` set to `true`.
+              The schema is a JSON representation of an Arrow schema using 
+              [Apache Arrow JSON test data format](https://github.com/apache/arrow/blob/master/docs/source/format/Integration.rst#json-test-data-format)
+              Having `with_result_set` set to `true` set to true doesn't guarantee that the schema will be present, the 
+              schema is only present if the query execution was successful.
+          type: object
+          additionalProperties:
+            type: string
 
     QueryHistoryPage:
       description: The response of the GET /connections/{id}/history/list endpoint.

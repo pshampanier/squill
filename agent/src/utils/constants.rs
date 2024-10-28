@@ -17,6 +17,13 @@ pub const DRIVERS_DIRNAME: &str = "drivers";
 /// Name of the environment variable used to specify the log level for the different components.
 pub const ENV_VAR_LOG: &str = "SQUILL_LOG";
 
+///
+/// Query Metadata
+///
+
+/// The key used to store the schema of the result set for queries with `with_result_set` set to `true`.
+pub const QUERY_METADATA_SCHEMA: &str = "schema";
+
 /// Windows reserved names.
 /// Source: <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
 pub const WINDOWS_RESERVED_NAMES: [&str; 26] = [

@@ -36,7 +36,9 @@ function Link(props: CommandLinkProps) {
   return (
     <dl className="text-sm table-row cursor-pointer" onClick={handleClick}>
       <dt className="table-cell text-right pr-1 align-middle">
-        <a href="#">{command.description}</a>
+        <a href="#" draggable="false">
+          {command.description}
+        </a>
       </dt>
       {command.shortcut && (
         <dd className="table-cell text-left">

@@ -238,6 +238,7 @@ export default function FileInput({
                 <div className="grid gap-1">
                   <a
                     href="#"
+                    draggable="false"
                     className="text-sm font-medium line-clamp-2 text-blue-500 hover:underline"
                     onClick={() => setEditMode(true)}
                   >

@@ -28,7 +28,7 @@ export default function CommandLink({ className, command: name }: CommandLinkPro
   const classes = cx("text-blue-400 dark:text-blue-300 hover:underline", className);
 
   return (
-    <a href="#" className={classes} onClick={handleClick}>
+    <a href="#" draggable="false" className={classes} onClick={handleClick}>
       {command.description}
     </a>
   );
