@@ -4504,9 +4504,10 @@ dependencies = [
 
 [[package]]
 name = "squill-async"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arrow-array",
+ "arrow-schema",
  "crossbeam-channel",
  "futures",
  "squill-core",
@@ -4516,7 +4517,7 @@ dependencies = [
 
 [[package]]
 name = "squill-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arrow-array",
  "arrow-schema",
@@ -4532,7 +4533,7 @@ dependencies = [
 
 [[package]]
 name = "squill-drivers"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "squill-async",
  "squill-core",
@@ -4543,9 +4544,10 @@ dependencies = [
 
 [[package]]
 name = "squill-duckdb"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arrow-array",
+ "arrow-schema",
  "duckdb",
  "squill-core",
  "url",
@@ -4553,7 +4555,7 @@ dependencies = [
 
 [[package]]
 name = "squill-serde"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4565,7 +4567,7 @@ dependencies = [
 
 [[package]]
 name = "squill-sqlite"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "arrow-array",
  "arrow-schema",

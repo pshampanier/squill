@@ -11,7 +11,11 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 impl QueryExecution {
-    /// Return the current metadata of the query with the given schema
+    /// Returns the current metadata of the query with the given schema
+    ///
+    /// This method is used to add the schema of the query to the metadata.
+    /// The schema is stored using the key `schema` and the value is the JSON representation of the schema using
+    /// [Apache Arrow JSON test data format](https://github.com/apache/arrow/blob/master/docs/source/format/Integration.rst#json-test-data-format).
     pub fn metadata_with_schema(&self, schema: &Schema) -> Result<HashMap<String, String>> {
         let value = arrow_integration_test::schema_to_json(schema);
         let string = serde_json::to_string_pretty(&value)?;
@@ -90,7 +94,7 @@ pub async fn create<S: Into<String>>(
 pub async fn get(conn: &mut Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<Option<QueryExecution>> {
     conn.query_map_row(
         r#"SELECT query_history_id, connection_id, revision, user_id, query, origin, created_at, executed_at, 
-                         execution_time, affected_rows, status, error, with_result_set, storage_bytes
+                         execution_time, affected_rows, status, error, with_result_set, storage_bytes, metadata
                    FROM query_history 
                   WHERE connection_id = ? AND query_history_id = ?"#,
         params!(connection_id, query_history_id),
@@ -205,7 +209,10 @@ fn map_query_row(row: &Row) -> Result<QueryExecution> {
         error: row.try_get_nullable::<_, _>("error")?,
         with_result_set: row.try_get::<_, _>("with_result_set")?,
         storage_bytes: row.try_get::<_, i64>("storage_bytes")? as u64,
-        metadata: serde_json::from_str(row.try_get::<_, String>("metadata")?.as_str())?,
+        metadata: match row.try_get_nullable::<_, String>("metadata") {
+            Ok(Some(metadata)) => serde_json::from_str(metadata.as_str())?,
+            _ => HashMap::new(),
+        },
     })
 }
 
