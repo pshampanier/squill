@@ -199,3 +199,56 @@ export class QueryHistoryPage {
     this.queries = (object?.queries || []).map((item) => new QueryExecution(item));
   }
 }
+
+
+/**
+ * The statistics about the data of a field across a result set.
+   * 
+ **/
+export class FieldStatistics {
+  
+  /**
+   * The maximum value of the attribute (see `min` for supported data types).
+   **/
+  @serializable("float")
+  max?: number;
+  
+  /**
+   * The maximum length of the attribute for `text` attributes.
+   **/
+  @serializable("integer", { min: 0, snakeCase: "property" })
+  maxLength?: number;
+  
+  /**
+   * The minimum value of the attribute.
+   * Only present if the attribute has a numeric representation (this include date, datetime).
+   * The following [DataType](https://arrow.apache.org/docs/format/Columnar.html#data-type) are currently
+   * supported:
+   * - Int
+   * - Floating Point
+   * - Decimal
+   * - Date: The number of days since the UNIX epoch.
+   * - Time: A number since midnight (precision depending on the time unit of the field).
+   * - Timestamp: The number since the UNIX epoch (precision depending on the time unit of the field, always UTC).
+   * - Duration: A number (precision depending on the time unit of the field)
+   * 
+   **/
+  @serializable("float")
+  min?: number;
+  
+  /**
+   * The number of missing values in the attribute.
+   **/
+  @serializable("integer", { required: true, min: 0 })
+  missing!: number;
+  
+  /**
+   * The number of unique values in the attribute.
+   **/
+  @serializable("integer", { min: 0 })
+  unique?: number;
+  
+  constructor(object?: Partial<FieldStatistics>) {
+    Object.assign(this, object);
+  }
+}

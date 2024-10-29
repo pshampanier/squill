@@ -1,5 +1,5 @@
-use crate::models::queries::{QueryExecution, QueryExecutionError, QueryExecutionStatus};
-use crate::utils::constants::{QUERY_METADATA_SCHEMA, USER_HISTORY_DIRNAME};
+use crate::models::queries::{FieldStatistics, QueryExecution, QueryExecutionError, QueryExecutionStatus};
+use crate::utils::constants::{QUERY_METADATA_SCHEMA, QUERY_METADATA_STATS, USER_HISTORY_DIRNAME};
 use crate::utils::parquet::RecordBatchReader;
 use crate::{resources, settings};
 use crate::{Result, UserError};
@@ -21,6 +21,14 @@ impl QueryExecution {
         let string = serde_json::to_string_pretty(&value)?;
         let mut metadata = self.metadata.clone();
         metadata.insert(QUERY_METADATA_SCHEMA.to_string(), string);
+        Ok(metadata)
+    }
+
+    /// Returns the current metadata of the query with the given statistics
+    pub fn metadata_with_stats(&self, stats: &Vec<FieldStatistics>) -> Result<HashMap<String, String>> {
+        let string = serde_json::to_string_pretty(stats)?;
+        let mut metadata = self.metadata.clone();
+        metadata.insert(QUERY_METADATA_STATS.to_string(), string);
         Ok(metadata)
     }
 }

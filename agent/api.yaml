@@ -969,6 +969,48 @@ components:
           additionalProperties:
             type: string
 
+    FieldStatistics:
+      description: |
+        The statistics about the data of a field across a result set.
+      type: object
+      required:
+        - missing
+      properties:
+        min:
+          description: |
+            The minimum value of the attribute.
+            Only present if the attribute has a numeric representation (this include date, datetime).
+            The following [DataType](https://arrow.apache.org/docs/format/Columnar.html#data-type) are currently
+            supported:
+            - Int
+            - Floating Point
+            - Decimal
+            - Date: The number of days since the UNIX epoch.
+            - Time: A number since midnight (precision depending on the time unit of the field).
+            - Timestamp: The number since the UNIX epoch (precision depending on the time unit of the field, always UTC).
+            - Duration: A number (precision depending on the time unit of the field)
+          type: number
+          format: double
+        max:
+          description: The maximum value of the attribute (see `min` for supported data types).
+          type: number
+          format: double
+        unique:
+          description: The number of unique values in the attribute.
+          type: integer
+          format: int64
+          minimum: 0
+        missing:
+          description: The number of missing values in the attribute.
+          type: integer
+          format: int64
+          minimum: 0
+        max_length:
+          description: The maximum length of the attribute for `text` attributes.
+          type: integer
+          format: int32
+          minimum: 0
+
     QueryHistoryPage:
       description: The response of the GET /connections/{id}/history/list endpoint.
       type: object

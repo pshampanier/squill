@@ -24,6 +24,9 @@ pub const ENV_VAR_LOG: &str = "SQUILL_LOG";
 /// The key used to store the schema of the result set for queries with `with_result_set` set to `true`.
 pub const QUERY_METADATA_SCHEMA: &str = "schema";
 
+/// The key used to store the statistics of the result set for queries with `with_stats` set to `true`.
+pub const QUERY_METADATA_STATS: &str = "stats";
+
 /// Windows reserved names.
 /// Source: <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file>
 pub const WINDOWS_RESERVED_NAMES: [&str; 26] = [

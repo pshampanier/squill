@@ -156,3 +156,36 @@ pub struct QueryHistoryPage {
     /// The list of queries in the history.
     pub queries: Vec<QueryExecution>,
 }
+
+/// The statistics about the data of a field across a result set.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
+pub struct FieldStatistics {
+    /// The maximum value of the attribute (see `min` for supported data types).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+
+    /// The maximum length of the attribute for `text` attributes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_length: Option<u32>,
+
+    /// The minimum value of the attribute.
+    /// Only present if the attribute has a numeric representation (this include date, datetime).
+    /// The following [DataType](https://arrow.apache.org/docs/format/Columnar.html#data-type) are currently
+    /// supported:
+    /// - Int
+    /// - Floating Point
+    /// - Decimal
+    /// - Date: The number of days since the UNIX epoch.
+    /// - Time: A number since midnight (precision depending on the time unit of the field).
+    /// - Timestamp: The number since the UNIX epoch (precision depending on the time unit of the field, always UTC).
+    /// - Duration: A number (precision depending on the time unit of the field)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+
+    /// The number of missing values in the attribute.
+    pub missing: u64,
+
+    /// The number of unique values in the attribute.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unique: Option<u64>,
+}

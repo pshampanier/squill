@@ -1,7 +1,7 @@
+use crate::models::queries::FieldStatistics;
 use crate::models::QueryExecutionStatus;
 use crate::server::notification_channels::PushNotificationService;
 use crate::tasks::statistics::collect_record_batch_stats;
-use crate::tasks::statistics::{merge_column_stats, ColumnStats};
 use crate::utils::constants::USER_HISTORY_DIRNAME;
 use crate::utils::parquet::RecordBatchWriter;
 use crate::{models::QueryExecution, server::state::ServerState};
@@ -47,7 +47,7 @@ use uuid::Uuid;
 struct PipelinedRecordBatch {
     offset: usize,
     record_batch: RecordBatch,
-    columns_stats: Vec<Option<Box<dyn ColumnStats>>>,
+    fields_stats: Vec<FieldStatistics>,
 }
 
 enum QueryPipelineMessage {
@@ -89,9 +89,8 @@ fn compute_statistics_task(
     record_batch: RecordBatch,
 ) -> BoxFuture<'static, Result<()>> {
     Box::pin(async move {
-        let columns_stats = collect_record_batch_stats(&record_batch);
-        tx.send(QueryPipelineMessage::RecordBatch(PipelinedRecordBatch { offset, record_batch, columns_stats }))
-            .await?;
+        let fields_stats = collect_record_batch_stats(&record_batch);
+        tx.send(QueryPipelineMessage::RecordBatch(PipelinedRecordBatch { offset, record_batch, fields_stats })).await?;
         Ok(())
     })
 }
@@ -263,7 +262,7 @@ async fn write_query_result_set(
 
     // The statistics of the columns of the record batches.
     // This is a merge of the statistics from all the record batches written to disk so far.
-    let mut columns_stats: Vec<Option<Box<dyn ColumnStats>>> = vec![];
+    let mut fields_stats: Option<Vec<FieldStatistics>> = None;
 
     // The status of the query should not be updated too frequently. We will update the status no more than once every
     // second.
@@ -288,7 +287,15 @@ async fn write_query_result_set(
                 //
                 // New batch ready
                 //
-                merge_column_stats(&mut columns_stats, &new_batch.columns_stats)?;
+
+                // Merging the statistics of the new batch with the existing statistics
+                if let Some(fields_stats) = &mut fields_stats {
+                    for (existing_stat, new_stat) in fields_stats.iter_mut().zip(new_batch.fields_stats) {
+                        existing_stat.merge(&new_stat);
+                    }
+                } else {
+                    fields_stats = Some(new_batch.fields_stats);
+                }
 
                 // Batches are not guaranteed to be received in the correct order. We need to sort them before writing
                 // them to disk.
@@ -311,12 +318,16 @@ async fn write_query_result_set(
 
                 if last_status_update.elapsed() > refresh_interval {
                     // Update the status of the query execution
+                    let metadata = fields_stats
+                        .as_ref()
+                        .map_or_else(|| Ok(query.metadata.clone()), |stats| query.metadata_with_stats(stats))?;
                     if let Some(updated_query) = update_query_history(
                         &state,
                         session_id,
                         QueryExecution {
                             affected_rows: processed_rows as u64,
                             storage_bytes: record_batch_writer.written_bytes as u64,
+                            metadata,
                             ..query
                         },
                     )
@@ -347,12 +358,16 @@ async fn write_query_result_set(
     record_batch_writer.close().await?;
 
     // Update the query with the final values
+    let metadata =
+        fields_stats.as_ref().map_or_else(|| Ok(query.metadata.clone()), |stats| query.metadata_with_stats(stats))?;
+
     update_query_history(
         &state,
         session_id,
         QueryExecution {
             affected_rows: processed_rows as u64,
             storage_bytes: record_batch_writer.written_bytes as u64,
+            metadata,
             ..query
         },
     )
@@ -386,63 +401,67 @@ async fn update_query_history(
 
 #[cfg(test)]
 mod tests {
-    use std::{collections::HashMap, sync::Arc};
 
     use super::*;
+    use crate::models;
     use crate::{server::state::ServerState, utils::tests};
     use arrow_array::{Int32Array, StringArray};
     use arrow_schema::{DataType, Field, Schema};
+    use resources::catalog;
+    use resources::queries;
+    use resources::users;
+    use std::sync::Arc;
     use tokio::sync::mpsc;
-    use uuid::Uuid;
+    use tokio_test::assert_ok;
 
     #[tokio::test]
     async fn test_write_query_result_set() {
-        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        //
+        // setup
+        //
+        let (_base_dir, conn_pool) = assert_ok!(tests::setup().await);
+        let mut conn = assert_ok!(conn_pool.get().await);
         let state = ServerState::new(conn_pool);
-        let _ = state.start().await;
+        state.start().await;
+        let username = users::local_username();
+        let user = assert_ok!(users::get_by_username(&mut conn, username).await);
+        let security_token = state.add_user_session(username, user.user_id);
         let (tx, rx) = mpsc::channel::<QueryPipelineMessage>(10);
-        let session_id = Uuid::nil();
-        let query_id = QueryExecution {
-            id: Uuid::new_v4(),
-            connection_id: Uuid::nil(),
-            user_id: Uuid::nil(),
-            query: String::new(),
-            origin: String::new(),
-            created_at: chrono::Utc::now(),
-            status: QueryExecutionStatus::Running,
-            revision: 0,
-            executed_at: None,
-            execution_time: 0.0,
-            affected_rows: 0,
-            error: None,
-            with_result_set: true,
-            storage_bytes: 0,
-            metadata: HashMap::new(),
-        };
-        let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query_id));
+        let session_id = security_token.session_id;
+        let connection = models::Connection { owner_user_id: security_token.user_id, ..Default::default() };
+        let connection_id = assert_ok!(catalog::add(&mut conn, &connection).await).id;
+        let query = assert_ok!(
+            queries::create(&mut conn, connection_id, "origin", security_token.user_id, "SELECT 1", true).await
+        );
 
-        let schema = Arc::new(Schema::new(vec![
-            Field::new("a", DataType::Int32, false),
-            Field::new("b", DataType::Utf8, false),
-        ]));
+        let record_batch = assert_ok!(RecordBatch::try_new(
+            Arc::new(Schema::new(vec![
+                Field::new("a", DataType::Int32, false),
+                Field::new("b", DataType::Utf8, false),
+            ])),
+            vec![
+                Arc::new(Int32Array::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
+                Arc::new(StringArray::from(vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"])),
+            ],
+        ));
+        let fields_stats = collect_record_batch_stats(&record_batch);
 
-        tx.send(QueryPipelineMessage::RecordBatch(PipelinedRecordBatch {
-            offset: 0,
-            record_batch: RecordBatch::try_new(
-                schema,
-                vec![
-                    Arc::new(Int32Array::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
-                    Arc::new(StringArray::from(vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"])),
-                ],
-            )
-            .unwrap(),
-            columns_stats: vec![None, None],
-        }))
-        .await
-        .unwrap();
+        //
+        // Run the writer task
+        //
+        let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query));
+        assert_ok!(
+            tx.send(QueryPipelineMessage::RecordBatch(PipelinedRecordBatch { offset: 0, record_batch, fields_stats }))
+                .await,
+        );
+        assert_ok!(tx.send(QueryPipelineMessage::AffectedRows(10)).await);
 
-        tx.send(QueryPipelineMessage::AffectedRows(10)).await.unwrap();
-
-        let _ = writer_task.await.unwrap();
+        //
+        // Assert the result
+        //
+        let result = assert_ok!(assert_ok!(writer_task.await));
+        assert!(result.is_some());
+        let query = result.unwrap();
+        assert_eq!(query.affected_rows, 10);
     }
 }
