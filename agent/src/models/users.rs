@@ -1,4 +1,5 @@
 use crate::json_enum;
+use crate::models::user_settings::TableSettings;
 use crate::models::variables::Variable;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -48,19 +49,6 @@ impl Default for EditorSettings {
 
 json_enum!(Density, Comfortable, Compact);
 json_enum!(Dividers, None, Rows, Grid);
-
-#[derive(Serialize, Deserialize)]
-pub struct TableSettings {
-    pub show_row_numbers: bool,
-    pub density: Density,
-    pub dividers: Dividers,
-}
-
-impl Default for TableSettings {
-    fn default() -> Self {
-        Self { show_row_numbers: true, density: Density::Comfortable, dividers: Dividers::Rows }
-    }
-}
 
 #[derive(Serialize, Deserialize)]
 pub struct User {

@@ -182,14 +182,14 @@ async fn get_query_history_data(
 
 fn ipc_serialize(record_batches: Vec<RecordBatch>) -> anyhow::Result<Vec<u8>> {
     let mut buffer = Cursor::new(Vec::new());
-    {
-        let mut writer = StreamWriter::try_new(&mut buffer, &record_batches[0].schema())?;
+    if !record_batches.is_empty() {
+        let schema = record_batches[0].schema();
+        let mut writer = StreamWriter::try_new(&mut buffer, &schema)?;
         for batch in record_batches {
             writer.write(&batch)?;
         }
         writer.finish()?;
     }
-
     Ok(buffer.into_inner())
 }
 

@@ -8,6 +8,7 @@ use crate::{models::QueryExecution, server::state::ServerState};
 use crate::{resources, settings, Result};
 use anyhow::anyhow;
 use arrow_array::RecordBatch;
+use arrow_schema::SchemaRef;
 use futures::future::BoxFuture;
 use futures::StreamExt;
 use parquet::basic::Compression;
@@ -186,7 +187,7 @@ async fn execute_query_with_result_set(
     let (tx, rx) = mpsc::channel::<QueryPipelineMessage>(settings::get_max_task_queue_size());
 
     // Spawn a task to write the result set into parquet files & send a notifications to the client
-    let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query.clone()));
+    let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, schema, query.clone()));
 
     // Read the record batches from the stream and send then to the stats collector task
     let res = {
@@ -239,6 +240,7 @@ async fn write_query_result_set(
     state: ServerState,
     session_id: Uuid,
     mut rx: mpsc::Receiver<QueryPipelineMessage>,
+    schema: SchemaRef,
     query: QueryExecution,
 ) -> Result<Option<QueryExecution>> {
     let mut query = query;
@@ -318,9 +320,10 @@ async fn write_query_result_set(
 
                 if last_status_update.elapsed() > refresh_interval {
                     // Update the status of the query execution
-                    let metadata = fields_stats
-                        .as_ref()
-                        .map_or_else(|| Ok(query.metadata.clone()), |stats| query.metadata_with_stats(stats))?;
+                    let metadata = fields_stats.as_ref().map_or_else(
+                        || Ok(query.metadata.clone()),
+                        |stats| query.metadata_with_stats(&schema, stats),
+                    )?;
                     if let Some(updated_query) = update_query_history(
                         &state,
                         session_id,
@@ -358,20 +361,16 @@ async fn write_query_result_set(
     record_batch_writer.close().await?;
 
     // Update the query with the final values
-    let metadata =
-        fields_stats.as_ref().map_or_else(|| Ok(query.metadata.clone()), |stats| query.metadata_with_stats(stats))?;
+    let metadata = fields_stats
+        .as_ref()
+        .map_or_else(|| Ok(query.metadata.clone()), |stats| query.metadata_with_stats(&schema, stats))?;
 
-    update_query_history(
-        &state,
-        session_id,
-        QueryExecution {
-            affected_rows: processed_rows as u64,
-            storage_bytes: record_batch_writer.written_bytes as u64,
-            metadata,
-            ..query
-        },
-    )
-    .await
+    Ok(Some(QueryExecution {
+        affected_rows: processed_rows as u64,
+        storage_bytes: record_batch_writer.written_bytes as u64,
+        metadata,
+        ..query
+    }))
 }
 
 /// Update the query history with given query.
@@ -434,11 +433,12 @@ mod tests {
             queries::create(&mut conn, connection_id, "origin", security_token.user_id, "SELECT 1", true).await
         );
 
+        let schema = Arc::new(Schema::new(vec![
+            Field::new("a", DataType::Int32, false),
+            Field::new("b", DataType::Utf8, false),
+        ]));
         let record_batch = assert_ok!(RecordBatch::try_new(
-            Arc::new(Schema::new(vec![
-                Field::new("a", DataType::Int32, false),
-                Field::new("b", DataType::Utf8, false),
-            ])),
+            schema.clone(),
             vec![
                 Arc::new(Int32Array::from(vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10])),
                 Arc::new(StringArray::from(vec!["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"])),
@@ -449,7 +449,7 @@ mod tests {
         //
         // Run the writer task
         //
-        let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, query));
+        let writer_task = tokio::task::spawn(write_query_result_set(state.clone(), session_id, rx, schema, query));
         assert_ok!(
             tx.send(QueryPipelineMessage::RecordBatch(PipelinedRecordBatch { offset: 0, record_batch, fields_stats }))
                 .await,

@@ -1,3 +1,4 @@
+pub mod arrow_json;
 pub mod constants;
 pub mod macros;
 pub mod parquet;

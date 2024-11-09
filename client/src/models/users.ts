@@ -1,6 +1,7 @@
 import { formatRegExp, serializable } from "@/utils/serializable";
 import { immerable } from "immer";
-import { Variable } from "./variables";
+import { Variable } from "@/models/variables";
+import { TableSettings } from "@/models/user-settings";
 
 const COLOR_SCHEME = ["light", "dark", "auto"] as const;
 const MINIMAP = ["show", "hide", "auto"] as const;
@@ -20,29 +21,6 @@ export class EditorSettings {
   renderWhitespace: RenderWhitespaceValue = "none";
 
   constructor(object?: Partial<EditorSettings>) {
-    Object.assign(this, object ?? {});
-  }
-}
-
-const DENSITY = ["comfortable", "compact"] as const;
-const DIVIDERS = ["none", "rows", "grid"] as const;
-
-export type Density = (typeof DENSITY)[number];
-export type Dividers = (typeof DIVIDERS)[number];
-
-export class TableSettings {
-  [immerable] = true;
-
-  @serializable("boolean", { snakeCase: "property" })
-  showRowNumbers: boolean = true;
-
-  @serializable("string", { snakeCase: "property", format: formatRegExp(DENSITY), trim: true })
-  density: Density = "comfortable";
-
-  @serializable("string", { snakeCase: "property", format: formatRegExp(DIVIDERS), trim: true })
-  dividers: Dividers = "rows";
-
-  constructor(object?: Partial<TableSettings>) {
     Object.assign(this, object ?? {});
   }
 }

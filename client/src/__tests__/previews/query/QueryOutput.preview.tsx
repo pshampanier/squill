@@ -3,9 +3,7 @@ import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
 import { QueryExecution } from "@/models/queries";
 import { addTime } from "@/utils/time";
-import { DataframeSchema, DataframeAttribute } from "@/models/dataframes";
-import { MemoryDataFrame } from "@/utils/dataframe";
-import TableView from "@/components/dataset/table-view";
+import { useUserStore } from "@/stores/UserStore";
 
 const QUERY_ERROR = new QueryExecution({
   query: `SELECT 
@@ -45,43 +43,6 @@ const QUERY_SUCCESS = new QueryExecution({
   executionTime: 32.365002,
 });
 
-const QUERY_SUCCESS_RESULT = `
-  "680","HL Road Frame - Black, 58","FR-R92B-58","True","True","Black","1431.50","2.24","LB "
-  "706","HL Road Frame - Green, 58","FR-R92G-58","True","True","Green","1431.50","2.24","LB "
-  "717","HL Road Frame - Red, 62","FR-R92R-62","True","True","Red","1431.50","2.30","LB "
-  "718","HL Road Frame - Red, 44","FR-R92R-44","True","True","Red","1431.50","2.12","LB "
-  "719","HL Road Frame - Red, 48","FR-R92R-48","True","True","Red","1431.50","2.16","LB "
-  "720","HL Road Frame - Red, 52","FR-R92R-52","True","True","Red","1431.50","2.20","LB "
-  "721","HL Road Frame - Red, 56","FR-R92R-56","True","True","Red","1431.50","2.24","LB "
-  "722","LL Road Frame - Black, 58","FR-R38B-58","True","True","Black","337.22","2.46","LB "
-  "723","LL Road Frame - Black, 60","FR-R38B-60","True","True","Black","337.22","2.48","LB "
-  "724","LL Road Frame - Black, 62","FR-R38B-62","True","True","Black","337.22","2.50","LB "`
-  .split("\n")
-  .filter((line) => line.trim() !== "")
-  .map((line) =>
-    JSON.parse(
-      `[${line
-        .replace(/,"True",/g, ',"true",')
-        .replace(/,"False",/g, ',"false",')
-        .replace(/"NULL"/g, "null")}]`,
-    ),
-  );
-
-const QUERY_SUCCESS_DATASET_SCHEMA = new DataframeSchema({
-  id: "query",
-  attributes: [
-    new DataframeAttribute({ name: "productid", type: "text", format: { name: "text" } }),
-    new DataframeAttribute({ name: "name", type: "text", format: { name: "text" } }),
-    new DataframeAttribute({ name: "productnumber", type: "text", format: { name: "text" } }),
-    new DataframeAttribute({ name: "makeflag", type: "boolean", format: { name: "boolean" } }),
-    new DataframeAttribute({ name: "finishedgoodsflag", type: "boolean", format: { name: "boolean" } }),
-    new DataframeAttribute({ name: "color", type: "text", format: { name: "color" } }),
-    new DataframeAttribute({ name: "listprice", type: "float32", format: { name: "money" } }),
-    new DataframeAttribute({ name: "weight", type: "float32", format: { name: "float" } }),
-    new DataframeAttribute({ name: "weightunitmeasurecode", type: "text", format: { name: "text" } }),
-  ],
-});
-
 const QUERY_RUNNING = new QueryExecution({
   query: `SELECT * FROM hotels;`,
   executedAt: addTime(new Date(), -30, "second"),
@@ -97,7 +58,8 @@ const QUERY_PENDING = new QueryExecution({
 });
 
 export default function QueryOutputPreview() {
-  const successDataFrame = new MemoryDataFrame("products", QUERY_SUCCESS_DATASET_SCHEMA, QUERY_SUCCESS_RESULT);
+  const settings = useUserStore((state) => state.settings?.tableSettings);
+
   return (
     <>
       {/*
@@ -109,7 +71,7 @@ export default function QueryOutputPreview() {
           When a error occurred during the execution, line numbers are displayed along to the error message.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" query={QUERY_ERROR} />
+          <QueryOutput className="w-full" query={QUERY_ERROR} settings={settings} />
         </PreviewBox>
       </Preview>
       {/*
@@ -121,7 +83,7 @@ export default function QueryOutputPreview() {
           When a error occurred during the execution, line numbers are displayed along to the error message.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" query={QUERY_CANCELLED} />
+          <QueryOutput className="w-full" query={QUERY_CANCELLED} settings={settings} />
         </PreviewBox>
       </Preview>
 
@@ -134,8 +96,7 @@ export default function QueryOutputPreview() {
           When the query is executed successfully, the execution time is displayed along with the query.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" query={QUERY_SUCCESS} />
-          <TableView className="h-56" dataframe={successDataFrame} />
+          <QueryOutput className="w-full" query={QUERY_SUCCESS} settings={settings} />
         </PreviewBox>
       </Preview>
       {/*
@@ -148,7 +109,7 @@ export default function QueryOutputPreview() {
           every second.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" query={QUERY_RUNNING} />
+          <QueryOutput className="w-full" query={QUERY_RUNNING} settings={settings} />
         </PreviewBox>
       </Preview>
       {/*
@@ -161,7 +122,7 @@ export default function QueryOutputPreview() {
           every second.
         </Preview.Description>
         <PreviewBox className="items-center">
-          <QueryOutput className="w-full" query={QUERY_PENDING} />
+          <QueryOutput className="w-full" query={QUERY_PENDING} settings={settings} />
         </PreviewBox>
       </Preview>
     </>

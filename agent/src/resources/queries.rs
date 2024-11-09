@@ -1,13 +1,19 @@
 use crate::models::queries::{FieldStatistics, QueryExecution, QueryExecutionError, QueryExecutionStatus};
-use crate::utils::constants::{QUERY_METADATA_SCHEMA, QUERY_METADATA_STATS, USER_HISTORY_DIRNAME};
+use crate::utils::arrow_json::schema_to_json;
+use crate::utils::constants::{
+    QUERY_METADATA_FIELD_MAX_LENGTH, QUERY_METADATA_FIELD_MAX_VALUE, QUERY_METADATA_FIELD_MIN_VALUE,
+    QUERY_METADATA_FIELD_MISSING_VALUES, QUERY_METADATA_FIELD_UNIQUE_VALUES, QUERY_METADATA_SCHEMA,
+    USER_HISTORY_DIRNAME,
+};
 use crate::utils::parquet::RecordBatchReader;
 use crate::{resources, settings};
 use crate::{Result, UserError};
 use arrow_array::RecordBatch;
-use arrow_schema::Schema;
+use arrow_schema::{Field, Schema};
 use futures::StreamExt;
 use squill_drivers::{async_conn::Connection, params, Row};
 use std::collections::HashMap;
+use std::sync::Arc;
 use uuid::Uuid;
 
 impl QueryExecution {
@@ -17,19 +23,43 @@ impl QueryExecution {
     /// The schema is stored using the key `schema` and the value is the JSON representation of the schema using
     /// [Apache Arrow JSON test data format](https://github.com/apache/arrow/blob/master/docs/source/format/Integration.rst#json-test-data-format).
     pub fn metadata_with_schema(&self, schema: &Schema) -> Result<HashMap<String, String>> {
-        let value = arrow_integration_test::schema_to_json(schema);
-        let string = serde_json::to_string_pretty(&value)?;
+        let value = schema_to_json(schema);
+        let string = serde_json::to_string(&value)?;
         let mut metadata = self.metadata.clone();
         metadata.insert(QUERY_METADATA_SCHEMA.to_string(), string);
         Ok(metadata)
     }
 
-    /// Returns the current metadata of the query with the given statistics
-    pub fn metadata_with_stats(&self, stats: &Vec<FieldStatistics>) -> Result<HashMap<String, String>> {
-        let string = serde_json::to_string_pretty(stats)?;
-        let mut metadata = self.metadata.clone();
-        metadata.insert(QUERY_METADATA_STATS.to_string(), string);
-        Ok(metadata)
+    /// Returns the current metadata of the query with a schema including the given statistics
+    pub fn metadata_with_stats(&self, schema: &Schema, stats: &[FieldStatistics]) -> Result<HashMap<String, String>> {
+        if schema.fields().len() != stats.len() {
+            return Err(UserError::InternalError("Schema fields and stats length mismatch".to_string()).into());
+        }
+        let fields: Vec<Arc<Field>> = schema
+            .fields()
+            .iter()
+            .zip(stats.iter())
+            .map(|(field, stat)| {
+                let mut metadata = field.metadata().clone();
+                if let Some(min_value) = stat.min {
+                    metadata.insert(QUERY_METADATA_FIELD_MIN_VALUE.to_string(), min_value.to_string());
+                }
+                if let Some(max_value) = stat.max {
+                    metadata.insert(QUERY_METADATA_FIELD_MAX_VALUE.to_string(), max_value.to_string());
+                }
+                if let Some(max_length) = stat.max_length {
+                    metadata.insert(QUERY_METADATA_FIELD_MAX_LENGTH.to_string(), max_length.to_string());
+                }
+                if let Some(unique) = stat.unique {
+                    metadata.insert(QUERY_METADATA_FIELD_UNIQUE_VALUES.to_string(), unique.to_string());
+                }
+                metadata.insert(QUERY_METADATA_FIELD_MISSING_VALUES.to_string(), stat.missing.to_string());
+                return Arc::new(
+                    Field::new(field.name(), field.data_type().clone(), field.is_nullable()).with_metadata(metadata),
+                );
+            })
+            .collect::<Vec<_>>();
+        self.metadata_with_schema(&Schema::new(fields).with_metadata(schema.metadata().clone()))
     }
 }
 

@@ -1,3 +1,4 @@
+use crate::models::user_settings::{NullValues, TableDensity, TableDividers, TableOverscan, TableSettings};
 use crate::models::users::{User, UserSettings};
 use crate::models::{Collection, ResourceType, SpecialCollection};
 use crate::resources::catalog;
@@ -9,6 +10,19 @@ use lazy_static::lazy_static;
 use squill_drivers::async_conn::Connection;
 use squill_drivers::{execute, params};
 use uuid::Uuid;
+
+impl Default for TableSettings {
+    fn default() -> Self {
+        Self {
+            show_row_numbers: true,
+            density: TableDensity::Comfortable,
+            dividers: TableDividers::Rows,
+            null_values: NullValues::Dash,
+            overscan: TableOverscan::Medium,
+            max_length: 50,
+        }
+    }
+}
 
 /// The special username used for a user running the agent locally.
 ///

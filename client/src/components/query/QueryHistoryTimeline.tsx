@@ -14,6 +14,7 @@ import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
 import Spinner from "@/components/core/Spinner";
 import { useEffect, useReducer, Dispatch, useState } from "react";
+import { useUserStore } from "@/stores/UserStore";
 
 export interface QueryHistoryAction {
   type: "update" | "remove" | "clear";
@@ -216,6 +217,7 @@ function QueryHistoryTimelineItem({
   queryExecution: QueryExecution;
   dateClassification: DateClassification;
 }) {
+  const settings = useUserStore((state) => state.settings?.tableSettings);
   const status: {
     severity: "message" | "info" | "success" | "warning" | "danger";
     label: string;
@@ -273,7 +275,7 @@ function QueryHistoryTimelineItem({
 
   return (
     <Timeline.Item {...status}>
-      <QueryOutput query={queryExecution} />
+      <QueryOutput query={queryExecution} settings={settings} />
     </Timeline.Item>
   );
 }

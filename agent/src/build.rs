@@ -55,17 +55,17 @@ fn main() {
     rust_codegen!("queries");
     rust_codegen!("auth");
     rust_codegen!("push_notifications");
-    rust_codegen!("dataframes");
     rust_codegen!("drivers");
     rust_codegen!("connections");
     rust_codegen!("resources");
     rust_codegen!("collections");
+    rust_codegen!("user_settings");
     typescript_codegen!("queries");
     typescript_codegen!("auth");
     typescript_codegen!("push-notifications");
-    typescript_codegen!("dataframes");
     typescript_codegen!("drivers");
     typescript_codegen!("connections");
     typescript_codegen!("collections");
     typescript_codegen!("resources");
+    typescript_codegen!("user-settings");
 }

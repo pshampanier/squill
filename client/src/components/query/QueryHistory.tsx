@@ -1,16 +1,50 @@
 import cx from "classix";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
-import { Dispatch, memo, useEffect, useReducer, useRef } from "react";
+import { Dispatch, memo, useCallback, useEffect, useReducer, useRef } from "react";
 import { DateClassification, generateDateClassifier } from "@/utils/time";
 import { secondary as colors } from "@/utils/colors";
 import { QueryExecution } from "@/models/queries";
 import QueryOutput from "@/components/query/QueryOutput";
 import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
+import { useUserStore } from "@/stores/UserStore";
+import Connections from "@/resources/connections";
+import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
+import { TableSettings } from "@/models/user-settings";
+import { QueryCache } from "@/utils/query-cache";
+
+type Layout = {
+  height?: number;
+  padding?: number;
+  marginTop?: number;
+  lineHeight?: number;
+};
+
+function calcHeight(layout: Layout, lines: number) {
+  if (!lines) {
+    return 0;
+  } else if (layout.height) {
+    return layout.height;
+  } else {
+    return (layout.padding ?? 0) * 2 + (layout.marginTop ?? 0) + layout.lineHeight * lines;
+  }
+}
+
+// FIXME: This should use the settings.
+function calcRowsHeight(query: QueryExecution, _settings: TableSettings) {
+  const schema = query.metadata?.[QUERY_METADATA_SCHEMA];
+  if (schema) {
+    const header = 26;
+    const rows = Math.min(query.affectedRows, 20) * 20; /* row height */
+    return 8 /* mt-2 */ + header + rows;
+  } else {
+    return 0;
+  }
+}
 
 /**
  * Memoized version of QueryOutput
  */
-const MemoQueryOutput = memo(QueryOutput, (prev, next) => {
+const MemoizedQueryOutput = memo(QueryOutput, (prev, next) => {
   return prev.query.revision === next.query.revision;
 });
 
@@ -19,6 +53,8 @@ const QUERY_HEADER_DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yeste
 interface QueryHistoryState {
   revision: number;
   queries: Map<string, QueryExecution>;
+  cache: QueryCache;
+  lastAction: null | "update" | "remove" | "set";
 }
 
 export interface QueryHistoryAction {
@@ -43,9 +79,21 @@ function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHis
         const previousQuery = queries.get(query.id);
         if (!previousQuery || query.revision > previousQuery.revision) {
           queries.set(query.id, query);
+          if (state.cache.has(query.id)) {
+            if (query.storageBytes > 0 && (!previousQuery || previousQuery.storageBytes === 0)) {
+              state.cache.fetch(query.id, () => {
+                return Connections.getQueryExecutionData(
+                  query.connectionId,
+                  query.id,
+                  0,
+                  Math.min(20, query.affectedRows),
+                );
+              });
+            }
+          }
         }
       });
-      return { revision: state.revision + 1, queries };
+      return { revision: state.revision + 1, queries, cache: state.cache, lastAction: action.type };
     }
 
     /**
@@ -56,7 +104,7 @@ function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHis
       action.queries?.forEach((query) => {
         queries.delete(query.id);
       });
-      return { revision: state.revision + 1, queries };
+      return { revision: state.revision + 1, queries, cache: state.cache, lastAction: action.type };
     }
 
     /**
@@ -67,7 +115,7 @@ function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHis
       action.queries?.forEach((query) => {
         queries.set(query.id, query);
       });
-      return { revision: state.revision + 1, queries };
+      return { revision: state.revision + 1, queries, cache: state.cache, lastAction: action.type };
     }
   }
 }
@@ -76,26 +124,19 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
   //
   // States & Refs
   //
+  const settings = useUserStore((state) => state.settings?.tableSettings);
   const rootRef = useRef<HTMLDivElement>(null);
-  const [history, dispatch] = useReducer(reducer, {
-    revision: 1,
-    queries: new Map(),
-  });
+  const [history, dispatch] = useReducer<(state: QueryHistoryState, action: QueryHistoryAction) => QueryHistoryState>(
+    reducer,
+    {
+      revision: 1,
+      queries: new Map(),
+      cache: new QueryCache(),
+      lastAction: null,
+    },
+  );
 
   const historyItems = getSortedHistory(history);
-
-  const layout = {
-    padding: 8,
-    header: 20,
-    body: {
-      padding: 8,
-      statementLineHeight: 18,
-      error: {
-        padding: 8,
-        lineHeight: 16,
-      },
-    },
-  };
 
   const virtualizer = useVirtualizer({
     count: historyItems.length,
@@ -103,13 +144,13 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
     getScrollElement: () => rootRef.current,
     estimateSize: (index: number) => {
       const query = historyItems[index];
-      let estimateSize = layout.header + (layout.padding + layout.body.padding) * 2;
-      estimateSize += (query.query?.split("\n").length ?? 0) * layout.body.statementLineHeight;
-      if (query.error) {
-        estimateSize +=
-          layout.body.error.padding * 2 + (query.error.message?.split("\n").length ?? 0) * layout.body.error.lineHeight;
-      }
-      return estimateSize;
+      const header = calcHeight({ height: 32 }, 1);
+      const statement = calcHeight({ lineHeight: 18 }, query.query?.split("\n").length);
+      const error = calcHeight({ marginTop: 8, padding: 8, lineHeight: 16 }, query.error?.message?.split("\n").length);
+      const rows = calcRowsHeight(query, settings);
+      const estimatedSize = header + (8 /* padding */ + statement + error + rows + 8); /* padding */
+      console.debug("QueryHistory (sizing)", { index, estimatedSize, header, statement, error, rows });
+      return estimatedSize;
     },
     getItemKey(index) {
       return historyItems[index].id;
@@ -124,9 +165,28 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
     // scroll to the bottom when first initialized
     rootRef.current?.scrollTo({
       top: rootRef.current?.scrollHeight,
-      behavior: "instant",
+      behavior: history.lastAction === "set" ? "instant" : "smooth",
     });
   }, [history]);
+
+  const handleOnLoad = useCallback((query: QueryExecution) => {
+    const cache = history.cache;
+    const ready = query.storageBytes > 0;
+    if (!cache.has(query.id)) {
+      cache.set(query.id);
+    }
+    if (ready) {
+      return cache.get(query.id, () => {
+        return Connections.getQueryExecutionData(query.connectionId, query.id, 0, Math.min(20, query.affectedRows));
+      });
+    } else {
+      return cache.getPromise(query.id);
+    }
+  }, []);
+
+  const handleOnCancel = useCallback((key: string) => {
+    history.cache.cancel(key);
+  }, []);
 
   // Because we are potentially going to process a large number of queries, we can optimize a bit by using reusing the
   // same date classifier for all queries.
@@ -168,7 +228,13 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
                 affectedRows={query.affectedRows}
                 numberFormatter={numberFormat}
               />
-              <MemoQueryOutput query={query} className={classes.output} />
+              <MemoizedQueryOutput
+                query={query}
+                className={classes.output}
+                settings={settings}
+                onLoad={handleOnLoad}
+                onCancel={handleOnCancel}
+              />
             </div>
           );
         })}

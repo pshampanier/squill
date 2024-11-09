@@ -35,7 +35,7 @@ export default function QueryExecutionHeader({
   return (
     <ul
       className={cx(
-        "query-header list-none flex flex-row items-center h-full text-xs select-none whitespace-nowrap",
+        "query-header list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap",
         className,
       )}
       data-component="query-execution-header"

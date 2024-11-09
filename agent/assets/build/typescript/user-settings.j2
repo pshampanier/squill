@@ -1,0 +1,12 @@
+{% from "typescript/macros" import enum, object -%}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ ********************************************************************/
+import { formatRegExp, serializable } from "@/utils/serializable";
+import { immerable } from "immer";
+
+{{ enum("TableDensity", components.schemas.TableDensity) }}
+{{ enum("TableDividers", components.schemas.TableDividers) }}
+{{ enum("TableOverscan", components.schemas.TableOverscan) }}
+{{ enum("NullValues", components.schemas.NullValues) }}
+{{ object("TableSettings", components.schemas.TableSettings) }}

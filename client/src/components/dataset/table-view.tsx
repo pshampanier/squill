@@ -1,23 +1,94 @@
 import cx from "classix";
-import { DataframeAttributeFormat } from "@/models/dataframes";
-import { primary as colors, secondary } from "@/utils/colors";
-import { DataFrame, DataFrameSlice } from "@/utils/dataframe";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { UseQueryResult, keepPreviousData, useQueries } from "@tanstack/react-query";
+import { DataFrame } from "@/utils/dataframe";
+import { Format } from "@/utils/format";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Duration } from "@/utils/duration";
-import TrueIcon from "@/icons/true.svg?react";
-import FalseIcon from "@/icons/false.svg?react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { primary as colors } from "@/utils/colors";
+import { NullValues, TableSettings } from "@/models/user-settings";
 import ResizePanel from "@/components/core/ResizePanel";
-import { TableSettings } from "@/models/users";
 
-/**
- * A row of data to be displayed by the component.
- *
- * The row is an array of strings where each string represents a value to be displayed in a table cell.
- * This component does not perform any formatting of the data, it is up to the caller to format the data as needed.
- */
-type Row = string[];
+export type ColumnAlignment = "left" | "center" | "right";
+
+type Dimensions = {
+  /**
+   * The width of a character in pixels.
+   */
+  charWidth: number;
+
+  /**
+   * The height of a line in pixels.
+   */
+  lineHeight: number;
+
+  /**
+   * The width of the row number column in pixels.
+   */
+  rowNumWidth: number;
+
+  /**
+   * The X padding of the cell in pixels (include both left and right padding).
+   */
+  px: number;
+};
+
+export interface TableViewComponent {
+  /**
+   * Change the columns displayed in the table.
+   */
+  setColumns(columns: TableViewColumn[]): void;
+
+  /**
+   * Change the rows displayed in the table.
+   */
+  setRows(rows: DataFrame): void;
+
+  /**
+   * Change the settings of the table.
+   */
+  setSettings(settings: TableSettings): void;
+
+  /**
+   * Indicate that the dataframe to be displayed is fetching some data.
+   */
+  setFetching(fetching: boolean): void;
+}
+
+export type TableViewColumn = {
+  /**
+   * The name of the column in the dataframe.
+   */
+  name: string;
+
+  /**
+   * The title of the column.
+   */
+  title: string;
+
+  /**
+   * The interface to use to format a value for the column.
+   */
+  format: Format;
+
+  /**
+   * The width of the column in pixels.
+   */
+  width?: number;
+
+  /**
+   * The maximum length of the column (number of characters of the text representation of the value).
+   */
+  maxLength?: number;
+
+  /**
+   * The alignment of the column.
+   */
+  align: ColumnAlignment;
+
+  /**
+   * The index of the column in the dataframe.
+   */
+  dataIndex: number;
+};
 
 type TableViewProps = {
   /**
@@ -26,553 +97,390 @@ type TableViewProps = {
   className?: string;
 
   /**
-   * The dataset to display in the table.
+   * The rows to display in the table.
+   */
+  rows?: DataFrame;
+
+  /**
+   * The columns to display in the table.
+   */
+  columns?: TableViewColumn[];
+
+  /**
+   * The settings to apply to the table.
+   */
+  settings: TableSettings;
+
+  /**
+   * A callback called when the component is mounted.
    *
-   * The dataset does not need to be loaded, the table will load the rows as needed.
+   * That callback provides the component instance as an argument to the parent component, allowing the parent component
+   * to interact with the component later on.
    */
-  dataframe: DataFrame<Row>;
-
-  /**
-   * The number of rows to fetch at a time (default 1000).
-   */
-  fetchSize?: number;
-
-  /**
-   * The number of rows to render outside the viewport.
-   */
-  overscan?: number;
-
-  settings?: TableSettings;
-
-  /**
-   * A callback to be called once a column has been resized.
-   */
-  onResize?: ResizeObserver;
+  onMount?: (component: TableViewComponent) => void;
 };
 
-type Column = {
-  title: string;
-
-  /**
-   * The format of the column
-   */
-  format: DataframeAttributeFormat;
-
-  /**
-   * The width of the column (in pixels)
-   */
-  width: number;
-
-  /**
-   * Whether the column should be sticky
-   */
-  sticky: boolean;
-
-  /**
-   * The classes to apply to the cells displaying the column
-   */
-  cellClasses: ColumnClasses;
-};
-
-type ColumnClasses = {
-  self: string;
-  div: string;
-};
-
-type QueryResult = {
-  data: Array<DataFrameSlice<Row>>;
-  isFetching: boolean;
-};
-
-function combineUseQueryResult(results: UseQueryResult<DataFrameSlice<Row>, Error>[]) {
-  // Combine the results of the queries into a single object
-  // We are keeping only the data that are available and the fetching state
-  console.debug("combining results", results);
-  return {
-    data: results.filter((r) => r.data).map((r) => r.data),
-    isFetching: results.some((r) => r.isFetching),
-  };
-}
-
-/**
- * A table view component that displays a dataset in a table.
- *
- * The cells in the table are rendered based on the format of the column.
- * The table will load the rows as needed and display a placeholder at the end of the table until all the rows have been
- * loaded.
- *
- * Inspired by https://tanstack.com/table/latest
- */
 export default function TableView({
-  className = "text-xs",
-  dataframe,
-  fetchSize = 1000,
-  overscan = 50,
-  settings = new TableSettings({
-    showRowNumbers: true,
-    density: "comfortable",
-    dividers: "rows",
-  }),
+  className,
+  columns: defaultColumns = [],
+  rows: defaultRows,
+  settings: defaultSettings,
+  onMount,
 }: TableViewProps) {
-  // The height in pixels of a row in the table
-  const estimatedRowHeight = getEstimatedRowHeight(settings);
+  //
+  // States & Refs
+  //
+  const [rows, setRows] = useState<DataFrame>(defaultRows);
+  const [columns, setColumns] = useState<TableViewColumn[]>(defaultColumns);
+  const [settings, setSettings] = useState<TableSettings>(defaultSettings);
+  const [fetching, setFetching] = useState<boolean>(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLDivElement>(null);
 
-  // The height in pixels of the entire table
-  const estimatedTotalHeight = estimatedRowHeight * (dataframe?.getSizeHint() || 0);
+  // Get the background color of the parent element
+  // This is needed to make the sticky columns opaque when scrolling horizontally
+  // This value cannot be memoized because it can change when the light/dark mode changes
+  const backgroundColor = getBackgroundColor(bodyRef.current);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [columns, setColumns] = useState<Column[]>(null);
+  // Get the dimensions that depends on the properties of the component
+  const dimensions = useMemo(() => {
+    const dimensions: Dimensions = { charWidth: 0, lineHeight: 0, rowNumWidth: 0, px: 0 };
+    const span = document.createElement("span");
+    span.className = "absolute font-mono text-xs whitespace-nowrap invisible";
+    span.textContent = "0".repeat(1000);
+    document.body.appendChild(span);
+    dimensions.charWidth = span.offsetWidth / span.textContent.length;
+    dimensions.lineHeight =
+      span.offsetHeight + (settings.density === "comfortable" ? 4 * 2 /* p-1 */ : 2 * 2) /* p-0.5 */;
+    if (settings.showRowNumbers) {
+      const maxRowNumber = rows?.getSizeHint()?.toString().length ?? 1;
+      dimensions.rowNumWidth = Math.ceil(maxRowNumber * dimensions.charWidth) + 8 /** pr-2: 8px */;
+    }
+    dimensions.px = (settings.density === "compact" ? 4 /* px-1 */ : 24) /* px-6 */ * 2;
+    document.body.removeChild(span);
+    return dimensions;
+  }, [settings.showRowNumbers, settings.density, bodyRef.current, rows?.getSizeHint()]);
 
-  // A state to force the update of the component
-  // Because the component is heavily memoized, it will not re-render when the state or property are changing. In order
-  // to avoid to duplicate the logic to update the component, we use this state to force the update when needed.
-  // It also speeds up the memoization test function since it does not need to compare all the properties.
-  const [refreshRevision, setRefreshRevision] = useState<number>(0);
+  const overscan = useMemo(() => {
+    switch (settings.overscan) {
+      case "small":
+        return { rows: 5, columns: 1 };
+      case "medium":
+        return { rows: 25, columns: 3 };
+      case "large":
+        return { rows: 125, columns: 9 };
+    }
+  }, [settings.overscan]);
 
-  /**
-   * The offsets of the slices that are currently needed to render the table, this is based on the range of rows that
-   * are currently visible in the table (including the overscan rows).
-   * This will be trigger useQueries() to fetch the data needed.
-   */
-  const [slicesOffsets, setSlicesOffsets] = useState<Array<number>>([]);
+  const nullValuesText = useMemo(() => {
+    switch (settings.nullValues) {
+      case "null_lowercase":
+        return "null";
+      case "null_uppercase":
+        return "NULL";
+      case "empty":
+        return "";
+      case "not_available_lowercase":
+        return "n/a";
+      case "not_available_uppercase":
+        return "N/A";
+      case "dash":
+        return "-";
+    }
+  }, [settings.nullValues]);
 
-  const virtualizerConfig = useMemo(
-    () => ({
-      count: dataframe?.getSizeHint() || 0,
-      estimateSize: () => estimatedRowHeight, // for accurate scrollbar dragging
-      getScrollElement: () => containerRef.current,
-      gap: 1,
-      overscan,
-    }),
-    [estimatedRowHeight],
-  );
-
-  const { getVirtualItems, calculateRange, measure } = useVirtualizer(virtualizerConfig);
-
-  const makeQueryConfig = useCallback(
-    (offset: number) => ({
-      queryKey: ["dataframe", dataframe?.getId(), offset, fetchSize],
-      queryFn: () => dataframe.getSlice(offset, fetchSize),
-      placeholderData: keepPreviousData,
-      staleTime: new Duration(1, "minute").toMilliseconds(),
-    }),
-    [],
-  );
-
-  const { data, isFetching } = useQueries<Array<DataFrameSlice<Row>>, QueryResult>({
-    queries: slicesOffsets.map(makeQueryConfig),
-    combine: combineUseQueryResult,
-  });
-
-  useEffect(() => {
-    // Get the schema of the dataset to determine the columns.
-    const columns = dataframe
-      ?.getSchema()
-      .attributes.map((attr): Partial<Column> => {
-        return {
-          title: attr.name,
-          format: attr.format,
-          width: 120,
-          sticky: false,
-        };
-      })
-      .map((column: Partial<Column>, index: number, columns: Partial<Column>[]): Column => {
-        // A second pass is needed to apply the CSS classes (because they depend on the other columns)
-        return {
-          ...column,
-          cellClasses: buildColumnClasses(column, index, columns, false, { settings }),
-        } as Column;
-      });
-    setColumns(columns);
-
-    // When the density changes, we need the virtualizer to re-measure the rows and trigger a refresh of the table.
-    measure();
-    setRefreshRevision((prev) => prev + 1);
-  }, [settings.density, settings.dividers, settings.showRowNumbers]);
-
-  /**
-   * Update the slices offsets when the range of visible rows changes.
-   *
-   * This will trigger the fetching of the data needed to render the rows in the range.
-   */
-
-  const handleRangeChange = useCallback(
-    (range: { startIndex: number; endIndex: number }) => {
-      const offsets = getSlicesOffsetsFromRange(range, overscan, dataframe.getSizeHint(), fetchSize);
-      // As long as the offsets already present in the state `slicesOffsets`, we don't need to update the state.
-      if (!offsets.every((offset) => slicesOffsets.includes(offset))) {
-        setSlicesOffsets(offsets);
+  const getColumnsWidth = useCallback(
+    (column: TableViewColumn) => {
+      let columnLength = Math.max(column.title.length, column.maxLength ?? 0, nullValuesText.length);
+      columnLength = Math.min(columnLength, settings.maxLength);
+      const calculatedWidth = Math.ceil(columnLength * dimensions.charWidth) + dimensions.px;
+      if (columnLength === column.title.length) {
+        return calculatedWidth + 4 /* resize handle */;
+      } else {
+        return calculatedWidth + 1 /* border */;
       }
     },
-    [slicesOffsets],
+    [dimensions.charWidth, dimensions.px, nullValuesText, settings.maxLength],
   );
 
-  const range = calculateRange();
-  if (range !== null) {
-    handleRangeChange(range);
-  }
+  const columnsWithSize = useMemo(() => {
+    const columnsWithSize = columns.map((column) => {
+      return {
+        ...column,
+        width: column.width ?? getColumnsWidth(column),
+      };
+    });
+    return columnsWithSize;
+  }, [columns, getColumnsWidth]);
 
-  const handleResize = useCallback((columnIndex: number, width: number) => {
-    // TODO: update the width of the column in the state
-    console.debug(`resizing column ${columnIndex} to ${width}px`);
+  const rowVirtualizer = useVirtualizer({
+    count: rows?.getSizeHint() ?? 0,
+    getScrollElement: () => bodyRef.current,
+    estimateSize: () => {
+      return dimensions.lineHeight;
+    },
+    overscan: overscan.rows,
+  });
+
+  const columnVirtualizer = useVirtualizer({
+    horizontal: true,
+    count: columnsWithSize?.length ?? 0,
+    getScrollElement: () => bodyRef.current,
+    estimateSize: (index) => columnsWithSize[index].width,
+    overscan: overscan.columns,
+  });
+
+  const tableViewComponentInterface: TableViewComponent = useMemo(() => {
+    return {
+      setColumns,
+      setRows,
+      setSettings,
+      setFetching,
+    };
   }, []);
 
-  const handleResizeEnd = useCallback((columnIndex: number, width: number) => {
-    // TODO: update the column definition and call the column observer
-    console.debug(`resizing column ${columnIndex} to ${width}px completed`);
+  useEffect(() => {
+    onMount?.(tableViewComponentInterface);
+
+    const handleScroll = () => {
+      if (headerRef.current && bodyRef.current) {
+        headerRef.current.scrollLeft = bodyRef.current.scrollLeft;
+      }
+    };
+    bodyRef.current?.addEventListener("scroll", handleScroll);
+    return () => {
+      bodyRef.current?.removeEventListener("scroll", handleScroll);
+    };
   }, []);
+
+  //
+  // Column resizing
+  //
+  const handleOnResizeColumn = (index: number, width: number) => {
+    setColumns((columns) => {
+      const newColumns = [...columns];
+      newColumns[index] = { ...newColumns[index], width };
+      return newColumns;
+    });
+    columnVirtualizer.resizeItem(index, width);
+  };
+
+  // Get the virtual items to render
+  const visibleRows = rowVirtualizer.getVirtualItems();
+  const visibleColumns = columnVirtualizer.getVirtualItems();
+
+  console.debug("Rendering TableView", {
+    charWidth: dimensions.charWidth,
+    lineHeight: dimensions.lineHeight,
+    rowNumWidth: dimensions.rowNumWidth,
+    showRowNumbers: settings.showRowNumbers,
+    density: settings.density,
+    dividers: settings.dividers,
+    fetching,
+    nullValues: settings.nullValues,
+  });
 
   const classes = {
-    container: cx("relative w-full h-full overflow-auto", className, colors("text", "background")),
-    table: {
-      self: cx("table-view grid w-full text-left select-none border-collapse", isFetching && "fetching"),
-      thead: {
-        self: cx("grid sticky top-0 z-10 text-xs uppercase font-semibold items-center", colors("background")),
-        tr: "flex w-full",
-        th: cx("flex grow", settings.density === "compact" && "p-1", settings.density === "comfortable" && "px-6 py-3"),
-        rowNum: buildColumnClasses(null, -1, columns, true, { settings }),
-      },
-      tbody: {
-        self: cx(
-          "relative grid w-full z-0",
-          settings.dividers !== "none" && "divide-y",
-          settings.dividers !== "none" && colors("divide"),
+    root: cx(
+      "table-view relative flex flex-col max-w-full font-mono text-xs box-border",
+      fetching && "fetching",
+      className,
+    ),
+    header: {
+      root: cx(
+        "relative flex flex-row w-full flex-none overflow-hidden font-medium font-semibold select-none",
+        colors("border"),
+      ),
+      romNumber: {
+        root: cx(
+          "absolute flex flex-none sticky left-0 text-center box-border select-none items-center",
+          colors("border"),
         ),
-        tr: {
-          self: cx("z-0", settings.dividers === "grid" && cx("divide-x", colors("divide"))),
-          rowNum: buildColumnClasses(null, -1, columns, false, { settings }),
+      },
+      cell: cx("flex flex-row flex-none select-none box-border  border-t border-b-2", colors("border")),
+      label: cx(
+        "flex-grow whitespace-nowrap text-center text-ellipsis overflow-hidden",
+        settings.density === "compact" && "p-1",
+        settings.density === "comfortable" && "px-6",
+      ),
+    },
+    body: {
+      root: "overflow-auto",
+      row: {
+        root: cx("box-border", colors("border"), settings.dividers !== "none" && "border-b"),
+        cell: cx(
+          "absolute top-0 px-1 flex flex-none items-center",
+          settings.dividers === "grid" && "box-border border-r",
+          colors("border"),
+        ),
+        text: "whitespace-nowrap text-ellipsis overflow-hidden select-none",
+        romNumber: {
+          root: cx(
+            "absolute flex pr-2 sticky left-0 select-none box-border",
+            colors("border"),
+            settings.dividers === "grid" && "border-r",
+          ),
+          text: "opacity-45 w-full text-right",
         },
       },
     },
+    rail: {
+      root: "rail absolute top-0 left-0 h-0.5 bg-transparent",
+    },
   };
 
-  if (!columns) {
-    return (
-      <div ref={containerRef} className={classes.container}>
-        <table className={cx(classes.table.self, "fetching")}>
-          <TableViewHeader
-            refreshRevision={refreshRevision}
-            columns={columns}
-            settings={settings}
-            classes={classes.table.thead}
-          />
-        </table>
-      </div>
-    );
-  } else {
-    console.debug(
-      `rendering (slicesOffsets=${slicesOffsets}, range=${JSON.stringify(range)}, settings=${JSON.stringify(settings)}, revision=${refreshRevision})`,
-    );
-    return (
-      <div ref={containerRef} className={classes.container}>
-        <table className={classes.table.self}>
-          <TableViewHeader
-            refreshRevision={refreshRevision}
-            columns={columns}
-            settings={settings}
-            classes={classes.table.thead}
-            onResize={handleResize}
-            onResizeEnd={handleResizeEnd}
-          />
-          <tbody className={classes.table.tbody.self} style={{ height: `${estimatedTotalHeight}px` }}>
-            {getVirtualItems().map((virtualRow) => {
-              const rowNum = virtualRow.index + 1;
-              const rowData = getRowData(data, virtualRow.index, fetchSize);
-              return (
-                <TableViewRow
-                  key={virtualRow.index}
-                  rowNum={rowNum}
-                  columns={columns}
-                  data={rowData}
-                  top={virtualRow.start}
-                  settings={settings}
-                  refreshRevision={refreshRevision}
-                  classes={classes.table.tbody}
-                />
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-}
-
-/**
- * A callback to be called when a column is resized.
- */
-type ResizeObserver = (columnIndex: number, width: number) => void;
-
-/**
- * A component that display the table table header.
- *
- * This component is memoized to avoid re-rendering whenever possible.
- */
-const TableViewHeader = memo(
-  ({
-    columns,
-    settings,
-    classes,
-    onResize,
-    onResizeEnd,
-  }: {
-    refreshRevision: number;
-    columns: Column[];
-    settings: TableSettings;
-    classes: { self: string; tr: string; th: string; rowNum: { self: string; div: string } };
-    onResize?: ResizeObserver;
-    onResizeEnd?: ResizeObserver;
-  }) => {
-    console.debug("rendering header");
-    return (
-      <thead className={classes.self}>
-        <tr className={classes.tr}>
-          {settings.showRowNumbers && (
-            <th scope="col" className={classes.rowNum.self}>
-              <div className={classes.rowNum.div}></div>
-            </th>
-          )}
-          {!columns &&
-            Array.from({ length: 5 }).map((_, i) => (
-              <th key={i} scope="col" className={cx(classes.th, secondary("background"), "rounded ml-0.5 mr-0.5")}></th>
-            ))}
-          {columns &&
-            columns.map((column, i) => (
-              <th
-                key={i}
-                scope="col"
-                style={{ width: column.width + "px" }}
-                className={cx("relative", classes.th, column.format.name === "boolean" && "justify-center")}
-              >
-                <div className="truncate">{column.title}</div>
-                <ResizePanel
-                  className="absolute right-0 h-4"
-                  width={column.width}
-                  minWidth={100}
-                  maxWidth={1000}
-                  onResize={(width) => onResize(i, width)}
-                  onResizeEnd={(width) => onResizeEnd(i, width)}
-                />
-              </th>
-            ))}
-        </tr>
-        {columns && (
-          <tr>
-            <th
-              className={cx("relative flex w-full h-0.5 overflow-hidden", colors("divide-background"))}
-              colSpan={columns.length + (settings.showRowNumbers ? 1 : 0)}
-            >
-              <div className="rail absolute top-0 left-0 w-full h-full">
-                <div className={cx("w-5 h-full", colors("selected:background"))}></div>
-              </div>
-            </th>
-          </tr>
+  return (
+    <div data-component="table-view" className={classes.root}>
+      {/* table header */}
+      <div ref={headerRef} data-component="table-view-header" className={classes.header.root}>
+        {/* rows number */}
+        {settings.showRowNumbers && (
+          <div
+            className={classes.header.romNumber.root}
+            style={{
+              backgroundColor,
+              width: `${dimensions.rowNumWidth}px`,
+            }}
+          ></div>
         )}
-      </thead>
-    );
-  },
-  (prev, next) => prev.refreshRevision === next.refreshRevision,
-);
-
-TableViewHeader.displayName = "TableViewHeader";
-
-/**
- * A component that display a row in the table.
- *
- * This component is memoized to avoid re-rendering whenever possible.
- */
-const TableViewRow = memo(
-  ({
-    rowNum,
-    columns,
-    data,
-    top,
-    settings,
-    classes,
-  }: {
-    refreshRevision: number;
-    rowNum: number;
-    columns: Column[];
-    data: Row;
-    top: number;
-    settings: TableSettings;
-    classes: {
-      tr: {
-        self: string;
-        rowNum: {
-          self: string;
-          div: string;
-        };
-      };
-    };
-  }) => {
-    console.debug("rendering row ", rowNum);
-    return (
-      <tr
-        className={classes.tr.self}
-        key={rowNum}
+        {columnsWithSize.map((column, index) => (
+          <div
+            key={index}
+            style={{ width: column.width }}
+            className={cx(classes.header.cell, index === 0 && "border-l")}
+          >
+            <span className={classes.header.label}>{column.title}</span>
+            <ResizePanel
+              className="flex-shrink-0"
+              width={column.width}
+              minWidth={50}
+              maxWidth={5000}
+              onResize={(width) => handleOnResizeColumn(index, width)}
+            />
+          </div>
+        ))}
+      </div>
+      {/* table body */}
+      <div ref={bodyRef} data-component="table-view-body" className={classes.body.root}>
+        <div
+          data-component="table-view-virtual-content"
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: `${columnVirtualizer.getTotalSize() + dimensions.rowNumWidth}px`,
+            position: "relative",
+          }}
+        >
+          {/* rows */}
+          {visibleRows.map((row) => {
+            const rowData = rows.get(row.index);
+            return (
+              <div
+                key={row.index}
+                className={classes.body.row.root}
+                style={{
+                  position: "absolute",
+                  top: `${row.start}px`,
+                  left: 0,
+                  right: 0,
+                  height: `${row.size}px`,
+                }}
+              >
+                {visibleColumns.map((column) => {
+                  const tableViewColumn = columnsWithSize[column.index];
+                  const value = rowData[tableViewColumn.dataIndex];
+                  const displayValue = value === null ? nullValuesText : tableViewColumn.format.format(value);
+                  const className = value === null ? cx(classes.body.row.cell, "opacity-45") : classes.body.row.cell;
+                  return (
+                    <MemoizedTableViewCell
+                      key={column.index}
+                      left={column.start + dimensions.rowNumWidth}
+                      width={column.size}
+                      height={row.size}
+                      align={tableViewColumn.align}
+                      nullValues={settings.nullValues}
+                      className={cx(className, column.index === 0 && settings.dividers === "grid" && "border-l")}
+                    >
+                      <span className={classes.body.row.text}>{displayValue}</span>
+                    </MemoizedTableViewCell>
+                  );
+                })}
+                {/* rows number */}
+                {settings.showRowNumbers && (
+                  <div
+                    data-component="table-view-row-number"
+                    className={classes.body.row.romNumber.root}
+                    style={{
+                      width: `${dimensions.rowNumWidth}px`,
+                      height: `${dimensions.lineHeight}px`,
+                      backgroundColor,
+                    }}
+                  >
+                    <span className={classes.body.row.romNumber.text}>{row.index + 1}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {/* rail indicator */}
+      <div
+        className={classes.rail.root}
         style={{
-          display: "flex",
-          position: "absolute",
-          transform: `translateY(${top}px)`, // must be a `style` as it changes on scroll
-          width: "100%",
+          width: `calc(100% - (${dimensions.rowNumWidth}px))`,
+          left: dimensions.rowNumWidth,
+          top: dimensions.lineHeight + (settings.density === "compact" ? 4 /* p-1 */ : 8 * 2) /* p-2 */ * 2 - 1,
         }}
       >
-        {settings.showRowNumbers && (
-          <td scope="col" className={classes.tr.rowNum.self}>
-            <div className={classes.tr.rowNum.div}>{rowNum}</div>
-          </td>
-        )}
-        {data ? <DataCells columns={columns} data={data} /> : <SkeletonCells columns={columns} />}
-      </tr>
-    );
-  },
-  (prev, next) => {
-    if (prev.data === null && next.data !== null) {
-      // The row data were loading but now they are available
-      return false;
-    } else {
-      return prev.refreshRevision === next.refreshRevision;
-    }
-  },
+        <div className={cx("w-5 h-full", colors("selected:background"))}></div>
+      </div>
+    </div>
+  );
+}
+
+type TableViewCellProps = {
+  children: React.ReactNode;
+  left: number;
+  width: number;
+  height: number;
+  align: ColumnAlignment;
+  className: string;
+  nullValues: NullValues;
+};
+
+function TableViewCell({ children, left, width, height, align, className }: TableViewCellProps) {
+  // console.debug("render TableViewCell");
+  return (
+    <div
+      className={className}
+      style={{
+        left,
+        width: `${width}px`,
+        height: `${height}px`,
+        justifyContent: align,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const MemoizedTableViewCell = memo(
+  TableViewCell,
+  (prev, next) =>
+    prev.left === next.left &&
+    prev.width === next.width &&
+    prev.className === next.className &&
+    prev.nullValues === next.nullValues,
 );
 
-TableViewRow.displayName = "TableViewRow";
-
-/**
- * A component that display the cells of a row when the data is not available.
- *
- * Note: This component does not render the first cell of the row (the row number).
- */
-function SkeletonCells({ columns }: { columns: Column[] }) {
-  return (
-    <>
-      {columns.map((column, i) => {
-        const classes = {
-          ...column.cellClasses,
-          div: cx(
-            column.cellClasses.div,
-            secondary("background"),
-            column.format.name === "boolean" ? "w-4 rounded-full" : "rounded w-3/4",
-          ),
-        };
-        return (
-          <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
-            <div className={classes.div}></div>
-          </td>
-        );
-      })}
-    </>
-  );
-}
-
-/**
- * A component that display the cells of a row when the data is available.
- */
-function DataCells({ columns, data }: { columns: Column[]; data: Row }) {
-  return (
-    <>
-      {columns.map((column, i) => {
-        const classes = {
-          ...column.cellClasses,
-          div: cx(column.cellClasses.div),
-        };
-        let children: string | React.ReactNode = data[i];
-        switch (column.format.name) {
-          case "boolean":
-            children = data[i] === "true" ? <TrueIcon /> : <FalseIcon />;
-            break;
-        }
-        return (
-          <td key={i} scope="col" className={classes.self} style={{ width: column.width + "px" }}>
-            <div className={classes.div}>{children}</div>
-          </td>
-        );
-      })}
-    </>
-  );
-}
-
-/**
- * An helper function to apply sticky column classes to the given.
- */
-function buildColumnClasses(
-  column: Partial<Column> | null,
-  index: number,
-  columns: Partial<Column>[],
-  header: boolean,
-  tableProps: Partial<TableViewProps>,
-): ColumnClasses {
-  if (index === -1) {
-    // Row number column
-    return {
-      self: cx(
-        "flex w-10 justify-end items-center font-light sticky left-0 z-1 opacity-100 font-mono pr-2",
-        colors("background"),
-      ),
-      div: "",
-    };
-  } else {
-    return {
-      self: cx(
-        "flex",
-        tableProps.settings.density === "compact" && "p-1",
-        tableProps.settings.density === "comfortable" && "px-6 py-3",
-        column.sticky ? "" /** TODO: add support for sticky columns */ : "grow",
-        column.format.name === "boolean" && "justify-center",
-        column.format.name === "int" && "justify-end",
-        column.format.name === "float" && "justify-end",
-        column.format.name === "money" && "justify-end",
-      ),
-      div: cx("truncate h-4"),
-    };
+function getBackgroundColor(element: HTMLElement) {
+  while (element) {
+    const color = window.getComputedStyle(element).backgroundColor;
+    if (color !== "rgba(0, 0, 0, 0)" && color !== "transparent") {
+      return color;
+    }
+    element = element.parentElement!;
   }
-}
-
-/**
- * Get an estimation of the height of a row in the table.
- */
-function getEstimatedRowHeight({ density, dividers }: TableSettings): number {
-  let height = 16; /* h-4 */
-  if (density === "compact") {
-    height += 4 * 2 /* p-1 */;
-  } else {
-    height += 12 * 2 /* py-3 */;
-  }
-
-  // FIXME: seems like divider should be taken into account but the dividers="grid" is having 1 pixel space between rows
-  // if adding that pixel to the estimated height.
-  if (false && dividers !== "none" /* eslint-disable-line no-constant-condition */) {
-    height += 1 /* divide-y */;
-  }
-  return height;
-}
-
-function getSlicesOffsetsFromRange(
-  range: { startIndex: number; endIndex: number },
-  overscan: number,
-  dataframeSize: number,
-  fetchSize: number,
-): Array<number> {
-  const offsets = Array<number>();
-  if (range !== null) {
-    const startIndex = Math.max(0, range.startIndex - overscan);
-    const endIndex = Math.min(Math.max(0, dataframeSize - 1), range.endIndex + overscan);
-    let offset = startIndex - (startIndex % fetchSize);
-    do {
-      offsets.push(offset);
-      offset += fetchSize;
-    } while (offset < endIndex);
-  }
-  return offsets;
-}
-
-function getRowData(data: Array<DataFrameSlice<Row>>, rowOffset: number, fetchSize: number): Row | null {
-  const sliceOffset = rowOffset - (rowOffset % fetchSize);
-  const slice = data.find((slice) => slice.offset === sliceOffset);
-  if (slice) {
-    return slice.data[rowOffset - sliceOffset];
-  } else {
-    return null;
-  }
+  return "transparent";
 }

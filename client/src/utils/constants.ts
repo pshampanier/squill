@@ -43,3 +43,13 @@ export const BLANK_PAGE_ITEM_ID = "blank";
  * A catalog id associated to an item not found.
  */
 export const NOT_FOUND_ITEM_ID = "not-found";
+
+/**
+ * Query Metadata
+ */
+export const QUERY_METADATA_SCHEMA = "schema";
+export const QUERY_METADATA_FIELD_MIN_VALUE = "min_value";
+export const QUERY_METADATA_FIELD_MAX_VALUE = "max_value";
+export const QUERY_METADATA_FIELD_MAX_LENGTH = "max_length";
+export const QUERY_METADATA_FIELD_MISSING_VALUES = "missing_values";
+export const QUERY_METADATA_FIELD_UNIQUE_VALUES = "unique_values";

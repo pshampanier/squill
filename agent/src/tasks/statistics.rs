@@ -1,4 +1,5 @@
 use crate::models::queries::FieldStatistics;
+use crate::utils::constants::STATISTICS_MAX_CHAR_LENGTH;
 use arrow_array::{Array, GenericStringArray, LargeStringArray, RecordBatch, StringArray};
 use arrow_array::{Float32Array, Float64Array};
 use arrow_array::{Int16Array, Int32Array, Int64Array, Int8Array, UInt16Array, UInt32Array, UInt64Array, UInt8Array};
@@ -116,7 +117,7 @@ where
     fn from(array: &GenericStringArray<T>) -> FieldStatistics {
         let mut missing: usize = 0;
         let mut max_length = 0;
-        for i in 0..array.len() {
+        for i in 0..array.len().min(STATISTICS_MAX_CHAR_LENGTH) {
             if array.is_valid(i) {
                 let value = array.value(i);
                 max_length = max_length.max(value.chars().count());

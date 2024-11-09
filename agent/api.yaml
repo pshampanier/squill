@@ -1083,151 +1083,6 @@ components:
           description: An updated query execution if the type is `query`.
           $ref: "#/components/schemas/QueryExecution"
 
-    DataframeAttributeFormatName:
-      description: The display format of a dataframe attribute.
-      type: string
-      oneOf:
-        - title: boolean
-          description: Format the attribute as a boolean (true/false).
-        - title: int
-          description: Format the attribute as a signed integer.
-        - title: float
-          description: Format the attribute as a floating point number.
-        - title: text
-          description: Format the attribute as a string.
-        - title: datetime
-          description: Format the attribute as a date and time.
-        - title: date
-          description: Format the attribute as a date.
-        - title: time
-          description: Format the attribute as a time.
-        - title: duration
-          description: Format the attribute as a duration.
-        - title: bytes
-          description: Format the attribute as a byte array.
-        - title: money
-          description: Format the attribute as currency amount.
-        - title: hex
-          description: Format the attribute as a percentage value.
-        - title: percent
-          description: Format the attribute as a percentage.
-        - title: graph
-          description: Format the attribute as a graph, the value to be formatted must be an array.
-        - title: measure
-          description: Format the attribute as a measure, the type of the measure must be specified (e.g. digitalStorage, duration, etc.)
-        - title: color
-          description: |
-            Format the attribute as a color (the value must be either a hex code, color name, or RGB value).
-            see: https://www.w3.org/TR/css-color-3/#svg-color
-
-    DataframeAttributeFormat:
-      description: The display format of a dataframe attribute.
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          description: The name of the format.
-          $ref: "#/components/schemas/DataframeAttributeFormatName"
-
-    DataframeAttributeType:
-      description: The type of a dataset attribute.
-      type: string
-      enum:
-        - null
-        - boolean
-        - int16
-        - int32
-        - int64
-        - float32
-        - float64
-        - text
-        - datetime
-        - date
-        - time
-        - bytes
-        - array
-        - object
-
-    DatasetAttributeStatistics:
-      description: The statistics about a dataset attribute.
-      type: object
-      properties:
-        min:
-          description: The minimum value of the attribute.
-          type: number
-        max:
-          description: The maximum value of the attribute.
-          type: number
-        unique:
-          description: The number of unique values in the attribute.
-          type: number
-        missing:
-          description: The number of missing values in the attribute.
-          type: number
-        max_length:
-          description: The maximum length of the attribute for `text` attributes.
-          type: integer
-          format: int32
-          minimum: 0
-        max_precision:
-          description: |
-            The maximum precision of the attribute if the attribute is a floating point number.
-          type: integer
-          format: int8
-          minimum: 0
-
-    DataframeAttribute:
-      description: |
-        Represents an attribute from a dataframe.
-
-        Attributes are the columns/properties of a dataframe, they have a name, a type, and a format that defines how 
-        the values should be displayed.
-      type: object
-      required:
-        - name
-        - type
-      properties:
-        name:
-          description: The name of the attribute.
-          type: string
-        type:
-          description: The data storage type of the attribute.
-          x-rust-name: data_type
-          $ref: "#/components/schemas/DataframeAttributeType"
-        format:
-          description: The display format of the attribute.
-          $ref: "#/components/schemas/DataframeAttributeFormat"
-        attributes:
-          description: A list of attributes describing each value if the current attribute is an object.
-          type: array
-          items:
-            $ref: "#/components/schemas/DataframeAttribute"
-        items:
-          description: An attribute describing the items if the current attribute is an array.
-          $ref: "#/components/schemas/DataframeAttribute"
-
-    DataframeSchema:
-      description: The schema of a dataframe.
-      type: object
-      required:
-        - attributes
-      properties:
-        id:
-          description: The unique identifier of the dataframe schema.
-          type: string
-          format: uuid
-        version:
-          description: The version of the dataframe schema.
-          type: integer
-          format: int32
-          minimum: 1
-        attributes:
-          description: The attributes of the dataframe.
-          type: array
-          items:
-            $ref: "#/components/schemas/DataframeAttribute"
-
     SpecialCollection:
       description: A special collection in the catalog.
       type: string
@@ -1268,6 +1123,79 @@ components:
         special:
           description: The special collection type.
           $ref: "#/components/schemas/SpecialCollection"
+
+    TableSettings:
+      description: The settings of a table displaying a dataframe.
+      type: object
+      x-immerable: true
+      required:
+        - show_row_numbers
+        - density
+        - dividers
+        - overscan
+        - null_values
+        - max_length
+      properties:
+        show_row_numbers:
+          description: Show the row numbers in the table.
+          type: boolean
+        density:
+          description: The density of the table.
+          $ref: "#/components/schemas/TableDensity"
+        dividers:
+          description: The dividers between columns & rows in the table.
+          $ref: "#/components/schemas/TableDividers"
+        overscan:
+          description: The overscan of the table.
+          $ref: "#/components/schemas/TableOverscan"
+        null_values:
+          description: The visual representation of null values.
+          $ref: "#/components/schemas/NullValues"
+        max_length:
+          description: The maximum length of a column in the table.
+          type: integer
+          format: int16
+          minimum: 0
+
+    TableDensity:
+      description: The density of a table.
+      type: string
+      enum:
+        - compact
+        - comfortable
+
+    TableDividers:
+      description: The dividers between columns & rows in a table.
+      type: string
+      oneOf:
+        - title: none
+          description: No dividers between columns & rows.
+        - title: rows
+          description: Dividers between rows only.
+        - title: grid
+          description: Dividers between columns & rows.
+
+    TableOverscan:
+      description: The overscan of a table.
+      type: string
+      oneOf:
+        - title: small
+          description: small - The overscan is 5 rows, 1 column.
+        - title: medium
+          description: medium - The overscan is 25 rows, 3 columns.
+        - title: large
+          description: large - The overscan is 125 rows, 9 columns.
+
+    NullValues:
+      description: The visual representation of null values.
+      type: string
+      enum:
+        - null_lowercase
+        - null_uppercase
+        - empty
+        - dash
+        - not_available_lowercase
+        - not_available_uppercase
 
   securitySchemes:
     ApiKeyAuth:

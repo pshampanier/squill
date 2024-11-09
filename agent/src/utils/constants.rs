@@ -23,9 +23,16 @@ pub const ENV_VAR_LOG: &str = "SQUILL_LOG";
 
 /// The key used to store the schema of the result set for queries with `with_result_set` set to `true`.
 pub const QUERY_METADATA_SCHEMA: &str = "schema";
+pub const QUERY_METADATA_FIELD_MIN_VALUE: &str = "min_value";
+pub const QUERY_METADATA_FIELD_MAX_VALUE: &str = "max_value";
+pub const QUERY_METADATA_FIELD_MAX_LENGTH: &str = "max_length";
+pub const QUERY_METADATA_FIELD_MISSING_VALUES: &str = "missing_values";
+pub const QUERY_METADATA_FIELD_UNIQUE_VALUES: &str = "unique_values";
 
-/// The key used to store the statistics of the result set for queries with `with_stats` set to `true`.
-pub const QUERY_METADATA_STATS: &str = "stats";
+/// When calculating the statistics for a column, we will only consider the first `STATISTICS_MAX_CHAR_LENGTH`
+/// characters for text columns. This is to avoid performance issues when calculating the statistics for large
+/// text columns.
+pub const STATISTICS_MAX_CHAR_LENGTH: usize = 1000;
 
 /// Windows reserved names.
 /// Source: <https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file>

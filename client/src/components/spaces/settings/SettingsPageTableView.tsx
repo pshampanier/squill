@@ -1,23 +1,29 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
-import { Density, Dividers } from "@/models/users";
-import { TableDataFrame, TableDataFrameFactory } from "@/utils/dataframe";
+import { ArrowDataFrame } from "@/utils/dataframe";
 import SettingsPage, { Settings, Setting, SettingsPanel } from "@/components/spaces/settings/SettingsPage";
 import Switch from "@/components/core/Switch";
 import Dropdown from "@/components/core/Dropdown";
-import TableView from "@/components/dataset/table-view";
-import cx from "classix";
-import { primary as colors } from "@/utils/colors";
+import { tableFromIPC } from "apache-arrow";
+import ArrowTableView, { ArrowTableViewComponent } from "@/components/dataset/arrow-table-view";
+import DATASET_URL from "@/assets/datasets/persons.arrow?url";
+import { NullValues, TableDensity, TableDividers, TableOverscan } from "@/models/user-settings";
 
 export default function SettingsPageTableView() {
-  const [previewData, setPreviewData] = useState<TableDataFrame>(null);
+  const tableView = useRef<ArrowTableViewComponent>(null);
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
   useEffect(() => {
-    console.debug("SettingsPageTableView mounted");
-    TableDataFrameFactory.fetch("/datasets/simpsons.csv").then((data) => {
-      setPreviewData(data);
-    });
+    fetch(DATASET_URL)
+      .then((response) => response.arrayBuffer())
+      .then((arrayBuffer) => {
+        const table = tableFromIPC(new Uint8Array(arrayBuffer));
+        tableView.current?.setSchema(table.schema);
+        tableView.current?.setRows(new ArrowDataFrame(table));
+      });
   }, []);
+  useEffect(() => {
+    tableView.current?.setSettings(userSettings.tableSettings);
+  }, [userSettings.tableSettings]);
   return (
     <SettingsPage title="Tables settings">
       <Settings>
@@ -34,7 +40,7 @@ export default function SettingsPageTableView() {
           <Dropdown
             defaultValue={userSettings.tableSettings.density}
             onChange={(value) => {
-              updateUserSettings({ tableSettings: { density: value as Density } });
+              updateUserSettings({ tableSettings: { density: value as TableDensity } });
             }}
           >
             <Dropdown.Option label="Comfortable" value="comfortable" />
@@ -45,7 +51,7 @@ export default function SettingsPageTableView() {
           <Dropdown
             defaultValue={userSettings.tableSettings.dividers}
             onChange={(value) => {
-              updateUserSettings({ tableSettings: { dividers: value as Dividers } });
+              updateUserSettings({ tableSettings: { dividers: value as TableDividers } });
             }}
           >
             <Dropdown.Option label="None" value="none" />
@@ -53,9 +59,39 @@ export default function SettingsPageTableView() {
             <Dropdown.Option label="Grid" value="grid" />
           </Dropdown>
         </Setting>
+        <Setting title="Null values" description="Controls how null values are displayed.">
+          <Dropdown
+            defaultValue={userSettings.tableSettings.nullValues}
+            onChange={(value) => {
+              updateUserSettings({ tableSettings: { nullValues: value as NullValues } });
+            }}
+          >
+            <Dropdown.Option label="null (lowercase)" value="null_lowercase" />
+            <Dropdown.Option label="NULL (uppercase)" value="null_uppercase" />
+            <Dropdown.Option label="(empty)" value="empty_string" />
+            <Dropdown.Option label="n/a (lowercase)" value="not_available_lowercase" />
+            <Dropdown.Option label="N/A (uppercase)" value="not_available_uppercase" />
+            <Dropdown.Option label="- (dash)" value="dash" />
+          </Dropdown>
+        </Setting>
       </Settings>
-      <SettingsPanel className={cx("h-96 border", colors("border"))}>
-        {previewData && <TableView dataframe={previewData} settings={userSettings.tableSettings} />}
+      <Setting title="Overscan" description="Optimize the rendering of the table.">
+        <Dropdown
+          defaultValue={userSettings.tableSettings.overscan}
+          onChange={(value) => {
+            updateUserSettings({ tableSettings: { overscan: value as TableOverscan } });
+          }}
+        >
+          <Dropdown.Option label="Small" value="small" />
+          <Dropdown.Option label="Medium" value="medium" />
+          <Dropdown.Option label="Large" value="large" />
+        </Dropdown>
+      </Setting>
+      <SettingsPanel className="h-96">
+        <ArrowTableView
+          settings={userSettings.tableSettings}
+          onMount={(component) => (tableView.current = component)}
+        />
       </SettingsPanel>
     </SettingsPage>
   );
