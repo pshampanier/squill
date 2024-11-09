@@ -45,6 +45,11 @@ export type ArrowTableViewProps = {
   rows?: DataFrame;
 
   /**
+   * Indicate if the table is fetching some data.
+   */
+  fetching?: boolean;
+
+  /**
    * The settings to apply to the table.
    */
   settings?: TableSettings;
@@ -55,7 +60,14 @@ export type ArrowTableViewProps = {
 /**
  * A `TableView` component that displays a dataframe with an Apache Arrow schema.
  */
-export default function ArrowTableView({ className, schema, rows, settings, onMount }: ArrowTableViewProps) {
+export default function ArrowTableView({
+  className,
+  schema,
+  rows,
+  settings,
+  onMount,
+  fetching = false,
+}: ArrowTableViewProps) {
   const tableViewComponent = useRef<TableViewComponent>(null);
 
   const getColumns = useCallback((schema: Schema) => {
@@ -116,6 +128,7 @@ export default function ArrowTableView({ className, schema, rows, settings, onMo
   return (
     <TableView
       className={className}
+      fetching={fetching}
       columns={schema ? getColumns(schema) : []}
       rows={rows}
       settings={settings}

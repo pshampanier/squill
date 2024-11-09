@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { tableFromIPC } from "apache-arrow";
-import { ArrowDataFrame } from "@/utils/dataframe";
+import { Table, tableFromIPC } from "apache-arrow";
+import { ArrowDataFrame, DataFrame } from "@/utils/dataframe";
 import Switch from "@/components/core/Switch";
 import Dropdown from "@/components/core/Dropdown";
 import ArrowTableView, { ArrowTableViewComponent } from "@/components/dataset/arrow-table-view";
@@ -10,7 +10,8 @@ import { NullValues, TableDensity, TableDividers, TableSettings } from "@/models
 import DATASET_URL from "@/assets/datasets/persons.arrow?url";
 
 export default function TableViewPreview() {
-  const refTableViewComponent = useRef<ArrowTableViewComponent>(null);
+  const refTableViewComponents = useRef<ArrowTableViewComponent[]>([]);
+  const [rows, setRows] = useState<ArrowDataFrame | null>(null);
   const [settings, setSettings] = useState<TableSettings>(
     new TableSettings({
       density: "compact",
@@ -26,96 +27,148 @@ export default function TableViewPreview() {
     fetch(DATASET_URL)
       .then((response) => response.arrayBuffer())
       .then((arrayBuffer) => {
-        const rows = new ArrowDataFrame(tableFromIPC(new Uint8Array(arrayBuffer)));
-        refTableViewComponent.current?.setSchema(rows.schema);
-        refTableViewComponent.current?.setRows(rows);
+        setRows(new ArrowDataFrame(tableFromIPC(new Uint8Array(arrayBuffer))));
       });
   }, []);
 
+  const emptyDataFrame = useMemo(() => {
+    if (!rows) {
+      return null;
+    } else {
+      return new ArrowDataFrame(new Table(rows.schema));
+    }
+  }, [rows]);
+
+  const fetchingDataFrame: DataFrame = useMemo(() => {
+    return {
+      getSizeHint() {
+        return 5;
+      },
+      get(_index) {
+        return null;
+      },
+    };
+  }, [rows]);
+
   const onMount = useCallback((component: ArrowTableViewComponent) => {
-    refTableViewComponent.current = component;
+    refTableViewComponents.current.push(component);
   }, []);
 
   useMemo(() => {
-    if (refTableViewComponent.current) {
-      refTableViewComponent.current.setSettings(settings);
-    }
+    refTableViewComponents.current.forEach((component) => {
+      component.setSettings(settings);
+    });
   }, [settings]);
 
   return (
     <>
+      <div className="flex flex-col m-4 space-y-0.5 w-[500px]">
+        <Setting title="Show row numbers">
+          <Switch
+            size="sm"
+            defaultChecked={settings.showRowNumbers}
+            onChange={(e) => {
+              setSettings((prev) => ({ ...prev, showRowNumbers: e.target.checked }));
+            }}
+          />
+        </Setting>
+        <Setting title="Density">
+          <Dropdown
+            defaultValue={settings.density}
+            onChange={(value) => {
+              setSettings((prev) => ({ ...prev, density: value as TableDensity }));
+            }}
+          >
+            <Dropdown.Option label="Comfortable" value="comfortable" />
+            <Dropdown.Option label="Compact" value="compact" />
+          </Dropdown>
+        </Setting>
+        <Setting title="Dividers">
+          <Dropdown
+            defaultValue={settings.dividers}
+            onChange={(value) => {
+              setSettings((prev) => ({ ...prev, dividers: value as TableDividers }));
+            }}
+          >
+            <Dropdown.Option label="None" value="none" />
+            <Dropdown.Option label="Rows" value="rows" />
+            <Dropdown.Option label="Grid" value="grid" />
+          </Dropdown>
+        </Setting>
+        <Setting title="Null values">
+          <Dropdown
+            defaultValue={settings.nullValues}
+            onChange={(value) => {
+              setSettings((prev) => ({ ...prev, nullValues: value as NullValues }));
+            }}
+          >
+            <Dropdown.Option label="null (lowercase)" value="null_lowercase" />
+            <Dropdown.Option label="NULL (uppercase)" value="null_uppercase" />
+            <Dropdown.Option label="(empty)" value="empty_string" />
+            <Dropdown.Option label="N/A (lowercase)" value="not_available_lowercase" />
+            <Dropdown.Option label="n/a (uppercase)" value="not_available_uppercase" />
+            <Dropdown.Option label="- (dash)" value="dash" />
+          </Dropdown>
+        </Setting>
+      </div>
       {/*
-       * No dataset
+       * With rows
        */}
       <Preview>
-        <Preview.Title>No Dataset</Preview.Title>
+        <Preview.Title>With Rows</Preview.Title>
         <Preview.Description>
           <div>
             Dataset can be displayed by the <code className="text-xs">TableView</code> component that will initiate the
             loading of the data as needed.
           </div>
-          <div className="flex flex-col m-4 space-y-0.5 w-[500px]">
-            <Setting title="Fetching">
-              <Switch
-                size="sm"
-                defaultChecked={false}
-                onChange={(e) => {
-                  refTableViewComponent.current?.setFetching(e.target.checked);
-                }}
-              />
-            </Setting>
-            <Setting title="Show row numbers">
-              <Switch
-                size="sm"
-                defaultChecked={settings.showRowNumbers}
-                onChange={(e) => {
-                  setSettings((prev) => ({ ...prev, showRowNumbers: e.target.checked }));
-                }}
-              />
-            </Setting>
-            <Setting title="Density">
-              <Dropdown
-                defaultValue={settings.density}
-                onChange={(value) => {
-                  setSettings((prev) => ({ ...prev, density: value as TableDensity }));
-                }}
-              >
-                <Dropdown.Option label="Comfortable" value="comfortable" />
-                <Dropdown.Option label="Compact" value="compact" />
-              </Dropdown>
-            </Setting>
-            <Setting title="Dividers">
-              <Dropdown
-                defaultValue={settings.dividers}
-                onChange={(value) => {
-                  setSettings((prev) => ({ ...prev, dividers: value as TableDividers }));
-                }}
-              >
-                <Dropdown.Option label="None" value="none" />
-                <Dropdown.Option label="Rows" value="rows" />
-                <Dropdown.Option label="Grid" value="grid" />
-              </Dropdown>
-            </Setting>
-            <Setting title="Null values">
-              <Dropdown
-                defaultValue={settings.nullValues}
-                onChange={(value) => {
-                  setSettings((prev) => ({ ...prev, nullValues: value as NullValues }));
-                }}
-              >
-                <Dropdown.Option label="null (lowercase)" value="null_lowercase" />
-                <Dropdown.Option label="NULL (uppercase)" value="null_uppercase" />
-                <Dropdown.Option label="(empty)" value="empty_string" />
-                <Dropdown.Option label="N/A (lowercase)" value="not_available_lowercase" />
-                <Dropdown.Option label="n/a (uppercase)" value="not_available_uppercase" />
-                <Dropdown.Option label="- (dash)" value="dash" />
-              </Dropdown>
-            </Setting>
-          </div>
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full h-[500px] overflow-hidden">
-            <ArrowTableView onMount={onMount} settings={settings} />
+            {rows && <ArrowTableView schema={rows.schema} rows={rows} onMount={onMount} settings={settings} />}
+          </div>
+        </PreviewBox>
+      </Preview>
+      {/*
+       * No row
+       */}
+      <Preview>
+        <Preview.Title>No Row</Preview.Title>
+        <Preview.Description>
+          <div>
+            Dataset can be displayed by the <code className="text-xs">TableView</code> component that will initiate the
+            loading of the data as needed.
+          </div>
+        </Preview.Description>
+        <PreviewBox>
+          <div className="flex w-full overflow-hidden">
+            {rows && (
+              <ArrowTableView schema={rows.schema} rows={emptyDataFrame} onMount={onMount} settings={settings} />
+            )}
+          </div>
+        </PreviewBox>
+      </Preview>
+      {/*
+       * Fetching
+       */}
+      <Preview>
+        <Preview.Title>Fetching...</Preview.Title>
+        <Preview.Description>
+          <div>
+            Dataset can be displayed by the <code className="text-xs">TableView</code> component that will initiate the
+            loading of the data as needed.
+          </div>
+        </Preview.Description>
+        <PreviewBox>
+          <div className="flex w-full overflow-hidden">
+            {rows && (
+              <ArrowTableView
+                schema={rows.schema}
+                rows={fetchingDataFrame}
+                onMount={onMount}
+                settings={settings}
+                fetching={true}
+              />
+            )}
           </div>
         </PreviewBox>
       </Preview>

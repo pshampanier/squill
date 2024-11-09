@@ -16,9 +16,19 @@ type Dimensions = {
   charWidth: number;
 
   /**
-   * The height of a line in pixels.
+   * The height of a line in pixels (excluding margins and borders).
    */
   lineHeight: number;
+
+  /**
+   * The height of the header in pixels (including margins and borders).
+   */
+  headerHeight: number;
+
+  /**
+   * The height of a row in pixels (including margins and borders).
+   */
+  rowHeight: number;
 
   /**
    * The width of the row number column in pixels.
@@ -107,6 +117,11 @@ type TableViewProps = {
   columns?: TableViewColumn[];
 
   /**
+   * Indicate if the table is fetching some data.
+   */
+  fetching?: boolean;
+
+  /**
    * The settings to apply to the table.
    */
   settings: TableSettings;
@@ -124,6 +139,7 @@ export default function TableView({
   className,
   columns: defaultColumns = [],
   rows: defaultRows,
+  fetching: defaultFetching = false,
   settings: defaultSettings,
   onMount,
 }: TableViewProps) {
@@ -133,7 +149,7 @@ export default function TableView({
   const [rows, setRows] = useState<DataFrame>(defaultRows);
   const [columns, setColumns] = useState<TableViewColumn[]>(defaultColumns);
   const [settings, setSettings] = useState<TableSettings>(defaultSettings);
-  const [fetching, setFetching] = useState<boolean>(false);
+  const [fetching, setFetching] = useState<boolean>(defaultFetching);
   const bodyRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -144,13 +160,26 @@ export default function TableView({
 
   // Get the dimensions that depends on the properties of the component
   const dimensions = useMemo(() => {
-    const dimensions: Dimensions = { charWidth: 0, lineHeight: 0, rowNumWidth: 0, px: 0 };
+    const dimensions: Dimensions = {
+      charWidth: 0,
+      lineHeight: 0,
+      headerHeight: 0,
+      rowHeight: 0,
+      rowNumWidth: 0,
+      px: 0,
+    };
     const span = document.createElement("span");
     span.className = "absolute font-mono text-xs whitespace-nowrap invisible";
     span.textContent = "0".repeat(1000);
     document.body.appendChild(span);
     dimensions.charWidth = span.offsetWidth / span.textContent.length;
-    dimensions.lineHeight =
+    dimensions.lineHeight = span.offsetHeight;
+    dimensions.headerHeight =
+      span.offsetHeight +
+      (settings.density === "comfortable" ? 8 * 2 /* p-1 */ : 4 * 2) /* p-1 */ +
+      1 /* bt-1 */ +
+      2 /* bt-2 */;
+    dimensions.rowHeight =
       span.offsetHeight + (settings.density === "comfortable" ? 4 * 2 /* p-1 */ : 2 * 2) /* p-0.5 */;
     if (settings.showRowNumbers) {
       const maxRowNumber = rows?.getSizeHint()?.toString().length ?? 1;
@@ -217,7 +246,7 @@ export default function TableView({
     count: rows?.getSizeHint() ?? 0,
     getScrollElement: () => bodyRef.current,
     estimateSize: () => {
-      return dimensions.lineHeight;
+      return dimensions.rowHeight;
     },
     overscan: overscan.rows,
   });
@@ -271,7 +300,7 @@ export default function TableView({
 
   console.debug("Rendering TableView", {
     charWidth: dimensions.charWidth,
-    lineHeight: dimensions.lineHeight,
+    rowHeight: dimensions.rowHeight,
     rowNumWidth: dimensions.rowNumWidth,
     showRowNumbers: settings.showRowNumbers,
     density: settings.density,
@@ -387,8 +416,21 @@ export default function TableView({
               >
                 {visibleColumns.map((column) => {
                   const tableViewColumn = columnsWithSize[column.index];
-                  const value = rowData[tableViewColumn.dataIndex];
-                  const displayValue = value === null ? nullValuesText : tableViewColumn.format.format(value);
+                  let displayValue: React.ReactNode = null;
+                  const value = rowData?.[tableViewColumn.dataIndex] ?? null;
+                  if (rowData === null) {
+                    displayValue = (
+                      <div
+                        className="bg-gray-100 dark:bg-gray-700"
+                        style={{
+                          width: tableViewColumn.maxLength * dimensions.charWidth,
+                          height: dimensions.lineHeight - 2 /* make it lighter by removing 2px */,
+                        }}
+                      ></div>
+                    );
+                  } else {
+                    displayValue = value === null ? nullValuesText : tableViewColumn.format.format(value);
+                  }
                   const className = value === null ? cx(classes.body.row.cell, "opacity-45") : classes.body.row.cell;
                   return (
                     <MemoizedTableViewCell
@@ -411,7 +453,7 @@ export default function TableView({
                     className={classes.body.row.romNumber.root}
                     style={{
                       width: `${dimensions.rowNumWidth}px`,
-                      height: `${dimensions.lineHeight}px`,
+                      height: `${dimensions.rowHeight}px`,
                       backgroundColor,
                     }}
                   >
@@ -429,7 +471,7 @@ export default function TableView({
         style={{
           width: `calc(100% - (${dimensions.rowNumWidth}px))`,
           left: dimensions.rowNumWidth,
-          top: dimensions.lineHeight + (settings.density === "compact" ? 4 /* p-1 */ : 8 * 2) /* p-2 */ * 2 - 1,
+          top: dimensions.headerHeight - 2 /* remove the border-bottom (bt-2) */,
         }}
       >
         <div className={cx("w-5 h-full", colors("selected:background"))}></div>

@@ -8,6 +8,9 @@ export interface DataFrame {
 
   /**
    * Get a row in the dataframe.
+   *
+   * This method should return an array of values, where each value is a column in the dataframe.
+   * Returns `null` if the row is not available.
    */
   get(index: number): Array<unknown>;
 }
