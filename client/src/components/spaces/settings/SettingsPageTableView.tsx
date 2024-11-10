@@ -5,19 +5,20 @@ import SettingsPage, { Settings, Setting, SettingsPanel } from "@/components/spa
 import Switch from "@/components/core/Switch";
 import Dropdown from "@/components/core/Dropdown";
 import { tableFromIPC } from "apache-arrow";
-import ArrowTableView, { ArrowTableViewComponent } from "@/components/dataset/arrow-table-view";
+import ArrowTableView from "@/components/dataset/arrow-table-view";
 import DATASET_URL from "@/assets/datasets/persons.arrow?url";
 import { NullValues, TableDensity, TableDividers, TableOverscan } from "@/models/user-settings";
+import { TableViewComponent } from "@/components/dataset/table-view";
 
 export default function SettingsPageTableView() {
-  const tableView = useRef<ArrowTableViewComponent>(null);
+  const tableView = useRef<TableViewComponent>(null);
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
   useEffect(() => {
     fetch(DATASET_URL)
       .then((response) => response.arrayBuffer())
       .then((arrayBuffer) => {
         const table = tableFromIPC(new Uint8Array(arrayBuffer));
-        tableView.current?.setSchema(table.schema);
+        tableView.current?.setColumns(ArrowTableView.getColumns(table.schema));
         tableView.current?.setRows(new ArrowDataFrame(table));
       });
   }, []);

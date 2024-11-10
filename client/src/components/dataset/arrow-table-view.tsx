@@ -1,70 +1,13 @@
-import { DataFrame } from "@/utils/dataframe";
-import TableView, { TableViewColumn, TableViewComponent } from "@/components/dataset/table-view";
-import { useCallback, useEffect, useRef } from "react";
+import TableView, { TableViewColumn, TableViewProps } from "@/components/dataset/table-view";
 import { DataType, Field, Schema } from "apache-arrow";
 import { BooleanFormat, DateFormat, DefaultFormat, NumberFormat } from "@/utils/format";
-import { TableSettings } from "@/models/user-settings";
 import { QUERY_METADATA_FIELD_MAX_LENGTH, QUERY_METADATA_FIELD_MAX_VALUE } from "@/utils/constants";
 
-export interface ArrowTableViewComponent {
-  /**
-   * Change the schema of the table.
-   */
-  setSchema(schema: Schema): void;
-
-  /**
-   * Change the settings of the table.
-   */
-  setSettings(settings: TableSettings): void;
-
-  /**
-   * Change the rows of the table.
-   */
-  setRows(rows: DataFrame): void;
-
-  /**
-   * Indicate that the dataframe to be displayed is fetching some data.
-   */
-  setFetching(fetching: boolean): void;
-}
-
-export type ArrowTableViewProps = {
-  /**
-   * Additional classes to apply to the top element rendered by the component.
-   */
-  className?: string;
-
+export type ArrowTableViewProps = TableViewProps & {
   /**
    * The schema of the dataframe.
    */
   schema?: Schema;
-
-  /**
-   * The maximum number of rows to display in the table.
-   *
-   * If the number of rows in the dataframe is greater than this value, the table will only display the given `maxRows`
-   * rows and the user will need to scroll to see the other rows.
-   *
-   * If undefined, the number of rows displayed will depend on the height available in the parent element.
-   */
-  maxRows?: number;
-
-  /**
-   * The rows to display.
-   */
-  rows?: DataFrame;
-
-  /**
-   * Indicate if the table is fetching some data.
-   */
-  fetching?: boolean;
-
-  /**
-   * The settings to apply to the table.
-   */
-  settings?: TableSettings;
-
-  onMount?: (component: ArrowTableViewComponent) => void;
 };
 
 const getColumns = (schema: Schema): TableViewColumn[] => {
@@ -111,41 +54,9 @@ const getColumns = (schema: Schema): TableViewColumn[] => {
 /**
  * A `TableView` component that displays a dataframe with an Apache Arrow schema.
  */
-export default function ArrowTableView({
-  className,
-  schema,
-  rows,
-  settings,
-  onMount,
-  maxRows,
-  fetching = false,
-}: ArrowTableViewProps) {
-  const tableViewComponent = useRef<TableViewComponent>(null);
-
-  useEffect(() => {
-    onMount?.({
-      setSchema: (schema) => tableViewComponent.current?.setColumns(getColumns(schema)),
-      setRows: (rows) => tableViewComponent.current?.setRows(rows),
-      setSettings: (settings) => tableViewComponent.current?.setSettings(settings),
-      setFetching: (fetching) => tableViewComponent.current?.setFetching(fetching),
-    });
-  }, []);
-
-  const handleOnMount = useCallback((component: TableViewComponent) => {
-    tableViewComponent.current = component;
-  }, []);
-
-  return (
-    <TableView
-      className={className}
-      fetching={fetching}
-      columns={schema ? getColumns(schema) : []}
-      maxRows={maxRows}
-      rows={rows}
-      settings={settings}
-      onMount={handleOnMount}
-    />
-  );
+export default function ArrowTableView(props: ArrowTableViewProps) {
+  const { schema, ...rest } = props;
+  return <TableView columns={schema ? getColumns(schema) : []} {...rest} />;
 }
 
 ArrowTableView.getColumns = getColumns;

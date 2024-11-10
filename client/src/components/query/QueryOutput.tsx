@@ -3,11 +3,12 @@ import { QueryExecution } from "@/models/queries";
 import { TableSettings } from "@/models/user-settings";
 import { Schema, Table } from "apache-arrow";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import Alert from "@/components/core/Alert";
-import Code from "@/components/core/Code";
-import ArrowTableView, { ArrowTableViewComponent } from "@/components/dataset/arrow-table-view";
+import { TableViewComponent } from "@/components/dataset/table-view";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
 import { ArrowDataFrame } from "@/utils/dataframe";
+import Alert from "@/components/core/Alert";
+import Code from "@/components/core/Code";
+import ArrowTableView from "@/components/dataset/arrow-table-view";
 
 type QueryOutputProps = {
   className?: string;
@@ -38,7 +39,7 @@ export default function QueryOutput({ className, query, settings, onLoad, onCanc
   // Props, States & Refs
   //
   const { status, error, query: statement } = query;
-  const tableView = useRef<ArrowTableViewComponent>(null);
+  const tableView = useRef<TableViewComponent>(null);
 
   //
   // Logic
@@ -74,7 +75,7 @@ export default function QueryOutput({ className, query, settings, onLoad, onCanc
   // otherwise, we can use the setSchema method to update the schema of the TableView later on.
   const schema = useMemo(() => getSchema(query), [query.metadata]);
 
-  const handleOnMount = useCallback((component: ArrowTableViewComponent) => {
+  const handleOnMount = useCallback((component: TableViewComponent) => {
     tableView.current = component;
   }, []);
 

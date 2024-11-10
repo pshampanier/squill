@@ -100,7 +100,7 @@ export type TableViewColumn = {
   dataIndex: number;
 };
 
-type TableViewProps = {
+export type TableViewProps = {
   /**
    * Additional classes to apply to the top element rendered by the component.
    */

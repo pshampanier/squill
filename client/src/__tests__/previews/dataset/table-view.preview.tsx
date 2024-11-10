@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Table, tableFromIPC } from "apache-arrow";
 import { ArrowDataFrame, DataFrame } from "@/utils/dataframe";
+import { NullValues, TableDensity, TableDividers, TableSettings } from "@/models/user-settings";
+import { TableViewComponent } from "@/components/dataset/table-view";
 import Switch from "@/components/core/Switch";
 import Dropdown from "@/components/core/Dropdown";
-import ArrowTableView, { ArrowTableViewComponent } from "@/components/dataset/arrow-table-view";
+import ArrowTableView from "@/components/dataset/arrow-table-view";
 import Preview from "../Preview";
 import PreviewBox from "../PreviewBox";
-import { NullValues, TableDensity, TableDividers, TableSettings } from "@/models/user-settings";
 import DATASET_URL from "@/assets/datasets/persons.arrow?url";
 
 export default function TableViewPreview() {
-  const refTableViewComponents = useRef<ArrowTableViewComponent[]>([]);
+  const refTableViewComponents = useRef<TableViewComponent[]>([]);
   const [rows, setRows] = useState<ArrowDataFrame | null>(null);
   const [settings, setSettings] = useState<TableSettings>(
     new TableSettings({
@@ -50,7 +51,7 @@ export default function TableViewPreview() {
     };
   }, [rows]);
 
-  const onMount = useCallback((component: ArrowTableViewComponent) => {
+  const onMount = useCallback((component: TableViewComponent) => {
     refTableViewComponents.current.push(component);
   }, []);
 
