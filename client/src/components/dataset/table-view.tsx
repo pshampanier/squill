@@ -158,6 +158,10 @@ export default function TableView({
   // This value cannot be memoized because it can change when the light/dark mode changes
   const backgroundColor = getBackgroundColor(bodyRef.current);
 
+  // noRows is true when there is no rows to display.
+  // This will be used to display a table footer.
+  const noRows = !rows?.getSizeHint();
+
   // Get the dimensions that depends on the properties of the component
   const dimensions = useMemo(() => {
     const dimensions: Dimensions = {
@@ -248,6 +252,7 @@ export default function TableView({
     estimateSize: () => {
       return dimensions.rowHeight;
     },
+    paddingEnd: noRows ? dimensions.rowHeight : 0,
     overscan: overscan.rows,
   });
 
@@ -345,13 +350,23 @@ export default function TableView({
         text: "whitespace-nowrap text-ellipsis overflow-hidden select-none",
         romNumber: {
           root: cx(
-            "absolute flex pr-2 sticky left-0 select-none box-border",
+            "absolute flex pr-2 sticky left-0 select-none box-border text-ellipsis overflow-hidden",
             colors("border"),
             settings.dividers === "grid" && "border-r",
           ),
           text: "opacity-45 w-full text-right",
         },
       },
+    },
+    footer: {
+      root: cx(
+        "absolute bottom-0 border-box flex flex-none items-center",
+        settings.dividers !== "none" && "border-b",
+        settings.dividers === "grid" && "border-l border-r",
+        settings.density === "compact" ? "p-1" : "px-6",
+        colors("border"),
+      ),
+      text: "opacity-45 w-full whitespace-nowrap text-ellipsis overflow-hidden select-none",
     },
     rail: {
       root: "rail absolute top-0 left-0 h-0.5 bg-transparent",
@@ -463,6 +478,19 @@ export default function TableView({
               </div>
             );
           })}
+          {/* footer */}
+          {noRows && (
+            <div
+              className={classes.footer.root}
+              style={{
+                width: `calc(100% - (${dimensions.rowNumWidth}px))`,
+                left: `${dimensions.rowNumWidth}px`,
+                height: `${dimensions.rowHeight}px`,
+              }}
+            >
+              {!fetching && <span className={classes.footer.text}>0 rows</span>}
+            </div>
+          )}
         </div>
       </div>
       {/* rail indicator */}
