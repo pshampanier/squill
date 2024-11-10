@@ -107,6 +107,16 @@ type TableViewProps = {
   className?: string;
 
   /**
+   * The maximum number of rows to display in the table.
+   *
+   * If the number of rows in the dataframe is greater than this value, the table will only display the given `maxRows`
+   * rows and the user will need to scroll to see the other rows.
+   *
+   * If undefined, the number of rows displayed will depend on the height available in the parent element.
+   */
+  maxRows?: number;
+
+  /**
    * The rows to display in the table.
    */
   rows?: DataFrame;
@@ -141,6 +151,7 @@ export default function TableView({
   rows: defaultRows,
   fetching: defaultFetching = false,
   settings: defaultSettings,
+  maxRows,
   onMount,
 }: TableViewProps) {
   //
@@ -373,6 +384,14 @@ export default function TableView({
     },
   };
 
+  const height = useMemo(() => {
+    if (maxRows) {
+      const actualRows = rows?.getSizeHint() ?? 1;
+      return Math.min(maxRows, actualRows) * dimensions.rowHeight + "px";
+    }
+    return "auto";
+  }, [dimensions.rowHeight, maxRows, rows?.getSizeHint()]);
+
   return (
     <div data-component="table-view" className={classes.root}>
       {/* table header */}
@@ -405,7 +424,12 @@ export default function TableView({
         ))}
       </div>
       {/* table body */}
-      <div ref={bodyRef} data-component="table-view-body" className={classes.body.root}>
+      <div
+        ref={bodyRef}
+        data-component="table-view-body"
+        className={classes.body.root}
+        style={{ height, width: `${columnVirtualizer.getTotalSize() + dimensions.rowNumWidth}px` }}
+      >
         <div
           data-component="table-view-virtual-content"
           style={{

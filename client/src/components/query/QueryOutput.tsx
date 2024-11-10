@@ -55,6 +55,7 @@ export default function QueryOutput({ className, query, settings, onLoad, onCanc
 
   useEffect(() => {
     if (query.withResultSet) {
+      console.debug("QueryOutput: Loading query result", query);
       onLoad?.(query)
         .then((table) => {
           // tableView.current?.setSchema(getSchema(query));

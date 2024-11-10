@@ -35,7 +35,8 @@ function calcRowsHeight(query: QueryExecution, _settings: TableSettings) {
   if (schema) {
     const header = 26;
     const rows = Math.min(query.affectedRows, 20) * 20; /* row height */
-    return 8 /* mt-2 */ + header + rows;
+    const footer = query.affectedRows === 0 ? 20 /* row height */ : 0;
+    return 8 /* mt-2 */ + header + rows + footer;
   } else {
     return 0;
   }
@@ -45,7 +46,7 @@ function calcRowsHeight(query: QueryExecution, _settings: TableSettings) {
  * Memoized version of QueryOutput
  */
 const MemoizedQueryOutput = memo(QueryOutput, (prev, next) => {
-  return prev.query.revision === next.query.revision;
+  return prev.query.status === next.query.status;
 });
 
 const QUERY_HEADER_DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yesterday", "this_year", "before_last_year"];
@@ -149,7 +150,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
       const error = calcHeight({ marginTop: 8, padding: 8, lineHeight: 16 }, query.error?.message?.split("\n").length);
       const rows = calcRowsHeight(query, settings);
       const estimatedSize = header + (8 /* padding */ + statement + error + rows + 8); /* padding */
-      console.debug("QueryHistory (sizing)", { index, estimatedSize, header, statement, error, rows });
+      // console.debug("QueryHistory (sizing)", { index, estimatedSize, header, statement, error, rows });
       return estimatedSize;
     },
     getItemKey(index) {

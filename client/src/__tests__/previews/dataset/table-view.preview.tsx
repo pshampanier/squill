@@ -123,9 +123,20 @@ export default function TableViewPreview() {
           </div>
         </Preview.Description>
         <PreviewBox>
-          <div className="flex w-full h-[500px] overflow-hidden">
+          <div className="flex w-full h-[400px]">
             {rows && <ArrowTableView schema={rows.schema} rows={rows} onMount={onMount} settings={settings} />}
           </div>
+        </PreviewBox>
+        <Preview.Description>
+          <div>
+            Using the property <code className="text-xs">maxRows=&quot;5&quot;</code> you can limit the number of rows
+            displayed.
+          </div>
+        </Preview.Description>
+        <PreviewBox>
+          {rows && (
+            <ArrowTableView schema={rows.schema} rows={rows} onMount={onMount} settings={settings} maxRows={5} />
+          )}
         </PreviewBox>
       </Preview>
       {/*
@@ -134,10 +145,7 @@ export default function TableViewPreview() {
       <Preview>
         <Preview.Title>No Row</Preview.Title>
         <Preview.Description>
-          <div>
-            Dataset can be displayed by the <code className="text-xs">TableView</code> component that will initiate the
-            loading of the data as needed.
-          </div>
+          If the dataset is empty, the table will display a message indicating that there is no data to display.
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full overflow-hidden">
@@ -153,13 +161,10 @@ export default function TableViewPreview() {
       <Preview>
         <Preview.Title>Fetching...</Preview.Title>
         <Preview.Description>
-          <div>
-            Dataset can be displayed by the <code className="text-xs">TableView</code> component that will initiate the
-            loading of the data as needed.
-          </div>
+          While fetching the data are displayed by a skeleton representative of each cell.
         </Preview.Description>
         <PreviewBox>
-          <div className="flex w-full overflow-hidden">
+          <div className="flex w-full">
             {rows && (
               <ArrowTableView
                 schema={rows.schema}
@@ -169,6 +174,15 @@ export default function TableViewPreview() {
                 fetching={true}
               />
             )}
+          </div>
+        </PreviewBox>
+        <Preview.Description>
+          If the number of rows is unknow at the time fetching, only one line is displayed without using the skeleton
+          since we don&apos;t know yet if there will be actually rows to display.
+        </Preview.Description>
+        <PreviewBox>
+          <div className="flex w-full">
+            {rows && <ArrowTableView schema={rows.schema} onMount={onMount} settings={settings} fetching={true} />}
           </div>
         </PreviewBox>
       </Preview>
