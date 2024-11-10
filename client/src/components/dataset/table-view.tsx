@@ -384,7 +384,10 @@ export default function TableView({
     },
   };
 
-  const height = useMemo(() => {
+  // Calculate the max height of the body
+  // If the number of rows is greater than the `maxRows`, the height of the body will be limited to the height of
+  // `maxRows` * the height of a row, otherwise, the height will be driven by the parent element.
+  const maxHeight = useMemo(() => {
     if (maxRows) {
       const actualRows = rows?.getSizeHint() ?? 1;
       return Math.min(maxRows, actualRows) * dimensions.rowHeight + "px";
@@ -428,7 +431,7 @@ export default function TableView({
         ref={bodyRef}
         data-component="table-view-body"
         className={classes.body.root}
-        style={{ height, width: `${columnVirtualizer.getTotalSize() + dimensions.rowNumWidth}px` }}
+        style={{ maxHeight, maxWidth: `${columnVirtualizer.getTotalSize() + dimensions.rowNumWidth}px` }}
       >
         <div
           data-component="table-view-virtual-content"
