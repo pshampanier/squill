@@ -45,6 +45,9 @@ pub struct RecordBatchWriter {
 
     /// The number of bytes written to files.
     pub written_bytes: usize,
+
+    /// The number of rows written to files.
+    pub written_rows: usize,
 }
 
 impl RecordBatchWriter {
@@ -58,6 +61,7 @@ impl RecordBatchWriter {
             current_file_num_rows: 0,
             file_part: 1,
             written_bytes: 0,
+            written_rows: 0,
         }
     }
 
@@ -96,12 +100,13 @@ impl RecordBatchWriter {
 
     async fn close_current_file(&mut self) -> Result<()> {
         if let Some(current_file) = self.current_file.take() {
-            let _file_metadata = current_file.close().await?;
+            let file_metadata = current_file.close().await?;
             let temp_file_name = self.get_temp_file_name();
             let current_file_name =
                 self.directory.join(format!("{}.part-{:#04}.parquet", self.file_prefix, self.file_part));
             tokio::fs::rename(&temp_file_name, &current_file_name).await?;
             self.written_bytes += tokio::fs::metadata(&current_file_name).await?.len() as usize;
+            self.written_rows += file_metadata.num_rows as usize;
             self.file_part += 1;
         }
         Ok(())

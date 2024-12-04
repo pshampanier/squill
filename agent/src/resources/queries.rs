@@ -117,6 +117,7 @@ pub async fn create<S: Into<String>>(
                     affected_rows: 0,
                     execution_time: 0.0,
                     storage_bytes: 0,
+                    storage_rows: 0,
                     metadata: HashMap::new(),
                 })
             },
@@ -132,9 +133,10 @@ pub async fn create<S: Into<String>>(
 pub async fn get(conn: &mut Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<Option<QueryExecution>> {
     conn.query_map_row(
         r#"SELECT query_history_id, connection_id, revision, user_id, query, origin, created_at, executed_at, 
-                         execution_time, affected_rows, status, error, with_result_set, storage_bytes, metadata
-                   FROM query_history 
-                  WHERE connection_id = ? AND query_history_id = ?"#,
+                             execution_time, affected_rows, status, error, with_result_set, storage_bytes, storage_rows, 
+                             metadata
+                        FROM query_history 
+                       WHERE connection_id = ? AND query_history_id = ?"#,
         params!(connection_id, query_history_id),
         |row| map_query_row(&row).map_err(|e| e.into()),
     )
@@ -160,6 +162,7 @@ pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Opti
                         execution_time = COALESCE(execution_time, ?),
                         affected_rows = COALESCE(?, affected_rows),
                         storage_bytes = ?,
+                        storage_rows = ?,
                         metadata = ?
                   WHERE query_history_id=? AND connection_id=? AND status <> ?
             RETURNING revision, executed_at"#,
@@ -170,6 +173,7 @@ pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Opti
             execution_time,
             affected_rows,
             query.storage_bytes as i64,
+            query.storage_rows as i64,
             if query.metadata.is_empty() { None } else { Some(serde_json::to_string(&query.metadata)?) },
             query.id,
             query.connection_id,
@@ -247,6 +251,7 @@ fn map_query_row(row: &Row) -> Result<QueryExecution> {
         error: row.try_get_nullable::<_, _>("error")?,
         with_result_set: row.try_get::<_, _>("with_result_set")?,
         storage_bytes: row.try_get::<_, i64>("storage_bytes")? as u64,
+        storage_rows: row.try_get::<_, i64>("storage_rows")? as u64,
         metadata: match row.try_get_nullable::<_, String>("metadata") {
             Ok(Some(metadata)) => serde_json::from_str(metadata.as_str())?,
             _ => HashMap::new(),
@@ -290,6 +295,7 @@ mod tests {
                 affected_rows: 0,
                 execution_time: 0.0,
                 storage_bytes: 0,
+                storage_rows: 0,
                 metadata: HashMap::new(),
             }
         );

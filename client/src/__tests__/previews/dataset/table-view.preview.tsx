@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Table, tableFromIPC } from "apache-arrow";
 import { ArrowDataFrame, DataFrame } from "@/utils/dataframe";
 import { NullValues, TableDensity, TableDividers, TableSettings } from "@/models/user-settings";
-import { TableViewComponent } from "@/components/dataset/table-view";
 import Switch from "@/components/core/Switch";
 import Dropdown from "@/components/core/Dropdown";
 import ArrowTableView from "@/components/dataset/arrow-table-view";
@@ -11,7 +10,6 @@ import PreviewBox from "../PreviewBox";
 import DATASET_URL from "@/assets/datasets/persons.arrow?url";
 
 export default function TableViewPreview() {
-  const refTableViewComponents = useRef<TableViewComponent[]>([]);
   const [rows, setRows] = useState<ArrowDataFrame | null>(null);
   const [settings, setSettings] = useState<TableSettings>(
     new TableSettings({
@@ -45,21 +43,14 @@ export default function TableViewPreview() {
       getSizeHint() {
         return 5;
       },
-      get(_index) {
+      getRow(_index) {
         return null;
+      },
+      loadRows(_offset, _limit) {
+        return Promise.resolve();
       },
     };
   }, [rows]);
-
-  const onMount = useCallback((component: TableViewComponent) => {
-    refTableViewComponents.current.push(component);
-  }, []);
-
-  useMemo(() => {
-    refTableViewComponents.current.forEach((component) => {
-      component.setSettings(settings);
-    });
-  }, [settings]);
 
   return (
     <>
@@ -125,7 +116,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full h-[400px]">
-            {rows && <ArrowTableView schema={rows.schema} rows={rows} onMount={onMount} settings={settings} />}
+            {rows && <ArrowTableView schema={rows.schema} rows={rows} settings={settings} />}
           </div>
         </PreviewBox>
         <Preview.Description>
@@ -135,9 +126,7 @@ export default function TableViewPreview() {
           </div>
         </Preview.Description>
         <PreviewBox>
-          {rows && (
-            <ArrowTableView schema={rows.schema} rows={rows} onMount={onMount} settings={settings} maxRows={5} />
-          )}
+          {rows && <ArrowTableView schema={rows.schema} rows={rows} settings={settings} maxRows={5} />}
         </PreviewBox>
       </Preview>
       {/*
@@ -150,9 +139,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full overflow-hidden">
-            {rows && (
-              <ArrowTableView schema={rows.schema} rows={emptyDataFrame} onMount={onMount} settings={settings} />
-            )}
+            {rows && <ArrowTableView schema={rows.schema} rows={emptyDataFrame} settings={settings} />}
           </div>
         </PreviewBox>
       </Preview>
@@ -167,13 +154,7 @@ export default function TableViewPreview() {
         <PreviewBox>
           <div className="flex w-full">
             {rows && (
-              <ArrowTableView
-                schema={rows.schema}
-                rows={fetchingDataFrame}
-                onMount={onMount}
-                settings={settings}
-                fetching={true}
-              />
+              <ArrowTableView schema={rows.schema} rows={fetchingDataFrame} settings={settings} fetching={true} />
             )}
           </div>
         </PreviewBox>
@@ -183,7 +164,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full">
-            {rows && <ArrowTableView schema={rows.schema} onMount={onMount} settings={settings} fetching={true} />}
+            {rows && <ArrowTableView schema={rows.schema} settings={settings} fetching={true} />}
           </div>
         </PreviewBox>
       </Preview>

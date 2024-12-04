@@ -1,16 +1,16 @@
 import { ResourceRef } from "@/models/resources";
 import { SVGIcon } from "@/utils/types";
 import { Users } from "@/resources/users";
-import Connections from "@/resources/connections";
+import { Connections } from "@/resources/connections";
+import { ApplicationSpace } from "@/utils/types";
+import { BLANK_PAGE_ITEM_ID, NOT_FOUND_ITEM_ID } from "@/utils/constants";
+import { Connection } from "@/models/connections";
+import { Environment } from "@/models/environments";
 import ConnectionEditor from "@/components/editors/ConnectionEditor";
 import BlankPageIcon from "@/icons/app-logo.svg?react";
 import NotFoundIcon from "@/icons/crashed.svg?react";
 import PlugIcon from "@/icons/plug.svg?react";
-import { ApplicationSpace } from "@/utils/types";
 import UserBlankEditor from "@/components/editors/UserBlankEditor";
-import { BLANK_PAGE_ITEM_ID, NOT_FOUND_ITEM_ID } from "@/utils/constants";
-import { Connection } from "@/models/connections";
-import { Environment } from "@/models/environments";
 
 export const BLANK_PAGE_TITLE = "Untitled";
 export const NOT_FOUND_PAGE_TITLE = "Not Found";

@@ -863,6 +863,7 @@ components:
         - origin
         - with_result_set
         - storage_bytes
+        - storage_rows
       properties:
         id:
           description: The unique identifier of the query execution.
@@ -952,6 +953,11 @@ components:
           type: string
         storage_bytes:
           description: The size of the result set on disk in bytes.
+          type: integer
+          format: int64
+          minimum: 0
+        storage_rows:
+          description: The number of rows stored on disk.
           type: integer
           format: int64
           minimum: 0

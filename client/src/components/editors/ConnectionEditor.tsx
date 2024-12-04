@@ -2,7 +2,7 @@ import React, { Dispatch, useCallback, useEffect, useRef } from "react";
 import { EDITOR_CONNECTION } from "@/utils/constants";
 import { useAppStore } from "@/stores/AppStore";
 import { editors } from "@/resources/editors";
-import Connections from "@/resources/connections";
+import { Connections } from "@/resources/connections";
 import ConnectionIcon from "@/icons/plug.svg?react";
 import QueryTerminal from "@/components/query/QueryTerminal";
 import { PushMessage } from "@/models/push-notifications";

@@ -85,6 +85,9 @@ CREATE TABLE query_history (
 	--- The size in bytes of the result set on disk.
 	storage_bytes INTEGER NOT NULL DEFAULT 0,
 
+	-- The number of rows stored on disk.
+	storage_rows INTEGER NOT NULL DEFAULT 0,
+
 	-- Error details if the status is failed.
 	error TEXT DEFAULT NULL,
 

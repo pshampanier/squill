@@ -330,6 +330,7 @@ async fn write_query_result_set(
                         QueryExecution {
                             affected_rows: processed_rows as u64,
                             storage_bytes: record_batch_writer.written_bytes as u64,
+                            storage_rows: record_batch_writer.written_rows as u64,
                             metadata,
                             ..query
                         },
@@ -368,6 +369,7 @@ async fn write_query_result_set(
     Ok(Some(QueryExecution {
         affected_rows: processed_rows as u64,
         storage_bytes: record_batch_writer.written_bytes as u64,
+        storage_rows: record_batch_writer.written_rows as u64,
         metadata,
         ..query
     }))

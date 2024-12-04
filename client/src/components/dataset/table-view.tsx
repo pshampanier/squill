@@ -41,28 +41,6 @@ type Dimensions = {
   px: number;
 };
 
-export interface TableViewComponent {
-  /**
-   * Change the columns displayed in the table.
-   */
-  setColumns(columns: TableViewColumn[]): void;
-
-  /**
-   * Change the rows displayed in the table.
-   */
-  setRows(rows: DataFrame): void;
-
-  /**
-   * Change the settings of the table.
-   */
-  setSettings(settings: TableSettings): void;
-
-  /**
-   * Indicate that the dataframe to be displayed is fetching some data.
-   */
-  setFetching(fetching: boolean): void;
-}
-
 export type TableViewColumn = {
   /**
    * The name of the column in the dataframe.
@@ -138,29 +116,33 @@ export type TableViewProps = {
 
   /**
    * A callback called when the component is mounted.
-   *
-   * That callback provides the component instance as an argument to the parent component, allowing the parent component
-   * to interact with the component later on.
    */
-  onMount?: (component: TableViewComponent) => void;
+  onMount?: () => void;
+
+  /**
+   * A callback called when the component is unmounted.
+   */
+  onUnmount?: () => void;
 };
 
+/**
+ * A table view component that displays a dataframe.
+ */
 export default function TableView({
   className,
   columns: defaultColumns = [],
-  rows: defaultRows,
-  fetching: defaultFetching = false,
-  settings: defaultSettings,
+  rows,
+  fetching = false,
+  settings,
   maxRows,
   onMount,
+  onUnmount,
 }: TableViewProps) {
   //
   // States & Refs
   //
-  const [rows, setRows] = useState<DataFrame>(defaultRows);
   const [columns, setColumns] = useState<TableViewColumn[]>(defaultColumns);
-  const [settings, setSettings] = useState<TableSettings>(defaultSettings);
-  const [fetching, setFetching] = useState<boolean>(defaultFetching);
+  //  const [rows, setRows] = useState<DataFrame>(defaultRows);
   const bodyRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
 
@@ -215,6 +197,11 @@ export default function TableView({
         return { rows: 125, columns: 9 };
     }
   }, [settings.overscan]);
+
+  // Reset the columns when the default columns change
+  useEffect(() => {
+    setColumns(defaultColumns);
+  }, [defaultColumns]);
 
   const nullValuesText = useMemo(() => {
     switch (settings.nullValues) {
@@ -275,18 +262,8 @@ export default function TableView({
     overscan: overscan.columns,
   });
 
-  const tableViewComponentInterface: TableViewComponent = useMemo(() => {
-    return {
-      setColumns,
-      setRows,
-      setSettings,
-      setFetching,
-    };
-  }, []);
-
   useEffect(() => {
-    onMount?.(tableViewComponentInterface);
-
+    onMount?.();
     const handleScroll = () => {
       if (headerRef.current && bodyRef.current) {
         headerRef.current.scrollLeft = bodyRef.current.scrollLeft;
@@ -295,6 +272,7 @@ export default function TableView({
     bodyRef.current?.addEventListener("scroll", handleScroll);
     return () => {
       bodyRef.current?.removeEventListener("scroll", handleScroll);
+      onUnmount?.();
     };
   }, []);
 
@@ -314,15 +292,22 @@ export default function TableView({
   const visibleRows = rowVirtualizer.getVirtualItems();
   const visibleColumns = columnVirtualizer.getVirtualItems();
 
+  if (rows && visibleRows.length > 0) {
+    rows.loadRows(visibleRows[0].index, visibleRows.length);
+  }
+
   console.debug("Rendering TableView", {
+    firstRow: visibleRows[0]?.index,
+    visibleRows: visibleRows.length,
     charWidth: dimensions.charWidth,
     rowHeight: dimensions.rowHeight,
     rowNumWidth: dimensions.rowNumWidth,
     showRowNumbers: settings.showRowNumbers,
     density: settings.density,
     dividers: settings.dividers,
-    fetching,
     nullValues: settings.nullValues,
+    fetching,
+    rows,
   });
 
   const classes = {
@@ -443,7 +428,7 @@ export default function TableView({
         >
           {/* rows */}
           {visibleRows.map((row) => {
-            const rowData = rows.get(row.index);
+            const rowData = rows.getRow(row.index);
             return (
               <div
                 key={row.index}
@@ -459,7 +444,7 @@ export default function TableView({
                 {visibleColumns.map((column) => {
                   const tableViewColumn = columnsWithSize[column.index];
                   let displayValue: React.ReactNode = null;
-                  const value = rowData?.[tableViewColumn.dataIndex] ?? null;
+                  const value = rowData?.[tableViewColumn.dataIndex];
                   if (rowData === null) {
                     displayValue = (
                       <div
@@ -477,6 +462,7 @@ export default function TableView({
                   return (
                     <MemoizedTableViewCell
                       key={column.index}
+                      rawValue={value}
                       left={column.start + dimensions.rowNumWidth}
                       width={column.size}
                       height={row.size}
@@ -536,6 +522,7 @@ export default function TableView({
 }
 
 type TableViewCellProps = {
+  rawValue: unknown;
   children: React.ReactNode;
   left: number;
   width: number;
@@ -546,7 +533,6 @@ type TableViewCellProps = {
 };
 
 function TableViewCell({ children, left, width, height, align, className }: TableViewCellProps) {
-  // console.debug("render TableViewCell");
   return (
     <div
       className={className}
@@ -565,6 +551,7 @@ function TableViewCell({ children, left, width, height, align, className }: Tabl
 const MemoizedTableViewCell = memo(
   TableViewCell,
   (prev, next) =>
+    prev.rawValue === next.rawValue &&
     prev.left === next.left &&
     prev.width === next.width &&
     prev.className === next.className &&

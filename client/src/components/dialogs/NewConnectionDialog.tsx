@@ -23,7 +23,7 @@ import UserIcon from "@/icons/user.svg?react";
 import ParamForm from "@/components/forms/connections/ParametersForm";
 import Overlay from "@/components/Overlay";
 import { useTaskEffect } from "@/hooks/use-task-effect";
-import Connections from "@/resources/connections";
+import { Connections } from "@/resources/connections";
 import Spinner from "@/components/core/Spinner";
 import { useUserStore } from "@/stores/UserStore";
 

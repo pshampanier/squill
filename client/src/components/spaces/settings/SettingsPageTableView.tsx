@@ -1,30 +1,25 @@
-import { useContext, useEffect, useRef } from "react";
-import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
+import { tableFromIPC } from "apache-arrow";
+import { useContext, useEffect, useState } from "react";
+import { NullValues, TableDensity, TableDividers, TableOverscan } from "@/models/user-settings";
 import { ArrowDataFrame } from "@/utils/dataframe";
+import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
 import SettingsPage, { Settings, Setting, SettingsPanel } from "@/components/spaces/settings/SettingsPage";
 import Switch from "@/components/core/Switch";
 import Dropdown from "@/components/core/Dropdown";
-import { tableFromIPC } from "apache-arrow";
 import ArrowTableView from "@/components/dataset/arrow-table-view";
 import DATASET_URL from "@/assets/datasets/persons.arrow?url";
-import { NullValues, TableDensity, TableDividers, TableOverscan } from "@/models/user-settings";
-import { TableViewComponent } from "@/components/dataset/table-view";
 
 export default function SettingsPageTableView() {
-  const tableView = useRef<TableViewComponent>(null);
+  const [dataframe, setDataframe] = useState<ArrowDataFrame | null>(null);
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
   useEffect(() => {
     fetch(DATASET_URL)
       .then((response) => response.arrayBuffer())
       .then((arrayBuffer) => {
         const table = tableFromIPC(new Uint8Array(arrayBuffer));
-        tableView.current?.setColumns(ArrowTableView.getColumns(table.schema));
-        tableView.current?.setRows(new ArrowDataFrame(table));
+        setDataframe(new ArrowDataFrame(table));
       });
   }, []);
-  useEffect(() => {
-    tableView.current?.setSettings(userSettings.tableSettings);
-  }, [userSettings.tableSettings]);
   return (
     <SettingsPage title="Tables settings">
       <Settings>
@@ -89,10 +84,7 @@ export default function SettingsPageTableView() {
         </Dropdown>
       </Setting>
       <SettingsPanel className="h-96">
-        <ArrowTableView
-          settings={userSettings.tableSettings}
-          onMount={(component) => (tableView.current = component)}
-        />
+        <ArrowTableView settings={userSettings.tableSettings} rows={dataframe} schema={dataframe?.schema} />
       </SettingsPanel>
     </SettingsPage>
   );

@@ -4,7 +4,7 @@ import { agent } from "@/resources/agent";
 import { Table } from "apache-arrow";
 import { HTTP_HEADER_X_ORIGIN } from "@/utils/constants";
 
-const Connections = {
+export const Connections = {
   async get(id: string): Promise<Connection> {
     return (await agent().get<Connection>(`/connections/${id}`)).as(Connection);
   },
@@ -73,5 +73,3 @@ const Connections = {
     ).asTable();
   },
 };
-
-export default Connections;

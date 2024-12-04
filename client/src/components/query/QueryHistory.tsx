@@ -1,17 +1,23 @@
 import cx from "classix";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
-import { Dispatch, memo, useCallback, useEffect, useReducer, useRef } from "react";
+import { Dispatch, memo, useEffect, useReducer, useRef } from "react";
 import { DateClassification, generateDateClassifier } from "@/utils/time";
 import { secondary as colors } from "@/utils/colors";
 import { QueryExecution } from "@/models/queries";
-import QueryOutput from "@/components/query/QueryOutput";
-import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
 import { useUserStore } from "@/stores/UserStore";
-import Connections from "@/resources/connections";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
 import { TableSettings } from "@/models/user-settings";
-import { QueryCache } from "@/utils/query-cache";
+import QueryOutput from "@/components/query/QueryOutput";
+import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
+import { useQueryCache } from "@/hooks/use-query-cache";
 
+/**
+ * Layout properties for an element displayed within the query history.
+ *
+ * If the `height` property is provided, it will be used as the height of the element, otherwise the height will be
+ * calculated based on the `padding`, `marginTop`, and `lineHeight` properties.
+ * All properties are optional and expected to be in pixels.
+ */
 type Layout = {
   height?: number;
   padding?: number;
@@ -44,22 +50,37 @@ function calcRowsHeight(query: QueryExecution, _settings: TableSettings) {
 
 /**
  * Memoized version of QueryOutput
+ *
+ * Re-render only when the query status or the schema of the query chan
  */
 const MemoizedQueryOutput = memo(QueryOutput, (prev, next) => {
-  return prev.query.status === next.query.status;
+  return (
+    prev.query.status === next.query.status &&
+    prev.query.storageRows === next.query.storageRows &&
+    prev.query.metadata?.[QUERY_METADATA_SCHEMA] === next.query.metadata?.[QUERY_METADATA_SCHEMA] &&
+    prev.fetching === next.fetching
+  );
 });
 
 const QUERY_HEADER_DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yesterday", "this_year", "before_last_year"];
 
 interface QueryHistoryState {
   revision: number;
+
+  /**
+   * All queries currently available in the history.
+   */
   queries: Map<string, QueryExecution>;
-  cache: QueryCache;
+
   lastAction: null | "update" | "remove" | "set";
 }
 
 export interface QueryHistoryAction {
   type: "update" | "remove" | "set";
+
+  /**
+   * A collection of queries (used by `update` `remove` and `set` actions).
+   */
   queries?: QueryExecution[];
 }
 
@@ -80,32 +101,21 @@ function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHis
         const previousQuery = queries.get(query.id);
         if (!previousQuery || query.revision > previousQuery.revision) {
           queries.set(query.id, query);
-          if (state.cache.has(query.id)) {
-            if (query.storageBytes > 0 && (!previousQuery || previousQuery.storageBytes === 0)) {
-              state.cache.fetch(query.id, () => {
-                return Connections.getQueryExecutionData(
-                  query.connectionId,
-                  query.id,
-                  0,
-                  Math.min(20, query.affectedRows),
-                );
-              });
-            }
-          }
         }
       });
-      return { revision: state.revision + 1, queries, cache: state.cache, lastAction: action.type };
+      return { ...state, revision: state.revision + 1, queries, lastAction: action.type };
     }
 
     /**
      * Remove the queries from the history.
+     * We are not removing yet the data from the cache, that will be done later when the TableView is unmounted.
      */
     case "remove": {
       const queries = new Map(state.queries);
       action.queries?.forEach((query) => {
         queries.delete(query.id);
       });
-      return { revision: state.revision + 1, queries, cache: state.cache, lastAction: action.type };
+      return { ...state, revision: state.revision + 1, queries, lastAction: action.type };
     }
 
     /**
@@ -116,10 +126,12 @@ function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHis
       action.queries?.forEach((query) => {
         queries.set(query.id, query);
       });
-      return { revision: state.revision + 1, queries, cache: state.cache, lastAction: action.type };
+      return { ...state, revision: state.revision + 1, queries, lastAction: action.type };
     }
   }
 }
+
+type ReducerFn = (state: QueryHistoryState, action: QueryHistoryAction) => QueryHistoryState;
 
 export default function QueryHistory({ className, onMount }: QueryHistoryProps) {
   //
@@ -127,15 +139,13 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
   //
   const settings = useUserStore((state) => state.settings?.tableSettings);
   const rootRef = useRef<HTMLDivElement>(null);
-  const [history, dispatch] = useReducer<(state: QueryHistoryState, action: QueryHistoryAction) => QueryHistoryState>(
-    reducer,
-    {
-      revision: 1,
-      queries: new Map(),
-      cache: new QueryCache(),
-      lastAction: null,
-    },
-  );
+  const [history, dispatch] = useReducer<ReducerFn>(reducer, {
+    revision: 1,
+    queries: new Map(),
+    lastAction: null,
+  });
+
+  const { getQueryStates } = useQueryCache();
 
   const historyItems = getSortedHistory(history);
 
@@ -170,25 +180,6 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
     });
   }, [history]);
 
-  const handleOnLoad = useCallback((query: QueryExecution) => {
-    const cache = history.cache;
-    const ready = query.storageBytes > 0;
-    if (!cache.has(query.id)) {
-      cache.set(query.id);
-    }
-    if (ready) {
-      return cache.get(query.id, () => {
-        return Connections.getQueryExecutionData(query.connectionId, query.id, 0, Math.min(20, query.affectedRows));
-      });
-    } else {
-      return cache.getPromise(query.id);
-    }
-  }, []);
-
-  const handleOnCancel = useCallback((key: string) => {
-    history.cache.cancel(key);
-  }, []);
-
   // Because we are potentially going to process a large number of queries, we can optimize a bit by using reusing the
   // same date classifier for all queries.
   const dateClassifier = generateDateClassifier(QUERY_HEADER_DATE_CLASSIFICATIONS);
@@ -211,6 +202,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
           const query = historyItems[virtualItem.index];
           const date = query.createdAt;
           const dateClassification = dateClassifier(date);
+          const { dataframe, fetching } = getQueryStates(query);
           return (
             <div
               key={virtualItem.key}
@@ -233,8 +225,8 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
                 query={query}
                 className={classes.output}
                 settings={settings}
-                onLoad={handleOnLoad}
-                onCancel={handleOnCancel}
+                dataframe={dataframe}
+                fetching={fetching}
               />
             </div>
           );

@@ -1,11 +1,10 @@
 import cx from "classix";
 import { QueryExecution } from "@/models/queries";
 import { TableSettings } from "@/models/user-settings";
-import { Schema, Table } from "apache-arrow";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { TableViewComponent } from "@/components/dataset/table-view";
+import { Schema } from "apache-arrow";
+import { useCallback, useMemo } from "react";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
-import { ArrowDataFrame } from "@/utils/dataframe";
+import { DataFrame } from "@/utils/dataframe";
 import Alert from "@/components/core/Alert";
 import Code from "@/components/core/Code";
 import ArrowTableView from "@/components/dataset/arrow-table-view";
@@ -13,8 +12,8 @@ import ArrowTableView from "@/components/dataset/arrow-table-view";
 type QueryOutputProps = {
   className?: string;
   query: QueryExecution;
-  onLoad?: (query: QueryExecution) => Promise<Table>;
-  onCancel?: (id: string) => void;
+  dataframe?: DataFrame;
+  fetching?: boolean;
   settings: TableSettings;
 };
 
@@ -34,12 +33,11 @@ function toJSONSchema(obj: any): any {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-export default function QueryOutput({ className, query, settings, onLoad, onCancel }: QueryOutputProps) {
+export default function QueryOutput({ className, query, dataframe, fetching = false, settings }: QueryOutputProps) {
   //
   // Props, States & Refs
   //
   const { status, error, query: statement } = query;
-  const tableView = useRef<TableViewComponent>(null);
 
   //
   // Logic
@@ -54,30 +52,9 @@ export default function QueryOutput({ className, query, settings, onLoad, onCanc
     }
   }, []);
 
-  useEffect(() => {
-    if (query.withResultSet) {
-      console.debug("QueryOutput: Loading query result", query);
-      onLoad?.(query)
-        .then((table) => {
-          // tableView.current?.setSchema(getSchema(query));
-          tableView.current?.setRows(new ArrowDataFrame(table));
-        })
-        .catch((error) => {
-          console.error("Failed to load query result", error);
-        });
-    }
-    return () => {
-      onCancel?.(query.id);
-    };
-  }, []);
-
   // If the schema is known at the time of the creation of the component, we can give it to the TableView as a property,
   // otherwise, we can use the setSchema method to update the schema of the TableView later on.
   const schema = useMemo(() => getSchema(query), [query.metadata]);
-
-  const handleOnMount = useCallback((component: TableViewComponent) => {
-    tableView.current = component;
-  }, []);
 
   //
   // Rendering
@@ -93,7 +70,16 @@ export default function QueryOutput({ className, query, settings, onLoad, onCanc
           <pre className="text-xs">{error.message}</pre>
         </Alert>
       )}
-      {schema && <ArrowTableView className="mt-2" settings={settings} schema={schema} onMount={handleOnMount} />}
+      {schema && (
+        <ArrowTableView
+          className="mt-2"
+          settings={settings}
+          schema={schema}
+          rows={dataframe}
+          maxRows={20}
+          fetching={fetching}
+        />
+      )}
     </div>
   );
 }

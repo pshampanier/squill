@@ -131,6 +131,9 @@ pub struct QueryExecution {
     /// The size of the result set on disk in bytes.
     pub storage_bytes: u64,
 
+    /// The number of rows stored on disk.
+    pub storage_rows: u64,
+
     /// The unique identifier of the user that executed the query.
     pub user_id: uuid::Uuid,
 

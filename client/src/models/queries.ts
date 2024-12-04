@@ -150,6 +150,12 @@ export class QueryExecution {
   storageBytes!: number;
   
   /**
+   * The number of rows stored on disk.
+   **/
+  @serializable("integer", { required: true, min: 0, snakeCase: "property" })
+  storageRows!: number;
+  
+  /**
    * The unique identifier of the user that executed the query.
    **/
   @serializable("string", { format: "uuid", required: true, snakeCase: "property" })

@@ -1,20 +1,33 @@
 import { Schema, Table } from "apache-arrow";
 
+/**
+ * Interface for a DataFrame.
+ *
+ * A DataFrame is a collection of rows, where each row is an array of values.
+ */
 export interface DataFrame {
   /**
-   * Get an estimate of the number of elements in the dataset.
+   * Get an estimate of the number of rows in the dataframe.
    */
   getSizeHint(): number;
 
   /**
-   * Get a row in the dataframe.
+   * Get a row from the dataframe.
    *
    * This method should return an array of values, where each value is a column in the dataframe.
    * Returns `null` if the row is not available.
    */
-  get(index: number): Array<unknown>;
+  getRow(index: number): Array<unknown>;
+
+  /**
+   * Load the given number of rows starting from the given offset.
+   */
+  loadRows(offset: number, limit: number): Promise<void>;
 }
 
+/**
+ * A DataFrame implementation that wraps an Arrow Table.
+ */
 export class ArrowDataFrame implements DataFrame {
   private _table: Table;
 
@@ -30,8 +43,12 @@ export class ArrowDataFrame implements DataFrame {
     return this._table?.numRows;
   }
 
-  get(index: number): Array<unknown> {
+  getRow(index: number): Array<unknown> {
     return this._table?.get(index).toArray();
+  }
+
+  loadRows(_offset: number, _limit: number): Promise<void> {
+    return Promise.resolve();
   }
 
   constructor(table?: Table) {

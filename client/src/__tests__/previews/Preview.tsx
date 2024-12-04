@@ -14,7 +14,7 @@ function PreviewTitle({ children }: PreviewProps) {
 }
 
 function PreviewDescription({ children }: PreviewProps) {
-  return <p className="mt-2">{children}</p>;
+  return <div className="mt-2">{children}</div>;
 }
 
 Preview.Title = PreviewTitle;
