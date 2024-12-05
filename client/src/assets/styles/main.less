@@ -188,10 +188,10 @@
 .query-header {
   .status {
     @apply relative flex z-0 h-5 items-center transition-all duration-300 delay-500 ease-in-out rounded-full select-none;
-    @apply ring-1 ring-gray-50 dark:ring-gray-700; // Apply ring to the main element.
+    @apply bg-gray-200 dark:bg-gray-800; // Apply background to the main element.
     &::before {
       content: "";
-      @apply absolute -inset-0  dark:bg-gray-800 rounded-full; // Background with opacity.
+      @apply absolute -inset-0 rounded-full; // Background with opacity.
       z-index: -1; // Ensure it’s behind both the ring and content.
     }
   }

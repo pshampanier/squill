@@ -2,7 +2,6 @@ import cx from "classix";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { Dispatch, memo, useEffect, useReducer, useRef } from "react";
 import { DateClassification, generateDateClassifier } from "@/utils/time";
-import { secondary as colors } from "@/utils/colors";
 import { QueryExecution } from "@/models/queries";
 import { useUserStore } from "@/stores/UserStore";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
@@ -190,7 +189,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
     root: cx("h-full overflow-y-auto", className),
     inner: "relative w-full",
     query: "absolute top-0 left-0 w-full flex flex-col",
-    output: cx("rounded p-2", colors("background")),
+    output: "p-2",
   };
 
   const virtualItems: VirtualItem[] = virtualizer.getVirtualItems();

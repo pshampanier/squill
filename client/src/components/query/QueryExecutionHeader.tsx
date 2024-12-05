@@ -2,12 +2,13 @@ import { DateClassification, formatDuration, formatRelativeDate, generateDateCla
 import cx from "classix";
 import { useCallback, useEffect, useState } from "react";
 import { format } from "@/utils/strings";
+import { QueryExecutionStatus } from "@/models/queries";
+import { secondary as colors } from "@/utils/colors";
+import Spinner from "@/components/core/Spinner";
 import SuccessIcon from "@/icons/true.svg?react";
 import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
-import Spinner from "@/components/core/Spinner";
-import { QueryExecutionStatus } from "@/models/queries";
 
 const LOCATE_STR_YESTERDAY_EN = "Yesterday, {0}";
 
@@ -35,7 +36,8 @@ export default function QueryExecutionHeader({
   return (
     <ul
       className={cx(
-        "query-header list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap",
+        "query-header list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap rounded",
+        colors("background", "text"),
         className,
       )}
       data-component="query-execution-header"
