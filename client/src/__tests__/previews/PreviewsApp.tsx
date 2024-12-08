@@ -36,6 +36,7 @@ import NotificationPreview from "./core/Notifications.preview";
 import TreeViewPreview from "./core/TreeView.preview";
 import SidePanelPreview from "./core/SidePanel.preview";
 import QueryHistoryPreview from "./query/QueryHistoryPreview";
+import ToolbarPreview from "./core/Toolbar.preview";
 import cx from "classix";
 
 export function PreviewsApp() {
@@ -69,6 +70,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="SidePanel" />
           <PreviewSidebarItem view="TableView" />
           <PreviewSidebarItem view="Timeline" />
+          <PreviewSidebarItem view="Toolbar" />
           <PreviewSidebarItem view="TreeView" />
           <PreviewSidebarItem view="Notification" />
           <PreviewSidebarItem view="Switch" />
@@ -121,6 +123,7 @@ export function PreviewsApp() {
           {view === "Switch" && <SwitchPreview />}
           {view === "TableView" && <TableViewPreview />}
           {view === "Timeline" && <TimelinePreview />}
+          {view === "Toolbar" && <ToolbarPreview />}
           {view === "TreeView" && <TreeViewPreview />}
           {view === "Notification" && <NotificationPreview />}
           {view === "Tooltip" && <TooltipPreview />}

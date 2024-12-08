@@ -116,7 +116,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full h-[400px]">
-            {rows && <ArrowTableView schema={rows.schema} rows={rows} settings={settings} />}
+            <ArrowTableView schema={rows?.schema} rows={rows} settings={settings} />
           </div>
         </PreviewBox>
         <Preview.Description>
@@ -126,7 +126,7 @@ export default function TableViewPreview() {
           </div>
         </Preview.Description>
         <PreviewBox>
-          {rows && <ArrowTableView schema={rows.schema} rows={rows} settings={settings} maxRows={5} />}
+          <ArrowTableView schema={rows?.schema} rows={rows} settings={settings} maxRows={5} />
         </PreviewBox>
       </Preview>
       {/*
@@ -139,7 +139,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full overflow-hidden">
-            {rows && <ArrowTableView schema={rows.schema} rows={emptyDataFrame} settings={settings} />}
+            <ArrowTableView schema={rows?.schema} rows={emptyDataFrame} settings={settings} />
           </div>
         </PreviewBox>
       </Preview>
@@ -153,9 +153,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full">
-            {rows && (
-              <ArrowTableView schema={rows.schema} rows={fetchingDataFrame} settings={settings} fetching={true} />
-            )}
+            <ArrowTableView schema={rows?.schema} rows={fetchingDataFrame} settings={settings} fetching={true} />
           </div>
         </PreviewBox>
         <Preview.Description>
@@ -164,7 +162,7 @@ export default function TableViewPreview() {
         </Preview.Description>
         <PreviewBox>
           <div className="flex w-full">
-            {rows && <ArrowTableView schema={rows.schema} settings={settings} fetching={true} />}
+            <ArrowTableView schema={rows?.schema} settings={settings} fetching={true} />
           </div>
         </PreviewBox>
       </Preview>

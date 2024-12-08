@@ -8,6 +8,8 @@ import QueryInput, { QueryEditorInstance } from "@/components/query/QueryInput";
 import Kbd from "@/components/core/Kbd";
 import AutoHide from "@/components/core/AutoHide";
 import QueryHistory, { QueryHistoryAction } from "@/components/query/QueryHistory";
+import { QueryExecution } from "@/models/queries";
+import { useUserStore } from "@/stores/UserStore";
 
 registerCommand(
   {
@@ -68,6 +70,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   const refRoot = React.useRef<HTMLDivElement>(null);
   const refHistory = React.useRef<HTMLDivElement>(null);
   const refHistoryDispatcher = React.useRef<Dispatch<QueryHistoryAction> | null>(null);
+  const addNotification = useUserStore((state) => state.addNotification);
 
   //
   // Update the height of the history component
@@ -82,7 +85,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   //
   // Command handling
   //
-  const handleOnCommand = useCallback((event: CommandEvent) => {
+  const handleOnCommand = useCallback((event: CommandEvent, query?: QueryExecution) => {
     switch (event.detail.name) {
       case "terminal.clear":
         // TODO: Implement clear
@@ -96,6 +99,40 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
       case "terminal.execute":
         editorRef.current?.validate();
         break;
+      case "query.rerun": {
+        //
+        // Rerun the given query.
+        //
+        onValidate(query.query);
+        break;
+      }
+      case "query.copy": {
+        //
+        // Copy the given query to the clipboard
+        //
+        if (query?.query) {
+          navigator.clipboard
+            .writeText(query.query)
+            .then(() => {
+              addNotification({
+                id: crypto.randomUUID(),
+                variant: "success",
+                message: "Query copied to the clipboard.",
+                autoDismiss: true,
+              });
+            })
+            .catch((err) => {
+              addNotification({
+                id: crypto.randomUUID(),
+                variant: "error",
+                message: "Copy failed.",
+                description: err,
+                autoDismiss: true,
+              });
+            });
+        }
+        break;
+      }
     }
   }, []);
   useCommand({ ref: refRoot, onCommand: handleOnCommand });
@@ -128,7 +165,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   return (
     <div ref={refRoot} className={classes.root}>
       <div ref={refHistory} className={classes.history}>
-        <QueryHistory onMount={handleHistoryDidMount} />
+        <QueryHistory onMount={handleHistoryDidMount} onCommand={handleOnCommand} />
       </div>
       <QueryInput
         mode="terminal"

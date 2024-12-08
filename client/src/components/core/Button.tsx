@@ -5,9 +5,11 @@ import { twMerge as tw } from "tailwind-merge";
 import { SyntheticEvent, useContext } from "react";
 
 export type ButtonVariant = "solid" | "outline" | "ghost";
+export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 type ButtonProps = {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   icon?: SVGIcon;
   text?: string;
   tooltip?: string;
@@ -22,6 +24,7 @@ type ButtonProps = {
 
 export default function Button({
   variant = "ghost",
+  size = "lg",
   className,
   icon,
   text,
@@ -35,15 +38,19 @@ export default function Button({
 }: ButtonProps) {
   colors = colors || useContext(ColorsContext) || primary;
   const classes = tw(
-    "flex flex-row h-9 items-center p-2 rounded box-border border-2 text-sm select-none ripple",
+    "flex flex-row items-center rounded box-border border-2 text-sm select-none ripple",
     colors("text"),
     (variant === "solid" || variant === "ghost") && "border-transparent",
     variant === "solid" && colors("selected:background", "selected:text", "hover:background", "hover:text"),
     variant === "outline" && "",
     variant === "outline" && colors("border", "hover:border"),
     variant === "ghost" && colors("hover:ghost-background", "hover:ghost-text"),
+    size === "xs" && "h-[22px] p-0.5",
+    size === "sm" && "h-6 p-0.5",
+    size === "md" && "h-7 p-1",
+    size === "lg" && "h-9 p-2",
     disabled && "disabled:opacity-50 disabled:pointer-events-none",
-    className
+    className,
   );
   const Icon = icon;
 
@@ -63,7 +70,7 @@ export default function Button({
       role="button"
       tabIndex={tabIndex}
     >
-      {icon && <Icon className="w-5 h-5" />}
+      {icon && <Icon className={tw(size === "xs" ? "w-4 h-4" : "w-5 h-5")} />}
       {text && <span className={icon && "ml-1"}>{text}</span>}
       {children}
     </button>

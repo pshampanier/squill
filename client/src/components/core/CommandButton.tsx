@@ -1,6 +1,6 @@
 import { dispatchCommand, getCommand } from "@/utils/commands";
 import { ColorsFunction } from "@/utils/colors";
-import Button, { ButtonVariant } from "@/components/core/Button";
+import Button, { ButtonSize, ButtonVariant } from "@/components/core/Button";
 import { SVGIcon } from "@/utils/types";
 
 type CommandButtonProps = {
@@ -10,6 +10,7 @@ type CommandButtonProps = {
   tooltip?: string;
   colors?: ColorsFunction;
   variant?: ButtonVariant;
+  size?: ButtonSize;
   className?: string;
 };
 
@@ -20,6 +21,7 @@ export default function CommandButton({
   tooltip,
   colors,
   variant,
+  size = "lg",
   className,
 }: CommandButtonProps) {
   const cmd = getCommand(command);
@@ -29,6 +31,7 @@ export default function CommandButton({
   return (
     <Button
       variant={variant}
+      size={size}
       icon={icon === undefined ? cmd.icon : icon}
       onClick={handleClick}
       className={className}

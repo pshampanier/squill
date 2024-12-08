@@ -90,6 +90,61 @@ export default function ButtonsPreview() {
         </PreviewBox>
       </Preview>
       {/*
+       * Sizes
+       */}
+      <Preview>
+        <Preview.Title>Sizes</Preview.Title>
+        <Preview.Description>Buttons exists in different sizes.</Preview.Description>
+        <PreviewBox className="flex text-sm">
+          <div className="flex flex-col">
+            <div className="inline-flex space-x-4 items-center">
+              <span className="w-40">xs</span>
+              <div className={cx("inline-flex space-x-4 items-center p-2 rounded", primary("background"))}>
+                <Button size="xs" text="Solid" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="xs" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="xs" text="Outline" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="xs" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="xs" text="Ghost" variant="ghost" colors={primary} icon={UserIcon} />
+                <Button size="xs" variant="ghost" colors={primary} icon={UserIcon} />
+              </div>
+            </div>
+            <div className="inline-flex space-x-4 items-center">
+              <span className="w-40">sm</span>
+              <div className={cx("inline-flex space-x-4 items-center p-2 rounded", primary("background"))}>
+                <Button size="sm" text="Solid" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="sm" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="sm" text="Outline" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="sm" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="sm" text="Ghost" variant="ghost" colors={primary} icon={UserIcon} />
+                <Button size="sm" variant="ghost" colors={primary} icon={UserIcon} />
+              </div>
+            </div>
+            <div className="inline-flex space-x-4 items-center">
+              <span className="w-40">md</span>
+              <div className={cx("inline-flex space-x-4 items-center p-2 rounded", primary("background"))}>
+                <Button size="md" text="Solid" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="md" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="md" text="Outline" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="md" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="md" text="Ghost" variant="ghost" colors={primary} icon={UserIcon} />
+                <Button size="md" variant="ghost" colors={primary} icon={UserIcon} />
+              </div>
+            </div>
+            <div className="inline-flex space-x-4 items-center">
+              <span className="w-40">lg</span>
+              <div className={cx("inline-flex space-x-4 items-center p-2 rounded", primary("background"))}>
+                <Button size="lg" text="Solid" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="lg" variant="solid" colors={primary} icon={UserIcon} />
+                <Button size="lg" text="Outline" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="lg" variant="outline" colors={primary} icon={UserIcon} />
+                <Button size="lg" text="Ghost" variant="ghost" colors={primary} icon={UserIcon} />
+                <Button size="lg" variant="ghost" colors={primary} icon={UserIcon} />
+              </div>
+            </div>
+          </div>
+        </PreviewBox>
+      </Preview>
+      {/*
        * Disabled
        */}
       <Preview>

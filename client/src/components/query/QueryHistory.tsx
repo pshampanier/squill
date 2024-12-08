@@ -6,9 +6,10 @@ import { QueryExecution } from "@/models/queries";
 import { useUserStore } from "@/stores/UserStore";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
 import { TableSettings } from "@/models/user-settings";
+import { useQueryCache } from "@/hooks/use-query-cache";
 import QueryOutput from "@/components/query/QueryOutput";
 import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
-import { useQueryCache } from "@/hooks/use-query-cache";
+import { CommandEvent } from "@/utils/commands";
 
 /**
  * Layout properties for an element displayed within the query history.
@@ -61,6 +62,16 @@ const MemoizedQueryOutput = memo(QueryOutput, (prev, next) => {
   );
 });
 
+const MemoizedQueryExecutionHeader = memo(QueryExecutionHeader, (prev, next) => {
+  return (
+    prev.date === next.date &&
+    prev.defaultClassification === next.defaultClassification &&
+    prev.status === next.status &&
+    prev.executionTime === next.executionTime &&
+    prev.affectedRows === next.affectedRows
+  );
+});
+
 const QUERY_HEADER_DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yesterday", "this_year", "before_last_year"];
 
 interface QueryHistoryState {
@@ -86,6 +97,7 @@ export interface QueryHistoryAction {
 type QueryHistoryProps = {
   className?: string;
   onMount?: (dispatcher: Dispatch<QueryHistoryAction>) => void;
+  onCommand: (event: CommandEvent, query: QueryExecution) => void;
 };
 
 function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHistoryState {
@@ -132,7 +144,7 @@ function reducer(state: QueryHistoryState, action: QueryHistoryAction): QueryHis
 
 type ReducerFn = (state: QueryHistoryState, action: QueryHistoryAction) => QueryHistoryState;
 
-export default function QueryHistory({ className, onMount }: QueryHistoryProps) {
+export default function QueryHistory({ className, onCommand, onMount }: QueryHistoryProps) {
   //
   // States & Refs
   //
@@ -188,7 +200,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
   const classes = {
     root: cx("h-full overflow-y-auto", className),
     inner: "relative w-full",
-    query: "absolute top-0 left-0 w-full flex flex-col",
+    query: "absolute top-0 left-0 w-full flex flex-col group",
     output: "p-2",
   };
 
@@ -202,6 +214,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
           const date = query.createdAt;
           const dateClassification = dateClassifier(date);
           const { dataframe, fetching } = getQueryStates(query);
+
           return (
             <div
               key={virtualItem.key}
@@ -211,7 +224,7 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
                 transform: `translateY(${virtualItem.start}px)`,
               }}
             >
-              <QueryExecutionHeader
+              <MemoizedQueryExecutionHeader
                 date={date}
                 dateClassifications={QUERY_HEADER_DATE_CLASSIFICATIONS}
                 defaultClassification={dateClassification}
@@ -219,6 +232,9 @@ export default function QueryHistory({ className, onMount }: QueryHistoryProps) 
                 executionTime={query.executionTime}
                 affectedRows={query.affectedRows}
                 numberFormatter={numberFormat}
+                onCommand={(event: CommandEvent) => {
+                  onCommand(event, query);
+                }}
               />
               <MemoizedQueryOutput
                 query={query}

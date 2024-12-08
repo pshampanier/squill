@@ -16,5 +16,5 @@ export default function QueryHistoryExample() {
     dispatcher({ type: "set", queries: history });
   }, []);
 
-  return <QueryHistory onMount={handleDidMount} />;
+  return <QueryHistory onMount={handleDidMount} onCommand={null} />;
 }

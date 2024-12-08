@@ -1,19 +1,34 @@
 import { DateClassification, formatDuration, formatRelativeDate, generateDateClassifier } from "@/utils/time";
 import cx from "classix";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "@/utils/strings";
 import { QueryExecutionStatus } from "@/models/queries";
-import { secondary as colors } from "@/utils/colors";
+import { secondary } from "@/utils/colors";
+import { ColorsContext } from "@/stores/ColorsContext";
 import Spinner from "@/components/core/Spinner";
+import Toolbar from "@/components/core/Toolbar";
+import CommandButton from "@/components/core/CommandButton";
 import SuccessIcon from "@/icons/true.svg?react";
 import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
+import StarIcon from "@/icons/star.svg?react";
+import CopyIcon from "@/icons/clipboard-copy.svg?react";
+import ArrowsPointingOutIcon from "@/icons/arrows-pointing-out.svg?react";
+import ReplayIcon from "@/icons/replay.svg?react";
+import { CommandEvent, registerCommand } from "@/utils/commands";
+import { useCommand } from "@/hooks/use-commands";
 
 const LOCATE_STR_YESTERDAY_EN = "Yesterday, {0}";
 
+registerCommand(
+  { name: "query.open", description: "Open query", icon: ArrowsPointingOutIcon },
+  { name: "query.rerun", description: "Rerun query", icon: ReplayIcon },
+  { name: "query.copy", description: "Copy query", icon: CopyIcon },
+  { name: "query.favorite.add", description: "Add to favorite", icon: StarIcon },
+);
+
 type QueryExecutionHeaderProps = {
-  className?: string;
   date: Date;
   dateClassifications: DateClassification[];
   defaultClassification: DateClassification;
@@ -21,6 +36,8 @@ type QueryExecutionHeaderProps = {
   executionTime?: number;
   affectedRows?: number;
   numberFormatter?: Intl.NumberFormat;
+  onCommand: (event: CommandEvent) => void;
+  className?: string;
 };
 
 export default function QueryExecutionHeader({
@@ -32,37 +49,51 @@ export default function QueryExecutionHeader({
   executionTime,
   affectedRows,
   numberFormatter,
+  onCommand,
 }: QueryExecutionHeaderProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  useCommand({ ref, onCommand });
+
   return (
-    <ul
-      className={cx(
-        "query-header list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap rounded",
-        colors("background", "text"),
-        className,
-      )}
-      data-component="query-execution-header"
-    >
-      <li className="flex text-divider items-center">
-        <Status status={status} className="ml-1 mr-2" />
-        <FormattedDate
-          date={date}
-          dateClassification={defaultClassification}
-          dateClassifications={dateClassifications}
-        />
-      </li>
-      {status === "completed" && (
-        <li className="flex text-divider items-center">
-          <StopwatchIcon className="mr-1" />
-          {formatDuration(executionTime * 1_000_000, { style: "short", precision: "millisecond" })[0]}
-        </li>
-      )}
-      {affectedRows > 0 && (
-        <li className="flex text-divider items-center">
-          <span className="select-text">{numberFormatter.format(affectedRows)}</span>&nbsp;
-          {(affectedRows > 1 && "rows") || "row"}
-        </li>
-      )}
-    </ul>
+    <ColorsContext.Provider value={secondary}>
+      <div
+        ref={ref}
+        data-component="query-execution-header"
+        className={cx("query-header rounded flex flex-row items-center", secondary("background", "text"), className)}
+      >
+        <ul className="list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap">
+          <li className="flex text-divider items-center">
+            <Status status={status} className="ml-1 mr-2" />
+            <FormattedDate
+              date={date}
+              dateClassification={defaultClassification}
+              dateClassifications={dateClassifications}
+            />
+          </li>
+          {status === "completed" && (
+            <li className="flex text-divider items-center">
+              <StopwatchIcon className="mr-1" />
+              {formatDuration(executionTime * 1_000_000, { style: "short", precision: "millisecond" })[0]}
+            </li>
+          )}
+          {affectedRows > 0 && (
+            <li className="flex text-divider items-center">
+              <span className="select-text">{numberFormatter.format(affectedRows)}</span>&nbsp;
+              {(affectedRows > 1 && "rows") || "row"}
+            </li>
+          )}
+        </ul>
+        <Toolbar
+          size="md"
+          className="ml-auto mr-0.5 opacity-0 transition-opacity duration-500 delay-200 group-hover:opacity-100"
+        >
+          <CommandButton size="md" command="query.rerun" />
+          <CommandButton size="md" command="query.copy" />
+          <CommandButton size="md" command="query.favorite.add" />
+          <CommandButton size="md" command="query.open" />
+        </Toolbar>
+      </div>
+    </ColorsContext.Provider>
   );
 }
 

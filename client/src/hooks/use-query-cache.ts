@@ -131,7 +131,7 @@ export function useQueryCache({
                 entry.key.offset === key.offset,
             );
             if (!entry) {
-              const newEntry: CacheEntry = { key, status: "pending", lastAccessed: Date.now() };
+              const newEntry: CacheEntry = { key, status: "pending", lastAccessed: performance.now() };
               localCache.push(newEntry);
             }
           });
@@ -151,11 +151,11 @@ export function useQueryCache({
               );
               if (!entry) {
                 next = next ?? [...prev];
-                const newEntry: CacheEntry = { key, status: "pending", lastAccessed: Date.now() };
+                const newEntry: CacheEntry = { key, status: "pending", lastAccessed: performance.now() };
                 console.debug("use-query-cache", { id: key.queryId, offset: key.offset, status: "pending" });
                 next.push(newEntry);
               } else {
-                entry.lastAccessed = Date.now();
+                entry.lastAccessed = performance.now();
               }
             });
             return next ?? prev;

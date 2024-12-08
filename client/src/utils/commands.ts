@@ -8,7 +8,7 @@ export type Command = {
   readonly name: string;
   readonly label?: string;
   readonly description: string;
-  readonly shortcut: KeyboardShortcut;
+  readonly shortcut?: KeyboardShortcut;
   readonly icon?: SVGIcon;
 };
 
