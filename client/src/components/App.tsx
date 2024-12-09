@@ -42,7 +42,10 @@ export function App() {
       case "sidebar.primary.toggle":
         toggleSidebarVisibility();
         break;
+      default:
+        return;
     }
+    event.stopPropagation(); // The command event has been handled
   }, []);
 
   useCommand({ ref: refApp, onCommand: handleCommand });

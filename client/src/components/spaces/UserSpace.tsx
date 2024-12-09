@@ -95,7 +95,11 @@ export default function UserSpace(props: SpaceProps) {
         closePage(useAppStore.getState().activePageId);
         break;
       }
+
+      default:
+        return;
     }
+    event.stopPropagation(); // The command event has been handled
   }, []);
 
   useCommand({ ref: refSpace, onCommand: handleCommand });

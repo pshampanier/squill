@@ -292,9 +292,11 @@ export default function TableView({
   const visibleRows = rowVirtualizer.getVirtualItems();
   const visibleColumns = columnVirtualizer.getVirtualItems();
 
-  if (rows && visibleRows.length > 0) {
-    rows.loadRows(visibleRows[0].index, visibleRows.length);
-  }
+  useEffect(() => {
+    if (rows && visibleRows.length > 0) {
+      rows.loadRows(visibleRows[0].index, visibleRows.length);
+    }
+  }, [visibleRows.length > 0 ? visibleRows[0].index : 0, visibleRows.length]);
 
   console.debug("Rendering TableView", {
     firstRow: visibleRows[0]?.index,

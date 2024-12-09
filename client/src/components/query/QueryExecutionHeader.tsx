@@ -57,6 +57,7 @@ export default function QueryExecutionHeader({
   return (
     <ColorsContext.Provider value={secondary}>
       <div
+        tabIndex={0}
         ref={ref}
         data-component="query-execution-header"
         className={cx("query-header rounded flex flex-row items-center", secondary("background", "text"), className)}

@@ -133,7 +133,10 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         }
         break;
       }
+      default:
+        return;
     }
+    event.stopPropagation(); // The command event has been handled
   }, []);
   useCommand({ ref: refRoot, onCommand: handleOnCommand });
 
