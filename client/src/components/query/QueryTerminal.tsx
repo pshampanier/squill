@@ -106,6 +106,14 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         onValidate(query.query);
         break;
       }
+      case "clipboard.paste": {
+        //
+        // Paste the clipboard content into the query editor.
+        //
+        editorRef.current?.focus();
+        break;
+      }
+
       case "query.copy": {
         //
         // Copy the given query to the clipboard

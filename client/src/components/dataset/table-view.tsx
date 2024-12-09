@@ -292,6 +292,9 @@ export default function TableView({
   const visibleRows = rowVirtualizer.getVirtualItems();
   const visibleColumns = columnVirtualizer.getVirtualItems();
 
+  // We need to use a useEffect to load the rows when the visible rows change because it's not allowed in react to call
+  // the `loadRows` method in the render method since this one is may end-up calling a `setState` during the parent
+  // component render phase.
   useEffect(() => {
     if (rows && visibleRows.length > 0) {
       rows.loadRows(visibleRows[0].index, visibleRows.length);

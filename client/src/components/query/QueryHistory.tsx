@@ -183,12 +183,23 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     onMount?.(dispatch);
   }, []);
 
+  //
+  // Scroll to the bottom of the history when the history changes.
+  //
+  // The behavior is different depending on the amount of content that need to be scrolled. If the new position of the
+  // scrollbar is outside the current view we scroll instantly, otherwise we scroll smoothly.
   useEffect(() => {
-    // scroll to the bottom when first initialized
-    rootRef.current?.scrollTo({
-      top: rootRef.current?.scrollHeight,
-      behavior: history.lastAction === "set" ? "instant" : "smooth",
-    });
+    if (rootRef.current) {
+      const clientHeight = rootRef.current.clientHeight;
+      const currentScrollPosition = rootRef.current.scrollTop + clientHeight;
+      const targetScrollPosition = rootRef.current.scrollHeight;
+      const offset = targetScrollPosition - currentScrollPosition;
+      const behavior = offset > clientHeight ? "instant" : "smooth";
+      rootRef.current.scrollTo({
+        top: targetScrollPosition,
+        behavior,
+      });
+    }
   }, [history]);
 
   // Because we are potentially going to process a large number of queries, we can optimize a bit by using reusing the
@@ -198,7 +209,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   const numberFormat = new Intl.NumberFormat("en-US");
 
   const classes = {
-    root: cx("h-full overflow-y-auto", className),
+    root: cx("h-full overflow-y-auto focus:outline-none", className),
     inner: "relative w-full",
     query: "absolute top-0 left-0 w-full flex flex-col group",
     output: "p-2",
