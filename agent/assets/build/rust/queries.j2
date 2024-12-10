@@ -17,6 +17,7 @@ impl QueryExecutionStatus {
             QueryExecutionStatus::Completed => "completed",
             QueryExecutionStatus::Failed => "failed",
             QueryExecutionStatus::Cancelled => "cancelled",
+            QueryExecutionStatus::Deleted => "deleted",
         }
     }
 }
@@ -31,6 +32,7 @@ impl TryFrom<&str> for QueryExecutionStatus {
             "completed" => Ok(QueryExecutionStatus::Completed),
             "failed" => Ok(QueryExecutionStatus::Failed),
             "cancelled" => Ok(QueryExecutionStatus::Cancelled),
+            "deleted" => Ok(QueryExecutionStatus::Deleted),
             _ => Err(anyhow!("Invalid query status: {}", value)),
         }
     }

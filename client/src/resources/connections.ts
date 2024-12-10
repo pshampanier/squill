@@ -46,7 +46,7 @@ export const Connections = {
    * @param connId The identifier of the connection to get the history from.
    * @param origin The origin of the history (e.g. `terminal`, `worksheet`, ...).
    */
-  async list_history(connId: string, origin: string): Promise<QueryHistoryPage> {
+  async listHistory(connId: string, origin: string): Promise<QueryHistoryPage> {
     return (
       await agent().get<QueryHistoryPage>(`/connections/${connId}/history`, {
         headers: {
@@ -54,6 +54,15 @@ export const Connections = {
         },
       })
     ).as(QueryHistoryPage);
+  },
+
+  /**
+   * Remove a query from the history.
+   *
+   * API: `DELETE /connections/:connId/history/:queryId`
+   */
+  async removeFromHistory(connId: string, queryId: string) {
+    await agent().del(`/connections/${connId}/history/${queryId}`);
   },
 
   async getHistoryPreview(connId: string, queryId: string): Promise<Table> {

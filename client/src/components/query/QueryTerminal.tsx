@@ -10,6 +10,7 @@ import AutoHide from "@/components/core/AutoHide";
 import QueryHistory, { QueryHistoryAction } from "@/components/query/QueryHistory";
 import { QueryExecution } from "@/models/queries";
 import { useUserStore } from "@/stores/UserStore";
+import { Connections } from "@/resources/connections";
 
 registerCommand(
   {
@@ -111,6 +112,15 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         // Paste the clipboard content into the query editor.
         //
         editorRef.current?.focus();
+        break;
+      }
+
+      case "query.history.delete": {
+        //
+        // Delete the given query from the history.
+        //
+        Connections.removeFromHistory(query.connectionId, query.id);
+        refHistoryDispatcher.current?.({ type: "remove", queries: [query] });
         break;
       }
 

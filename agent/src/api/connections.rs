@@ -18,6 +18,7 @@ use axum::extract::{Path, State};
 use axum::http::HeaderMap;
 use axum::http::HeaderName;
 use axum::response::Response;
+use axum::routing::delete;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use common::constants::X_REQUEST_ORIGIN;
@@ -193,6 +194,26 @@ fn ipc_serialize(record_batches: Vec<RecordBatch>) -> anyhow::Result<Vec<u8>> {
     Ok(buffer.into_inner())
 }
 
+/// DELETE /connections/{id}/history/{query_id}
+///
+/// Remove a query from the history.
+async fn delete_query_from_history(
+    state: State<ServerState>,
+    context: ServerResult<RequestContext>,
+    Path((id, query_history_id)): Path<(Uuid, Uuid)>,
+) -> ServerResult<()> {
+    let user_session = context?.get_user_session()?;
+    let mut conn = state.get_agentdb_connection().await?;
+
+    let connection: models::Connection = catalog::get(&mut conn, id).await?;
+    if connection.owner_user_id != user_session.get_user_id() {
+        return Err(err_forbidden!("You are not allowed to access this connection."));
+    }
+
+    queries::delete_from_history(&mut conn, id, query_history_id).await?;
+    Ok(())
+}
+
 pub fn authenticated_routes(state: ServerState) -> Router {
     Router::new()
         .route("/connections/defaults", get(get_connection_defaults))
@@ -200,6 +221,7 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/connections/:id", get(get_connection))
         .route("/connections/:id/execute", post(execute_buffer))
         .route("/connections/:id/history", get(list_queries_history))
+        .route("/connections/:id/history/:query_history_id", delete(delete_query_from_history))
         .route("/connections/:id/history/:query_history_id/data", get(get_query_history_data))
         .with_state(state)
 }

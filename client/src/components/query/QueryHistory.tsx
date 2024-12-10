@@ -189,7 +189,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   // The behavior is different depending on the amount of content that need to be scrolled. If the new position of the
   // scrollbar is outside the current view we scroll instantly, otherwise we scroll smoothly.
   useEffect(() => {
-    if (rootRef.current) {
+    if (rootRef.current && history.lastAction !== "remove") {
       const clientHeight = rootRef.current.clientHeight;
       const currentScrollPosition = rootRef.current.scrollTop + clientHeight;
       const targetScrollPosition = rootRef.current.scrollHeight;
@@ -225,7 +225,6 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
           const date = query.createdAt;
           const dateClassification = dateClassifier(date);
           const { dataframe, fetching } = getQueryStates(query);
-
           return (
             <div
               key={virtualItem.key}

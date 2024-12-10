@@ -77,7 +77,7 @@ CREATE TABLE query_history (
 	affected_rows INTEGER,
 
 	-- The execution status of the query.	
-	status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')) DEFAULT 'pending',
+	status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled', 'deleted')) DEFAULT 'pending',
 
 	-- `true` if the query return a result set (whenever the result set is empty or not).
 	with_result_set BOOLEAN DEFAULT FALSE,

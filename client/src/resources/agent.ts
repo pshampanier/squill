@@ -178,6 +178,10 @@ export class Agent {
     return this.fetch(path, "GET", options);
   }
 
+  async del<T extends object>(path: string, options?: FetchOptions): Promise<SerializedResource<T>> {
+    return this.fetch(path, "DELETE", options);
+  }
+
   async put<B extends object, R extends object>(
     path: string,
     body: B,

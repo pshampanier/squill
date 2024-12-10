@@ -12,7 +12,7 @@ import SuccessIcon from "@/icons/true.svg?react";
 import ErrorIcon from "@/icons/false.svg?react";
 import PauseIcon from "@/icons/pause.svg?react";
 import StopwatchIcon from "@/icons/stopwatch.svg?react";
-import StarIcon from "@/icons/star.svg?react";
+import TrashIcon from "@/icons/trash.svg?react";
 import CopyIcon from "@/icons/clipboard-copy.svg?react";
 import ArrowsPointingOutIcon from "@/icons/arrows-pointing-out.svg?react";
 import ReplayIcon from "@/icons/replay.svg?react";
@@ -25,7 +25,7 @@ registerCommand(
   { name: "query.open", description: "Open query", icon: ArrowsPointingOutIcon },
   { name: "query.rerun", description: "Rerun query", icon: ReplayIcon },
   { name: "query.copy", description: "Copy query", icon: CopyIcon },
-  { name: "query.favorite.add", description: "Add to favorite", icon: StarIcon },
+  { name: "query.history.delete", description: "Delete from history", icon: TrashIcon },
 );
 
 type QueryExecutionHeaderProps = {
@@ -90,7 +90,7 @@ export default function QueryExecutionHeader({
         >
           <CommandButton size="md" command="query.rerun" />
           <CommandButton size="md" command="query.copy" />
-          <CommandButton size="md" command="query.favorite.add" />
+          <CommandButton size="md" command="query.history.delete" />
           <CommandButton size="md" command="query.open" />
         </Toolbar>
       </div>

@@ -33,7 +33,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   // history when new query are added, modified or removed.
   const handleHistoryDidMount = (origin: string, dispatcher: Dispatch<QueryHistoryAction>) => {
     queryEventHandler.current = dispatcher;
-    Connections.list_history(connId, origin).then((page) => {
+    Connections.listHistory(connId, origin).then((page) => {
       // The dispatcher is called with an action to initialize the history.
       queryEventHandler.current?.({
         type: "set",

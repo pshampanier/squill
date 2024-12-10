@@ -10,11 +10,23 @@ use std::collections::HashMap;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryExecutionStatus {
+    /// Waiting to be executed.
     Pending,
+
+    /// Execution in progress.
     Running,
+
+    /// Execution completed successfully.
     Completed,
+
+    /// Execution failed.
     Failed,
+
+    /// Execution was cancelled.
     Cancelled,
+
+    /// Removed from the history.
+    Deleted,
 }
 
 impl QueryExecutionStatus {
@@ -25,6 +37,7 @@ impl QueryExecutionStatus {
             QueryExecutionStatus::Completed => "completed",
             QueryExecutionStatus::Failed => "failed",
             QueryExecutionStatus::Cancelled => "cancelled",
+            QueryExecutionStatus::Deleted => "deleted",
         }
     }
 }
@@ -39,6 +52,7 @@ impl TryFrom<&str> for QueryExecutionStatus {
             "completed" => Ok(QueryExecutionStatus::Completed),
             "failed" => Ok(QueryExecutionStatus::Failed),
             "cancelled" => Ok(QueryExecutionStatus::Cancelled),
+            "deleted" => Ok(QueryExecutionStatus::Deleted),
             _ => Err(anyhow!("Invalid query status: {}", value)),
         }
     }

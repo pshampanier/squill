@@ -7,7 +7,7 @@ import { formatRegExp, serializable } from "@/utils/serializable";
 /**
  * The status of a query execution.
  */
-export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed", "failed", "cancelled"] as const;
+export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed", "failed", "cancelled", "deleted"] as const;
 export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number];
 
 

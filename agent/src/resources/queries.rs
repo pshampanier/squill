@@ -145,6 +145,9 @@ pub async fn get(conn: &mut Connection, connection_id: Uuid, query_history_id: U
 }
 
 /// Update the query in the history.
+///
+/// - The query can only be updated if the status is not a final status.
+/// - Each time the query is updated, the revision is incremented.
 pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Option<QueryExecution>> {
     // The `affected_rows` is stored in memory as a `u64` but in the database it is stored as a `i64` because of sqlite
     // limitations. It doesn't really matter since the number of affected rows should always be less than `i64::MAX`.
@@ -164,7 +167,7 @@ pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Opti
                         storage_bytes = ?,
                         storage_rows = ?,
                         metadata = ?
-                  WHERE query_history_id=? AND connection_id=? AND status <> ?
+                  WHERE query_history_id=? AND connection_id=? AND status IN (?, ?)
             RETURNING revision, executed_at"#,
         params!(
             query.status.as_str(),
@@ -177,7 +180,8 @@ pub async fn update(conn: &mut Connection, query: QueryExecution) -> Result<Opti
             if query.metadata.is_empty() { None } else { Some(serde_json::to_string(&query.metadata)?) },
             query.id,
             query.connection_id,
-            QueryExecutionStatus::Cancelled.as_str()
+            QueryExecutionStatus::Pending.as_str(),
+            QueryExecutionStatus::Running.as_str()
         ),
         |row| {
             Ok(QueryExecution {
@@ -201,9 +205,14 @@ pub async fn list_history<S: Into<String>>(
     let origin: String = origin.into();
     let mut queries = Vec::new();
     let mut stmt = conn
-        .prepare("SELECT * FROM query_history WHERE connection_id = ? AND origin = ? and user_id = ? ORDER BY created_at DESC")
+        .prepare(
+            r#"SELECT * FROM query_history 
+                           WHERE connection_id = ? AND origin = ? and user_id = ? AND status <> ?
+                           ORDER BY created_at DESC"#,
+        )
         .await?;
-    let mut rows = stmt.query_rows(params!(connection_id, origin, user_id)).await?;
+    let mut rows =
+        stmt.query_rows(params!(connection_id, origin, user_id, QueryExecutionStatus::Deleted.as_str())).await?;
     while let Some(next) = rows.next().await {
         match next {
             Ok(row) => queries.push(map_query_row(&row)?),
@@ -232,6 +241,16 @@ pub async fn read_history_data(
     } else {
         Err(UserError::NotFound("Query not found".to_string()).into())
     }
+}
+
+/// Remove the query from the history.
+pub async fn delete_from_history(conn: &mut Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<()> {
+    conn.execute(
+        "UPDATE query_history SET status = ? WHERE connection_id = ? AND query_history_id = ?",
+        params!(QueryExecutionStatus::Deleted.as_str(), connection_id, query_history_id),
+    )
+    .await?;
+    Ok(())
 }
 
 #[inline]
