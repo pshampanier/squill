@@ -894,7 +894,8 @@ components:
         - revision
         - connection_id
         - user_id
-        - query
+        - text
+        - hash
         - status
         - created_at
         - affected_rows
@@ -928,9 +929,18 @@ components:
           description: The unique identifier of the user that executed the query.
           type: string
           format: uuid
-        query:
-          description: The query that was executed.
+        text:
+          description: The text of the query.
           type: string
+        hash:
+          description: |
+            The hash of the text of the query after normalization.
+
+            The hash is used to determine if two queries are the same regardless of their formatting. The hash is 
+            computed by normalizing the query into tokens.
+          type: integer
+          format: int64
+          minimum: 0
         with_result_set:
           description: |
             A flag indicating if the query is a result set returning query.

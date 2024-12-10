@@ -77,20 +77,20 @@ export function useQuerySuggestion(initialHistory: QueryExecution[]): QuerySugge
       let cache = get().suggestions;
       if (cache && query.startsWith(get().suggestionQuery)) {
         // We can refine the existing cache of suggestions
-        cache = cache.filter((item) => item.query.toLowerCase().startsWith(query));
+        cache = cache.filter((item) => item.text.toLowerCase().startsWith(query));
         setSuggestionQuery(query);
         setSuggestions(cache);
       } else {
-        cache = get().history.filter((item) => item.query.toLowerCase().startsWith(query));
+        cache = get().history.filter((item) => item.text.toLowerCase().startsWith(query));
         setSuggestionQuery(query);
         setSuggestions(cache);
       }
       if (cache.length > 0) {
         // Return the first suggestion that is not the query itself
-        const index = cache.findIndex((item) => item.query.toLowerCase() !== query);
+        const index = cache.findIndex((item) => item.text.toLowerCase() !== query);
         if (index !== -1) {
           setSuggestionIndex(index);
-          return cache[index].query.slice(query.length);
+          return cache[index].text.slice(query.length);
         }
       }
       // No suggestion found
@@ -103,7 +103,7 @@ export function useQuerySuggestion(initialHistory: QueryExecution[]): QuerySugge
       const cache = get().suggestions;
       if (index < cache.length - 1) {
         setSuggestionIndex(index + 1);
-        return cache[index + 1].query.slice(get().suggestionQuery.length);
+        return cache[index + 1].text.slice(get().suggestionQuery.length);
       } else {
         return "";
       }
@@ -114,7 +114,7 @@ export function useQuerySuggestion(initialHistory: QueryExecution[]): QuerySugge
       const cache = get().suggestions;
       if (index > 0) {
         setSuggestionIndex(index - 1);
-        return cache[index - 1].query.slice(get().suggestionQuery.length);
+        return cache[index - 1].text.slice(get().suggestionQuery.length);
       } else {
         return "";
       }

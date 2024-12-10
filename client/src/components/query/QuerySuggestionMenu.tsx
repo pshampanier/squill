@@ -24,7 +24,7 @@ export default function QuerySuggestionMenu({ suggestions }: QuerySuggestionMenu
           const shortcut: KeyboardShortcut = index < 9 ? [`Meta+${index + 1}`, `Ctrl+${index + 1}`] : undefined;
           return (
             <Menu.Item key={index} onClick={handleOnClick} icon={HistoryIcon} shortcut={shortcut}>
-              <pre className="text-xs align-middle max-h-32 text-wrap overflow-hidden">{suggestion.query}</pre>
+              <pre className="text-xs align-middle max-h-32 text-wrap overflow-hidden">{suggestion.text}</pre>
             </Menu.Item>
           );
         })}

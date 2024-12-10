@@ -27,7 +27,7 @@ export default function QueryHistoryTimelinePreview() {
       id: Math.random().toString(36).substring(7),
       revision: 0,
       createdAt: new Date(),
-      query: `UPDATE users SET name = 'John Doe' WHERE id = ${counter.current++}`,
+      text: `UPDATE users SET name = 'John Doe' WHERE id = ${counter.current++}`,
       status: "pending",
     });
     console.debug("pendingExecution", pendingExecution);

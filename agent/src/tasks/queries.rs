@@ -139,7 +139,7 @@ async fn execute_query(
 ///
 /// This function returns the updated [QueryExecution].
 async fn execute_query_without_result_set(conn: &mut Connection, query: QueryExecution) -> Result<QueryExecution> {
-    let affected_rows = conn.execute(query.query.as_str(), None).await?;
+    let affected_rows = conn.execute(query.text.as_str(), None).await?;
     Ok(QueryExecution { status: QueryExecutionStatus::Completed, affected_rows, ..query })
 }
 
@@ -153,7 +153,7 @@ async fn execute_query_with_result_set(
     conn: &mut Connection,
     query: QueryExecution,
 ) -> Result<QueryExecution> {
-    let mut stmt = conn.prepare(query.query.as_str()).await?;
+    let mut stmt = conn.prepare(query.text.as_str()).await?;
     let mut stream = stmt.query(None).await?;
 
     let mut next_batch = stream.next().await;
@@ -432,7 +432,7 @@ mod tests {
         let connection = models::Connection { owner_user_id: security_token.user_id, ..Default::default() };
         let connection_id = assert_ok!(catalog::add(&mut conn, &connection).await).id;
         let query = assert_ok!(
-            queries::create(&mut conn, connection_id, "origin", security_token.user_id, "SELECT 1", true).await
+            queries::create(&mut conn, connection_id, "origin", security_token.user_id, "SELECT 1", 42, true).await
         );
 
         let schema = Arc::new(Schema::new(vec![

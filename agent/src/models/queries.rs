@@ -105,6 +105,12 @@ pub struct QueryExecution {
     /// before starting to loose precision. In addition seconds are more user friendly than nanoseconds.
     pub execution_time: f64,
 
+    /// The hash of the text of the query after normalization.
+    ///
+    /// The hash is used to determine if two queries are the same regardless of their formatting. The hash is
+    /// computed by normalizing the query into tokens.
+    pub hash: u64,
+
     /// The unique identifier of the query execution.
     pub id: uuid::Uuid,
 
@@ -127,9 +133,6 @@ pub struct QueryExecution {
     /// Examples of origins are: `terminal`, `worksheet`, `e7ee76db-8758-4da4-bbce-242c8d1f3d63`, etc.
     pub origin: String,
 
-    /// The query that was executed.
-    pub query: String,
-
     /// The revision number of the query execution.
     ///
     /// The revision number is used to track the changes to the query execution. It is incremented each time the
@@ -147,6 +150,9 @@ pub struct QueryExecution {
 
     /// The number of rows stored on disk.
     pub storage_rows: u64,
+
+    /// The text of the query.
+    pub text: String,
 
     /// The unique identifier of the user that executed the query.
     pub user_id: uuid::Uuid,

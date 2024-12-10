@@ -6,7 +6,7 @@ import { addTime } from "@/utils/time";
 import { useUserStore } from "@/stores/UserStore";
 
 const QUERY_ERROR = new QueryExecution({
-  query: `SELECT 
+  text: `SELECT 
     hotels.name, 
     hotels.address, 
     hotels.telephone_number, 
@@ -27,13 +27,13 @@ FROM
 });
 
 const QUERY_CANCELLED = new QueryExecution({
-  query: `SELECT name, address FROM hotels ORDER BY name;`,
+  text: `SELECT name, address FROM hotels ORDER BY name;`,
   executedAt: addTime(new Date(), -2, "hour"),
   status: "cancelled",
 });
 
 const QUERY_SUCCESS = new QueryExecution({
-  query: `SELECT productid, name, productnumber, makeflag, finishedgoodsflag, color, listprice, weight, weightunitmeasurecode
+  text: `SELECT productid, name, productnumber, makeflag, finishedgoodsflag, color, listprice, weight, weightunitmeasurecode
   FROM production.product
  WHERE listprice > 0 AND weight IS NOT NULL
  LIMIT 10;`,
@@ -44,14 +44,14 @@ const QUERY_SUCCESS = new QueryExecution({
 });
 
 const QUERY_RUNNING = new QueryExecution({
-  query: `SELECT * FROM hotels;`,
+  text: `SELECT * FROM hotels;`,
   executedAt: addTime(new Date(), -30, "second"),
   status: "running",
   withResultSet: true,
 });
 
 const QUERY_PENDING = new QueryExecution({
-  query: `SELECT name, address FROM hotels ORDER BY name;`,
+  text: `SELECT name, address FROM hotels ORDER BY name;`,
   executedAt: new Date(),
   status: "pending",
   withResultSet: true,

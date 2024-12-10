@@ -37,7 +37,7 @@ export default function QueryOutput({ className, query, dataframe, fetching = fa
   //
   // Props, States & Refs
   //
-  const { status, error, query: statement } = query;
+  const { status, error, text: statement } = query;
 
   //
   // Logic

@@ -104,7 +104,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         //
         // Rerun the given query.
         //
-        onValidate(query.query);
+        onValidate(query.text);
         break;
       }
       case "clipboard.paste": {
@@ -128,9 +128,9 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         //
         // Copy the given query to the clipboard
         //
-        if (query?.query) {
+        if (query?.text) {
           navigator.clipboard
-            .writeText(query.query)
+            .writeText(query.text)
             .then(() => {
               addNotification({
                 id: crypto.randomUUID(),

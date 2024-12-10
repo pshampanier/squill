@@ -24,6 +24,9 @@ use axum::{Json, Router};
 use common::constants::X_REQUEST_ORIGIN;
 use serde::Deserialize;
 use squill_drivers::async_conn::Connection;
+use std::hash::DefaultHasher;
+use std::hash::Hash;
+use std::hash::Hasher;
 use std::io::Cursor;
 use uuid::Uuid;
 
@@ -81,6 +84,10 @@ async fn execute_buffer(
     // Parse the SQL query
     let statements = loose_sqlparser::parse(&buffer);
     for statement in statements {
+        // Generate a hash of the statement
+        let mut hasher = DefaultHasher::new();
+        statement.hash(&mut hasher);
+
         // Insert the query into the database
         queries.push(
             resources::queries::create(
@@ -89,6 +96,7 @@ async fn execute_buffer(
                 &origin,
                 user_session.get_user_id(),
                 &statement.sql().to_string(),
+                hasher.finish(),
                 statement.is_query(),
             )
             .await?,

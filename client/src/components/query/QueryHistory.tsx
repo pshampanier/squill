@@ -167,7 +167,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     estimateSize: (index: number) => {
       const query = historyItems[index];
       const header = calcHeight({ height: 32 }, 1);
-      const statement = calcHeight({ lineHeight: 18 }, query.query?.split("\n").length);
+      const statement = calcHeight({ lineHeight: 18 }, query.text?.split("\n").length);
       const error = calcHeight({ marginTop: 8, padding: 8, lineHeight: 16 }, query.error?.message?.split("\n").length);
       const rows = calcRowsHeight(query, settings);
       const estimatedSize = header + (8 /* padding */ + statement + error + rows + 8); /* padding */

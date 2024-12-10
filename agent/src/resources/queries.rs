@@ -92,15 +92,16 @@ pub async fn create<S: Into<String>>(
     origin: S,
     user_id: Uuid,
     statement: S,
+    hash: u64,
     with_result_set: bool,
 ) -> Result<QueryExecution> {
     let origin: String = origin.into();
     let statement: String = statement.into();
     match conn
         .query_map_row(
-            r#"INSERT INTO query_history(query_history_id, connection_id, user_id, origin, query, with_result_set)
-                           VALUES(?, ?, ?, ?, ?, ?) RETURNING query_history_id, created_at"#,
-            params!(Uuid::new_v4(), connection_id, user_id, &origin, &statement, with_result_set),
+            r#"INSERT INTO query_history(query_history_id, connection_id, user_id, origin, text, hash, with_result_set)
+                           VALUES(?, ?, ?, ?, ?, ?, ?) RETURNING query_history_id, created_at"#,
+            params!(Uuid::new_v4(), connection_id, user_id, &origin, &statement, hash as i64, with_result_set),
             |row| {
                 Ok(QueryExecution {
                     id: row.try_get(0)?,
@@ -108,7 +109,8 @@ pub async fn create<S: Into<String>>(
                     revision: 0,
                     connection_id,
                     user_id,
-                    query: statement,
+                    text: statement,
+                    hash,
                     with_result_set,
                     status: QueryExecutionStatus::Pending,
                     error: None,
@@ -132,7 +134,7 @@ pub async fn create<S: Into<String>>(
 /// Load a query from the history.
 pub async fn get(conn: &mut Connection, connection_id: Uuid, query_history_id: Uuid) -> Result<Option<QueryExecution>> {
     conn.query_map_row(
-        r#"SELECT query_history_id, connection_id, revision, user_id, query, origin, created_at, executed_at, 
+        r#"SELECT query_history_id, connection_id, revision, user_id, text, hash, origin, created_at, executed_at, 
                              execution_time, affected_rows, status, error, with_result_set, storage_bytes, storage_rows, 
                              metadata
                         FROM query_history 
@@ -260,7 +262,8 @@ fn map_query_row(row: &Row) -> Result<QueryExecution> {
         revision: row.try_get::<_, i64>("revision")? as u32,
         connection_id: row.try_get::<_, _>("connection_id")?,
         user_id: row.try_get::<_, _>("user_id")?,
-        query: row.try_get::<_, String>("query")?,
+        text: row.try_get::<_, String>("text")?,
+        hash: row.try_get::<_, i64>("hash")? as u64,
         origin: row.try_get::<_, String>("origin")?,
         created_at: row.try_get::<_, chrono::DateTime<chrono::Utc>>("created_at")?,
         executed_at: row.try_get_nullable::<_, chrono::DateTime<chrono::Utc>>("executed_at")?,
@@ -296,7 +299,7 @@ mod tests {
         let mut conn = assert_ok!(conn_pool.get().await);
 
         // create
-        let initial_query = create(&mut conn, connection_id, origin, user_id, statement, true).await.unwrap();
+        let initial_query = create(&mut conn, connection_id, origin, user_id, statement, 42, true).await.unwrap();
         assert_eq!(
             initial_query,
             QueryExecution {
@@ -305,7 +308,8 @@ mod tests {
                 origin: origin.to_string(),
                 revision: 0,
                 user_id,
-                query: statement.to_string(),
+                text: statement.to_string(),
+                hash: 42,
                 with_result_set: true,
                 status: QueryExecutionStatus::Pending,
                 error: None,
@@ -363,15 +367,15 @@ mod tests {
         let origin_1 = "origin1";
         let origin_2 = "origin2";
 
-        create(&mut conn, connection_id_1, origin_1, user_id_1, "SELECT 1", true).await.unwrap();
-        create(&mut conn, connection_id_1, origin_1, user_id_1, "SELECT 2", true).await.unwrap();
-        create(&mut conn, connection_id_1, origin_2, user_id_1, "SELECT 3", true).await.unwrap();
-        create(&mut conn, connection_id_2, origin_1, user_id_1, "SELECT 4", true).await.unwrap();
-        create(&mut conn, connection_id_1, origin_1, user_id_2, "SELECT 5", true).await.unwrap();
+        assert_ok!(create(&mut conn, connection_id_1, origin_1, user_id_1, "SELECT 1", 42, true).await);
+        assert_ok!(create(&mut conn, connection_id_1, origin_1, user_id_1, "SELECT 2", 42, true).await);
+        assert_ok!(create(&mut conn, connection_id_1, origin_2, user_id_1, "SELECT 3", 42, true).await);
+        assert_ok!(create(&mut conn, connection_id_2, origin_1, user_id_1, "SELECT 4", 42, true).await);
+        assert_ok!(create(&mut conn, connection_id_1, origin_1, user_id_2, "SELECT 5", 42, true).await);
 
         let history = assert_ok!(list_history(&mut conn, connection_id_1, user_id_1, origin_1, 100).await);
         assert_eq!(history.len(), 2);
-        assert!(matches!(history[0].query.as_str(), "SELECT 1" | "SELECT 2"));
-        assert!(matches!(history[1].query.as_str(), "SELECT 1" | "SELECT 2"));
+        assert!(matches!(history[0].text.as_str(), "SELECT 1" | "SELECT 2"));
+        assert!(matches!(history[1].text.as_str(), "SELECT 1" | "SELECT 2"));
     }
 }

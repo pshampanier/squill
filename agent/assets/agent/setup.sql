@@ -59,7 +59,10 @@ CREATE TABLE query_history (
 	user_id UUID NOT_NULL REFERENCES users(user_id),
 
 	-- The query that was executed.
-	query TEXT NOT NULL,
+	text TEXT NOT NULL,
+
+	-- The hash of the query text.
+	hash INTEGER NOT NULL,
 
 	-- The origin of the query.
 	origin TEXT NOT NULL,

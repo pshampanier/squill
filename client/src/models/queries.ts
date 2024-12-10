@@ -87,6 +87,16 @@ export class QueryExecution {
   executionTime!: number;
   
   /**
+   * The hash of the text of the query after normalization.
+   * 
+   * The hash is used to determine if two queries are the same regardless of their formatting. The hash is 
+   * computed by normalizing the query into tokens.
+   * 
+   **/
+  @serializable("integer", { required: true, min: 0 })
+  hash!: number;
+  
+  /**
    * The unique identifier of the query execution.
    **/
   @serializable("string", { format: "uuid", required: true })
@@ -119,12 +129,6 @@ export class QueryExecution {
   origin!: string;
   
   /**
-   * The query that was executed.
-   **/
-  @serializable("string", { required: true })
-  query!: string;
-  
-  /**
    * The revision number of the query execution.
    * 
    * The revision number is used to track the changes to the query execution. It is incremented each time the
@@ -154,6 +158,12 @@ export class QueryExecution {
    **/
   @serializable("integer", { required: true, min: 0, snakeCase: "property" })
   storageRows!: number;
+  
+  /**
+   * The text of the query.
+   **/
+  @serializable("string", { required: true })
+  text!: string;
   
   /**
    * The unique identifier of the user that executed the query.
