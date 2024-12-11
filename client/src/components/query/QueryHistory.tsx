@@ -9,6 +9,7 @@ import { useQueryCache } from "@/hooks/use-query-cache";
 import QueryOutput from "@/components/query/QueryOutput";
 import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
 import { CommandEvent } from "@/utils/commands";
+import { DataFrame } from "@/utils/dataframe";
 
 /**
  * Memoized version of QueryOutput
@@ -131,7 +132,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
       const headerSize = QueryExecutionHeader.estimateSize();
       const outputSize = QueryOutput.estimateSize(query, tableSettings) + 8 * 2; /* p-2 */
       const estimatedSize = headerSize + outputSize;
-      console.debug("QueryHistory (sizing)", { index, estimatedSize, headerSize, outputSize });
+      // console.debug("QueryHistory (sizing)", { index, estimatedSize, headerSize, outputSize });
       return estimatedSize;
     },
     getItemKey(index) {
@@ -192,6 +193,12 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
           const date = query.createdAt;
           const dateClassification = dateClassifier(date);
           const { dataframe, fetching } = getQueryStates(query);
+          const previewDataframe: DataFrame = {
+            ...dataframe,
+            getSizeHint() {
+              return Math.min(20, dataframe.getSizeHint());
+            },
+          };
           return (
             <div
               key={virtualItem.key}
@@ -215,7 +222,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
                 query={query}
                 className={classes.output}
                 settings={tableSettings}
-                dataframe={dataframe}
+                dataframe={previewDataframe}
                 fetching={fetching}
               />
             </div>
