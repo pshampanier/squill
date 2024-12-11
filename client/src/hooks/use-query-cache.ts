@@ -25,10 +25,34 @@ type Key = {
 };
 
 export type CacheEntry = {
+  /**
+   * The key of the entry in the cache.
+   */
   key: Key;
+
+  /**
+   * The status of the query in the cache.
+   *
+   * - `pending`: The entry is had been added to the cache but its fetch has not started.
+   * - `fetching`: The entry is currently being fetched.
+   * - `success`: The data have been fetched and are available in the cache.
+   * - `error`: The entry has been fetched but an error occurred.
+   */
   status: "pending" | "fetching" | "success" | "error";
+
+  /**
+   * The timestamp of the last access to the entry.
+   */
   lastAccessed: number;
+
+  /**
+   * The data available in the cache when the status is `success`.
+   */
   table?: Table;
+
+  /**
+   * The error that occurred when fetching failed.
+   */
   error?: unknown;
 };
 

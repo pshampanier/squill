@@ -94,11 +94,11 @@ export default function TableViewPreview() {
               setSettings((prev) => ({ ...prev, nullValues: value as NullValues }));
             }}
           >
-            <Dropdown.Option label="null (lowercase)" value="null_lowercase" />
-            <Dropdown.Option label="NULL (uppercase)" value="null_uppercase" />
-            <Dropdown.Option label="(empty)" value="empty_string" />
-            <Dropdown.Option label="N/A (lowercase)" value="not_available_lowercase" />
-            <Dropdown.Option label="n/a (uppercase)" value="not_available_uppercase" />
+            <Dropdown.Option label="null" value="null_lowercase" />
+            <Dropdown.Option label="NULL" value="null_uppercase" />
+            <Dropdown.Option label="(empty)" value="empty" />
+            <Dropdown.Option label="n/a" value="not_available_lowercase" />
+            <Dropdown.Option label="N/A" value="not_available_uppercase" />
             <Dropdown.Option label="- (dash)" value="dash" />
           </Dropdown>
         </Setting>

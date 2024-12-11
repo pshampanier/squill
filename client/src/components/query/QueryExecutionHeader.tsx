@@ -2,7 +2,7 @@ import { DateClassification, formatDuration, formatRelativeDate, generateDateCla
 import cx from "classix";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { format } from "@/utils/strings";
-import { QueryExecutionStatus } from "@/models/queries";
+import { QueryExecution, QueryExecutionStatus } from "@/models/queries";
 import { secondary } from "@/utils/colors";
 import { ColorsContext } from "@/stores/ColorsContext";
 import Spinner from "@/components/core/Spinner";
@@ -29,25 +29,21 @@ registerCommand(
 );
 
 type QueryExecutionHeaderProps = {
+  query: QueryExecution;
   date: Date;
   dateClassifications: DateClassification[];
   defaultClassification: DateClassification;
-  status: QueryExecutionStatus;
-  executionTime?: number;
-  affectedRows?: number;
   numberFormatter?: Intl.NumberFormat;
   onCommand: (event: CommandEvent) => void;
   className?: string;
 };
 
-export default function QueryExecutionHeader({
+export function QueryExecutionHeader({
   className,
   date,
   dateClassifications,
   defaultClassification,
-  status,
-  executionTime,
-  affectedRows,
+  query: { status, executionTime, affectedRows, withResultSet },
   numberFormatter,
   onCommand,
 }: QueryExecutionHeaderProps) {
@@ -60,7 +56,11 @@ export default function QueryExecutionHeader({
         tabIndex={0}
         ref={ref}
         data-component="query-execution-header"
-        className={cx("query-header rounded flex flex-row items-center", secondary("background", "text"), className)}
+        className={cx(
+          "query-header h-8 rounded flex flex-row items-center",
+          secondary("background", "text"),
+          className,
+        )}
       >
         <ul className="list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap">
           <li className="flex text-divider items-center">
@@ -77,10 +77,11 @@ export default function QueryExecutionHeader({
               {formatDuration(executionTime * 1_000_000, { style: "short", precision: "millisecond" })[0]}
             </li>
           )}
-          {affectedRows > 0 && (
+          {(affectedRows > 0 || status === "completed") && (
             <li className="flex text-divider items-center">
               <span className="select-text">{numberFormatter.format(affectedRows)}</span>&nbsp;
               {(affectedRows > 1 && "rows") || "row"}
+              {!withResultSet && " affected"}
             </li>
           )}
         </ul>
@@ -91,7 +92,7 @@ export default function QueryExecutionHeader({
           <CommandButton size="md" command="query.rerun" />
           <CommandButton size="md" command="query.copy" />
           <CommandButton size="md" command="query.history.delete" />
-          <CommandButton size="md" command="query.open" />
+          <CommandButton size="md" command="query.open" disabled={!withResultSet || status === "failed"} />
         </Toolbar>
       </div>
     </ColorsContext.Provider>
@@ -285,3 +286,9 @@ function Status({ status, className }: StatusProps) {
     </div>
   );
 }
+
+QueryExecutionHeader.estimateSize = function () {
+  return 32 /* h-8: 32px */;
+};
+
+export default QueryExecutionHeader;

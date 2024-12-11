@@ -11,6 +11,7 @@ type CommandButtonProps = {
   colors?: ColorsFunction;
   variant?: ButtonVariant;
   size?: ButtonSize;
+  disabled?: boolean;
   className?: string;
 };
 
@@ -22,6 +23,7 @@ export default function CommandButton({
   colors,
   variant,
   size = "lg",
+  disabled,
   className,
 }: CommandButtonProps) {
   const cmd = getCommand(command);
@@ -36,6 +38,7 @@ export default function CommandButton({
       onClick={handleClick}
       className={className}
       colors={colors}
+      disabled={disabled}
       text={text === undefined ? cmd.label : text}
       tooltip={tooltip === undefined ? cmd.description : tooltip}
     />

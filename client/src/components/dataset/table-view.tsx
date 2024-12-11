@@ -16,19 +16,14 @@ type Dimensions = {
   charWidth: number;
 
   /**
-   * The height of a line in pixels (excluding margins and borders).
+   * The height of a line in pixels (applies to header, rows and footer).
    */
   lineHeight: number;
 
   /**
-   * The height of the header in pixels (including margins and borders).
+   * The height of a skeleton row in pixels.
    */
-  headerHeight: number;
-
-  /**
-   * The height of a row in pixels (including margins and borders).
-   */
-  rowHeight: number;
+  skeletonHeight: number;
 
   /**
    * The width of the row number column in pixels.
@@ -38,7 +33,7 @@ type Dimensions = {
   /**
    * The X padding of the cell in pixels (include both left and right padding).
    */
-  px: number;
+  padding: number;
 };
 
 export type TableViewColumn = {
@@ -128,7 +123,7 @@ export type TableViewProps = {
 /**
  * A table view component that displays a dataframe.
  */
-export default function TableView({
+function TableView({
   className,
   columns: defaultColumns = [],
   rows,
@@ -160,29 +155,22 @@ export default function TableView({
     const dimensions: Dimensions = {
       charWidth: 0,
       lineHeight: 0,
-      headerHeight: 0,
-      rowHeight: 0,
+      skeletonHeight: 0,
       rowNumWidth: 0,
-      px: 0,
+      padding: 0,
     };
     const span = document.createElement("span");
     span.className = "absolute font-mono text-xs whitespace-nowrap invisible";
     span.textContent = "0".repeat(1000);
     document.body.appendChild(span);
     dimensions.charWidth = span.offsetWidth / span.textContent.length;
-    dimensions.lineHeight = span.offsetHeight;
-    dimensions.headerHeight =
-      span.offsetHeight +
-      (settings.density === "comfortable" ? 8 * 2 /* p-1 */ : 4 * 2) /* p-1 */ +
-      1 /* bt-1 */ +
-      2 /* bt-2 */;
-    dimensions.rowHeight =
-      span.offsetHeight + (settings.density === "comfortable" ? 4 * 2 /* p-1 */ : 2 * 2) /* p-0.5 */;
+    dimensions.lineHeight = getLineHeight(settings);
+    dimensions.skeletonHeight = dimensions.lineHeight - (settings.density === "compact" ? 6 : 12);
     if (settings.showRowNumbers) {
       const maxRowNumber = rows?.getSizeHint()?.toString().length ?? 1;
       dimensions.rowNumWidth = Math.ceil(maxRowNumber * dimensions.charWidth) + 8 /** pr-2: 8px */;
     }
-    dimensions.px = (settings.density === "compact" ? 4 /* px-1 */ : 24) /* px-6 */ * 2;
+    dimensions.padding = (settings.density === "compact" ? 4 /* px-1 */ : 24) /* px-6 */ * 2;
     document.body.removeChild(span);
     return dimensions;
   }, [settings.showRowNumbers, settings.density, bodyRef.current, rows?.getSizeHint()]);
@@ -224,14 +212,14 @@ export default function TableView({
     (column: TableViewColumn) => {
       let columnLength = Math.max(column.title.length, column.maxLength ?? 0, nullValuesText.length);
       columnLength = Math.min(columnLength, settings.maxLength);
-      const calculatedWidth = Math.ceil(columnLength * dimensions.charWidth) + dimensions.px;
+      const calculatedWidth = Math.ceil(columnLength * dimensions.charWidth) + dimensions.padding;
       if (columnLength === column.title.length) {
         return calculatedWidth + 4 /* resize handle */;
       } else {
         return calculatedWidth + 1 /* border */;
       }
     },
-    [dimensions.charWidth, dimensions.px, nullValuesText, settings.maxLength],
+    [dimensions.charWidth, dimensions.padding, nullValuesText, settings.maxLength],
   );
 
   const columnsWithSize = useMemo(() => {
@@ -247,10 +235,8 @@ export default function TableView({
   const rowVirtualizer = useVirtualizer({
     count: rows?.getSizeHint() ?? 0,
     getScrollElement: () => bodyRef.current,
-    estimateSize: () => {
-      return dimensions.rowHeight;
-    },
-    paddingEnd: noRows ? dimensions.rowHeight : 0,
+    estimateSize: () => dimensions.lineHeight,
+    paddingEnd: noRows ? dimensions.lineHeight : 0,
     overscan: overscan.rows,
   });
 
@@ -288,6 +274,14 @@ export default function TableView({
     columnVirtualizer.resizeItem(index, width);
   };
 
+  //
+  // If the table density changes, we need to update the virtualizers
+  //
+  useEffect(() => {
+    rowVirtualizer.measure();
+    columnVirtualizer.measure();
+  }, [settings.density]);
+
   // Get the virtual items to render
   const visibleRows = rowVirtualizer.getVirtualItems();
   const visibleColumns = columnVirtualizer.getVirtualItems();
@@ -305,7 +299,7 @@ export default function TableView({
     firstRow: visibleRows[0]?.index,
     visibleRows: visibleRows.length,
     charWidth: dimensions.charWidth,
-    rowHeight: dimensions.rowHeight,
+    lineHeight: dimensions.lineHeight,
     rowNumWidth: dimensions.rowNumWidth,
     showRowNumbers: settings.showRowNumbers,
     density: settings.density,
@@ -324,34 +318,39 @@ export default function TableView({
     header: {
       root: cx(
         "relative flex flex-row w-full flex-none overflow-hidden font-medium font-semibold select-none",
+        settings.density === "compact" && "h-5",
+        settings.density === "comfortable" && "h-8",
         colors("border"),
       ),
       romNumber: {
         root: cx(
           "absolute flex flex-none sticky left-0 text-center box-border select-none items-center",
           colors("border"),
+          settings.dividers === "grid" && "border-r",
         ),
       },
-      cell: cx("flex flex-row flex-none select-none box-border  border-t border-b-2", colors("border")),
-      label: cx(
-        "flex-grow whitespace-nowrap text-center text-ellipsis overflow-hidden",
-        settings.density === "compact" && "p-1",
-        settings.density === "comfortable" && "px-6",
-      ),
+      cell: cx("flex flex-row flex-none select-none box-border  border-t-2 border-b-2 items-center", colors("border")),
+      label: "flex-grow whitespace-nowrap text-center text-ellipsis overflow-hidden px-1",
     },
     body: {
       root: "overflow-auto",
       row: {
-        root: cx("box-border", colors("border"), settings.dividers !== "none" && "border-b"),
+        root: cx(
+          "box-border",
+          colors("border"),
+          settings.dividers !== "none" && "border-b",
+          settings.density === "compact" && "h-5",
+          settings.density === "comfortable" && "h-8",
+        ),
         cell: cx(
-          "absolute top-0 px-1 flex flex-none items-center",
+          "absolute top-0 flex flex-none items-center",
           settings.dividers === "grid" && "box-border border-r",
           colors("border"),
         ),
-        text: "whitespace-nowrap text-ellipsis overflow-hidden select-none",
+        text: "whitespace-nowrap text-ellipsis overflow-hidden select-none px-1",
         romNumber: {
           root: cx(
-            "absolute flex pr-2 sticky left-0 select-none box-border text-ellipsis overflow-hidden",
+            "absolute flex pr-2 sticky left-0 select-none box-border text-ellipsis overflow-hidden items-center",
             colors("border"),
             settings.dividers === "grid" && "border-r",
           ),
@@ -364,10 +363,11 @@ export default function TableView({
         "absolute bottom-0 border-box flex flex-none items-center",
         settings.dividers !== "none" && "border-b",
         settings.dividers === "grid" && "border-l border-r",
-        settings.density === "compact" ? "p-1" : "px-6",
+        settings.density === "compact" && "h-5",
+        settings.density === "comfortable" && "h-8",
         colors("border"),
       ),
-      text: "opacity-45 w-full whitespace-nowrap text-ellipsis overflow-hidden select-none",
+      text: "opacity-45 w-full whitespace-nowrap text-ellipsis overflow-hidden select-none px-1",
     },
     rail: {
       root: "rail absolute top-0 left-0 h-0.5 bg-transparent",
@@ -378,12 +378,12 @@ export default function TableView({
   // If the number of rows is greater than the `maxRows`, the height of the body will be limited to the height of
   // `maxRows` * the height of a row, otherwise, the height will be driven by the parent element.
   const maxHeight = useMemo(() => {
-    if (maxRows) {
-      const actualRows = rows?.getSizeHint() ?? 1;
-      return Math.min(maxRows, actualRows) * dimensions.rowHeight + "px";
+    if (maxRows && rows?.getSizeHint()) {
+      const actualRows = rows.getSizeHint();
+      return Math.min(maxRows, actualRows) * dimensions.lineHeight + "px";
     }
     return "auto";
-  }, [dimensions.rowHeight, maxRows, rows?.getSizeHint()]);
+  }, [dimensions.lineHeight, maxRows, rows?.getSizeHint()]);
 
   return (
     <div data-component="table-view" className={classes.root}>
@@ -407,7 +407,7 @@ export default function TableView({
           >
             <span className={classes.header.label}>{column.title}</span>
             <ResizePanel
-              className="flex-shrink-0"
+              className="h-full flex-shrink-0"
               width={column.width}
               minWidth={50}
               maxWidth={5000}
@@ -451,12 +451,13 @@ export default function TableView({
                   let displayValue: React.ReactNode = null;
                   const value = rowData?.[tableViewColumn.dataIndex];
                   if (rowData === null) {
+                    // The row is not loaded yet, we are displaying a skeleton...
                     displayValue = (
                       <div
                         className="bg-gray-100 dark:bg-gray-700"
                         style={{
                           width: tableViewColumn.maxLength * dimensions.charWidth,
-                          height: dimensions.lineHeight - 2 /* make it lighter by removing 2px */,
+                          height: dimensions.skeletonHeight,
                         }}
                       ></div>
                     );
@@ -486,7 +487,7 @@ export default function TableView({
                     className={classes.body.row.romNumber.root}
                     style={{
                       width: `${dimensions.rowNumWidth}px`,
-                      height: `${dimensions.rowHeight}px`,
+                      height: `${dimensions.lineHeight}px`,
                       backgroundColor,
                     }}
                   >
@@ -503,7 +504,7 @@ export default function TableView({
               style={{
                 width: `calc(100% - (${dimensions.rowNumWidth}px))`,
                 left: `${dimensions.rowNumWidth}px`,
-                height: `${dimensions.rowHeight}px`,
+                height: `${dimensions.lineHeight}px`,
               }}
             >
               {!fetching && <span className={classes.footer.text}>0 rows</span>}
@@ -517,7 +518,7 @@ export default function TableView({
         style={{
           width: `calc(100% - (${dimensions.rowNumWidth}px))`,
           left: dimensions.rowNumWidth,
-          top: dimensions.headerHeight - 2 /* remove the border-bottom (bt-2) */,
+          top: dimensions.lineHeight - 2 /* remove the border-bottom (bt-2) */,
         }}
       >
         <div className={cx("w-5 h-full", colors("selected:background"))}></div>
@@ -525,6 +526,26 @@ export default function TableView({
     </div>
   );
 }
+
+/**
+ * Get the height in pixels of a line in the table.
+ * All lines are the same height (headers, rows, and footer).
+ */
+function getLineHeight(tableSettings: TableSettings) {
+  return tableSettings.density === "compact" ? 20 /* h-5 */ : 32 /* h-8 */;
+}
+
+/**
+ * Estimate the height of the table in pixels.
+ */
+TableView.estimateSize = function (rowCount: number, tableSettings: TableSettings) {
+  // All lines are the same height, including the header and the footer.
+  // The table is composed with at least two lines (header and footer), or the headers + the rows.
+  const lineHeight = getLineHeight(tableSettings);
+  return Math.max(2, rowCount + 1) * lineHeight;
+};
+
+export default TableView;
 
 type TableViewCellProps = {
   rawValue: unknown;

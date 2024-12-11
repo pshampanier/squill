@@ -5,48 +5,10 @@ import { DateClassification, generateDateClassifier } from "@/utils/time";
 import { QueryExecution } from "@/models/queries";
 import { useUserStore } from "@/stores/UserStore";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
-import { TableSettings } from "@/models/user-settings";
 import { useQueryCache } from "@/hooks/use-query-cache";
 import QueryOutput from "@/components/query/QueryOutput";
 import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
 import { CommandEvent } from "@/utils/commands";
-
-/**
- * Layout properties for an element displayed within the query history.
- *
- * If the `height` property is provided, it will be used as the height of the element, otherwise the height will be
- * calculated based on the `padding`, `marginTop`, and `lineHeight` properties.
- * All properties are optional and expected to be in pixels.
- */
-type Layout = {
-  height?: number;
-  padding?: number;
-  marginTop?: number;
-  lineHeight?: number;
-};
-
-function calcHeight(layout: Layout, lines: number) {
-  if (!lines) {
-    return 0;
-  } else if (layout.height) {
-    return layout.height;
-  } else {
-    return (layout.padding ?? 0) * 2 + (layout.marginTop ?? 0) + layout.lineHeight * lines;
-  }
-}
-
-// FIXME: This should use the settings.
-function calcRowsHeight(query: QueryExecution, _settings: TableSettings) {
-  const schema = query.metadata?.[QUERY_METADATA_SCHEMA];
-  if (schema) {
-    const header = 26;
-    const rows = Math.min(query.affectedRows, 20) * 20; /* row height */
-    const footer = query.affectedRows === 0 ? 20 /* row height */ : 0;
-    return 8 /* mt-2 */ + header + rows + footer;
-  } else {
-    return 0;
-  }
-}
 
 /**
  * Memoized version of QueryOutput
@@ -66,9 +28,9 @@ const MemoizedQueryExecutionHeader = memo(QueryExecutionHeader, (prev, next) => 
   return (
     prev.date === next.date &&
     prev.defaultClassification === next.defaultClassification &&
-    prev.status === next.status &&
-    prev.executionTime === next.executionTime &&
-    prev.affectedRows === next.affectedRows
+    prev.query.status === next.query.status &&
+    prev.query.executionTime === next.query.executionTime &&
+    prev.query.affectedRows === next.query.affectedRows
   );
 });
 
@@ -148,7 +110,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   //
   // States & Refs
   //
-  const settings = useUserStore((state) => state.settings?.tableSettings);
+  const tableSettings = useUserStore((state) => state.settings?.tableSettings);
   const rootRef = useRef<HTMLDivElement>(null);
   const [history, dispatch] = useReducer<ReducerFn>(reducer, {
     revision: 1,
@@ -166,12 +128,10 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     getScrollElement: () => rootRef.current,
     estimateSize: (index: number) => {
       const query = historyItems[index];
-      const header = calcHeight({ height: 32 }, 1);
-      const statement = calcHeight({ lineHeight: 18 }, query.text?.split("\n").length);
-      const error = calcHeight({ marginTop: 8, padding: 8, lineHeight: 16 }, query.error?.message?.split("\n").length);
-      const rows = calcRowsHeight(query, settings);
-      const estimatedSize = header + (8 /* padding */ + statement + error + rows + 8); /* padding */
-      // console.debug("QueryHistory (sizing)", { index, estimatedSize, header, statement, error, rows });
+      const headerSize = QueryExecutionHeader.estimateSize();
+      const outputSize = QueryOutput.estimateSize(query, tableSettings) + 8 * 2; /* p-2 */
+      const estimatedSize = headerSize + outputSize;
+      console.debug("QueryHistory (sizing)", { index, estimatedSize, headerSize, outputSize });
       return estimatedSize;
     },
     getItemKey(index) {
@@ -182,6 +142,13 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   useEffect(() => {
     onMount?.(dispatch);
   }, []);
+
+  //
+  // If the table density changes, we need to update the virtualizer.
+  //
+  useEffect(() => {
+    virtualizer.measure();
+  }, [tableSettings?.density]);
 
   //
   // Scroll to the bottom of the history when the history changes.
@@ -238,9 +205,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
                 date={date}
                 dateClassifications={QUERY_HEADER_DATE_CLASSIFICATIONS}
                 defaultClassification={dateClassification}
-                status={query.status}
-                executionTime={query.executionTime}
-                affectedRows={query.affectedRows}
+                query={query}
                 numberFormatter={numberFormat}
                 onCommand={(event: CommandEvent) => {
                   onCommand(event, query);
@@ -249,7 +214,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
               <MemoizedQueryOutput
                 query={query}
                 className={classes.output}
-                settings={settings}
+                settings={tableSettings}
                 dataframe={dataframe}
                 fetching={fetching}
               />

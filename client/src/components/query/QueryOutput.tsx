@@ -8,6 +8,7 @@ import { DataFrame } from "@/utils/dataframe";
 import Alert from "@/components/core/Alert";
 import Code from "@/components/core/Code";
 import ArrowTableView from "@/components/dataset/arrow-table-view";
+import TableView from "@/components/dataset/table-view";
 
 type QueryOutputProps = {
   className?: string;
@@ -33,7 +34,7 @@ function toJSONSchema(obj: any): any {
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-export default function QueryOutput({ className, query, dataframe, fetching = false, settings }: QueryOutputProps) {
+export function QueryOutput({ className, query, dataframe, fetching = false, settings }: QueryOutputProps) {
   //
   // Props, States & Refs
   //
@@ -77,9 +78,37 @@ export default function QueryOutput({ className, query, dataframe, fetching = fa
           schema={schema}
           rows={dataframe}
           maxRows={20}
-          fetching={fetching}
+          fetching={fetching || (query.status === "running" && dataframe?.getSizeHint() === 0)}
         />
       )}
     </div>
   );
 }
+
+type Layout = {
+  padding?: number;
+  marginTop?: number;
+  marginBottom?: number;
+  lineHeight?: number;
+};
+
+function calcHeight(layout: Layout, lines: number) {
+  return (layout.padding ?? 0) * 2 + (layout.marginTop ?? 0) + (layout.marginBottom ?? 0) + layout.lineHeight * lines;
+}
+
+/**
+ * Estimate the height of the QueryOutput component for a given query.
+ */
+QueryOutput.estimateSize = function (query: QueryExecution, tableSettings: TableSettings) {
+  const codeSize = calcHeight({ lineHeight: 18 }, query.text.split("\n").length);
+  const alertSize =
+    query.status === "failed"
+      ? calcHeight({ padding: 8, marginTop: 8, lineHeight: 16 }, query.error.message.split("\n").length)
+      : 0;
+  const tableViewSize = query.metadata?.[QUERY_METADATA_SCHEMA]
+    ? TableView.estimateSize(Math.min(query.storageRows, 20), tableSettings) + 8 /* mt-2 */
+    : 0;
+  return codeSize + alertSize + tableViewSize;
+};
+
+export default QueryOutput;
