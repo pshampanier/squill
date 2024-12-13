@@ -3,7 +3,7 @@ import { editor } from "monaco-editor";
 import editorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import htmlWorker from "monaco-editor/esm/vs/language/html/html.worker?worker";
 import { getSyntaxHighlightingTheme } from "@/utils/colors";
-import { EditorSettings } from "@/models/users";
+import { MonacoEditorSettings } from "@/models/user-settings";
 
 self.MonacoEnvironment = {
   getWorker: function (_, label) {
@@ -42,11 +42,29 @@ function getMonacoTheme(colorScheme: "light" | "dark"): editor.IStandaloneThemeD
   };
 }
 
-export function getMonacoOptions(settings: EditorSettings) {
-  return {
-    minimap: {
-      enabled: settings.minimap === "show" || settings.minimap === "auto",
-    },
-    renderWhitespace: settings.renderWhitespace,
-  };
+/**
+ * Convert the user settings into Monaco editor options.
+ */
+export function intoMonacoOptions(settings: MonacoEditorSettings): monaco.editor.IEditorOptions {
+  if (settings) {
+    return {
+      minimap: {
+        enabled: settings.minimap === "show" || settings.minimap === "auto",
+        autohide: settings.minimap === "auto",
+      },
+      matchBrackets: settings.matchBrackets,
+      renderWhitespace: settings.whitespace,
+      /* @ts-expect-error TS2322 */
+      cursorStyle: {
+        underline: "underline",
+        line: "line",
+        block: "block",
+        block_outline: "block-outline",
+        line_thin: "line-thin",
+        underline_thin: "underline-thin",
+      }[settings.cursorStyle],
+    };
+  } else {
+    return {};
+  }
 }

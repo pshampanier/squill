@@ -1,7 +1,7 @@
 import { env } from "@/utils/env";
 import { useContext } from "react";
 import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
-import SettingsPage from "@/components/spaces/settings/SettingsPage";
+import SettingsPage, { Setting } from "@/components/spaces/settings/SettingsPage";
 import ButtonGroup from "@/components/core/ButtonGroup";
 import Switch from "@/components/core/Switch";
 
@@ -11,6 +11,8 @@ import LinuxIcon from "@/assets/icons/linux-logo.svg?react";
 import WindowsIcon from "@/assets/icons/windows-logo.svg?react";
 import AppleIcon from "@/assets/icons/apple-logo.svg?react";
 import { ColorScheme } from "@/models/users";
+import Dropdown from "@/components/core/Dropdown";
+import { NullValues } from "@/models/user-settings";
 
 const OperatingSystemsIcon =
   env.platform === "macos" ? AppleIcon : env.platform === "windows" ? WindowsIcon : LinuxIcon;
@@ -45,27 +47,22 @@ export default function SettingsPageGeneral() {
           }}
         />
       </SettingsPage.Setting>
-      <SettingsPage.Setting
-        title="Show file extensions"
-        description="If not selected, file extensions will be only displayed when editing a file name."
-      >
-        <Switch
-          size="sm"
-          defaultChecked={userSettings.showFileExtensions}
-          onChange={(e) => {
-            updateUserSettings({ showFileExtensions: e.target.checked });
+      <Setting title="Null values" description="Controls how null values are displayed.">
+        <Dropdown
+          defaultValue={userSettings.nullValues}
+          onChange={(value) => {
+            const nullValues = value as NullValues;
+            updateUserSettings({ nullValues, historySettings: { tableSettings: { nullValues } } });
           }}
-        />
-      </SettingsPage.Setting>
-      <SettingsPage.Setting title="Show recently opened" description="Shows recently opened files in the sidebar.">
-        <Switch
-          size="sm"
-          defaultChecked={userSettings.showRecentlyOpened}
-          onChange={(e) => {
-            updateUserSettings({ showRecentlyOpened: e.target.checked });
-          }}
-        />
-      </SettingsPage.Setting>
+        >
+          <Dropdown.Option label="null" value="null_lowercase" />
+          <Dropdown.Option label="NULL" value="null_uppercase" />
+          <Dropdown.Option label="(empty)" value="empty" />
+          <Dropdown.Option label="n/a" value="not_available_lowercase" />
+          <Dropdown.Option label="N/A" value="not_available_uppercase" />
+          <Dropdown.Option label="- (dash)" value="dash" />
+        </Dropdown>
+      </Setting>
     </SettingsPage>
   );
 }

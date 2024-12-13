@@ -18,7 +18,6 @@ type ResourceType = resources.ResourceType;
 export const SPECIAL_COLLECTION_VALUES = ["favorites", "trash"] as const;
 export type SpecialCollection = (typeof SPECIAL_COLLECTION_VALUES)[number];
 
-
 /**
  * A collection resources stored in the catalog.
  **/

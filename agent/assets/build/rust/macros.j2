@@ -1,4 +1,5 @@
-{% macro enum(name, schema) %}
+{% macro enum(name) %}
+{%- set schema = components.schemas[name] -%}
 {% if schema.description %}
 /// {{ schema.description | trim | replace('\n', '\n  /// ') }}
 {%- endif %}
@@ -20,7 +21,8 @@ pub enum {{ name | pascal_case }} {
 }
 {% endmacro %}
 
-{% macro type(name, schema) %}
+{% macro type(name) %}
+{%- set schema = components.schemas[name] -%}
 {% if schema.description %}
 /// {{ schema.description | trim | replace('\n', '\n  /// ') }}
 {%- endif %}
@@ -73,7 +75,8 @@ pub type {{ name | pascal_case }} = {{ rust_type(schema) }};
   {%- endif -%}
 {% endmacro %}
 
-{% macro struct(name, schema) %}
+{% macro struct(name) %}
+{%- set schema = components.schemas[name] -%}
 {% if schema.description %}
 /// {{ schema.description | trim | replace('\n', '\n  /// ') }}
 {%- endif %}

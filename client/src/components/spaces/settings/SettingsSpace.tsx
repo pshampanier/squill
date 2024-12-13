@@ -6,22 +6,22 @@ import { createContext, useState } from "react";
 import { DeepPartial, SVGIcon } from "@/utils/types";
 import { primary as colors, secondary } from "@/utils/colors";
 import { produce } from "immer";
-import { UserSettings } from "@/models/users";
 import { NO_ICON } from "@/utils/constants";
 import { dispatchCommand } from "@/utils/commands";
 import { useUserStore } from "@/stores/UserStore";
 import { SettingsPageName, useAppStore } from "@/stores/AppStore";
+import { UserSettings } from "@/models/user-settings";
 import Titlebar from "@/components/titlebar/Titlebar";
 import Space from "@/components/spaces/Space";
 import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
-import EditIcon from "@/icons/edit.svg?react";
-import TableIcon from "@/icons/table.svg?react";
+import HistoryIcon from "@/icons/history.svg?react";
+import TerminalIcon from "@/icons/terminal.svg?react";
 import Button from "@/components/core/Button";
 import CommandButton from "@/components/core/CommandButton";
 import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGeneral";
-import SettingsPageEditor from "@/components/spaces/settings/SettingsPageEditor";
-import SettingsPageTableView from "@/components/spaces/settings/SettingsPageTableView";
+import SettingsPageHistory from "@/components/spaces/settings/SettingsPageHistory";
+import SettingsPageTerminal from "@/components/spaces/settings/SettingsPageTerminal";
 import SettingsIcon from "@/icons/settings.svg?react";
 import PrimarySidebar from "@/components/layout/PrimarySidebar";
 import TreeView from "@/components/core/TreeView";
@@ -82,8 +82,8 @@ export default function SettingsSpace() {
 
   const pages: SettingsPage[] = [
     { label: "General", icon: SettingsIcon, name: "general" },
-    { label: "Text editor", icon: EditIcon, name: "text-editor" },
-    { label: "Tables", icon: TableIcon, name: "table-view" },
+    { label: "Terminal", icon: TerminalIcon, name: "terminal" },
+    { label: "History", icon: HistoryIcon, name: "history" },
   ];
 
   return (
@@ -119,8 +119,8 @@ export default function SettingsSpace() {
             <div className="flex flex-col items-center w-full">
               <div className="flex flex-col w-3/4 p-8 min-w-[600px] h-full">
                 {selectedPage === "general" && <SettingsPageGeneral />}
-                {selectedPage === "text-editor" && <SettingsPageEditor />}
-                {selectedPage === "table-view" && <SettingsPageTableView />}
+                {selectedPage === "history" && <SettingsPageHistory />}
+                {selectedPage === "terminal" && <SettingsPageTerminal />}
                 <div className={cx("flex flex-row justify-end space-x-1 border-t pt-4", colors("border"))}>
                   <CommandButton text="Cancel" variant="outline" command="settings.close" icon={NO_ICON} />
                   <Button text="Apply" variant="solid" disabled={!modified} onClick={applySettings} />

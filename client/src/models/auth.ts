@@ -8,10 +8,8 @@ export type TokenType = (typeof TOKEN_TYPE_VALUES)[number];
 export const AUTHENTICATION_METHOD_VALUES = ["user_password"] as const;
 export type AuthenticationMethod = (typeof AUTHENTICATION_METHOD_VALUES)[number];
 
-
 /// A username
 type Username = string;
-
 
 
 /**
@@ -75,7 +73,6 @@ export class SecurityTokens {
   }
 }
 
-
 /**
  * The credentials used to authenticate a user.
  **/
@@ -92,7 +89,6 @@ export class Credentials {
   }
 }
 
-
 export class Authentication {
   
   @serializable("object", { factory: Credentials, required: true })
@@ -106,7 +102,6 @@ export class Authentication {
     this.credentials = object?.credentials && new Credentials(object.credentials);
   }
 }
-
 
 /**
  * The request body of the POST /auth/refresh-token endpoint.

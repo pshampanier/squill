@@ -55,7 +55,7 @@ type DropdownProps = {
    *
    * This will be the value of the dropdown when it is first rendered.
    */
-  defaultValue?: string;
+  defaultValue?: string | number;
 
   /**
    * A collection of `Dropdown.Option` components.
@@ -75,7 +75,7 @@ type DropdownProps = {
   /**
    * A function that will be called when the value of the dropdown changes.
    */
-  onChange?: (value: string) => void;
+  onChange?: (value: string | number) => void;
 
   /**
    * The size of the dropdown (`sm`, `md` or `lg`).
@@ -229,7 +229,7 @@ function Dropdown({
 }
 
 export type DropdownValue = {
-  value: string;
+  value: string | number;
   label?: string;
   icon?: SVGIcon;
   command?: string;
@@ -246,11 +246,11 @@ function DropdownOption({ className, value, icon, label, command, children, disa
   return (
     <Menu.Item
       className={className}
-      label={label}
+      label={label ?? value.toString()}
       icon={icon}
       command={command}
       disabled={disabled}
-      id={value}
+      id={value.toString()}
       onClick={onClick}
     >
       {children}

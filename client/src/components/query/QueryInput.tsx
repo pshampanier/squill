@@ -3,6 +3,8 @@ import * as monaco from "monaco-editor";
 import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
+import { MonacoEditorSettings } from "@/models/user-settings";
+import { intoMonacoOptions } from "@/utils/monaco-workers";
 
 type IStandaloneCodeEditor = monaco.editor.IStandaloneCodeEditor;
 type IEditorOptions = monaco.editor.IEditorOptions;
@@ -181,6 +183,11 @@ type QueryInputProps = {
    * @param size with new size of the editor.
    */
   onResize?: (size: { width: number; height: number }) => void;
+
+  /**
+   * The settings of the Monaco editor that can be adjusted b the user.
+   */
+  settings?: MonacoEditorSettings;
 };
 
 /**
@@ -217,6 +224,7 @@ export default function QueryInput({
   rows,
   colorScheme = "light",
   placeholder,
+  settings,
 }: QueryInputProps) {
   const editorRef = useRef<IStandaloneCodeEditor | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -232,12 +240,16 @@ export default function QueryInput({
     rows = undefined;
   }
 
-  if (editorRef.current) {
-    // If the editor is already mounted, we update the properties that may have changed.
-    editorRef.current.updateOptions({
+  //
+  // Settings or theme updated...
+  //
+  useEffect(() => {
+    editorRef.current?.updateOptions({
       theme: MONACO_THEMES[colorScheme],
+      ...DEFAULT_MONACO_OPTIONS[mode],
+      ...intoMonacoOptions(settings),
     });
-  }
+  }, [colorScheme, settings]);
 
   /**
    * Get the size of the editor.
@@ -639,6 +651,7 @@ export default function QueryInput({
     const editor = monaco.editor.create(containerRef.current, {
       theme: MONACO_THEMES[colorScheme],
       ...DEFAULT_MONACO_OPTIONS[mode],
+      ...intoMonacoOptions(settings),
     });
     const model = monaco.editor.createModel(value, "pgsql");
     editor.setModel(model);
@@ -648,20 +661,37 @@ export default function QueryInput({
     editor.focus();
     editorRef.current = editor;
 
-    if (placeholder && mode === "terminal") {
-      const root = document.createElement("div");
-      root.className = "flex text-xs items-center select-none opacity-50 pointer-events-none";
-      ReactDOM.createRoot(root).render(placeholder);
-      placeholderRef.current = {
-        getId: () => "widget.placeholder",
-        getDomNode: () => root,
-        getPosition() {
-          return {
-            preference: null,
-          };
+    if (mode === "terminal") {
+      //
+      // Disable the default keybinding for some commands
+      //
+      [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, monaco.KeyCode.F3, monaco.KeyCode.F3, monaco.KeyCode.F1].forEach(
+        (keybinding) => {
+          monaco.editor.addKeybindingRule({
+            keybinding,
+            command: null,
+          });
         },
-      };
-      showPlaceholder(model.getValue().length === 0);
+      );
+
+      //
+      // Display the placeholder
+      //
+      if (placeholder) {
+        const root = document.createElement("div");
+        root.className = "flex text-xs items-center select-none opacity-50 pointer-events-none";
+        ReactDOM.createRoot(root).render(placeholder);
+        placeholderRef.current = {
+          getId: () => "widget.placeholder",
+          getDomNode: () => root,
+          getPosition() {
+            return {
+              preference: null,
+            };
+          },
+        };
+        showPlaceholder(model.getValue().length === 0);
+      }
     }
 
     // Notify the parent component that the editor is mounted

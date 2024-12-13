@@ -1,5 +1,4 @@
 import { ROOT_CATALOG_ID, Users } from "@/resources/users";
-import { UserSettings } from "@/models/users";
 import { produce } from "immer";
 import { create } from "zustand";
 import { ResourceRef, ResourceType } from "@/models/resources";
@@ -8,6 +7,7 @@ import { Notification } from "@/components/core/NotificationInbox";
 import { BLANK_PAGE_ITEM_ID, METADATA_RESOURCES_TYPE, NOT_FOUND_ITEM_ID } from "@/utils/constants";
 import { AnyResource, getResourceHandler, ResourceHandler } from "@/resources/handlers";
 import { ApplicationSpace, SVGIcon } from "@/utils/types";
+import { UserSettings } from "@/models/user-settings";
 
 /**
  * The status of either the resource or the children.

@@ -58,7 +58,7 @@ const QUERY_PENDING = new QueryExecution({
 });
 
 export default function QueryOutputPreview() {
-  const settings = useUserStore((state) => state.settings?.tableSettings);
+  const settings = useUserStore((state) => state.settings?.historySettings.tableSettings);
 
   return (
     <>

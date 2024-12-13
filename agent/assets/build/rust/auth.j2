@@ -5,10 +5,10 @@
 use serde::{Deserialize, Serialize};
 use squill_drivers::serde::Decode;
 
-{{ enum("AuthenticationMethod", components.schemas.AuthenticationMethod) }}
-{{ enum("TokenType", components.schemas.TokenType) }}
-{{ type("Username", components.schemas.Username) }}
-{{ struct("Authentication", components.schemas.Authentication) }}
-{{ struct("Credentials", components.schemas.Credentials) }}
-{{ struct("SecurityTokens", components.schemas.SecurityTokens) }}
-{{ struct("RefreshToken", components.schemas.RefreshToken) }}
+{{ enum("AuthenticationMethod") }}
+{{ enum("TokenType") }}
+{{ type("Username") }}
+{{ struct("Authentication") }}
+{{ struct("Credentials") }}
+{{ struct("SecurityTokens") }}
+{{ struct("RefreshToken") }}

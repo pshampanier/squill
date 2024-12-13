@@ -11,7 +11,6 @@ import { immerable } from "immer";
 export const CONNECTION_MODE_VALUES = ["host", "socket", "file", "connection_string", "uri"] as const;
 export type ConnectionMode = (typeof CONNECTION_MODE_VALUES)[number];
 
-
 /**
  * Description of a connection to a datasource.
  **/

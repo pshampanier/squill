@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use squill_drivers::serde::Decode;
 use anyhow::{anyhow, Error};
 
-{{ enum("QueryExecutionStatus", components.schemas.QueryExecutionStatus) }}
+{{ enum("QueryExecutionStatus") }}
 
 impl QueryExecutionStatus {
     pub fn as_str(&self) -> &'static str {
@@ -38,7 +38,7 @@ impl TryFrom<&str> for QueryExecutionStatus {
     }
 }
 
-{{ struct("QueryExecutionError", components.schemas.QueryExecutionError) }}
-{{ struct("QueryExecution", components.schemas.QueryExecution) }}
-{{ struct("QueryHistoryPage", components.schemas.QueryHistoryPage) }}
-{{ struct("FieldStatistics", components.schemas.FieldStatistics) }}
+{{ struct("QueryExecutionError") }}
+{{ struct("QueryExecution") }}
+{{ struct("QueryHistoryPage") }}
+{{ struct("FieldStatistics") }}

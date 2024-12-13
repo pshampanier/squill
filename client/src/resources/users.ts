@@ -1,6 +1,7 @@
 import { Authentication } from "@/models/auth";
 import { ResourceType, ResourceRef } from "@/models/resources";
-import { User, UserSettings } from "@/models/users";
+import { UserSettings } from "@/models/user-settings";
+import { User } from "@/models/users";
 import { agent } from "@/resources/agent";
 import { HTTP_HEADER_X_RESOURCE_TYPE } from "@/utils/constants";
 

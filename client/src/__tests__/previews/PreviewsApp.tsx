@@ -30,7 +30,6 @@ import TimelinePreview from "./core/Timeline.preview";
 import QueryTerminalPreview from "./query/QueryTerminal.preview";
 import QueryPromptPreview from "./query/QueryPrompt.preview";
 import LoadingContainerPreview from "./core/LoadingContainer.preview";
-import QueryHistoryTimelinePreview from "./query/QueryHistoryTimelinePreview";
 import FileInputPreview from "./core/FileInput.preview";
 import NotificationPreview from "./core/Notifications.preview";
 import TreeViewPreview from "./core/TreeView.preview";
@@ -58,7 +57,6 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="QueryOutput" />
           <PreviewSidebarItem view="QueryPrompt" />
           <PreviewSidebarItem view="QueryTerminal" />
-          <PreviewSidebarItem view="QueryHistoryTimeline" />
           <PreviewSidebarItem view="QueryHistory" />
           <PreviewSidebarItem view="Input" />
           <PreviewSidebarItem view="Tooltip" />
@@ -102,7 +100,6 @@ export function PreviewsApp() {
           {view === "Code" && <CodePreview />}
           {view === "Dropdown" && <DropdownPreview />}
           {view === "FileInput" && <FileInputPreview />}
-          {view === "QueryHistoryTimeline" && <QueryHistoryTimelinePreview />}
           {view === "QueryHistory" && <QueryHistoryPreview />}
           {view === "QueryInput" && <QueryInputPreview />}
           {view === "QueryOutput" && <QueryOutputPreview />}

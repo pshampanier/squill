@@ -1,5 +1,9 @@
-use crate::models::user_settings::{NullValues, TableDensity, TableDividers, TableOverscan, TableSettings};
-use crate::models::users::{User, UserSettings};
+use crate::models::user_settings::{
+    ColorScheme, HistorySettings, MonacoEditorCursorStyle, MonacoEditorMatchBrackets, MonacoEditorMinimap,
+    MonacoEditorSettings, MonacoEditorWhitespace, NullValues, TableDensity, TableDividers, TableOverscan,
+    TableSettings, TerminalSettings, UserSettings,
+};
+use crate::models::users::User;
 use crate::models::{Collection, ResourceType, SpecialCollection};
 use crate::resources::catalog;
 use crate::utils::constants::USER_HISTORY_DIRNAME;
@@ -11,15 +15,70 @@ use squill_drivers::async_conn::Connection;
 use squill_drivers::{execute, params};
 use uuid::Uuid;
 
+impl Default for HistorySettings {
+    fn default() -> Self {
+        Self {
+            max_age: 365,
+            max_entries: 1_000,
+            max_rows: 20,
+            max_storage: 10_000,
+            table_settings: TableSettings::default(),
+        }
+    }
+}
+
 impl Default for TableSettings {
     fn default() -> Self {
         Self {
-            show_row_numbers: true,
+            show_row_numbers: false,
             density: TableDensity::Comfortable,
             dividers: TableDividers::Rows,
             null_values: NullValues::Dash,
-            overscan: TableOverscan::Medium,
-            max_length: 50,
+            overscan: TableOverscan::Small,
+            max_length: 100,
+        }
+    }
+}
+
+impl Default for MonacoEditorSettings {
+    fn default() -> Self {
+        Self {
+            cursor_style: MonacoEditorCursorStyle::Underline,
+            match_brackets: MonacoEditorMatchBrackets::Near,
+            whitespace: MonacoEditorWhitespace::None,
+            minimap: MonacoEditorMinimap::Hide,
+        }
+    }
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for TerminalSettings {
+    fn default() -> Self {
+        Self { editor_settings: MonacoEditorSettings::default() }
+    }
+}
+
+impl Default for UserSettings {
+    fn default() -> Self {
+        Self {
+            color_scheme: ColorScheme::Auto,
+            telemetry: true,
+            show_favorites: true,
+            null_values: NullValues::Dash,
+            terminal_settings: TerminalSettings::default(),
+            history_settings: HistorySettings::default(),
+            editor_settings: MonacoEditorSettings::default(),
+        }
+    }
+}
+
+impl Default for User {
+    fn default() -> Self {
+        Self {
+            username: String::new(),
+            user_id: Uuid::new_v4(),
+            variables: Vec::new(),
+            settings: UserSettings::default(),
         }
     }
 }

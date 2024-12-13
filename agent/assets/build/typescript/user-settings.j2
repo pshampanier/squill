@@ -5,8 +5,18 @@
 import { formatRegExp, serializable } from "@/utils/serializable";
 import { immerable } from "immer";
 
-{{ enum("TableDensity", components.schemas.TableDensity) }}
-{{ enum("TableDividers", components.schemas.TableDividers) }}
-{{ enum("TableOverscan", components.schemas.TableOverscan) }}
-{{ enum("NullValues", components.schemas.NullValues) }}
-{{ object("TableSettings", components.schemas.TableSettings) }}
+{{ enum("ColorScheme") }}
+{{ enum("TableDensity") }}
+{{ enum("TableDividers") }}
+{{ enum("TableOverscan") }}
+{{ enum("NullValues") }}
+{{ enum("MonacoEditorMinimap") }}
+{{ enum("MonacoEditorWhitespace") }}
+{{ enum("MonacoEditorCursorStyle") }}
+{{ enum("MonacoEditorMatchBrackets") }}
+
+{{ object("MonacoEditorSettings") }}
+{{ object("TableSettings") }}
+{{ object("TerminalSettings") }}
+{{ object("HistorySettings") }}
+{{ object("UserSettings") }}

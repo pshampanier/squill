@@ -5,8 +5,18 @@
 use serde::{Deserialize, Serialize};
 use squill_drivers::serde::Decode;
 
-{{ enum("TableDensity", components.schemas.TableDensity) }}
-{{ enum("TableDividers", components.schemas.TableDividers) }}
-{{ enum("TableOverscan", components.schemas.TableOverscan) }}
-{{ enum("NullValues", components.schemas.NullValues) }}
-{{ struct("TableSettings", components.schemas.TableSettings) }}
+{{ enum("ColorScheme") }}
+{{ enum("TableDensity") }}
+{{ enum("TableDividers") }}
+{{ enum("TableOverscan") }}
+{{ enum("NullValues") }}
+{{ enum("MonacoEditorMinimap") }}
+{{ enum("MonacoEditorWhitespace") }}
+{{ enum("MonacoEditorCursorStyle") }}
+{{ enum("MonacoEditorMatchBrackets") }}
+
+{{ struct("MonacoEditorSettings") }}
+{{ struct("TableSettings") }}
+{{ struct("TerminalSettings") }}
+{{ struct("HistorySettings") }}
+{{ struct("UserSettings") }}

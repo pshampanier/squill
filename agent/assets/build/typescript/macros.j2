@@ -2,7 +2,8 @@
   {{- property["$ref"] | split('/') | list | last -}}
 {% endmacro %}
 
-{%- macro enum(name, schema) -%}
+{%- macro enum(name) -%}
+  {%- set schema = components.schemas[name] -%}
   {%- if schema.enum is defined -%}
     {%- set values = schema.enum -%}
   {%- elif schema.oneOf is defined -%}
@@ -17,7 +18,8 @@ export const {{ name | snake_case | upper }}_VALUES = ["{{ values | join('", "')
 export type {{ name | pascal_case }} = (typeof {{ name | snake_case |  upper }}_VALUES)[number];
 {%- endmacro -%}
 
-{% macro type(name, schema) %}
+{% macro type(name) %}
+{%- set schema = components.schemas[name] -%}
 {% if schema.description %}
 /// {{ schema.description | trim | replace('\n', '\n  /// ') }}
 {%- endif %}
@@ -108,7 +110,7 @@ items: { {{ serializable_attr(name, ref) }} }
     {% set attributes = attributes + ['items: { type: "' ~ prop.items.type ~ '" }'] %}
   {%- elif prop.type == "object" and prop.additionalProperties is defined -%}
     {% set attributes = attributes + ['items: { type: "' ~ ts_type(prop.additionalProperties) ~ '" }'] %}
-  {%- elif prop.type == "object" -%}
+  {%- elif prop.type == "object" and 'factory:' not in attributes | join(', ') -%}
     {% set attributes = attributes + ['factory: ' ~ name] %}
   {%- endif -%}
   {%- if '_' in name -%}
@@ -124,8 +126,9 @@ items: { {{ serializable_attr(name, ref) }} }
   {%- endif -%}
 {%- endmacro -%}
 
-{% macro object(name, schema) %}
-{% if schema.description %}
+{% macro object(name) %}
+{%- set schema = components.schemas[name] %}
+{%- if schema.description %}
 /**
  * {{ schema.description | replace('\n', '\n   * ') }}
  **/

@@ -66,7 +66,9 @@ export function useQueryCache({
 }: QueryCacheProps = {}): QueryCacheHook {
   const [entries, setEntries] = useState<CacheEntry[]>([]);
 
+  //
   // Every time the cache is updated, we check if there are any pending entries that can be fetched.
+  //
   useEffect(() => {
     let modified = false;
     let activeFetch = entries.reduce((count, entry) => count + (entry.status === "fetching" ? 1 : 0), 0);
@@ -104,6 +106,14 @@ export function useQueryCache({
       });
     }
   }, [entries]);
+
+  //
+  // If the fetch limit changes, we need to clear the cache because offsets in cache are expected to be aligned with
+  // the fetch limit.
+  //
+  useEffect(() => {
+    setEntries([]);
+  }, [fetchLimit]);
 
   const getQueryStates = (query: QueryExecution) => {
     // Filter the cache to get all the entries that belong to the query execution.

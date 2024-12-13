@@ -6,7 +6,6 @@ import { formatRegExp, serializable } from "@/utils/serializable";
 export const RESOURCE_TYPE_VALUES = ["connection", "environment", "collection", "user"] as const;
 export type ResourceType = (typeof RESOURCE_TYPE_VALUES)[number];
 
-
 /**
  * A reference to a resource.
    * 

@@ -111,7 +111,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   //
   // States & Refs
   //
-  const tableSettings = useUserStore((state) => state.settings?.tableSettings);
+  const historySettings = useUserStore((state) => state.settings?.historySettings);
   const rootRef = useRef<HTMLDivElement>(null);
   const [history, dispatch] = useReducer<ReducerFn>(reducer, {
     revision: 1,
@@ -119,7 +119,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     lastAction: null,
   });
 
-  const { getQueryStates } = useQueryCache();
+  const { getQueryStates } = useQueryCache({ fetchLimit: historySettings?.maxRows ?? 20 });
 
   const historyItems = getSortedHistory(history);
 
@@ -130,7 +130,9 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     estimateSize: (index: number) => {
       const query = historyItems[index];
       const headerSize = QueryExecutionHeader.estimateSize();
-      const outputSize = QueryOutput.estimateSize(query, tableSettings) + 8 * 2; /* p-2 */
+      const outputSize =
+        QueryOutput.estimateSize(query, historySettings?.maxRows ?? 20, historySettings?.tableSettings) +
+        8 * 2; /* p-2 */
       const estimatedSize = headerSize + outputSize;
       // console.debug("QueryHistory (sizing)", { index, estimatedSize, headerSize, outputSize });
       return estimatedSize;
@@ -149,7 +151,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   //
   useEffect(() => {
     virtualizer.measure();
-  }, [tableSettings?.density]);
+  }, [historySettings?.tableSettings.density]);
 
   //
   // Scroll to the bottom of the history when the history changes.
@@ -196,7 +198,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
           const previewDataframe: DataFrame = {
             ...dataframe,
             getSizeHint() {
-              return Math.min(20, dataframe.getSizeHint());
+              return Math.min(historySettings?.maxRows ?? 20, dataframe.getSizeHint());
             },
           };
           return (
@@ -221,7 +223,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
               <MemoizedQueryOutput
                 query={query}
                 className={classes.output}
-                settings={tableSettings}
+                settings={historySettings?.tableSettings}
                 dataframe={previewDataframe}
                 fetching={fetching}
               />

@@ -72,6 +72,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   const refHistory = React.useRef<HTMLDivElement>(null);
   const refHistoryDispatcher = React.useRef<Dispatch<QueryHistoryAction> | null>(null);
   const addNotification = useUserStore((state) => state.addNotification);
+  const terminalSettings = useUserStore((state) => state.settings?.terminalSettings);
 
   //
   // Update the height of the history component
@@ -196,6 +197,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         onResize={handleEditorResize}
         colorScheme={colorScheme}
         placeholder={PLACEHOLDER}
+        settings={terminalSettings?.editorSettings}
       />
       <AutoHide className={classes.help} onClick={() => editorRef.current?.focus()}>
         <CommandLinkList className="p-6">

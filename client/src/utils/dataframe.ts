@@ -39,6 +39,16 @@ export class ArrowDataFrame implements DataFrame {
     return this._table?.schema;
   }
 
+  /**
+   * Return a zero-copy sub-section of this DataFrame.
+   *
+   * @param begin The beginning of the specified portion of the Table.
+   * @param end The end of the specified portion of the Table. This is exclusive of the element at the index 'end'.
+   */
+  slice(begin: number, end: number): ArrowDataFrame {
+    return new ArrowDataFrame(this._table.slice(begin, end));
+  }
+
   getSizeHint(): number {
     return this._table?.numRows;
   }

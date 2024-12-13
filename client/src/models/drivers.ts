@@ -19,7 +19,6 @@ export const DRIVER_PASSWORD = "PASSWORD";
 export const DRIVER_CAPABILITIES_VALUES = ["sql", "auth_user_password", "auth_password", "connect_string", "connect_host", "connect_socket", "connect_file", "connect_uri", "read_only", "connect_ssl"] as const;
 export type DriverCapabilities = (typeof DRIVER_CAPABILITIES_VALUES)[number];
 
-
 /**
  * A driver that can be used to connect to a datasource.
  **/

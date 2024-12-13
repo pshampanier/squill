@@ -20,7 +20,6 @@ export type PushMessageType = (typeof PUSH_MESSAGE_TYPE_VALUES)[number];
 export const LOG_LEVEL_VALUES = ["info", "warning", "error"] as const;
 export type LogLevel = (typeof LOG_LEVEL_VALUES)[number];
 
-
 /**
  * A log message sent by the agent to the client through the Push Notification Channel.
  **/
@@ -39,7 +38,6 @@ export class Log {
     Object.assign(this, object);
   }
 }
-
 
 /**
  * A Push Notification sent by the agent to the client through the Notification Channel.

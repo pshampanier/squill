@@ -1207,7 +1207,7 @@ components:
           description: The visual representation of null values.
           $ref: "#/components/schemas/NullValues"
         max_length:
-          description: The maximum length of a column in the table.
+          description: The maximum number of characters to display in a column.
           type: integer
           format: int16
           minimum: 0
@@ -1251,6 +1251,158 @@ components:
         - dash
         - not_available_lowercase
         - not_available_uppercase
+
+    MonacoEditorSettings:
+      description: The settings of the Monaco Editor used by the terminal, worksheet, etc.
+      type: object
+      x-immerable: true
+      required:
+        - minimap
+        - whitespace
+        - cursor_style
+        - match_brackets
+      properties:
+        minimap:
+          description: The minimap visibility of the Monaco Editor.
+          $ref: "#/components/schemas/MonacoEditorMinimap"
+        whitespace:
+          description: The whitespace rendering of the Monaco Editor.
+          $ref: "#/components/schemas/MonacoEditorWhitespace"
+        cursor_style:
+          description: The cursor style of the Monaco Editor.
+          $ref: "#/components/schemas/MonacoEditorCursorStyle"
+        match_brackets:
+          description: The match brackets setting of the Monaco Editor.
+          $ref: "#/components/schemas/MonacoEditorMatchBrackets"
+
+    MonacoEditorMinimap:
+      description: The minimap visibility of the Monaco Editor.
+      type: string
+      enum:
+        - show
+        - hide
+        - auto
+
+    MonacoEditorWhitespace:
+      description: The whitespace rendering of the Monaco Editor.
+      type: string
+      enum:
+        - none
+        - boundary
+        - selection
+        - all
+        - trailing
+
+    MonacoEditorCursorStyle:
+      description: The cursor style of the Monaco Editor.
+      type: string
+      enum:
+        - line
+        - block
+        - underline
+        - line_thin
+        - block_outline
+        - underline_thin
+
+    MonacoEditorMatchBrackets:
+      description: The match brackets setting of the Monaco Editor.
+      type: string
+      enum:
+        - always
+        - never
+        - near
+
+    HistorySettings:
+      description: The settings of the history view.
+      type: object
+      x-immerable: true
+      required:
+        - max_entries
+        - max_age
+        - max_storage
+        - max_rows
+        - table_settings
+      properties:
+        max_entries:
+          description: The maximum number of entries in the history.
+          type: integer
+          format: int16
+          minimum: 0
+        max_age:
+          description: The maximum age of the entries in the history (in days).
+          type: integer
+          format: int16
+          minimum: 0
+        max_storage:
+          description: The maximum storage of the history (in megabytes).
+          type: integer
+          format: int64
+          minimum: 0
+        max_rows:
+          description: The maximum number of rows to display in the result set.
+          type: integer
+          format: int16
+          minimum: 5
+        table_settings:
+          description: The settings of the table displaying the result set.
+          type: object
+          $ref: "#/components/schemas/TableSettings"
+
+    TerminalSettings:
+      description: The settings of a terminal.
+      type: object
+      x-immerable: true
+      required:
+        - editor_settings
+      properties:
+        editor_settings:
+          description: The settings of the Monaco Editor used by the history view.
+          type: object
+          $ref: "#/components/schemas/MonacoEditorSettings"
+
+    ColorScheme:
+      description: The color scheme of the application.
+      type: string
+      enum:
+        - light
+        - dark
+        - auto
+
+    UserSettings:
+      description: The settings of a user.
+      type: object
+      x-immerable: true
+      required:
+        - color_scheme
+        - telemetry
+        - show_favorites
+        - null_values
+        - terminal_settings
+        - history_settings
+        - editor_settings
+      properties:
+        telemetry:
+          description: Enable/Disable the telemetry.
+          type: boolean
+        show_favorites:
+          description: Show the favorites in the catalog.
+          type: boolean
+        color_scheme:
+          description: The color scheme of the application.
+          $ref: "#/components/schemas/ColorScheme"
+        terminal_settings:
+          description: The settings of the terminal.
+          $ref: "#/components/schemas/TerminalSettings"
+        history_settings:
+          description: The settings of the history view.
+          $ref: "#/components/schemas/HistorySettings"
+        null_values:
+          description: The visual representation of null values.
+          $ref: "#/components/schemas/NullValues"
+        editor_settings:
+          description: The settings of the Monaco Editor used by worksheet and files.
+          type: object
+          $ref: "#/components/schemas/MonacoEditorSettings"
 
   securitySchemes:
     ApiKeyAuth:

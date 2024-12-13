@@ -10,7 +10,7 @@ import EditCommandIcon from "@/icons/edit.svg?react";
 import PreviewCommandIcon from "@/icons/preview.svg?react";
 import Button from "@/components/core/Button";
 import { useUserStore } from "@/stores/UserStore";
-import { getMonacoOptions } from "@/utils/monaco-workers";
+import { intoMonacoOptions } from "@/utils/monaco-workers";
 import { useAppStore } from "@/stores/AppStore";
 
 const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId: _pageId }) => {
@@ -19,7 +19,7 @@ const MarkdownEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId: _
   const editorRef = useRef<monacoEditor.IStandaloneCodeEditor>();
   const initialContent = useRef<string>();
   const modified = useRef<boolean>(false);
-  const monacoOptions = useUserStore((state) => getMonacoOptions(state.settings.editorSettings));
+  const monacoOptions = useUserStore((state) => intoMonacoOptions(state.settings.editorSettings));
   const colorScheme = useAppStore((state) => state.colorScheme);
 
   // Options for the Monaco editor

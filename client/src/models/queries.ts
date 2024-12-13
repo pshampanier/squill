@@ -10,7 +10,6 @@ import { formatRegExp, serializable } from "@/utils/serializable";
 export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed", "failed", "cancelled", "deleted"] as const;
 export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number];
 
-
 /**
  * An error message from a query execution.
  **/
@@ -29,7 +28,6 @@ export class QueryExecutionError {
     Object.assign(this, object);
   }
 }
-
 
 /**
  * The execution of a query.
@@ -192,7 +190,6 @@ export class QueryExecution {
   }
 }
 
-
 /**
  * The response of the GET /connections/{id}/history/list endpoint.
  **/
@@ -215,7 +212,6 @@ export class QueryHistoryPage {
     this.queries = (object?.queries || []).map((item) => new QueryExecution(item));
   }
 }
-
 
 /**
  * The statistics about the data of a field across a result set.

@@ -77,7 +77,6 @@ export function QueryOutput({ className, query, dataframe, fetching = false, set
           settings={settings}
           schema={schema}
           rows={dataframe}
-          maxRows={20}
           fetching={fetching || (query.status === "running" && dataframe?.getSizeHint() === 0)}
         />
       )}
@@ -99,14 +98,14 @@ function calcHeight(layout: Layout, lines: number) {
 /**
  * Estimate the height of the QueryOutput component for a given query.
  */
-QueryOutput.estimateSize = function (query: QueryExecution, tableSettings: TableSettings) {
+QueryOutput.estimateSize = function (query: QueryExecution, maxRows: number, tableSettings: TableSettings) {
   const codeSize = calcHeight({ lineHeight: 18 }, query.text.split("\n").length);
   const alertSize =
     query.status === "failed"
       ? calcHeight({ padding: 8, marginTop: 8, lineHeight: 16 }, query.error.message.split("\n").length)
       : 0;
   const tableViewSize = query.metadata?.[QUERY_METADATA_SCHEMA]
-    ? TableView.estimateSize(Math.min(query.storageRows, 20), tableSettings) + 8 /* mt-2 */
+    ? TableView.estimateSize(Math.min(query.storageRows, maxRows), tableSettings) + 8 /* mt-2 */
     : 0;
   return codeSize + alertSize + tableViewSize;
 };
