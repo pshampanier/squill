@@ -85,6 +85,12 @@ impl From<anyhow::Error> for QueryExecutionError {
     }
 }
 
+impl From<String> for QueryExecutionError {
+    fn from(e: String) -> Self {
+        QueryExecutionError { message: e, line: None, column: None }
+    }
+}
+
 /// Create a new query in the history.
 pub async fn create<S: Into<String>>(
     conn: &mut Connection,

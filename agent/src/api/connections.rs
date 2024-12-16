@@ -110,7 +110,7 @@ async fn execute_buffer(
             let queries = queries.clone();
             let state = state.0.clone();
             let session_id = user_session.get_id();
-            Box::new(move || execute_queries_task(state, session_id, queries))
+            Box::new(move || execute_queries_task(state, session_id, connection.id, queries))
         })
         .await?;
 

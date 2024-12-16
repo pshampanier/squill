@@ -64,23 +64,45 @@ enum QueryPipelineMessage {
 pub fn execute_queries_task(
     state: ServerState,
     session_id: uuid::Uuid,
+    connection_id: Uuid,
     queries: Vec<QueryExecution>,
 ) -> BoxFuture<'static, Result<()>> {
     Box::pin(async move {
-        for query in queries {
-            match execute_query(state.clone(), session_id, query.clone()).await {
-                Ok(Some(query)) => {
-                    debug!("The query execution with id {} was successful", query.id);
+        match state.get_user_db_connection(connection_id).await {
+            Ok(mut conn) => {
+                for query in queries {
+                    match execute_query(state.clone(), session_id, &mut conn, query.clone()).await {
+                        Ok(Some(query)) => {
+                            debug!("The query execution with id {} was successful", query.id);
+                        }
+                        Ok(None) => {
+                            debug!("The query execution with id {} cannot be completed. Skipping...", query.id);
+                        }
+                        Err(e) => {
+                            error!("The query execution with id {} failed (reason: {})", query.id, e);
+                        }
+                    };
                 }
-                Ok(None) => {
-                    debug!("The query execution with id {} cannot be completed. Skipping...", query.id);
+                Ok(())
+            }
+            Err(e) => {
+                // We could not get a connection to the database, update the status of the queries (all of them failed)
+                for query in queries {
+                    // The query execution failed
+                    let _ = update_query_history(
+                        &state,
+                        session_id,
+                        QueryExecution {
+                            status: QueryExecutionStatus::Failed,
+                            error: Some(e.to_string().into()),
+                            ..query
+                        },
+                    )
+                    .await;
                 }
-                Err(e) => {
-                    error!("The query execution with id {} failed (reason: {})", query.id, e);
-                }
-            };
+                Err(e)
+            }
         }
-        Ok(())
     })
 }
 
@@ -104,30 +126,33 @@ fn compute_statistics_task(
 async fn execute_query(
     state: ServerState,
     session_id: uuid::Uuid,
+    conn: &mut Connection,
     query: QueryExecution,
 ) -> Result<Option<QueryExecution>> {
     if let Some(query) =
         update_query_history(&state, session_id, QueryExecution { status: QueryExecutionStatus::Running, ..query })
             .await?
     {
-        let mut conn = state.get_user_db_connection(query.connection_id).await?;
         let start_time = Instant::now(); // Record the start time of the query execution
         let query = match if query.with_result_set {
             //
             // The query is expected to return a result set
             //
-            execute_query_with_result_set(state.clone(), session_id, &mut conn, query.clone()).await
+            execute_query_with_result_set(state.clone(), session_id, conn, query.clone()).await
         } else {
             //
             // The query is expected to return a number of affected rows
             //
-            execute_query_without_result_set(&mut conn, query.clone()).await
+            execute_query_without_result_set(conn, query.clone()).await
         } {
             Ok(query) => {
                 let execution_time = start_time.elapsed().as_secs_f64();
                 QueryExecution { status: QueryExecutionStatus::Completed, execution_time, ..query }
             }
-            Err(e) => QueryExecution { status: QueryExecutionStatus::Failed, error: Some(e.into()), ..query },
+            Err(e) => {
+                let execution_time = start_time.elapsed().as_secs_f64();
+                QueryExecution { status: QueryExecutionStatus::Failed, error: Some(e.into()), execution_time, ..query }
+            }
         };
         update_query_history(&state, session_id, query.clone()).await
     } else {

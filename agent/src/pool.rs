@@ -1,6 +1,7 @@
 use anyhow::Result;
-use deadpool::managed::{Manager, Metrics, Object, Pool, RecycleResult};
+use deadpool::managed::{Manager, Metrics, Object, Pool, RecycleError, RecycleResult};
 use squill_drivers::async_conn::Connection;
+use tracing::error;
 
 pub type ConnectionPool = Pool<ConnectionManager>;
 pub type ConnectionGuard = Object<ConnectionManager>;
@@ -17,8 +18,11 @@ impl Manager for ConnectionManager {
         Connection::open(&self.uri).await
     }
 
-    async fn recycle(&self, _: &mut Connection, _: &Metrics) -> RecycleResult<Self::Error> {
-        Ok(())
+    async fn recycle(&self, conn: &mut Connection, _: &Metrics) -> RecycleResult<Self::Error> {
+        conn.ping().await.map_err(|e| {
+            error!("Failed to recycle connection into the pool: {}", e);
+            RecycleError::Backend(e)
+        })
     }
 }
 

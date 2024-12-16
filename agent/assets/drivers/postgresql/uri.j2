@@ -1,0 +1,50 @@
+{#
+ # Convert a connection definition into a PostgreSQL URI.
+ # 
+ # The expected URI is using the following format where all the connection options are given as parameters:
+ # 
+ #   postgresql://?host=localhost&dbname=my_db&...
+ #
+ #   See also: https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING-URIS
+ #}
+
+{%- set params = [] -%}
+
+{%- if mode == "uri" -%}
+  {# 
+   # Returns the URI as defined in the connection.
+   #}
+  {{- uri -}}
+{%- else -%}
+  {# 
+   # Build the URI by creating a list of parameters.
+   #}
+  {%- if mode == "host" -%}
+    {% set params = params + ["host=" ~ host | urlencode] %}
+  {%- elif mode == "socket" -%}
+    {% set params = params + ["host=" ~ socket | urlencode] %}
+  {%- endif -%}
+  
+  {%- if port != "" -%}
+    {% set params = params + ["port=" ~ port | urlencode] %}
+  {%- endif -%}
+  {%- if username != "" -%}
+    {% set params = params + ["user=" ~ username | urlencode] %}
+  {%- endif -%}
+  {%- if password != "" -%}
+    {% set params = params + ["password=" ~ password | urlencode] %}
+  {%- endif -%}
+
+  {# 
+   # Add the application name (hardcoded to `squill`).
+   #}
+  {%- set params = params + ["options=" ~ "-c application_name=squill" | urlencode] -%}
+
+  {# 
+   # Compose the URI.
+   #}
+  {%- set uri = "postgresql://?" ~ params | join('&') -%}
+  
+  {# Returns the URI #}
+  {{- uri -}}
+{%- endif -%}
