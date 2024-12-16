@@ -64,6 +64,61 @@ export class DateFormat implements Format {
 }
 
 /**
+ * A format that displays the value as a UUID.
+ */
+export class UuidFormat implements Format {
+  format(value: unknown): string {
+    if (value === null || value === undefined) {
+      return null;
+    } else if (value instanceof Uint8Array) {
+      const bytes: string[] = Array.from(value).map((byte: number): string => byte.toString(16).padStart(2, "0"));
+      const parts = [
+        bytes.slice(0, 4).join(""),
+        bytes.slice(4, 6).join(""),
+        bytes.slice(6, 8).join(""),
+        bytes.slice(8, 10).join(""),
+        bytes.slice(10).join(""),
+      ];
+      return parts.join("-");
+    } else {
+      return value.toString();
+    }
+  }
+}
+
+/**
+ * A format that displays the value as a binary in hexadecimal.
+ */
+export class BinaryFormat implements Format {
+  format(value: unknown): string {
+    if (value === null || value === undefined) {
+      return null;
+    } else if (value instanceof Uint8Array) {
+      const bytes: string[] = Array.from(value).map((byte: number): string => byte.toString(16).padStart(2, "0"));
+      return bytes.join("");
+    } else {
+      return value.toString();
+    }
+  }
+}
+
+/**
+ * A format that displays the value as a mac address.
+ */
+export class MacAddressFormat implements Format {
+  format(value: unknown): string {
+    if (value === null || value === undefined) {
+      return null;
+    } else if (value instanceof Uint8Array) {
+      const bytes: string[] = Array.from(value).map((byte: number): string => byte.toString(16).padStart(2, "0"));
+      return bytes.join("-");
+    } else {
+      return value.toString();
+    }
+  }
+}
+
+/**
  * A format that displays the value as a string.
  */
 export class DefaultFormat implements Format {

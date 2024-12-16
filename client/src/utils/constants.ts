@@ -45,7 +45,7 @@ export const BLANK_PAGE_ITEM_ID = "blank";
 export const NOT_FOUND_ITEM_ID = "not-found";
 
 /**
- * Query Metadata
+ * Query Metadata keys
  */
 export const QUERY_METADATA_SCHEMA = "schema";
 export const QUERY_METADATA_FIELD_MIN_VALUE = "min_value";
@@ -53,3 +53,11 @@ export const QUERY_METADATA_FIELD_MAX_VALUE = "max_value";
 export const QUERY_METADATA_FIELD_MAX_LENGTH = "max_length";
 export const QUERY_METADATA_FIELD_MISSING_VALUES = "missing_values";
 export const QUERY_METADATA_FIELD_UNIQUE_VALUES = "unique_values";
+export const QUERY_METADATA_FIELD_DATASOURCE_TYPE = "datasource_type";
+
+/**
+ * Query Metadata values
+ */
+export const QUERY_METADATA_DATASOURCE_TYPE_UUID = "uuid";
+export const QUERY_METADATA_DATASOURCE_TYPE_MACADDR = "macaddr"; // MAC address (postgresql)
+export const QUERY_METADATA_DATASOURCE_TYPE_MACADDR8 = "macaddr8"; // MAC address (postgresql)
