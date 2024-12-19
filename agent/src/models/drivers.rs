@@ -38,6 +38,9 @@ pub enum DriverCapabilities {
 
     /// The driver is capable of connecting to a data source through SSL.
     ConnectSsl,
+
+    /// The driver is limited to connect only one datasource through a given connection.
+    SingleDatasource,
 }
 
 /// A driver that can be used to connect to a datasource.

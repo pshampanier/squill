@@ -1,11 +1,10 @@
 import cx from "classix";
 import { primary, secondary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
-import Button from "@/components/core/Button";
-import ChevronIcon from "@/icons/chevron-right.svg?react";
-
 import React, { SyntheticEvent, createContext } from "react";
 import { raise } from "@/utils/telemetry";
+import Button from "@/components/core/Button";
+import ChevronIcon from "@/icons/chevron-right.svg?react";
 
 type StepperProps = {
   /**
@@ -114,19 +113,28 @@ function Stepper({ children, doneButtonText = "Done", onCancel, onCompleted }: S
 
   // Click on the "Next/Done" button
   const handleNext = (event: SyntheticEvent) => {
-    activeChild.props.onSubmit?.(event, activeChild.props.name);
+    const actions: StepperNavigation = {
+      cancel: () => {
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      proceed: () => {
+        if (activeStep === completedStep + 1) {
+          setCompletedStep((prev) => prev + 1);
+        }
+        // If the active step is not the last one, we move to the next step otherwise we call the onCompleted callback
+        if (activeStep < visibleChildren.length - 1) {
+          startTransitionTo(activeStep + 1);
+        } else {
+          onCompleted?.(event);
+        }
+      },
+    };
+    activeChild.props.onSubmit?.(event, activeChild.props.name, actions);
     if (!event.defaultPrevented) {
-      // The event was not prevented, so we can proceed to the next step
-      if (activeStep === completedStep + 1) {
-        setCompletedStep((prev) => prev + 1);
-      }
-      // If the active step is not the last one, we move to the next step otherwise we call the onCompleted callback
-      if (activeStep < visibleChildren.length - 1) {
-        startTransitionTo(activeStep + 1);
-      } else {
-        onCompleted?.(event);
-      }
+      actions.proceed();
     }
+    event.stopPropagation();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -171,9 +179,9 @@ function Stepper({ children, doneButtonText = "Done", onCancel, onCompleted }: S
         <ul className="w-full">{navChildren}</ul>
       </nav>
       <div className="flex flex-col w-3/4 pl-4">
-        <div className="flex overflow-x-hidden">
+        <div className="flex overflow-x-hidden h-full">
           <div
-            className="relative flex w-full transition-all ease-in-out duration-200"
+            className="relative flex w-full h-full transition-all ease-in-out duration-200"
             style={{ left: mainViewOffset }}
             onTransitionEnd={() => setTransitionInProgress(false)}
           >
@@ -269,23 +277,23 @@ function NavStep({ step, title, icon, status, completedStep, active, count, onCh
       status === "upcoming" ? "pointer-events-none" : "cursor-pointer",
       status === "upcoming" && step - completedStep === 1 && "opacity-50",
       status === "upcoming" && step - completedStep === 2 && "opacity-35",
-      status === "upcoming" && step - completedStep > 2 && "opacity-20"
+      status === "upcoming" && step - completedStep > 2 && "opacity-20",
     ),
     line: cx(
       step < count - 1 && "before:absolute before:w-[1px] before:h-11 mb-2 before:left-6 before:top-12",
-      status === "completed" ? "before:bg-green-600" : "before:bg-gray-500"
+      status === "completed" ? "before:bg-green-600" : "before:bg-gray-500",
     ),
     status: cx(
       "text-xs",
       status === "completed" && "text-green-600",
       status === "in-progress" && "text-blue-500",
-      status === "upcoming" && "hidden"
+      status === "upcoming" && "hidden",
     ),
     icon: cx(
       "w-8 h-8 p-1 rounded-full border-2",
       active && "border-green-600 text-green-600 bg-white dark:bg-gray-300",
       !active && status === "completed" && "border-green-600 bg-green-600 text-white",
-      status === "upcoming" && "bg-white text-gray-500 border-gray"
+      status === "upcoming" && "bg-white text-gray-500 border-gray",
     ),
   };
 
@@ -306,6 +314,31 @@ function NavStep({ step, title, icon, status, completedStep, active, count, onCh
       </div>
     </li>
   );
+}
+
+/**
+ * An interface given to the onSubmit() callback of the Step component.
+ *
+ * It allows the step to control the navigation of the stepper by cancelling or proceeding to the next step.
+ */
+export interface StepperNavigation {
+  /**
+   * Cancel the navigation to the next step.
+   *
+   * This will prevent the stepper from moving to the next step and the current step will remain active.
+   * This could be to temporarily block the navigation until some conditions are met and then `proceed()` could be called.
+   */
+  cancel: () => void;
+
+  /**
+   * Proceed to the next step.
+   *
+   * This will move the stepper to the next step and the next step will become active. By default the stepper will move
+   * to the next step if `cancelled` is not called. So this function is typically called when the validation is
+   * asynchronous. In other words, when the step needs to wait for a response from the server before moving to the next
+   * step, `cancel()` should be called first and then `proceed()` should be called when component is ready to move.
+   */
+  proceed: () => void;
 }
 
 type StepProps = {
@@ -345,7 +378,7 @@ type StepProps = {
    * @param event The event originating the submit.
    * @param name The name of the step.
    */
-  onSubmit?: (event: SyntheticEvent, name: string) => void;
+  onSubmit?: (event: SyntheticEvent, name: string, actions: StepperNavigation) => void;
 
   /**
    * The content of the step.
@@ -357,13 +390,16 @@ function Step({ title, children, name, visible }: StepProps) {
   if (!visible) return null;
   const { isStepVisible } = React.useContext(StepperContext);
   const classes = {
-    section: cx("flex-shrink-0 w-full justify-center items-center", isStepVisible(name) ? "visible" : "invisible"),
+    section: cx(
+      "flex-shrink-0 w-full h-full justify-center items-center",
+      isStepVisible(name) ? "visible" : "invisible",
+    ),
   };
   return (
     <section className={classes.section}>
-      <div className="flex flex-col space-y-4">
-        <h1 className={cx("font-bold text-xl", primary("heading-text"))}>{title}</h1>
-        <div className="flex">{children}</div>
+      <div className="flex flex-col space-y-4 h-full overflow-hidden">
+        <h1 className={cx("font-bold text-xl shrink-0", primary("heading-text"))}>{title}</h1>
+        <div className="flex grow overflow-hidden">{children}</div>
       </div>
     </section>
   );

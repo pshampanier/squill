@@ -1,0 +1,69 @@
+{#-
+ # get_conn_info(): Get information about the connection.
+ # 
+ # Returns:
+ #   - version: The version of the server (major.minor).
+ #   - description: The description of the server (ex: PostgreSQL 16.2 (Debian 16.2-1.pgdg120+2) on x86_64...).
+ #   - current_datasource: The name of the current database.
+-#}
+{%- macro get_connection_info() -%}
+SELECT
+  CONCAT(
+    current_setting('server_version_num')::int / 10000, '.',  -- Extract major version
+    current_setting('server_version_num')::int % 10000  -- Extract minor version
+  ) AS version,
+  current_setting('server_version') AS description,
+  current_database() AS current_datasource
+{%- endmacro %}
+
+{#-
+ # List all databases.
+ # 
+ # Returns:
+ #   - name: The name of the database.
+ #   - description: The description of the database.
+ #   - size_in_bytes: The size of the database in bytes.
+-#}
+{%- macro list_datasources() -%}
+SELECT d0.datname AS name,
+       d1.description AS description,
+       pg_catalog.pg_database_size(d0.datname) AS size_in_bytes
+  FROM pg_catalog.pg_database d0
+  LEFT JOIN pg_shdescription d1 ON d0.oid = d1.objoid
+ WHERE d0.datistemplate = false
+{%- endmacro %}
+
+{#-
+ # Describe the content of a database.
+ #
+ # In PostgreSQL, a database is a collection of schemas.
+ # 
+ # Args:
+ #   - database_name: The name of the database.
+ # 
+ # Returns:
+ #   - type: The type of object (always 'schema').
+ #   - name: The name of the schema.
+-#}
+{%- macro describe_datasource(database_name) -%}
+SELECT 'schema' AS type,
+       nspname AS name
+  FROM pg_catalog.pg_namespace
+ WHERE nspname NOT LIKE 'pg_%'
+   AND nspname != 'information_schema'
+{%- endmacro %}
+
+{#-
+ # Describe the content of a schema.
+ # 
+ # Args:
+ #   - schema_name: The name of the schema.
+ # 
+-#}
+{%- macro describe_schema(schema_name) -%}
+SELECT * 
+FROM (VALUES 
+    ('table'), 
+    ('view')
+) AS result(type);
+{%- endmacro %}

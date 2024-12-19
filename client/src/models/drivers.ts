@@ -16,7 +16,7 @@ export const DRIVER_PASSWORD = "PASSWORD";
 /**
  * The description of the capabilities of a driver.
  */
-export const DRIVER_CAPABILITIES_VALUES = ["sql", "auth_user_password", "auth_password", "connect_string", "connect_host", "connect_socket", "connect_file", "connect_uri", "read_only", "connect_ssl"] as const;
+export const DRIVER_CAPABILITIES_VALUES = ["sql", "auth_user_password", "auth_password", "connect_string", "connect_host", "connect_socket", "connect_file", "connect_uri", "read_only", "connect_ssl", "single_datasource"] as const;
 export type DriverCapabilities = (typeof DRIVER_CAPABILITIES_VALUES)[number];
 
 /**

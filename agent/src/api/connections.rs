@@ -2,6 +2,7 @@ use crate::api::error::ServerResult;
 use crate::err_forbidden;
 use crate::err_param;
 use crate::models;
+use crate::models::connections::Datasource;
 use crate::models::queries::QueryHistoryPage;
 use crate::resources;
 use crate::resources::catalog;
@@ -64,7 +65,7 @@ fn extract_header(headers: &HeaderMap, name: &'static str) -> Result<String, Use
         .ok_or_else(|| err_param!("HTTP header '{}' is missing.", name))
 }
 
-async fn execute_buffer(
+async fn run_buffer(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
@@ -118,16 +119,68 @@ async fn execute_buffer(
     Ok(Json(queries))
 }
 
-/// POST /connections/test
+/// POST /connections/validate
 ///
-/// Test if the connection is valid (can connect to the datasource).
-async fn test_connection(state: State<ServerState>, Json(conn): Json<models::Connection>) -> ServerResult<()> {
-    let jinja_env = state.get_jinja_env(&conn.driver);
-    let uri = jinja_env.render_template("uri", &conn)?;
+/// Check the validity of a connection definition.
+///
+/// The connection definition is validate by the agent to ensure that the connection can be established.
+/// If the connection can be established the agent will return the connection information including the default
+/// datasource and all other datasources available for the connection.
+async fn validate_connection(
+    state: State<ServerState>,
+    Json(conn_def): Json<models::Connection>,
+) -> ServerResult<Json<models::Connection>> {
+    let jinja_env = state.get_jinja_env(&conn_def.driver);
+    let uri = jinja_env.render_template("uri", &conn_def)?;
     match Connection::open(uri).await {
-        Ok(_) => Ok(()),
+        Ok(mut conn) => {
+            // We've successfully connected to the database, let's get the connection info and the datasources.
+            // We don't take the list of datasources as given by list_datasources() because we want to keep the
+            // hidden flag from the connection definition (if any).
+            let conn_info = conn_def.get_info(&mut conn, &jinja_env).await?;
+            let conn_datasources = conn_def.list_datasources(&mut conn, &jinja_env).await?;
+            Ok(Json(models::Connection {
+                default_datasource: conn_info.default_datasource,
+                datasources: conn_datasources
+                    .into_iter()
+                    .map(|ds| Datasource {
+                        name: ds.name.clone(),
+                        description: ds.description,
+                        size_in_bytes: ds.size_in_bytes,
+                        hidden: conn_def
+                            .datasources
+                            .iter()
+                            .find(|prev_ds| prev_ds.name == ds.name)
+                            .map(|d| d.hidden)
+                            .unwrap_or(false),
+                    })
+                    .collect(),
+                ..conn_def
+            }))
+        }
         Err(e) => Err(UserError::InvalidParameter(e.to_string()).into()),
     }
+}
+
+/// GET /connections/{id}/datasources:
+///
+/// List the datasources available on a connection.
+/// TODO: Finalize the implementation.
+async fn list_datasources(
+    state: State<ServerState>,
+    context: ServerResult<RequestContext>,
+    Path(id): Path<Uuid>,
+) -> ServerResult<Json<Vec<Datasource>>> {
+    let user_session = context?.get_user_session()?;
+    let mut conn = state.get_agentdb_connection().await?;
+
+    let conn_def: models::Connection = catalog::get(&mut conn, id).await?;
+    if conn_def.owner_user_id != user_session.get_user_id() {
+        return Err(err_forbidden!("You are not allowed to access this connection."));
+    }
+
+    let jinja_env = state.get_jinja_env(&conn_def.driver);
+    Ok(Json(conn_def.list_datasources(&mut conn, &jinja_env).await?))
 }
 
 #[derive(Deserialize)]
@@ -225,9 +278,10 @@ async fn delete_query_from_history(
 pub fn authenticated_routes(state: ServerState) -> Router {
     Router::new()
         .route("/connections/defaults", get(get_connection_defaults))
-        .route("/connections/test", post(test_connection))
+        .route("/connections/validate", post(validate_connection))
         .route("/connections/:id", get(get_connection))
-        .route("/connections/:id/execute", post(execute_buffer))
+        .route("/connections/:id/datasources", get(list_datasources))
+        .route("/connections/:id/run", post(run_buffer))
         .route("/connections/:id/history", get(list_queries_history))
         .route("/connections/:id/history/:query_history_id", delete(delete_query_from_history))
         .route("/connections/:id/history/:query_history_id/data", get(get_query_history_data))

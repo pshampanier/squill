@@ -7,7 +7,6 @@ use crate::server::notification_channels::NotificationChannel;
 use crate::server::user_sessions::UserSession;
 use crate::settings;
 use crate::tasks::{TaskFn, TasksQueue};
-use crate::utils::constants::DRIVERS_DIRNAME;
 use crate::utils::validators::Username;
 use crate::UserError;
 use anyhow::{Context, Result};
@@ -373,9 +372,7 @@ impl ServerState {
 
     /// Get a Jinja environment for a specific driver.
     pub fn get_jinja_env(&self, driver: &str) -> JinjaEnvironment<'_> {
-        let mut jinja_env = JinjaEnvironment::new();
-        jinja_env.set_template_directory(settings::get_assets_dir().join(DRIVERS_DIRNAME).join(driver));
-        jinja_env
+        JinjaEnvironment::new_from_driver(driver)
     }
 }
 

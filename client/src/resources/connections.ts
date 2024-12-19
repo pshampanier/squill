@@ -13,12 +13,21 @@ export const Connections = {
     return (await agent().get<Connection>(`/connections/defaults`)).as(Connection);
   },
 
-  async test(connection: Connection): Promise<void> {
-    await agent().post(`/connections/test`, connection);
+  /**
+   * POST /connections/validate
+   *
+   * Check the validity of a connection definition.
+   *
+   * The connection definition is validate by the agent to ensure that the connection can be established.
+   * If the connection can be established the agent will return the connection information including the default
+   * datasource and all other datasources available for the connection.
+   */
+  async validate(connection: Connection): Promise<Connection> {
+    return (await agent().post<Connection, Connection>(`/connections/validate`, connection)).as(Connection);
   },
 
   /**
-   * Execute a buffer of queries thought the connection.
+   * Run a buffer of queries thought the connection.
    *
    * The buffer is may contain 0 or more queries. For each query, a query execution is created and added to the history
    * and the the identifier of each query execution is returned.
@@ -28,9 +37,9 @@ export const Connections = {
    * @param buffer A text containing 0 or more statements to execute.
    * @returns A Promise that will resolve with a list of query executions.
    */
-  async execute(connId: string, origin: string, buffer: string): Promise<QueryExecution[]> {
+  async run(connId: string, origin: string, buffer: string): Promise<QueryExecution[]> {
     return (
-      await agent().post<string, QueryExecution>(`/connections/${connId}/execute`, buffer, {
+      await agent().post<string, QueryExecution>(`/connections/${connId}/run`, buffer, {
         headers: {
           [HTTP_HEADER_X_ORIGIN]: origin,
         },

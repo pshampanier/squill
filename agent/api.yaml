@@ -111,29 +111,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ConnectionDescription"
+                $ref: "#/components/schemas/ConnectionInfo"
 
         "401":
           description: Unauthorized
-
-  /connections/describe/datasources:
-    get:
-      summary: List the datasources available for the connection.
-      security:
-        - ApiKeyAuth: []
-      responses:
-        "200":
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ConnectionDescription"
-
-        "401":
-          description: Unauthorized
-
-        "404":
-          description: Connection not found"
 
   /connections/{id}:
     get:
@@ -160,9 +141,9 @@ paths:
         "404":
           description: Connection not found
 
-  /connections/{id}/execute:
+  /connections/{id}/run:
     post:
-      summary: Execute one or more queries on the connection.
+      summary: Run one or more queries on the connection.
       security:
         - ApiKeyAuth: []
       parameters:
@@ -192,6 +173,30 @@ paths:
                 type: object
                 additionalProperties:
                   type: string
+        "401":
+          description: Unauthorized
+
+  /connections/{id}/datasources:
+    get:
+      summary: List the datasources available for the connection.
+      operationId: listDatasources
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Datasource"
         "401":
           description: Unauthorized
 
@@ -295,9 +300,14 @@ paths:
         "404":
           description: Query not found
 
-  /connections/test:
+  /connections/validate:
     post:
-      summary: Test a connection.
+      summary: |
+        Check the validity of a connection definition.
+
+        The connection definition is validate by the agent to ensure that the connection can be established.
+        If the connection can be established the agent will return the connection information including the default
+        datasource and all other datasources available for the connection.
       security:
         - ApiKeyAuth: []
       requestBody:
@@ -309,6 +319,10 @@ paths:
       responses:
         "200":
           description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
         "401":
           description: Unauthorized
 
@@ -551,6 +565,8 @@ components:
           description: The driver is capable of opening a connection in read-only mode.
         - title: connect_ssl
           description: The driver is capable of connecting to a data source through SSL.
+        - title: single_datasource
+          description: The driver is limited to connect only one datasource through a given connection.
 
     Driver:
       description: A driver that can be used to connect to a datasource.
@@ -587,20 +603,46 @@ components:
           additionalProperties:
             type: string
 
-    ConnectionDescription:
+    ConnectionInfo:
       description: Description of a connection to a datasource.
       type: object
+      required:
+        - description
+        - backend_version
       properties:
         description:
           type: string
           description: |
             The description of the connection (e.g. "Server version: 9.0.1 MySQL Community Server - GPL").
-        server_version:
+        backend_version:
           type: string
           description: The version of the server (e.g. "9.0.1").
+        default_datasource:
+          type: string
+          description: The name of the default datasource (e.g. "my_database").
+
+    Datasource:
+      description: The description of a datasource (database for SQL engines).
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: The name of the datasource (e.g. "my_database").
+        description:
+          type: string
+          description: The description of the datasource (e.g. "My database").
+        size_in_bytes:
+          type: integer
+          format: int64
+          description: The size of the datasource in bytes.
+        hidden:
+          type: boolean
+          description: A flag indicating if the datasource is hidden in the user interface.
 
     Connection:
-      description: Description of a connection to a datasource.
+      description: Definition of a connection to datasources.
       type: object
       x-immerable: true
       required:
@@ -683,9 +725,15 @@ components:
           type: boolean
           description: Whether the password should be saved.
 
-        datasource:
+        default_datasource:
           type: string
           description: The name of the default datasource to use.
+
+        datasources:
+          type: array
+          description: The list of datasources available for the connection.
+          items:
+            $ref: "#/components/schemas/Datasource"
 
         options:
           type: object

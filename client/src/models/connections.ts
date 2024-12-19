@@ -12,7 +12,70 @@ export const CONNECTION_MODE_VALUES = ["host", "socket", "file", "connection_str
 export type ConnectionMode = (typeof CONNECTION_MODE_VALUES)[number];
 
 /**
+ * The description of a datasource (database for SQL engines).
+ **/
+export class Datasource {
+  
+  /**
+   * The description of the datasource (e.g. "My database").
+   **/
+  @serializable("string")
+  description?: string;
+  
+  /**
+   * A flag indicating if the datasource is hidden in the user interface.
+   **/
+  @serializable("boolean")
+  hidden?: boolean;
+  
+  /**
+   * The name of the datasource (e.g. "my_database").
+   **/
+  @serializable("string", { required: true })
+  name!: string;
+  
+  /**
+   * The size of the datasource in bytes.
+   **/
+  @serializable("integer", { snakeCase: "property" })
+  sizeInBytes?: number;
+  
+  constructor(object?: Partial<Datasource>) {
+    Object.assign(this, object);
+  }
+}
+
+/**
  * Description of a connection to a datasource.
+ **/
+export class ConnectionInfo {
+  
+  /**
+   * The version of the server (e.g. "9.0.1").
+   **/
+  @serializable("string", { required: true, snakeCase: "property" })
+  backendVersion!: string;
+  
+  /**
+   * The name of the default datasource (e.g. "my_database").
+   **/
+  @serializable("string", { snakeCase: "property" })
+  defaultDatasource?: string;
+  
+  /**
+   * The description of the connection (e.g. "Server version: 9.0.1 MySQL Community Server - GPL").
+   * 
+   **/
+  @serializable("string", { required: true })
+  description!: string;
+  
+  constructor(object?: Partial<ConnectionInfo>) {
+    Object.assign(this, object);
+  }
+}
+
+/**
+ * Definition of a connection to datasources.
  **/
 export class Connection {
   [immerable] = true;
@@ -30,10 +93,16 @@ export class Connection {
   connectionString?: string;
   
   /**
+   * The list of datasources available for the connection.
+   **/
+  @serializable("array", { items: { type: "object", options: { factory: Datasource } } })
+  datasources?: Datasource[];
+  
+  /**
    * The name of the default datasource to use.
    **/
-  @serializable("string")
-  datasource?: string;
+  @serializable("string", { snakeCase: "property" })
+  defaultDatasource?: string;
   
   /**
    * The description of the connection.
@@ -130,5 +199,6 @@ export class Connection {
   
   constructor(object?: Partial<Connection>) {
     Object.assign(this, object);
+    this.datasources = (object?.datasources || []).map((item) => new Datasource(item));
   }
 }

@@ -18,14 +18,11 @@ export default function Modal({ onClose, onCancel, children, className }: ModalP
     // This code implies that the root element of the application is the element with the id "root" and the
     // notification popup is the element with the id "notification-popup".
     // When the modal is closed, the notification popup is moved back to root element in the DOM.
-    const notificationPopup = document.getElementById("notification-popup");
-    if (notificationPopup) {
-      dialogRef.current?.appendChild(notificationPopup);
-    }
+    const portals = ["notification-popup", "dropdown-popup"].map((n) => document.getElementById(n)).filter((p) => p);
+    portals.forEach((portal) => dialogRef.current?.appendChild(portal));
     return () => {
-      if (notificationPopup) {
-        document.getElementById("root").appendChild(notificationPopup);
-      }
+      const root = document.getElementById("root");
+      portals.forEach((portal) => root.appendChild(portal));
     };
   });
 

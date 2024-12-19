@@ -1,4 +1,30 @@
-{#- SQLite version 3.43.2 -#}
-{%- macro server_info() %}
-SELECT 'SQLite version ' || sqlite_version()
+#-
+ # get_conn_info(): Get information about the connection.
+ # 
+ # Returns:
+ #   - version: The version of the server (major.minor).
+ #   - description: The description of the server (ex: `SQLite version 3.43.2`).
+ #   - current_datasource: The name of the current database.
+-#
+{%- macro get_connection_info() -%}
+SELECT
+  sqlite_version() AS version,
+  'SQLite version ' || sqlite_version() AS description,
+  'main' AS current_datasource
+{%- endmacro %}
+
+{#-
+ # List all databases.
+ # 
+ # Returns:
+ #   - name: The name of the database.
+ #   - description: The description of the database. (Always `NULL` for SQLite)
+ #   - size_in_bytes: The size of the database in bytes.
+-#}
+{%- macro list_datasources() -%}
+SELECT 
+  'main' AS name,
+  NULL AS description,
+  (page_count * page_size) AS size_in_bytes
+  FROM pragma_page_count(), pragma_page_size();
 {%- endmacro %}

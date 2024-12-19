@@ -1,5 +1,5 @@
 import cx from "classix";
-import { SyntheticEvent, useRef, useState } from "react";
+import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { ColorsFunction, primary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
 import { raise } from "@/utils/telemetry";
@@ -135,7 +135,13 @@ function Dropdown({
     whileElementsMounted: autoUpdate,
   });
 
-  const handleButtonClick = () => {
+  useEffect(() => {
+    setValue(defaultValue);
+  }, [defaultValue]);
+
+  const handleButtonClick = (event: SyntheticEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
     setOpen(!open);
   };
 
@@ -144,6 +150,8 @@ function Dropdown({
     if ((!open && event.key === "Enter") || event.key === "ArrowDown" || event.key === " " || event.key === "ArrowUp") {
       setOpen(!open);
     }
+    event.preventDefault();
+    event.stopPropagation();
   };
 
   const handleOptionClick = (value: string) => {
@@ -202,6 +210,8 @@ function Dropdown({
     open && "-rotate-90",
   );
 
+  console.debug("Rendering Dropdown", { open, value, label, children });
+
   return (
     <div ref={setReferences} className="relative inline-block" onKeyDown={handleKeyDown} tabIndex={0}>
       <Button
@@ -216,8 +226,8 @@ function Dropdown({
         <ChevronIcon className={iconClasses} />
       </Button>
       {open && (
-        <FloatingPortal>
-          <div ref={refs.setFloating} style={{ ...floatingStyles, zIndex: 9999 }}>
+        <FloatingPortal id="dropdown-popup">
+          <div ref={refs.setFloating} style={{ ...floatingStyles, zIndex: 10000 }}>
             <Menu onClose={handleClose} size={size}>
               <Menu.Group>{children}</Menu.Group>
             </Menu>

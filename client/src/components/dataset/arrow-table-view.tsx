@@ -25,6 +25,31 @@ export type ArrowTableViewProps = TableViewProps & {
   schema?: Schema;
 };
 
+/**
+ * Generates a list of columns for a `TableView` component based on an Apache Arrow schema.
+ *
+ * @param schema The schema of the dataframe.
+ *
+ * The schema is an array of fields, where each field has the following properties:
+ * ```json
+ *  [
+ *    {
+ *      "children": [],
+ *      "metadata": { "datasource_type": "inet", "max_length": "10", "missing_values": "5" },
+ *      "name": "client_addr",
+ *      "nullable": true,
+ *      "type": { "name": "utf8" }
+ *    },
+ *    {
+ *      "children": [],
+ *      "metadata": { "datasource_type": "text", "missing_values": "6" },
+ *      "name": "client_hostname",
+ *      "nullable": true,
+ *      "type": { "name": "utf8" }
+ *    }
+ *  ]
+ * ```
+ */
 const getColumns = (schema: Schema): TableViewColumn[] => {
   return schema.fields.map((field: Field, index) => {
     const column: Partial<TableViewColumn> = {
@@ -34,10 +59,16 @@ const getColumns = (schema: Schema): TableViewColumn[] => {
     };
 
     if (DataType.isBool(field.type)) {
+      //
+      // Booleans
+      //
       column.align = "center";
       column.maxLength = 1;
       column.format = new BooleanFormat();
     } else if (DataType.isFloat(field.type)) {
+      //
+      // Floats
+      //
       column.align = "right";
       column.format = new NumberFormat("en-US", { maximumFractionDigits: 2 });
       const maxValue = field.metadata?.get(QUERY_METADATA_FIELD_MAX_VALUE)
@@ -45,20 +76,35 @@ const getColumns = (schema: Schema): TableViewColumn[] => {
         : Number.MAX_VALUE;
       column.maxLength = column.format.format(maxValue).length;
     } else if (DataType.isInt(field.type)) {
+      //
+      // Integers
+      //
       column.align = "right";
       column.format = new NumberFormat("en-US", { maximumFractionDigits: 0 });
       const maxValue = field.metadata?.get(QUERY_METADATA_FIELD_MAX_VALUE) ?? Number.MAX_SAFE_INTEGER;
       column.maxLength = column.format.format(maxValue).length;
     } else if (DataType.isDate(field.type)) {
+      //
+      // Dates
+      //
       column.align = "right";
       column.format = new DateFormat("en-US", { dateStyle: "short" });
       column.maxLength = column.format.format(new Date()).length;
     } else if (DataType.isTimestamp(field.type)) {
+      //
+      // Timestamps
+      //
       column.align = "right";
       column.format = new DateFormat("en-US", { dateStyle: "short", timeStyle: "short" });
       column.maxLength = column.format.format(new Date()).length;
     } else if (DataType.isBinary(field.type)) {
+      //
+      // Binary data
+      //
       switch (field.metadata?.get(QUERY_METADATA_FIELD_DATASOURCE_TYPE)) {
+        //
+        // Some binary data can be formatted as text if we know the type from the datasource.
+        //
         case QUERY_METADATA_DATASOURCE_TYPE_UUID: {
           //
           // UUIDs
@@ -70,7 +116,7 @@ const getColumns = (schema: Schema): TableViewColumn[] => {
         }
         case QUERY_METADATA_DATASOURCE_TYPE_MACADDR: {
           //
-          // MAC addresses
+          // MAC addresses ('e2:74:fe:ed:4b:d9')
           //
           column.align = "left";
           column.format = new MacAddressFormat();
@@ -79,7 +125,7 @@ const getColumns = (schema: Schema): TableViewColumn[] => {
         }
         case QUERY_METADATA_DATASOURCE_TYPE_MACADDR8: {
           //
-          // MAC addresses 8
+          // MAC addresses 8 ('08:00:2b:01:02:03:04:05')
           //
           column.align = "left";
           column.format = new MacAddressFormat();
@@ -96,6 +142,9 @@ const getColumns = (schema: Schema): TableViewColumn[] => {
         }
       }
     } else {
+      //
+      // Default formatting
+      //
       column.align = "left";
       column.format = new DefaultFormat();
     }

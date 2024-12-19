@@ -100,6 +100,9 @@ pub struct {{ name | pascal_case }} {
   {% elif field_rust_type == "String" %}
   #[serde(default, skip_serializing_if = "String::is_empty")]
   pub {{ field_name }}: {{ field_rust_type }},
+  {% elif field_rust_type == "bool" %}
+  #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+  pub {{ field_name }}: {{ field_rust_type }},
   {% elif field_rust_type == "uuid::Uuid" %}
   #[serde(default, skip_serializing_if = "uuid::Uuid::is_nil")]
   pub {{ field_name }}: {{ field_rust_type }},

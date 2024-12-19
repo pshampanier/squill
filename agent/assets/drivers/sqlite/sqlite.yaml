@@ -9,6 +9,7 @@ capabilities:
   - connect_file
   - connect_uri
   - read_only
+  - single_datasource
 defaults:
   URI: "file::memory:?cache=shared"
   CONNECTION_MODE: file

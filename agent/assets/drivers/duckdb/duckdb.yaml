@@ -9,6 +9,7 @@ capabilities:
   - connect_file
   - connect_string
   - read_only
+  - single_datasource
 defaults:
   CONNECTION_MODE: file
   CONNECTION_STRING: memory://

@@ -2,7 +2,6 @@ pub mod agent;
 pub mod auth;
 pub mod collections;
 pub mod connections;
-pub mod datasources;
 pub mod drivers;
 pub mod environments;
 pub mod errors;

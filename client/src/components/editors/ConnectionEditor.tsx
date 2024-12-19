@@ -43,7 +43,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
   };
 
   const handleValidate = useCallback((origin: string, value: string) => {
-    Connections.execute(connId, origin, value)
+    Connections.run(connId, origin, value)
       .then((queries) => {
         queryEventHandler.current?.call(null, {
           type: "update",
