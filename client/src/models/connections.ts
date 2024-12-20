@@ -57,10 +57,10 @@ export class ConnectionInfo {
   backendVersion!: string;
   
   /**
-   * The name of the default datasource (e.g. "my_database").
+   * The name of the current datasource (e.g. "my_database").
    **/
   @serializable("string", { snakeCase: "property" })
-  defaultDatasource?: string;
+  currentDatasource?: string;
   
   /**
    * The description of the connection (e.g. "Server version: 9.0.1 MySQL Community Server - GPL").

@@ -58,9 +58,9 @@ pub struct ConnectionInfo {
     /// The version of the server (e.g. "9.0.1").
     pub backend_version: String,
 
-    /// The name of the default datasource (e.g. "my_database").
+    /// The name of the current datasource (e.g. "my_database").
     #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub default_datasource: String,
+    pub current_datasource: String,
 
     /// The description of the connection (e.g. "Server version: 9.0.1 MySQL Community Server - GPL").
     pub description: String,

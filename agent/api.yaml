@@ -617,9 +617,9 @@ components:
         backend_version:
           type: string
           description: The version of the server (e.g. "9.0.1").
-        default_datasource:
+        current_datasource:
           type: string
-          description: The name of the default datasource (e.g. "my_database").
+          description: The name of the current datasource (e.g. "my_database").
 
     Datasource:
       description: The description of a datasource (database for SQL engines).

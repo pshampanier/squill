@@ -116,7 +116,7 @@ impl Connection {
                 let version: String = row.try_get("version")?;
                 let description: String = row.try_get_nullable("description")?.unwrap_or(String::new());
                 let current_datasource: String = row.try_get_nullable("current_datasource")?.unwrap_or(String::new());
-                Ok(ConnectionInfo { backend_version: version, default_datasource: current_datasource, description })
+                Ok(ConnectionInfo { backend_version: version, current_datasource, description })
             })
             .await?
             .ok_or(err_internal!("Failed to get connection info"))
@@ -164,7 +164,7 @@ mod tests {
         let jinja_env = JinjaEnvironment::new_from_driver(&conn_def.driver);
         let conn_info = assert_ok!(conn_def.get_info(&mut conn, &jinja_env).await);
         assert!(conn_info.backend_version.starts_with("3."));
-        assert_eq!(conn_info.default_datasource, "main");
+        assert_eq!(conn_info.current_datasource, "main");
     }
 
     #[tokio::test]

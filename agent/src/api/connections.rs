@@ -140,7 +140,7 @@ async fn validate_connection(
             let conn_info = conn_def.get_info(&mut conn, &jinja_env).await?;
             let conn_datasources = conn_def.list_datasources(&mut conn, &jinja_env).await?;
             Ok(Json(models::Connection {
-                default_datasource: conn_info.default_datasource,
+                default_datasource: conn_info.current_datasource,
                 datasources: conn_datasources
                     .into_iter()
                     .map(|ds| Datasource {
