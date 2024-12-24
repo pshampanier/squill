@@ -36,6 +36,13 @@
   {%- endif -%}
 
   {# 
+   # Add the database name.
+   #}
+  {%- if default_datasource != "" -%}
+    {% set params = params + ["dbname=" ~ default_datasource | urlencode] %}
+  {%- endif -%}
+  
+  {# 
    # Add the application name (hardcoded to `squill`).
    #}
   {%- set params = params + ["options=" ~ "-c application_name=squill" | urlencode] -%}

@@ -30,5 +30,5 @@ export function useCommand({ ref, onCommand }: CommandHookProps) {
     return () => {
       htmlElement.removeEventListener("command", handleCommandEvent);
     };
-  }, []);
+  }, [onCommand]);
 }

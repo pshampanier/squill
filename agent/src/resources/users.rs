@@ -47,6 +47,8 @@ impl Default for MonacoEditorSettings {
             match_brackets: MonacoEditorMatchBrackets::Near,
             whitespace: MonacoEditorWhitespace::None,
             minimap: MonacoEditorMinimap::Hide,
+            insert_spaces: true,
+            tab_size: 2,
         }
     }
 }

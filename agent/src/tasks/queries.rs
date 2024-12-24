@@ -65,10 +65,11 @@ pub fn execute_queries_task(
     state: ServerState,
     session_id: uuid::Uuid,
     connection_id: Uuid,
+    datasource: String,
     queries: Vec<QueryExecution>,
 ) -> BoxFuture<'static, Result<()>> {
     Box::pin(async move {
-        match state.get_user_db_connection(connection_id).await {
+        match state.get_user_db_connection(connection_id, &datasource).await {
             Ok(mut conn) => {
                 for query in queries {
                     match execute_query(state.clone(), session_id, &mut conn, query.clone()).await {
@@ -457,7 +458,17 @@ mod tests {
         let connection = models::Connection { owner_user_id: security_token.user_id, ..Default::default() };
         let connection_id = assert_ok!(catalog::add(&mut conn, &connection).await).id;
         let query = assert_ok!(
-            queries::create(&mut conn, connection_id, "origin", security_token.user_id, "SELECT 1", 42, true).await
+            queries::create(
+                &mut conn,
+                connection_id,
+                "test_db",
+                "origin",
+                security_token.user_id,
+                "SELECT 1",
+                42,
+                true
+            )
+            .await
         );
 
         let schema = Arc::new(Schema::new(vec![

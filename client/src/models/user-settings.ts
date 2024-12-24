@@ -73,6 +73,12 @@ export class MonacoEditorSettings {
   cursorStyle!: MonacoEditorCursorStyle;
   
   /**
+   * Insert spaces when pressing Tab.
+   **/
+  @serializable("boolean", { required: true, snakeCase: "property" })
+  insertSpaces!: boolean;
+  
+  /**
    * The match brackets setting of the Monaco Editor.
    **/
   @serializable("string", { format: formatRegExp(MONACO_EDITOR_MATCH_BRACKETS_VALUES), required: true, snakeCase: "property" })
@@ -83,6 +89,12 @@ export class MonacoEditorSettings {
    **/
   @serializable("string", { format: formatRegExp(MONACO_EDITOR_MINIMAP_VALUES), required: true })
   minimap!: MonacoEditorMinimap;
+  
+  /**
+   * Size of a tab in spaces.
+   **/
+  @serializable("integer", { required: true, min: 1, snakeCase: "property" })
+  tabSize!: number;
   
   /**
    * The whitespace rendering of the Monaco Editor.

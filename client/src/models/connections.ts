@@ -12,6 +12,34 @@ export const CONNECTION_MODE_VALUES = ["host", "socket", "file", "connection_str
 export type ConnectionMode = (typeof CONNECTION_MODE_VALUES)[number];
 
 /**
+ * The payload of the POST /connections/{id}/run endpoint.
+ **/
+export class RunRequest {
+  
+  /**
+   * A text buffer containing 0 or more queries.
+   **/
+  @serializable("string", { required: true })
+  buffer!: string;
+  
+  /**
+   * The name of the datasource to be used within the connection.
+   **/
+  @serializable("string", { required: true })
+  datasource!: string;
+  
+  /**
+   * The origin of the request ('terminal', 'worksheet', etc).
+   **/
+  @serializable("string", { required: true })
+  origin!: string;
+  
+  constructor(object?: Partial<RunRequest>) {
+    Object.assign(this, object);
+  }
+}
+
+/**
  * The description of a datasource (database for SQL engines).
  **/
 export class Datasource {

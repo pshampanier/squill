@@ -1,8 +1,8 @@
 use crate::api::error::ServerResult;
 use crate::err_forbidden;
-use crate::err_param;
 use crate::models;
 use crate::models::connections::Datasource;
+use crate::models::connections::RunRequest;
 use crate::models::queries::QueryHistoryPage;
 use crate::resources;
 use crate::resources::catalog;
@@ -16,13 +16,10 @@ use arrow_array::RecordBatch;
 use arrow_ipc::writer::StreamWriter;
 use axum::extract::Query;
 use axum::extract::{Path, State};
-use axum::http::HeaderMap;
-use axum::http::HeaderName;
 use axum::response::Response;
 use axum::routing::delete;
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use common::constants::X_REQUEST_ORIGIN;
 use serde::Deserialize;
 use squill_drivers::async_conn::Connection;
 use std::hash::DefaultHasher;
@@ -56,23 +53,12 @@ async fn get_connection(
     Ok(Json(connection))
 }
 
-fn extract_header(headers: &HeaderMap, name: &'static str) -> Result<String, UserError> {
-    headers
-        .get(HeaderName::from_static(name))
-        .and_then(|o| o.to_str().ok())
-        .filter(|o| !o.is_empty())
-        .map(|o| o.to_string())
-        .ok_or_else(|| err_param!("HTTP header '{}' is missing.", name))
-}
-
 async fn run_buffer(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
-    buffer: String,
+    Json(request_body): Json<RunRequest>,
 ) -> ServerResult<Json<Vec<models::QueryExecution>>> {
-    let origin = extract_header(&headers, X_REQUEST_ORIGIN)?;
     let user_session = context?.get_user_session()?;
     let mut conn = state.get_agentdb_connection().await?;
     let connection: models::Connection = catalog::get(&mut conn, id).await?;
@@ -83,7 +69,7 @@ async fn run_buffer(
     let mut queries: Vec<models::QueryExecution> = Vec::new();
 
     // Parse the SQL query
-    let statements = loose_sqlparser::parse(&buffer);
+    let statements = loose_sqlparser::parse(&request_body.buffer);
     for statement in statements {
         // Generate a hash of the statement
         let mut hasher = DefaultHasher::new();
@@ -94,7 +80,8 @@ async fn run_buffer(
             resources::queries::create(
                 &mut conn,
                 id,
-                &origin,
+                &request_body.datasource,
+                &request_body.origin,
                 user_session.get_user_id(),
                 &statement.sql().to_string(),
                 hasher.finish(),
@@ -111,7 +98,8 @@ async fn run_buffer(
             let queries = queries.clone();
             let state = state.0.clone();
             let session_id = user_session.get_id();
-            Box::new(move || execute_queries_task(state, session_id, connection.id, queries))
+            let datasource = request_body.datasource.clone();
+            Box::new(move || execute_queries_task(state, session_id, connection.id, datasource, queries))
         })
         .await?;
 
@@ -185,7 +173,9 @@ async fn list_datasources(
 
 #[derive(Deserialize)]
 struct ListQueriesHistoryParams {
-    offset: Option<String>,
+    origin: String,
+    datasource: String,
+    offset: Option<usize>,
 }
 
 /// GET /connections/{id}/history:
@@ -196,14 +186,23 @@ async fn list_queries_history(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
-    headers: HeaderMap,
-    Query(_params): Query<ListQueriesHistoryParams>,
+    Query(params): Query<ListQueriesHistoryParams>,
 ) -> ServerResult<Json<QueryHistoryPage>> {
     let user_session = context?.get_user_session()?;
-    let origin = extract_header(&headers, X_REQUEST_ORIGIN)?;
+    let origin = params.origin;
+    let datasource = params.datasource;
     let mut conn = state.get_agentdb_connection().await?;
     let limit = settings::get_max_query_history_fetch_size();
-    let queries = queries::list_history(&mut conn, id, user_session.get_user_id(), origin, limit).await?;
+    let queries = queries::list_history(
+        &mut conn,
+        id,
+        user_session.get_user_id(),
+        origin,
+        datasource,
+        params.offset.unwrap_or(0),
+        limit,
+    )
+    .await?;
     Ok(Json(QueryHistoryPage { queries, next_page: String::new() }))
 }
 

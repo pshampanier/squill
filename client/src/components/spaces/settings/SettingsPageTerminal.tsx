@@ -3,6 +3,8 @@ import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
 import SettingsPage from "@/components/spaces/settings/SettingsPage";
 import Dropdown from "@/components/core/Dropdown";
 import { MonacoEditorCursorStyle, MonacoEditorWhitespace } from "@/models/user-settings";
+import Input from "@/components/core/Input";
+import Switch from "@/components/core/Switch";
 
 export default function SettingsPageTerminal() {
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
@@ -25,6 +27,31 @@ export default function SettingsPageTerminal() {
           <Dropdown.Option label="Block (outline)" value="block_outline" />
           <Dropdown.Option label="Underline (thin)" value="underline_thin" />
         </Dropdown>
+      </SettingsPage.Setting>
+      <SettingsPage.Setting
+        title="Render TAB as whitespaces"
+        description="If enabled, the TAB key will be rendered using the given number of spaces."
+      >
+        <Switch
+          size="md"
+          defaultChecked={userSettings.terminalSettings.editorSettings.insertSpaces}
+          onChange={(e) => {
+            updateUserSettings({ terminalSettings: { editorSettings: { insertSpaces: e.target.checked } } });
+          }}
+        />
+        <Input
+          type="number"
+          defaultValue={userSettings.terminalSettings.editorSettings.tabSize}
+          min={1}
+          max={8}
+          required
+          disabled={!userSettings.terminalSettings.editorSettings.insertSpaces}
+          onChange={(value) => {
+            updateUserSettings({
+              terminalSettings: { editorSettings: { tabSize: value.target.valueAsNumber } },
+            });
+          }}
+        />
       </SettingsPage.Setting>
       <SettingsPage.Setting title="White spaces" description="Controls how to render the white spaces.">
         <Dropdown

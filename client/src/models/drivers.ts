@@ -12,6 +12,13 @@ export const DRIVER_HOST = "HOST";
 export const DRIVER_SOCKET = "SOCKET";
 export const DRIVER_PASSWORD = "PASSWORD";
 
+/**
+  * Check if the driver has the given capability.
+  */
+export function hasCapability(driver: Driver, capability: DriverCapabilities): boolean {
+  return driver?.capabilities.includes(capability);
+}
+
 
 /**
  * The description of the capabilities of a driver.

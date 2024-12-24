@@ -87,76 +87,79 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   //
   // Command handling
   //
-  const handleOnCommand = useCallback((event: CommandEvent, query?: QueryExecution) => {
-    switch (event.detail.name) {
-      case "terminal.clear":
-        // TODO: Implement clear
-        break;
-      case "terminal.history.clear":
-        refHistoryDispatcher.current?.({ type: "set" });
-        break;
-      case "terminal.history.search":
-        // TODO: Implement search
-        break;
-      case "terminal.execute":
-        editorRef.current?.validate();
-        break;
-      case "query.rerun": {
-        //
-        // Rerun the given query.
-        //
-        onValidate(query.text);
-        break;
-      }
-      case "clipboard.paste": {
-        //
-        // Paste the clipboard content into the query editor.
-        //
-        editorRef.current?.focus();
-        break;
-      }
-
-      case "query.history.delete": {
-        //
-        // Delete the given query from the history.
-        //
-        Connections.removeFromHistory(query.connectionId, query.id);
-        refHistoryDispatcher.current?.({ type: "remove", queries: [query] });
-        break;
-      }
-
-      case "query.copy": {
-        //
-        // Copy the given query to the clipboard
-        //
-        if (query?.text) {
-          navigator.clipboard
-            .writeText(query.text)
-            .then(() => {
-              addNotification({
-                id: crypto.randomUUID(),
-                variant: "success",
-                message: "Query copied to the clipboard.",
-                autoDismiss: true,
-              });
-            })
-            .catch((err) => {
-              addNotification({
-                id: crypto.randomUUID(),
-                variant: "error",
-                message: "Copy failed.",
-                description: err,
-                autoDismiss: true,
-              });
-            });
+  const handleOnCommand = useCallback(
+    (event: CommandEvent, query?: QueryExecution) => {
+      switch (event.detail.name) {
+        case "terminal.clear":
+          // TODO: Implement clear
+          break;
+        case "terminal.history.clear":
+          refHistoryDispatcher.current?.({ type: "set" });
+          break;
+        case "terminal.history.search":
+          // TODO: Implement search
+          break;
+        case "terminal.execute":
+          editorRef.current?.validate();
+          break;
+        case "query.rerun": {
+          //
+          // Rerun the given query.
+          //
+          onValidate(query.text);
+          break;
         }
-        break;
+        case "clipboard.paste": {
+          //
+          // Paste the clipboard content into the query editor.
+          //
+          editorRef.current?.focus();
+          break;
+        }
+
+        case "query.history.delete": {
+          //
+          // Delete the given query from the history.
+          //
+          Connections.removeFromHistory(query.connectionId, query.id);
+          refHistoryDispatcher.current?.({ type: "remove", queries: [query] });
+          break;
+        }
+
+        case "query.copy": {
+          //
+          // Copy the given query to the clipboard
+          //
+          if (query?.text) {
+            navigator.clipboard
+              .writeText(query.text)
+              .then(() => {
+                addNotification({
+                  id: crypto.randomUUID(),
+                  variant: "success",
+                  message: "Query copied to the clipboard.",
+                  autoDismiss: true,
+                });
+              })
+              .catch((err) => {
+                addNotification({
+                  id: crypto.randomUUID(),
+                  variant: "error",
+                  message: "Copy failed.",
+                  description: err,
+                  autoDismiss: true,
+                });
+              });
+          }
+          break;
+        }
+        default:
+          return;
       }
-      default:
-        return;
-    }
-    event.stopPropagation(); // The command event has been handled
-  }, []);
+      event.stopPropagation(); // The command event has been handled
+    },
+    [onValidate],
+  );
   useCommand({ ref: refRoot, onCommand: handleOnCommand });
 
   // The query editor is mounted

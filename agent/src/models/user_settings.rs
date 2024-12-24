@@ -108,11 +108,17 @@ pub struct MonacoEditorSettings {
     /// The cursor style of the Monaco Editor.
     pub cursor_style: MonacoEditorCursorStyle,
 
+    /// Insert spaces when pressing Tab.
+    pub insert_spaces: bool,
+
     /// The match brackets setting of the Monaco Editor.
     pub match_brackets: MonacoEditorMatchBrackets,
 
     /// The minimap visibility of the Monaco Editor.
     pub minimap: MonacoEditorMinimap,
+
+    /// Size of a tab in spaces.
+    pub tab_size: i16,
 
     /// The whitespace rendering of the Monaco Editor.
     pub whitespace: MonacoEditorWhitespace,

@@ -33,6 +33,19 @@ pub enum ConnectionOption {
     ReadOnly,
 }
 
+/// The payload of the POST /connections/{id}/run endpoint.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
+pub struct RunRequest {
+    /// A text buffer containing 0 or more queries.
+    pub buffer: String,
+
+    /// The name of the datasource to be used within the connection.
+    pub datasource: String,
+
+    /// The origin of the request ('terminal', 'worksheet', etc).
+    pub origin: String,
+}
+
 /// The description of a datasource (database for SQL engines).
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Datasource {

@@ -56,6 +56,12 @@ export class QueryExecution {
   createdAt!: Date;
   
   /**
+   * The name of the datasource within the connection used to execute the query.
+   **/
+  @serializable("string")
+  datasource?: string;
+  
+  /**
    * The error message if the query execution failed.
    **/
   @serializable("object", { factory: QueryExecutionError })

@@ -1,4 +1,5 @@
 use crate::jinja::JinjaEnvironment;
+use crate::models;
 use crate::models::auth::SecurityTokens;
 use crate::models::PushMessage;
 use crate::pool::{self, ConnectionGuard, ConnectionPool};
@@ -71,9 +72,9 @@ pub struct ServerState {
 
     /// The connection pool to the user's databases.
     ///
-    /// - the key is a `connection_id` from a [crate::models::Connection].
+    /// - the key is a `URI` created from [crate::models::Connection].
     /// - the value is a connection pool to the database.
-    user_db_conn_pool: Arc<Mutex<LruCache<Uuid, Arc<ConnectionPool>>>>,
+    user_db_conn_pool: Arc<Mutex<LruCache<String, Arc<ConnectionPool>>>>,
 }
 
 impl ServerState {
@@ -112,14 +113,28 @@ impl ServerState {
     ///
     /// Here a user's database refers to a connection created by a user in the catalog.
     /// The connection is taken from the connection pool and will return to the pool once dropped.
-    pub async fn get_user_db_connection(&self, connection_id: Uuid) -> Result<ConnectionGuard> {
-        // Get the connection pool from the cache.
+    pub async fn get_user_db_connection(&self, connection_id: Uuid, datasource: &str) -> Result<ConnectionGuard> {
+        // First we need to get the URI associated to the Connection and the given datasource.
+        let uri = {
+            let mut agent_db_conn = self.get_agentdb_connection().await?;
+            catalog::get::<models::Connection>(&mut agent_db_conn, connection_id)
+                .await
+                .context("Cannot get the connection from the agent database.")
+                .and_then(|conn_def| {
+                    let jinja_env = self.get_jinja_env(&conn_def.driver);
+                    let conn_def_with_datasource =
+                        models::Connection { default_datasource: datasource.to_string(), ..conn_def };
+                    jinja_env.render_template("uri", &conn_def_with_datasource)
+                })?
+        };
+
+        // Get the connection pool associated to the URI from the cache.
         // This code is intentionally not trying to get a connection from the pool as soon as we've got the pool,
         // instead we get the pool first and release the lock on the mutex before getting the connection. This is to
         // avoid holding the lock for too long while waiting for the connection to be available because getting the
         // connection from the pool can take some time if there is no connection available in the pool.
         let conn_pool_opt = match self.user_db_conn_pool.lock() {
-            Ok(mut user_db_conn_pool) => user_db_conn_pool.get(&connection_id).cloned(),
+            Ok(mut user_db_conn_pool) => user_db_conn_pool.get(&uri).cloned(),
             Err(_) => {
                 panic!("Unable to recover from a poisoned user db connection mutex");
             }
@@ -129,28 +144,21 @@ impl ServerState {
         let conn_pool = match conn_pool_opt {
             Some(pool) => pool,
             None => {
-                // connection pool not found in the cache.
-                let mut agent_db_conn = self.get_agentdb_connection().await?;
-                catalog::get::<crate::models::Connection>(&mut agent_db_conn, connection_id)
-                    .await
-                    .context("Cannot get the connection from the agent database.")
-                    .and_then(|conn_model| {
-                        let jinja_env = self.get_jinja_env(&conn_model.driver);
-                        let uri = jinja_env.render_template("uri", &conn_model)?;
-                        let conn_pool = Arc::new(pool::create(uri)?);
-                        match self.user_db_conn_pool.lock() {
-                            Ok(mut user_db_conn_pool) => {
-                                user_db_conn_pool.put(connection_id, conn_pool.clone());
-                                Ok(conn_pool)
-                            }
-                            Err(_) => {
-                                panic!("Unable to recover from a poisoned user db connection mutex");
-                            }
-                        }
-                    })?
+                // No connection pool not found in the cache for the given URI, create a new one.
+                let conn_pool = Arc::new(pool::create(&uri)?);
+                match self.user_db_conn_pool.lock() {
+                    Ok(mut user_db_conn_pool) => {
+                        user_db_conn_pool.put(uri, conn_pool.clone());
+                        conn_pool
+                    }
+                    Err(_) => {
+                        panic!("Unable to recover from a poisoned user db connection mutex");
+                    }
+                }
             }
         };
 
+        // Get a connection from the pool.
         conn_pool.get().await.map_err(anyhow::Error::from).context("Cannot get a connection to the user database.")
     }
 

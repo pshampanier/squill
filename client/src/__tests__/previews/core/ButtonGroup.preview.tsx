@@ -120,6 +120,34 @@ export default function SwitchPreview() {
               </ButtonGroup>
               <label>disabled icons</label>
             </div>
+            <div className="inline-flex space-x-4 items-center">
+              <ButtonGroup defaultValue="light" size="xs">
+                <ButtonGroup.Item name="light" label="light" icon={ThemeLightIcon} />
+                <ButtonGroup.Item name="dark" label="dark" icon={ThemeDarkIcon} />
+              </ButtonGroup>
+              <label>xs</label>
+            </div>
+            <div className="inline-flex space-x-4 items-center">
+              <ButtonGroup defaultValue="light" size="sm">
+                <ButtonGroup.Item name="light" label="light" icon={ThemeLightIcon} />
+                <ButtonGroup.Item name="dark" label="dark" icon={ThemeDarkIcon} />
+              </ButtonGroup>
+              <label>sm</label>
+            </div>
+            <div className="inline-flex space-x-4 items-center">
+              <ButtonGroup defaultValue="light" size="md">
+                <ButtonGroup.Item name="light" label="light" icon={ThemeLightIcon} />
+                <ButtonGroup.Item name="dark" label="dark" icon={ThemeDarkIcon} />
+              </ButtonGroup>
+              <label>md</label>
+            </div>
+            <div className="inline-flex space-x-4 items-center">
+              <ButtonGroup defaultValue="light" size="lg">
+                <ButtonGroup.Item name="light" label="light" icon={ThemeLightIcon} />
+                <ButtonGroup.Item name="dark" label="dark" icon={ThemeDarkIcon} />
+              </ButtonGroup>
+              <label>lg</label>
+            </div>
           </div>
         </PreviewBox>
       </Preview>

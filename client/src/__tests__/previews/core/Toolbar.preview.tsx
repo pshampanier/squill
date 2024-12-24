@@ -7,8 +7,14 @@ import StarIcon from "@/icons/star.svg?react";
 import CopyIcon from "@/icons/clipboard-copy.svg?react";
 import ArrowsPointingOutIcon from "@/icons/arrows-pointing-out.svg?react";
 import { ColorsContext } from "@/stores/ColorsContext";
+import Dropdown, { DropdownValue } from "@/components/core/Dropdown";
+import TerminalIcon from "@/icons/terminal.svg?react";
 
 export default function ToolbarPreview() {
+  const dropdownValues: DropdownValue[] = [
+    { label: "Terminal", value: "terminal", icon: TerminalIcon },
+    { label: "Worksheet", value: "worksheet" },
+  ];
   return (
     <>
       {/*
@@ -24,6 +30,7 @@ export default function ToolbarPreview() {
               <Button icon={StarIcon} />
               <Button icon={CopyIcon} />
               <Button icon={ArrowsPointingOutIcon} />
+              <Dropdown values={dropdownValues} defaultValue="terminal" variant="ghost" size="sm" />
             </Toolbar>
           </div>
           <div className="inline-flex space-x-4 items-center">
@@ -33,6 +40,7 @@ export default function ToolbarPreview() {
                 <Button icon={StarIcon} />
                 <Button icon={CopyIcon} />
                 <Button icon={ArrowsPointingOutIcon} />
+                <Dropdown values={dropdownValues} defaultValue="terminal" variant="ghost" size="sm" />
               </Toolbar>
             </ColorsContext.Provider>
           </div>

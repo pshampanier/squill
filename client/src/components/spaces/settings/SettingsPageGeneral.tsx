@@ -40,7 +40,7 @@ export default function SettingsPageGeneral() {
       </SettingsPage.Setting>
       <SettingsPage.Setting title="Show favorites" description="Show favorites in the sidebar.">
         <Switch
-          size="sm"
+          size="md"
           defaultChecked={userSettings.showFavorites}
           onChange={(e) => {
             updateUserSettings({ showFavorites: e.target.checked });

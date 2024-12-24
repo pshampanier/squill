@@ -54,6 +54,8 @@ export function intoMonacoOptions(settings: MonacoEditorSettings): monaco.editor
       },
       matchBrackets: settings.matchBrackets,
       renderWhitespace: settings.whitespace,
+      insertSpaces: settings.insertSpaces,
+      tabSize: settings.tabSize,
       /* @ts-expect-error TS2322 */
       cursorStyle: {
         underline: "underline",

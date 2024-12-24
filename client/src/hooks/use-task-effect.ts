@@ -19,9 +19,9 @@ type TaskEffect = {
 };
 
 export function useTaskEffect(
-  initialStatus: TaskStatus,
-  initialTask: TaskFunction,
-  initialMessage: string
+  initialStatus: TaskStatus = "pending",
+  initialTask?: TaskFunction,
+  initialMessage: string = "",
 ): TaskEffect {
   const [taskStatus, setTaskStatus] = useState<TaskStatus>(initialStatus);
   const [message, setMessage] = useState<Error | string>(initialMessage);

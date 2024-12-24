@@ -45,7 +45,7 @@ function Setting({ title, description, children }: SettingProps) {
         <div>{title}</div>
         <div className="text-xs">{description}</div>
       </div>
-      <div className="flex flex-col ml-auto justify-center">{children}</div>
+      <div className="flex flex-col ml-auto justify-center items-end space-y-2">{children}</div>
     </div>
   );
 }

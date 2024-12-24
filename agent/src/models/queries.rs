@@ -85,6 +85,10 @@ pub struct QueryExecution {
     /// This is the time when the query was submitted to the agent.
     pub created_at: chrono::DateTime<chrono::Utc>,
 
+    /// The name of the datasource within the connection used to execute the query.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub datasource: String,
+
     /// The error message if the query execution failed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<QueryExecutionError>,

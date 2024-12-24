@@ -19,7 +19,7 @@ type InputProps = {
   /**
    * The initial value of the input.
    */
-  defaultValue?: string;
+  defaultValue?: string | number;
 
   /**
    * The label of the input.

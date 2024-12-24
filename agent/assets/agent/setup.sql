@@ -52,8 +52,11 @@ CREATE TABLE query_history (
 	-- The revision of the query (incremented by 1 every time the record is updated).
 	revision INTEGER NOT NULL DEFAULT 0,
 
-	-- The connection that was used to execute the query.
+	-- The connection used to execute the query.
 	connection_id UUID NOT NULL REFERENCES catalog(catalog_id),
+
+	-- The name of the datasource used to execute the query.
+	datasource TEXT NOT NULL,
 
 	-- The user that executed the query.
 	user_id UUID NOT_NULL REFERENCES users(user_id),

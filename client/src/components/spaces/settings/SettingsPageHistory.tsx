@@ -52,7 +52,7 @@ export default function SettingsPageTableView() {
         </Setting>
         <Setting title="Show row numbers" description="Show the row numbers as the first column in result sets.">
           <Switch
-            size="sm"
+            size="md"
             defaultChecked={userSettings.historySettings.tableSettings.showRowNumbers}
             onChange={(e) => {
               updateUserSettings({ historySettings: { tableSettings: { showRowNumbers: e.target.checked } } });

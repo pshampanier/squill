@@ -458,7 +458,7 @@ export default function QueryInput({
       onValidate?.(editor.getModel().getValue());
       editor.getModel().setValue("");
     });
-  }, []);
+  }, [onValidate]);
 
   /**
    * Creates a suggestion event object.
@@ -485,84 +485,92 @@ export default function QueryInput({
   /**
    * Handle the key down event in the editor.
    */
-  const handleKeyDown = (e: monaco.IKeyboardEvent) => {
-    const editor = editorRef.current;
-    if (
-      e.keyCode === monaco.KeyCode.Tab &&
-      !e.shiftKey &&
-      !e.ctrlKey &&
-      !e.altKey &&
-      !e.metaKey &&
-      inlineSuggestionRef.current
-    ) {
-      //
-      // [Tab] Accept the current inline suggestion
-      //
-      applyWithoutTriggeringSuggestion(() => {
-        applyInlineSuggestion();
-      });
-      onSuggest?.(
-        makeSuggestionEvent({
-          currentQuery: getCursorQuery(),
-        }),
-      );
-      e.preventDefault();
-      e.stopPropagation();
-    } else if (e.keyCode === monaco.KeyCode.Escape && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      //
-      // [Escape] => Remove the inline suggestion
-      //
-      applyWithoutTriggeringSuggestion(() => {
-        dismissInlineSuggestion();
-      });
-      e.preventDefault();
-      e.stopPropagation();
-    } else if (
-      mode == "terminal" &&
-      editor.getSelections().length === 1 &&
-      e.keyCode === monaco.KeyCode.Enter &&
-      !e.shiftKey &&
-      !e.ctrlKey &&
-      !e.altKey &&
-      !e.metaKey
-    ) {
-      //
-      // [Enter] => If at the end of the input, check the input value is terminated by a semicolon, otherwise enter a
-      // new line.
-      //
-      const lastLineNumber = editor.getModel().getLineCount();
-      const cursor = editor.getPosition();
-      const textAfterCursor = editor
-        .getModel()
-        .getValueInRange(
-          new monaco.Range(
-            cursor.lineNumber,
-            cursor.column,
-            lastLineNumber,
-            editor.getModel().getLineMaxColumn(lastLineNumber),
-          ),
+  const handleKeyDown = useCallback(
+    (e: monaco.IKeyboardEvent) => {
+      const editor = editorRef.current;
+      if (
+        e.keyCode === monaco.KeyCode.Tab &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        inlineSuggestionRef.current
+      ) {
+        //
+        // [Tab] Accept the current inline suggestion
+        //
+        applyWithoutTriggeringSuggestion(() => {
+          applyInlineSuggestion();
+        });
+        onSuggest?.(
+          makeSuggestionEvent({
+            currentQuery: getCursorQuery(),
+          }),
         );
-      const value = editor.getModel().getValue();
-      if (textAfterCursor.trim().length === 0 && value.trim().endsWith(";")) {
-        validate();
         e.preventDefault();
         e.stopPropagation();
-      } else {
+      } else if (e.keyCode === monaco.KeyCode.Escape && !e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        //
+        // [Escape] => Remove the inline suggestion
+        //
         applyWithoutTriggeringSuggestion(() => {
           dismissInlineSuggestion();
         });
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (
+        mode == "terminal" &&
+        editor.getSelections().length === 1 &&
+        e.keyCode === monaco.KeyCode.Enter &&
+        !e.shiftKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey
+      ) {
+        //
+        // [Enter] => If at the end of the input, check the input value is terminated by a semicolon, otherwise enter a
+        // new line.
+        //
+        const lastLineNumber = editor.getModel().getLineCount();
+        const cursor = editor.getPosition();
+        const textAfterCursor = editor
+          .getModel()
+          .getValueInRange(
+            new monaco.Range(
+              cursor.lineNumber,
+              cursor.column,
+              lastLineNumber,
+              editor.getModel().getLineMaxColumn(lastLineNumber),
+            ),
+          );
+        const value = editor.getModel().getValue();
+        if (textAfterCursor.trim().length === 0 && value.trim().endsWith(";")) {
+          validate();
+          e.preventDefault();
+          e.stopPropagation();
+        } else {
+          applyWithoutTriggeringSuggestion(() => {
+            dismissInlineSuggestion();
+          });
+        }
+      } else if (!MODIFIER_KEYS.includes(e.keyCode)) {
+        //
+        // [Any key other than a modifier] => dismiss the inline suggestion
+        //
+        applyWithoutTriggeringSuggestion(() => {
+          dismissInlineSuggestion();
+        });
+      } else {
+        console.log("Key code: ", e.keyCode);
       }
-    } else if (!MODIFIER_KEYS.includes(e.keyCode)) {
-      //
-      // [Any key other than a modifier] => dismiss the inline suggestion
-      //
-      applyWithoutTriggeringSuggestion(() => {
-        dismissInlineSuggestion();
-      });
-    } else {
-      console.log("Key code: ", e.keyCode);
-    }
-  };
+    },
+    [validate],
+  );
+
+  // Whenever the callback function changes, we update the keydown event listener in the editor.
+  useEffect(() => {
+    editorRef.current?.onKeyDown(handleKeyDown);
+  }, [handleKeyDown]);
 
   /**
    * A click anywhere in the editor will dismiss the inline suggestion.

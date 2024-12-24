@@ -1,8 +1,7 @@
-import { Connection } from "@/models/connections";
+import { Connection, RunRequest } from "@/models/connections";
 import { QueryExecution, QueryHistoryPage } from "@/models/queries";
 import { agent } from "@/resources/agent";
 import { Table } from "apache-arrow";
-import { HTTP_HEADER_X_ORIGIN } from "@/utils/constants";
 
 export const Connections = {
   async get(id: string): Promise<Connection> {
@@ -33,16 +32,17 @@ export const Connections = {
    * and the the identifier of each query execution is returned.
    *
    * @param connId The identifier of the connection to execute the buffer on.
+   * @param datasource The name of the datasource to use for the execution.
    * @param origin The origin of the buffer (e.g. `terminal`, `worksheet`, ...).
    * @param buffer A text containing 0 or more statements to execute.
    * @returns A Promise that will resolve with a list of query executions.
    */
-  async run(connId: string, origin: string, buffer: string): Promise<QueryExecution[]> {
+  async run(connId: string, datasource: string, origin: string, buffer: string): Promise<QueryExecution[]> {
     return (
-      await agent().post<string, QueryExecution>(`/connections/${connId}/run`, buffer, {
-        headers: {
-          [HTTP_HEADER_X_ORIGIN]: origin,
-        },
+      await agent().post<RunRequest, QueryExecution>(`/connections/${connId}/run`, {
+        datasource,
+        buffer,
+        origin,
       })
     ).asArray(QueryExecution);
   },
@@ -55,12 +55,10 @@ export const Connections = {
    * @param connId The identifier of the connection to get the history from.
    * @param origin The origin of the history (e.g. `terminal`, `worksheet`, ...).
    */
-  async listHistory(connId: string, origin: string): Promise<QueryHistoryPage> {
+  async listHistory(connId: string, origin: string, datasource: string, offset: number = 0): Promise<QueryHistoryPage> {
     return (
       await agent().get<QueryHistoryPage>(`/connections/${connId}/history`, {
-        headers: {
-          [HTTP_HEADER_X_ORIGIN]: origin,
-        },
+        query: { origin, datasource, offset: offset.toString() },
       })
     ).as(QueryHistoryPage);
   },
