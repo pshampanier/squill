@@ -58,6 +58,30 @@ impl TryFrom<&str> for QueryExecutionStatus {
     }
 }
 
+/// A query.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
+pub struct Query {
+    /// The hash of the text of the query after normalization.
+    ///
+    /// The hash is used to determine if two queries are the same regardless of their formatting. The hash is
+    /// computed by normalizing the query into tokens.
+    pub hash: u64,
+
+    /// The text of the query.
+    pub text: String,
+
+    /// A flag indicating if the query is a result set returning query.
+    ///
+    /// This flag is used to determine if the query execution may return the result set or not.
+    ///
+    /// Examples of result set returning queries are:
+    /// - `SELECT``: The primary statement that retrieves rows from one or more tables.
+    /// - `SHOW``: A statement that shows information about databases, tables, or other objects.
+    /// - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can
+    ///    return rows when combined with the `RETURNING` clause.
+    pub with_result_set: bool,
+}
+
 /// An error message from a query execution.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct QueryExecutionError {

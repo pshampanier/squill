@@ -9,6 +9,8 @@ use squill_drivers::async_conn::RowStream;
 use std::collections::HashMap;
 use uuid::Uuid;
 
+const METADATA_DRIVER: &str = "driver";
+
 /// Jinja template to get information about the connection/server.
 ///
 /// Returns a statement which once executed returns a single row with the following columns:
@@ -48,9 +50,10 @@ impl Resource for Connection {
         ResourceType::Connection
     }
     fn metadata(&self) -> HashMap<String, String> {
-        HashMap::new()
+        let mut metadata = HashMap::new();
+        metadata.insert(METADATA_DRIVER.to_string(), self.driver.clone());
+        metadata
     }
-
     fn from_storage(parent_id: Uuid, name: String, resource: serde_json::Value) -> Result<Self>
     where
         Self: Sized,

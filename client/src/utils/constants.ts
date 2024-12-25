@@ -22,6 +22,7 @@ export const EDITOR_USER_BLANK = "UserBlank";
 // List of metadata keys used by ResourceRef
 export const METADATA_RESOURCES_TYPE = "resources_type";
 export const METADATA_SPECIAL = "special";
+export const METADATA_DRIVER = "driver";
 
 // UI constants & defaults
 export const MIN_PRIMARY_SIDEBAR_WIDTH = 250;

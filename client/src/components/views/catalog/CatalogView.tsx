@@ -8,16 +8,17 @@ import StarIcon from "@/icons/star.svg?react";
 import PlugIcon from "@/icons/plug.svg?react";
 import FolderIcon from "@/icons/folder.svg?react";
 import { create, StoreApi, UseBoundStore } from "zustand";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LoadingContainer from "@/components/core/LoadingContainer";
 import cx from "classix";
-import { METADATA_RESOURCES_TYPE, METADATA_SPECIAL } from "@/utils/constants";
+import { METADATA_DRIVER, METADATA_RESOURCES_TYPE, METADATA_SPECIAL } from "@/utils/constants";
 import { ResourceType } from "@/models/resources";
 import { SpecialCollection } from "@/models/collections";
 import CommandLink from "@/components/core/CommandLink";
 import { CommandEvent, registerCommand } from "@/utils/commands";
 import { useCommand } from "@/hooks/use-commands";
 import { useAppStore } from "@/stores/AppStore";
+import { agent } from "@/resources/agent";
 
 /**
  * A Regular expression to check the validity of a catalog item name.
@@ -320,6 +321,16 @@ function ConnectionViewItem({ catalogId: connId, useViewStore }: ConnectionViewI
     }
   }, []);
 
+  const Icon = useMemo(() => {
+    const driverName = catalogItem.metadata?.[METADATA_DRIVER];
+    const driver = driverName ? agent().drivers.find((d) => d.name === driverName) : undefined;
+    if (driver?.icon) {
+      return <img src={`/icons/drivers/${driver.icon}`} alt={driver.name} className="aspect-square w-5 object-cover" />;
+    } else {
+      return PlugIcon;
+    }
+  }, [catalogItem]);
+
   const handleEditingBlur = useCallback((event: React.FocusEvent<HTMLInputElement>) => {
     if (event.target.checkValidity()) {
       setEditing(false);
@@ -382,7 +393,7 @@ function ConnectionViewItem({ catalogId: connId, useViewStore }: ConnectionViewI
       ref={refItem}
       key={connId}
       label={catalogItem.name}
-      icon={PlugIcon}
+      icon={Icon}
       status={viewStatus}
       onClick={handleClick}
       onToggle={handleToggle}

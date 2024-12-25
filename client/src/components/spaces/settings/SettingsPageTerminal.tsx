@@ -29,8 +29,8 @@ export default function SettingsPageTerminal() {
         </Dropdown>
       </SettingsPage.Setting>
       <SettingsPage.Setting
-        title="Render TAB as whitespaces"
-        description="If enabled, the TAB key will be rendered using the given number of spaces."
+        title="Render TAB as white spaces"
+        description="If enabled, the TAB key will be rendered using the given number of white spaces."
       >
         <Switch
           size="md"
@@ -40,6 +40,7 @@ export default function SettingsPageTerminal() {
           }}
         />
         <Input
+          className="w-full"
           type="number"
           defaultValue={userSettings.terminalSettings.editorSettings.tabSize}
           min={1}

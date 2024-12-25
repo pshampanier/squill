@@ -11,6 +11,47 @@ export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed",
 export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number];
 
 /**
+ * A query.
+ **/
+export class Query {
+  
+  /**
+   * The hash of the text of the query after normalization.
+   * 
+   * The hash is used to determine if two queries are the same regardless of their formatting. The hash is 
+   * computed by normalizing the query into tokens.
+   * 
+   **/
+  @serializable("integer", { required: true, min: 0 })
+  hash!: number;
+  
+  /**
+   * The text of the query.
+   **/
+  @serializable("string", { required: true })
+  text!: string;
+  
+  /**
+   * A flag indicating if the query is a result set returning query.
+   * 
+   * This flag is used to determine if the query execution may return the result set or not.
+   * 
+   * Examples of result set returning queries are:
+   * - `SELECT``: The primary statement that retrieves rows from one or more tables.
+   * - `SHOW``: A statement that shows information about databases, tables, or other objects.
+   * - `INSERT ... RETURNING`: In some databases (like PostgreSQL), `INSERT``, `UPDATE``, and `DELETE`` can 
+   *    return rows when combined with the `RETURNING` clause.
+   * 
+   **/
+  @serializable("boolean", { required: true, snakeCase: "property" })
+  withResultSet!: boolean;
+  
+  constructor(object?: Partial<Query>) {
+    Object.assign(this, object);
+  }
+}
+
+/**
  * An error message from a query execution.
  **/
 export class QueryExecutionError {

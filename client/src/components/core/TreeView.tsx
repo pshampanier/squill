@@ -1,7 +1,7 @@
 import { ColorsFunction, primary } from "@/utils/colors";
 import { SVGIcon } from "@/utils/types";
 import cx from "classix";
-import React, { forwardRef, useCallback, useEffect } from "react";
+import React, { forwardRef, useCallback, useEffect, useMemo } from "react";
 import Spinner from "@/components/core/Spinner";
 import Input from "@/components/core/Input";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
@@ -55,7 +55,7 @@ type TreeViewItemProps = {
   /**
    * The icon to display for the item.
    */
-  icon?: SVGIcon;
+  icon?: JSX.Element | SVGIcon;
 
   /**
    * Additional classes to apply to the top level element of the component.
@@ -225,7 +225,7 @@ TreeView.Item = forwardRef<HTMLElement, TreeViewItemProps>((props, ref) => {
   const {
     className,
     label,
-    icon: Icon,
+    icon,
     collapsible = false,
     status: controlledStatus,
     defaultStatus = "closed",
@@ -364,6 +364,16 @@ TreeView.Item = forwardRef<HTMLElement, TreeViewItemProps>((props, ref) => {
     children: "flex flex-row w-full",
   };
 
+  const Icon = useMemo(() => {
+    if (icon && React.isValidElement(icon)) {
+      return icon;
+    } else if (icon) {
+      const Icon = icon as SVGIcon;
+      return <Icon className={classes.icon} data-component="tree-view-item-icon" />;
+    }
+    return null;
+  }, [icon]);
+
   console.debug("TreeView.Item.render", { label, status, controlledStatus });
 
   return (
@@ -376,7 +386,7 @@ TreeView.Item = forwardRef<HTMLElement, TreeViewItemProps>((props, ref) => {
     >
       <div className="relative h-9 w-full">
         <button ref={buttonRef} className={classes.button}>
-          {Icon && <Icon className={classes.icon} data-component="tree-view-item-icon" />}
+          {Icon}
           <span className={classes.label} data-type="label">
             {status !== "editing" && label}
           </span>
