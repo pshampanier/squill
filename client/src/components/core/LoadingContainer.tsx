@@ -18,8 +18,13 @@ type LoadingContainerProps = {
 
   /**
    * The status of the loading container.
+   *
+   * - "pending": The container is not visible.
+   * - "running": The container is visible and shows a spinner.
+   * - "error": The container is visible and shows an error message.
+   * - "success": The container is not visible.
    */
-  status: "pending" | "error" | "success";
+  status: "pending" | "running" | "error" | "success";
 
   /**
    * The error that occurred if the status is "error".
@@ -75,9 +80,9 @@ export default function LoadingContainer({
       size === "xl" && "text-md",
       className,
     ),
-    pending: cx(
+    running: cx(
       "flex flex-col bg-transparent w-full h-full items-center  justify-center",
-      status !== "pending" && "hidden",
+      status !== "running" && "hidden",
     ),
     error: cx(
       "flex flex-col bg-transparent w-full h-full items-center justify-center",
@@ -86,25 +91,29 @@ export default function LoadingContainer({
     ),
   };
 
-  return (
-    <div className={classes.self}>
-      {status === "pending" && (
-        <div className={classes.pending}>
-          <Spinner size={size} delay={200} />
-          <div className="flex h-8 w-full items-center justify-center">
-            <span className={cx("transition-opacity duration-500", showMessage ? "opacity-100" : "opacity-0")}>
-              {message}
-            </span>
+  if (status === "pending" || status === "success") {
+    return null;
+  } else {
+    return (
+      <div className={classes.self}>
+        {status === "running" && (
+          <div className={classes.running}>
+            <Spinner size={size} delay={200} />
+            <div className="flex h-8 w-full items-center justify-center">
+              <span className={cx("transition-opacity duration-500", showMessage ? "opacity-100" : "opacity-0")}>
+                {message}
+              </span>
+            </div>
+          </div>
+        )}
+        <div className={classes.error}>
+          <CrashedImage className="w-40 h-40 opacity-20" />
+          <div className="flex flex-col font-semibold w-full items-center space-y-3">
+            <UserErrorMessage error={error} fallback={errorFallback} />
+            <Button onClick={onRetry} variant="outline" text="Retry" className="flex px-8 justify-center" />
           </div>
         </div>
-      )}
-      <div className={classes.error}>
-        <CrashedImage className="w-40 h-40 opacity-20" />
-        <div className="flex flex-col font-semibold w-full items-center space-y-3">
-          <UserErrorMessage error={error} fallback={errorFallback} />
-          <Button onClick={onRetry} variant="outline" text="Retry" className="flex px-8 justify-center" />
-        </div>
       </div>
-    </div>
-  );
+    );
+  }
 }

@@ -311,7 +311,7 @@ function TableView({
 
   const classes = {
     root: cx(
-      "table-view relative flex flex-col max-w-full font-mono text-xs box-border",
+      "table-view relative flex flex-col max-w-full max-h-full font-mono text-xs box-border",
       fetching && "fetching",
       className,
     ),

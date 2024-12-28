@@ -126,7 +126,7 @@ export function useQueryCache({
       fetching: localCache.find((entry) => entry.status === "fetching") !== undefined,
       dataframe: {
         getSizeHint() {
-          return query.storageRows;
+          return query?.storageRows ?? 0;
         },
         getRow(index: number) {
           const keyOffset = index - (index % fetchLimit);

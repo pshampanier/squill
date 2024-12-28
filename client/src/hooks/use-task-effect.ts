@@ -15,7 +15,7 @@ type TaskEffect = {
    * The task function should return a promise.
    * Setting a new task will automatically run task that changing the task status to "running".
    */
-  setTask(task: TaskFunction): void;
+  setTask(task: TaskFunction, message?: string): void;
 };
 
 export function useTaskEffect(
@@ -29,9 +29,12 @@ export function useTaskEffect(
   // The task function is stored in a ref so that it can be updated without causing a re-render.
   const task = useRef<TaskFunction>(initialTask);
 
-  const setTask = (newTask: TaskFunction) => {
+  const setTask = (newTask: TaskFunction, message?: string) => {
     task.current = newTask;
     setTaskStatus("running");
+    if (message !== undefined) {
+      setMessage(message);
+    }
   };
 
   useEffect(() => {

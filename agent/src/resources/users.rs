@@ -1,7 +1,7 @@
 use crate::models::user_settings::{
     ColorScheme, HistorySettings, MonacoEditorCursorStyle, MonacoEditorMatchBrackets, MonacoEditorMinimap,
-    MonacoEditorSettings, MonacoEditorWhitespace, NullValues, TableDensity, TableDividers, TableOverscan,
-    TableSettings, TerminalSettings, UserSettings,
+    MonacoEditorSettings, MonacoEditorWhitespace, NullValues, RegionalSettings, TableDensity, TableDividers,
+    TableOverscan, TableSettings, TerminalSettings, UserSettings,
 };
 use crate::models::users::User;
 use crate::models::{Collection, ResourceType, SpecialCollection};
@@ -60,6 +60,12 @@ impl Default for TerminalSettings {
     }
 }
 
+impl Default for RegionalSettings {
+    fn default() -> Self {
+        Self { locale: "en-US".to_string(), use_system: true }
+    }
+}
+
 impl Default for UserSettings {
     fn default() -> Self {
         Self {
@@ -70,6 +76,7 @@ impl Default for UserSettings {
             terminal_settings: TerminalSettings::default(),
             history_settings: HistorySettings::default(),
             editor_settings: MonacoEditorSettings::default(),
+            regional_settings: RegionalSettings::default(),
         }
     }
 }

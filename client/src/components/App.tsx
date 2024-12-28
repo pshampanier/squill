@@ -20,7 +20,7 @@ registerCommand(
     ],
     icon: SettingsIcon,
   },
-  { name: "settings.close", description: "Close", shortcut: "Escape", icon: CloseIcon },
+  { name: "close", description: "Close", shortcut: "Escape", icon: CloseIcon },
 );
 
 export function App() {
@@ -36,7 +36,7 @@ export function App() {
       case "settings.open":
         openSettings();
         break;
-      case "settings.close":
+      case "close":
         closeSettings();
         break;
       case "sidebar.primary.toggle":

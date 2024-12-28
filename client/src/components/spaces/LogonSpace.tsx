@@ -63,7 +63,7 @@ export default function LogonSpace(props: SpaceProps) {
       <div className="flex flex-row h-[calc(100%-2.75rem)] w-full items-center">
         <LoadingContainer
           message="Trying to connect..."
-          status={status}
+          status={status === "pending" ? "running" : status}
           error={error}
           errorFallback="Oops, the connection to the Agent failed..."
           onRetry={() => refetch()}

@@ -60,7 +60,7 @@ export default function SettingsSpace() {
     try {
       await Users.saveSettings(userSettings);
       resetSettings();
-      dispatchCommand("settings.close");
+      dispatchCommand("close");
     } catch (error: unknown) {
       addNotification({
         id: crypto.randomUUID(),
@@ -96,7 +96,7 @@ export default function SettingsSpace() {
           <Titlebar.AppName className="grow" />
           <Toolbar className="flex-none">
             <UserNotificationIconButton />
-            <CommandButton command="settings.close" />
+            <CommandButton command="close" />
           </Toolbar>
         </Titlebar>
         <div className="flex flex-row h-[calc(100%-2.75rem)]">
@@ -122,7 +122,7 @@ export default function SettingsSpace() {
                 {selectedPage === "history" && <SettingsPageHistory />}
                 {selectedPage === "terminal" && <SettingsPageTerminal />}
                 <div className={cx("flex flex-row justify-end space-x-1 border-t pt-4", colors("border"))}>
-                  <CommandButton text="Cancel" variant="outline" command="settings.close" icon={NO_ICON} />
+                  <CommandButton text="Cancel" variant="outline" command="close" icon={NO_ICON} />
                   <Button text="Apply" variant="solid" disabled={!modified} onClick={applySettings} />
                 </div>
               </div>

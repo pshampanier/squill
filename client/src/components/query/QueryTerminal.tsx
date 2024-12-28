@@ -2,15 +2,16 @@ import cx from "classix";
 import { Dispatch, useCallback } from "react";
 import React from "react";
 import { CommandEvent, registerCommand } from "@/utils/commands";
+import { QueryExecution, QueryExecutionKey } from "@/models/queries";
+import { useUserStore } from "@/stores/UserStore";
+import { Connections } from "@/resources/connections";
 import { useCommand } from "@/hooks/use-commands";
 import CommandLinkList from "@/components/core/CommandLinkList";
 import QueryInput, { QueryEditorInstance } from "@/components/query/QueryInput";
 import Kbd from "@/components/core/Kbd";
 import AutoHide from "@/components/core/AutoHide";
 import QueryHistory, { QueryHistoryAction } from "@/components/query/QueryHistory";
-import { QueryExecution } from "@/models/queries";
-import { useUserStore } from "@/stores/UserStore";
-import { Connections } from "@/resources/connections";
+import QueryResultViewer from "@/components/query/QueryResultViewer";
 
 registerCommand(
   {
@@ -73,6 +74,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   const refHistoryDispatcher = React.useRef<Dispatch<QueryHistoryAction> | null>(null);
   const addNotification = useUserStore((state) => state.addNotification);
   const terminalSettings = useUserStore((state) => state.settings?.terminalSettings);
+  const [openedQuery, setOpenedQuery] = React.useState<QueryExecutionKey | null>(null);
 
   //
   // Update the height of the history component
@@ -121,8 +123,22 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
           //
           // Delete the given query from the history.
           //
-          Connections.removeFromHistory(query.connectionId, query.id);
+          // We are doing an optimistic  delete here, if it fails, a notification will be displayed by the user interface.
+          Connections.removeFromHistory(query.connectionId, query.id).catch((err) => {
+            addNotification({
+              id: crypto.randomUUID(),
+              variant: "error",
+              message: "Failed to delete the query from history.",
+              description: err,
+            });
+          });
+          // TODO: The query status should be temporarily set to "deleted" to prevent instead of removing it from the
+          // history immediately, and only remove it when the API call is successful.
           refHistoryDispatcher.current?.({ type: "remove", queries: [query] });
+          if (openedQuery.connectionId === query.connectionId && openedQuery.id === query.id) {
+            // If the query is open, close it.
+            setOpenedQuery(null);
+          }
           break;
         }
 
@@ -153,6 +169,26 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
           }
           break;
         }
+
+        case "query.open": {
+          //
+          // Open a query result in the editor.
+          //
+          setOpenedQuery({
+            connectionId: query.connectionId,
+            id: query.id,
+          });
+          break;
+        }
+
+        case "close": {
+          //
+          // Close the query result and display back the terminal.
+          //
+          setOpenedQuery(null);
+          break;
+        }
+
         default:
           return;
       }
@@ -181,34 +217,38 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
   }, []);
 
   const classes = {
-    root: cx("flex flex-col w-full h-full overflow-hidden", className),
+    root: cx("w-full h-full", className),
+    terminal: cx("flex flex-col w-full h-full overflow-hidden", openedQuery ? "hidden" : ""),
     history: "flex-col flex-shrink-0 overflow-y-hidden px-4 pb-2",
     input: "flex-shrink-0 py-1 min-h-6",
     help: "flex flex-shrink flex-grow min-h-0 overflow-hidden items-center justify-center opacity-70 select-none",
   };
 
   return (
-    <div ref={refRoot} className={classes.root}>
-      <div ref={refHistory} className={classes.history}>
-        <QueryHistory onMount={handleHistoryDidMount} onCommand={handleOnCommand} />
+    <div ref={refRoot} className={classes.root} data-component="query-terminal">
+      <div className={classes.terminal}>
+        <div ref={refHistory} className={classes.history}>
+          <QueryHistory onMount={handleHistoryDidMount} onCommand={handleOnCommand} />
+        </div>
+        <QueryInput
+          mode="terminal"
+          className={classes.input}
+          onValidate={onValidate}
+          onMount={handleEditorDidMount}
+          onResize={handleEditorResize}
+          colorScheme={colorScheme}
+          placeholder={PLACEHOLDER}
+          settings={terminalSettings?.editorSettings}
+        />
+        <AutoHide className={classes.help} onClick={() => editorRef.current?.focus()}>
+          <CommandLinkList className="p-6">
+            <CommandLinkList.Link command="terminal.clear" />
+            <CommandLinkList.Link command="terminal.history.clear" />
+            <CommandLinkList.Link command="terminal.history.search" />
+          </CommandLinkList>
+        </AutoHide>
       </div>
-      <QueryInput
-        mode="terminal"
-        className={classes.input}
-        onValidate={onValidate}
-        onMount={handleEditorDidMount}
-        onResize={handleEditorResize}
-        colorScheme={colorScheme}
-        placeholder={PLACEHOLDER}
-        settings={terminalSettings?.editorSettings}
-      />
-      <AutoHide className={classes.help} onClick={() => editorRef.current?.focus()}>
-        <CommandLinkList className="p-6">
-          <CommandLinkList.Link command="terminal.clear" />
-          <CommandLinkList.Link command="terminal.history.clear" />
-          <CommandLinkList.Link command="terminal.history.search" />
-        </CommandLinkList>
-      </AutoHide>
+      {openedQuery && <QueryResultViewer queryKey={openedQuery} onCommand={handleOnCommand} />}
     </div>
   );
 }

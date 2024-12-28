@@ -274,6 +274,28 @@ async fn delete_query_from_history(
     Ok(())
 }
 
+/// GET /connections/{id}/history/{query_id}
+///
+/// Load a query from the history.
+async fn get_query_from_history(
+    state: State<ServerState>,
+    context: ServerResult<RequestContext>,
+    Path((id, query_history_id)): Path<(Uuid, Uuid)>,
+) -> ServerResult<Json<models::QueryExecution>> {
+    let user_session = context?.get_user_session()?;
+    let mut conn = state.get_agentdb_connection().await?;
+
+    let connection: models::Connection = catalog::get(&mut conn, id).await?;
+    if connection.owner_user_id != user_session.get_user_id() {
+        return Err(err_forbidden!("You are not allowed to access this connection."));
+    }
+
+    match queries::get(&mut conn, id, query_history_id).await? {
+        Some(query) => Ok(Json(query)),
+        None => Err(UserError::NotFound("Query not found".to_string()).into()),
+    }
+}
+
 pub fn authenticated_routes(state: ServerState) -> Router {
     Router::new()
         .route("/connections/defaults", get(get_connection_defaults))
@@ -282,6 +304,7 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/connections/:id/datasources", get(list_datasources))
         .route("/connections/:id/run", post(run_buffer))
         .route("/connections/:id/history", get(list_queries_history))
+        .route("/connections/:id/history/:query_history_id", get(get_query_from_history))
         .route("/connections/:id/history/:query_history_id", delete(delete_query_from_history))
         .route("/connections/:id/history/:query_history_id/data", get(get_query_history_data))
         .with_state(state)

@@ -1,6 +1,6 @@
 import { DateClassification, formatDuration, formatRelativeDate, generateDateClassifier } from "@/utils/time";
 import cx from "classix";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "@/utils/strings";
 import { QueryExecution, QueryExecutionStatus } from "@/models/queries";
 import { secondary } from "@/utils/colors";
@@ -18,8 +18,10 @@ import ArrowsPointingOutIcon from "@/icons/arrows-pointing-out.svg?react";
 import ReplayIcon from "@/icons/replay.svg?react";
 import { CommandEvent, registerCommand } from "@/utils/commands";
 import { useCommand } from "@/hooks/use-commands";
+import { Locale } from "@/utils/types";
 
 const LOCATE_STR_YESTERDAY_EN = "Yesterday, {0}";
+const DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yesterday", "this_year", "before_last_year"];
 
 registerCommand(
   { name: "query.open", description: "Open query", icon: ArrowsPointingOutIcon },
@@ -30,25 +32,35 @@ registerCommand(
 
 type QueryExecutionHeaderProps = {
   query: QueryExecution;
-  date: Date;
-  dateClassifications: DateClassification[];
-  defaultClassification: DateClassification;
+  locale: Locale;
+  mode: "compact" | "full";
+  dateClassifier?: (date: Date) => DateClassification;
   numberFormatter?: Intl.NumberFormat;
   onCommand: (event: CommandEvent) => void;
   className?: string;
 };
 
-export function QueryExecutionHeader({
+function QueryExecutionHeader({
   className,
-  date,
-  dateClassifications,
-  defaultClassification,
-  query: { status, executionTime, affectedRows, withResultSet },
-  numberFormatter,
+  locale,
+  mode,
+  dateClassifier: defaultDateClassifier,
+  query: { status, executionTime, affectedRows, withResultSet, createdAt },
+  numberFormatter: defaultNumberFormatter,
   onCommand,
 }: QueryExecutionHeaderProps) {
   const ref = useRef<HTMLDivElement>(null);
   useCommand({ ref, onCommand });
+
+  const dateClassifier = useMemo(() => {
+    return defaultDateClassifier || generateDefaultDateClassifier(locale);
+  }, [defaultDateClassifier, locale]);
+
+  const numberFormatter = useMemo(() => {
+    return defaultNumberFormatter || new Intl.NumberFormat(locale);
+  }, [defaultNumberFormatter, locale]);
+
+  const dateClassification = dateClassifier(createdAt);
 
   return (
     <ColorsContext.Provider value={secondary}>
@@ -65,11 +77,7 @@ export function QueryExecutionHeader({
         <ul className="list-none flex flex-row flex-none items-center h-8 text-xs select-none whitespace-nowrap">
           <li className="flex text-divider items-center">
             <Status status={status} className="ml-1 mr-2" />
-            <FormattedDate
-              date={date}
-              dateClassification={defaultClassification}
-              dateClassifications={dateClassifications}
-            />
+            <FormattedDate date={createdAt} dateClassification={dateClassification} locale={locale} />
           </li>
           {status === "completed" && (
             <li className="flex text-divider items-center">
@@ -87,12 +95,18 @@ export function QueryExecutionHeader({
         </ul>
         <Toolbar
           size="md"
-          className="ml-auto mr-0.5 opacity-0 transition-opacity duration-500 delay-200 group-hover:opacity-100"
+          className={cx(
+            "ml-auto mr-0.5",
+            mode === "compact" && "opacity-0 transition-opacity duration-500 delay-200 group-hover:opacity-100",
+          )}
         >
           <CommandButton size="md" command="query.rerun" />
           <CommandButton size="md" command="query.copy" />
-          <CommandButton size="md" command="query.history.delete" />
-          <CommandButton size="md" command="query.open" disabled={!withResultSet || status === "failed"} />
+          {mode === "compact" && <CommandButton size="md" command="query.history.delete" />}
+          {mode === "compact" && (
+            <CommandButton size="md" command="query.open" disabled={!withResultSet || status === "failed"} />
+          )}
+          {mode === "full" && <CommandButton size="md" command="close" />}
         </Toolbar>
       </div>
     </ColorsContext.Provider>
@@ -106,12 +120,12 @@ export function QueryExecutionHeader({
  */
 function FormattedDate({
   date,
-  dateClassifications,
   dateClassification: defaultDateClassification,
+  locale,
 }: {
   date: Date;
-  dateClassifications: DateClassification[];
   dateClassification: DateClassification;
+  locale: Locale;
 }) {
   const [displayValue, setDisplayValue] = useState<string>();
   const [lastRefreshAt, setLastRefreshAt] = useState<Date>();
@@ -121,8 +135,7 @@ function FormattedDate({
       const now = new Date();
 
       // If the date classification is not provided, generate it based on the date.
-      const dateClassification =
-        defaultDateClassification || generateDateClassifier(dateClassifications, { currentDate: now })(date);
+      const dateClassification = defaultDateClassification || generateDefaultDateClassifier(locale)(date);
 
       switch (dateClassification) {
         case "yesterday": {
@@ -201,7 +214,7 @@ function FormattedDate({
         }
       }
     },
-    [],
+    [locale],
   );
   useEffect(() => {
     // At the first render `lastRefreshAt` is undefined, we are using the provided data classification, otherwise we
@@ -287,6 +300,23 @@ function Status({ status, className }: StatusProps) {
   );
 }
 
+/**
+ * Return a default date classifier for the given locale.
+ */
+const generateDefaultDateClassifier = function (locale: Locale) {
+  return generateDateClassifier(DATE_CLASSIFICATIONS, {
+    locale,
+  });
+};
+
+/**
+ * Return a function to generate the default date classifier for the given locale.
+ */
+QueryExecutionHeader.generateDefaultDateClassifier = generateDefaultDateClassifier;
+
+/**
+ * Estimate the size of the component.
+ */
 QueryExecutionHeader.estimateSize = function () {
   return 32 /* h-8: 32px */;
 };

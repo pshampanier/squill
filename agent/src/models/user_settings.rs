@@ -172,6 +172,17 @@ pub struct HistorySettings {
     pub table_settings: TableSettings,
 }
 
+/// The regional settings of the application.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
+pub struct RegionalSettings {
+    /// The locale of the application.
+    pub locale: String,
+
+    /// Use the system settings for the regional settings.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub use_system: bool,
+}
+
 /// The settings of a user.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct UserSettings {
@@ -186,6 +197,9 @@ pub struct UserSettings {
 
     /// The visual representation of null values.
     pub null_values: NullValues,
+
+    /// The regional settings of the application.
+    pub regional_settings: RegionalSettings,
 
     /// Show the favorites in the catalog.
     pub show_favorites: bool,

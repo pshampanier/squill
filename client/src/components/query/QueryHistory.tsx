@@ -1,7 +1,6 @@
 import cx from "classix";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
 import { Dispatch, memo, useEffect, useReducer, useRef } from "react";
-import { DateClassification, generateDateClassifier } from "@/utils/time";
 import { QueryExecution } from "@/models/queries";
 import { useUserStore } from "@/stores/UserStore";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
@@ -27,15 +26,12 @@ const MemoizedQueryOutput = memo(QueryOutput, (prev, next) => {
 
 const MemoizedQueryExecutionHeader = memo(QueryExecutionHeader, (prev, next) => {
   return (
-    prev.date === next.date &&
-    prev.defaultClassification === next.defaultClassification &&
+    prev.query.createdAt === next.query.createdAt &&
     prev.query.status === next.query.status &&
     prev.query.executionTime === next.query.executionTime &&
     prev.query.affectedRows === next.query.affectedRows
   );
 });
-
-const QUERY_HEADER_DATE_CLASSIFICATIONS: DateClassification[] = ["today", "yesterday", "this_year", "before_last_year"];
 
 interface QueryHistoryState {
   revision: number;
@@ -173,9 +169,8 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   }, [history]);
 
   // Because we are potentially going to process a large number of queries, we can optimize a bit by using reusing the
-  // same date classifier for all queries.
-  const dateClassifier = generateDateClassifier(QUERY_HEADER_DATE_CLASSIFICATIONS);
-
+  // same date classifier & NumberFormat for all queries.
+  const dateClassifier = QueryExecutionHeader.generateDefaultDateClassifier("en-US");
   const numberFormat = new Intl.NumberFormat("en-US");
 
   const classes = {
@@ -192,8 +187,6 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
       <div className={classes.inner} style={{ height: virtualizer.getTotalSize() }}>
         {virtualItems.map((virtualItem) => {
           const query = historyItems[virtualItem.index];
-          const date = query.createdAt;
-          const dateClassification = dateClassifier(date);
           const { dataframe, fetching } = getQueryStates(query);
           const previewDataframe: DataFrame = {
             ...dataframe,
@@ -211,14 +204,14 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
               }}
             >
               <MemoizedQueryExecutionHeader
-                date={date}
-                dateClassifications={QUERY_HEADER_DATE_CLASSIFICATIONS}
-                defaultClassification={dateClassification}
                 query={query}
+                mode="compact"
+                dateClassifier={dateClassifier}
                 numberFormatter={numberFormat}
                 onCommand={(event: CommandEvent) => {
                   onCommand(event, query);
                 }}
+                locale={"en-US"}
               />
               <MemoizedQueryOutput
                 query={query}

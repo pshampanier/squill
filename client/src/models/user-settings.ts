@@ -215,6 +215,29 @@ export class HistorySettings {
 }
 
 /**
+ * The regional settings of the application.
+ **/
+export class RegionalSettings {
+  [immerable] = true;
+  
+  /**
+   * The locale of the application.
+   **/
+  @serializable("string", { required: true })
+  locale!: string;
+  
+  /**
+   * Use the system settings for the regional settings.
+   **/
+  @serializable("boolean", { snakeCase: "property" })
+  useSystem?: boolean;
+  
+  constructor(object?: Partial<RegionalSettings>) {
+    Object.assign(this, object);
+  }
+}
+
+/**
  * The settings of a user.
  **/
 export class UserSettings {
@@ -245,6 +268,12 @@ export class UserSettings {
   nullValues!: NullValues;
   
   /**
+   * The regional settings of the application.
+   **/
+  @serializable("object", { factory: RegionalSettings, required: true, snakeCase: "property" })
+  regionalSettings!: RegionalSettings;
+  
+  /**
    * Show the favorites in the catalog.
    **/
   @serializable("boolean", { required: true, snakeCase: "property" })
@@ -266,6 +295,7 @@ export class UserSettings {
     Object.assign(this, object);
     this.editorSettings = object?.editorSettings && new MonacoEditorSettings(object.editorSettings);
     this.historySettings = object?.historySettings && new HistorySettings(object.historySettings);
+    this.regionalSettings = object?.regionalSettings && new RegionalSettings(object.regionalSettings);
     this.terminalSettings = object?.terminalSettings && new TerminalSettings(object.terminalSettings);
   }
 }

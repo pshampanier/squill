@@ -72,6 +72,15 @@ export const Connections = {
     await agent().del(`/connections/${connId}/history/${queryId}`);
   },
 
+  /**
+   * Get a query from the history.
+   *
+   * API: `GET /connections/:connId/history/:queryId`
+   */
+  async getFromHistory(connId: string, queryId: string): Promise<QueryExecution> {
+    return (await agent().get<QueryExecution>(`/connections/${connId}/history/${queryId}`)).as(QueryExecution);
+  },
+
   async getHistoryPreview(connId: string, queryId: string): Promise<Table> {
     return (await agent().get<QueryExecution>(`/connections/${connId}/history/${queryId}/preview`)).asTable();
   },

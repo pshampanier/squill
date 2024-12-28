@@ -29,8 +29,8 @@ export default function SettingsPageTerminal() {
         </Dropdown>
       </SettingsPage.Setting>
       <SettingsPage.Setting
-        title="Render TAB as white spaces"
-        description="If enabled, the TAB key will be rendered using the given number of white spaces."
+        title="Use white spaces for TAB"
+        description="If enabled, white spaces will be inserted instead of a tabulation when the TAB key is pressed."
       >
         <Switch
           size="md"

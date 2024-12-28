@@ -158,7 +158,7 @@ export default function CatalogView({ className, catalogId = ROOT_CATALOG_ID }: 
       <LoadingContainer
         size="md"
         message="Loading..."
-        status={catalogItem.status === "error" ? "error" : "pending"}
+        status={catalogItem.status === "error" ? "error" : "running"}
         errorFallback="Oops, it failed..."
         onRetry={() => useUserStore.getState().loadCatalogChildren(catalogId)}
       />
