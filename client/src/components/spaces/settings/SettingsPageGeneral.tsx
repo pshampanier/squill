@@ -52,7 +52,7 @@ export default function SettingsPageGeneral() {
           defaultValue={userSettings.nullValues}
           onChange={(value) => {
             const nullValues = value as NullValues;
-            updateUserSettings({ nullValues, historySettings: { tableSettings: { nullValues } } });
+            updateUserSettings({ nullValues });
           }}
         >
           <Dropdown.Option label="null" value="null_lowercase" />

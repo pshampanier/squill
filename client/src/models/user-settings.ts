@@ -203,10 +203,16 @@ export class HistorySettings {
   maxStorage!: number;
   
   /**
-   * The settings of the table displaying the result set.
+   * The settings of the table displaying the result set preview.
    **/
   @serializable("object", { factory: TableSettings, required: true, snakeCase: "property" })
   tableSettings!: TableSettings;
+  
+  /**
+   * Use the default settings of the table displaying the result set preview.
+   **/
+  @serializable("boolean", { required: true, snakeCase: "property" })
+  useDefaultTableSettings!: boolean;
   
   constructor(object?: Partial<HistorySettings>) {
     Object.assign(this, object);
@@ -280,6 +286,12 @@ export class UserSettings {
   showFavorites!: boolean;
   
   /**
+   * The settings of a table displaying a result set.
+   **/
+  @serializable("object", { factory: TableSettings, required: true, snakeCase: "property" })
+  tableSettings!: TableSettings;
+  
+  /**
    * Enable/Disable the telemetry.
    **/
   @serializable("boolean", { required: true })
@@ -296,6 +308,7 @@ export class UserSettings {
     this.editorSettings = object?.editorSettings && new MonacoEditorSettings(object.editorSettings);
     this.historySettings = object?.historySettings && new HistorySettings(object.historySettings);
     this.regionalSettings = object?.regionalSettings && new RegionalSettings(object.regionalSettings);
+    this.tableSettings = object?.tableSettings && new TableSettings(object.tableSettings);
     this.terminalSettings = object?.terminalSettings && new TerminalSettings(object.terminalSettings);
   }
 }

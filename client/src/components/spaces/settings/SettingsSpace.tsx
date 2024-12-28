@@ -19,13 +19,15 @@ import HistoryIcon from "@/icons/history.svg?react";
 import TerminalIcon from "@/icons/terminal.svg?react";
 import Button from "@/components/core/Button";
 import CommandButton from "@/components/core/CommandButton";
-import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGeneral";
-import SettingsPageHistory from "@/components/spaces/settings/SettingsPageHistory";
-import SettingsPageTerminal from "@/components/spaces/settings/SettingsPageTerminal";
 import SettingsIcon from "@/icons/settings.svg?react";
+import TableIcon from "@/icons/table.svg?react";
 import PrimarySidebar from "@/components/layout/PrimarySidebar";
 import TreeView from "@/components/core/TreeView";
 import UserNotificationIconButton from "@/components/user-store/UserNotificationIconButton";
+import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGeneral";
+import SettingsPageHistory from "@/components/spaces/settings/SettingsPageHistory";
+import SettingsPageTerminal from "@/components/spaces/settings/SettingsPageTerminal";
+import SettingsPageTables from "@/components/spaces/settings/SettingsPageTable";
 
 type UserSettingsContext = {
   userSettings: Readonly<UserSettings>;
@@ -73,15 +75,34 @@ export default function SettingsSpace() {
   };
 
   const updateUserSettings = (settings: DeepPartial<UserSettings>) => {
-    const newSettings = produce(userSettings, (draft) => {
-      return merge(draft, settings);
+    setUserSettings((userSettings) => {
+      const newSettings = produce(userSettings, (draft) => {
+        if (settings.nullValues) {
+          // Null values display settings is a global setting for now, so we need to update all settings that depend on
+          // it.
+          settings = {
+            tableSettings: { nullValues: settings.nullValues },
+            historySettings: { tableSettings: { nullValues: settings.nullValues } },
+            ...settings,
+          };
+        }
+        if (settings.tableSettings?.maxLength) {
+          // Max length is only accessible from the table settings, so we need to update the history settings as well.
+          settings = {
+            historySettings: { tableSettings: { maxLength: settings.tableSettings.maxLength } },
+            ...settings,
+          };
+        }
+        return merge(draft, settings);
+      });
+      setModified(!equal(newSettings, Users.current.settings));
+      return newSettings;
     });
-    setModified(!equal(newSettings, Users.current.settings));
-    setUserSettings(newSettings);
   };
 
   const pages: SettingsPage[] = [
     { label: "General", icon: SettingsIcon, name: "general" },
+    { label: "Tables", icon: TableIcon, name: "table" },
     { label: "Terminal", icon: TerminalIcon, name: "terminal" },
     { label: "History", icon: HistoryIcon, name: "history" },
   ];
@@ -118,9 +139,12 @@ export default function SettingsSpace() {
           <Main className={colors("background", "text")}>
             <div className="flex flex-col items-center w-full">
               <div className="flex flex-col w-3/4 p-8 min-w-[600px] h-full">
-                {selectedPage === "general" && <SettingsPageGeneral />}
-                {selectedPage === "history" && <SettingsPageHistory />}
-                {selectedPage === "terminal" && <SettingsPageTerminal />}
+                <div className="w-full flex flex-grow overflow-hidden">
+                  {selectedPage === "general" && <SettingsPageGeneral />}
+                  {selectedPage === "table" && <SettingsPageTables />}
+                  {selectedPage === "history" && <SettingsPageHistory />}
+                  {selectedPage === "terminal" && <SettingsPageTerminal />}
+                </div>
                 <div className={cx("flex flex-row justify-end space-x-1 border-t pt-4", colors("border"))}>
                   <CommandButton text="Cancel" variant="outline" command="close" icon={NO_ICON} />
                   <Button text="Apply" variant="solid" disabled={!modified} onClick={applySettings} />

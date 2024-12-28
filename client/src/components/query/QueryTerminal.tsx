@@ -186,6 +186,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
           // Close the query result and display back the terminal.
           //
           setOpenedQuery(null);
+          editorRef.current?.focus();
           break;
         }
 

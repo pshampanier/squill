@@ -168,8 +168,11 @@ pub struct HistorySettings {
     /// The maximum storage of the history (in megabytes).
     pub max_storage: u64,
 
-    /// The settings of the table displaying the result set.
+    /// The settings of the table displaying the result set preview.
     pub table_settings: TableSettings,
+
+    /// Use the default settings of the table displaying the result set preview.
+    pub use_default_table_settings: bool,
 }
 
 /// The regional settings of the application.
@@ -203,6 +206,9 @@ pub struct UserSettings {
 
     /// Show the favorites in the catalog.
     pub show_favorites: bool,
+
+    /// The settings of a table displaying a result set.
+    pub table_settings: TableSettings,
 
     /// Enable/Disable the telemetry.
     pub telemetry: bool,

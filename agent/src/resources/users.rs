@@ -22,7 +22,13 @@ impl Default for HistorySettings {
             max_entries: 1_000,
             max_rows: 20,
             max_storage: 10_000,
-            table_settings: TableSettings::default(),
+            use_default_table_settings: false,
+            table_settings: TableSettings {
+                density: TableDensity::Compact,
+                show_row_numbers: false,
+                dividers: TableDividers::Rows,
+                ..TableSettings::default()
+            },
         }
     }
 }
@@ -30,9 +36,9 @@ impl Default for HistorySettings {
 impl Default for TableSettings {
     fn default() -> Self {
         Self {
-            show_row_numbers: false,
+            show_row_numbers: true,
             density: TableDensity::Comfortable,
-            dividers: TableDividers::Rows,
+            dividers: TableDividers::Grid,
             null_values: NullValues::Dash,
             overscan: TableOverscan::Small,
             max_length: 100,
@@ -74,6 +80,7 @@ impl Default for UserSettings {
             show_favorites: true,
             null_values: NullValues::Dash,
             terminal_settings: TerminalSettings::default(),
+            table_settings: TableSettings::default(),
             history_settings: HistorySettings::default(),
             editor_settings: MonacoEditorSettings::default(),
             regional_settings: RegionalSettings::default(),

@@ -1482,6 +1482,7 @@ components:
         - max_age
         - max_storage
         - max_rows
+        - use_default_table_settings
         - table_settings
       properties:
         max_entries:
@@ -1504,8 +1505,11 @@ components:
           type: integer
           format: int16
           minimum: 5
+        use_default_table_settings:
+          description: Use the default settings of the table displaying the result set preview.
+          type: boolean
         table_settings:
-          description: The settings of the table displaying the result set.
+          description: The settings of the table displaying the result set preview.
           type: object
           $ref: "#/components/schemas/TableSettings"
 
@@ -1553,6 +1557,7 @@ components:
         - show_favorites
         - null_values
         - terminal_settings
+        - table_settings
         - history_settings
         - editor_settings
         - regional_settings
@@ -1566,6 +1571,10 @@ components:
         color_scheme:
           description: The color scheme of the application.
           $ref: "#/components/schemas/ColorScheme"
+        table_settings:
+          description: The settings of a table displaying a result set.
+          type: object
+          $ref: "#/components/schemas/TableSettings"
         terminal_settings:
           description: The settings of the terminal.
           $ref: "#/components/schemas/TerminalSettings"

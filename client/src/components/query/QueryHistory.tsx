@@ -1,14 +1,14 @@
 import cx from "classix";
 import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
-import { Dispatch, memo, useEffect, useReducer, useRef } from "react";
+import { Dispatch, memo, useEffect, useMemo, useReducer, useRef } from "react";
 import { QueryExecution } from "@/models/queries";
+import { CommandEvent } from "@/utils/commands";
+import { DataFrame } from "@/utils/dataframe";
 import { useUserStore } from "@/stores/UserStore";
 import { QUERY_METADATA_SCHEMA } from "@/utils/constants";
 import { useQueryCache } from "@/hooks/use-query-cache";
 import QueryOutput from "@/components/query/QueryOutput";
 import QueryExecutionHeader from "@/components/query/QueryExecutionHeader";
-import { CommandEvent } from "@/utils/commands";
-import { DataFrame } from "@/utils/dataframe";
 
 /**
  * Memoized version of QueryOutput
@@ -107,7 +107,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   //
   // States & Refs
   //
-  const historySettings = useUserStore((state) => state.settings?.historySettings);
+  const settings = useUserStore((state) => state.settings);
   const rootRef = useRef<HTMLDivElement>(null);
   const [history, dispatch] = useReducer<ReducerFn>(reducer, {
     revision: 1,
@@ -115,7 +115,19 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     lastAction: null,
   });
 
-  const { getQueryStates } = useQueryCache({ fetchLimit: historySettings?.maxRows ?? 20 });
+  const { getQueryStates } = useQueryCache({ fetchLimit: settings?.historySettings.maxRows ?? 20 });
+
+  // The settings to be used to display tables in the history.
+  const tableSettings = useMemo(() => {
+    if (settings?.historySettings.useDefaultTableSettings) {
+      return settings.tableSettings;
+    } else {
+      return settings?.historySettings.tableSettings;
+    }
+  }, [settings]);
+
+  // The maximum number of rows to display in the history for the result set preview.
+  const maxRows = settings?.historySettings.maxRows ?? 20;
 
   const historyItems = getSortedHistory(history);
 
@@ -126,9 +138,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
     estimateSize: (index: number) => {
       const query = historyItems[index];
       const headerSize = QueryExecutionHeader.estimateSize();
-      const outputSize =
-        QueryOutput.estimateSize(query, historySettings?.maxRows ?? 20, historySettings?.tableSettings) +
-        8 * 2; /* p-2 */
+      const outputSize = QueryOutput.estimateSize(query, maxRows, tableSettings) + 8 * 2; /* p-2 */
       const estimatedSize = headerSize + outputSize;
       // console.debug("QueryHistory (sizing)", { index, estimatedSize, headerSize, outputSize });
       return estimatedSize;
@@ -147,7 +157,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
   //
   useEffect(() => {
     virtualizer.measure();
-  }, [historySettings?.tableSettings.density]);
+  }, [tableSettings?.density]);
 
   //
   // Scroll to the bottom of the history when the history changes.
@@ -191,7 +201,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
           const previewDataframe: DataFrame = {
             ...dataframe,
             getSizeHint() {
-              return Math.min(historySettings?.maxRows ?? 20, dataframe.getSizeHint());
+              return Math.min(maxRows, dataframe.getSizeHint());
             },
           };
           return (
@@ -216,7 +226,7 @@ export default function QueryHistory({ className, onCommand, onMount }: QueryHis
               <MemoizedQueryOutput
                 query={query}
                 className={classes.output}
-                settings={historySettings?.tableSettings}
+                settings={tableSettings}
                 dataframe={previewDataframe}
                 fetching={fetching}
               />

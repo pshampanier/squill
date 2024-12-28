@@ -1,40 +1,26 @@
-import { tableFromIPC } from "apache-arrow";
-import { useContext, useEffect, useMemo, useState } from "react";
-import { TableDensity, TableDividers } from "@/models/user-settings";
-import { ArrowDataFrame } from "@/utils/dataframe";
+import { useCallback, useContext } from "react";
+import { TableSettings } from "@/models/user-settings";
 import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
-import SettingsPage, { Settings, Setting, SettingsPanel } from "@/components/spaces/settings/SettingsPage";
-import Switch from "@/components/core/Switch";
+import SettingsPage, { Settings, Setting } from "@/components/spaces/settings/SettingsPage";
 import Dropdown from "@/components/core/Dropdown";
-import ArrowTableView from "@/components/dataset/arrow-table-view";
-import DATASET_URL from "@/assets/datasets/persons.arrow?url";
+import TableSettingsInputs from "./TableSettingsInputs";
+import { DeepPartial } from "@/utils/types";
+import TableSettingsPreview from "./TableSettingsPreview";
+import Switch from "@/components/core/Switch";
 
-export default function SettingsPageTableView() {
-  const [dataframe, setDataframe] = useState<ArrowDataFrame | null>(null);
+export default function SettingsPageHistory() {
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
-  useEffect(() => {
-    fetch(DATASET_URL)
-      .then((response) => response.arrayBuffer())
-      .then((arrayBuffer) => {
-        const table = tableFromIPC(new Uint8Array(arrayBuffer));
-        setDataframe(new ArrowDataFrame(table));
-      });
-  }, []);
 
-  // Get the first few rows to display in the preview
-  const rows = useMemo(() => {
-    if (!dataframe) {
-      return null;
-    }
-    return dataframe.slice(0, userSettings.historySettings.maxRows);
-  }, [dataframe, userSettings.historySettings.maxRows]);
+  const handleSettingsChanged = useCallback((settings: DeepPartial<TableSettings>) => {
+    updateUserSettings({ historySettings: { tableSettings: { ...settings } } });
+  }, []);
 
   return (
     <SettingsPage title="History settings">
       <Settings>
         <Setting
           title="Number of rows to preview"
-          description="The maximum number of rows to display in the history for a result set."
+          description="The maximum number of rows to display in the history for the result set preview."
         >
           <Dropdown
             size="sm"
@@ -50,42 +36,32 @@ export default function SettingsPageTableView() {
             <Dropdown.Option value={100} />
           </Dropdown>
         </Setting>
-        <Setting title="Show row numbers" description="Show the row numbers as the first column in result sets.">
+        <Setting
+          title="Use default tables settings"
+          description="Use the default tables settings for all tables displaying a preview in the history."
+        >
           <Switch
             size="md"
-            defaultChecked={userSettings.historySettings.tableSettings.showRowNumbers}
+            defaultChecked={userSettings.historySettings.useDefaultTableSettings}
             onChange={(e) => {
-              updateUserSettings({ historySettings: { tableSettings: { showRowNumbers: e.target.checked } } });
+              updateUserSettings({ historySettings: { useDefaultTableSettings: e.target.checked } });
             }}
           />
         </Setting>
-        <Setting title="Density" description="Controls the spacing between the rows.">
-          <Dropdown
-            defaultValue={userSettings.historySettings.tableSettings.density}
-            onChange={(value) => {
-              updateUserSettings({ historySettings: { tableSettings: { density: value as TableDensity } } });
-            }}
-          >
-            <Dropdown.Option label="Comfortable" value="comfortable" />
-            <Dropdown.Option label="Compact" value="compact" />
-          </Dropdown>
-        </Setting>
-        <Setting title="Dividers" description="Controls rows and cells borders.">
-          <Dropdown
-            defaultValue={userSettings.historySettings.tableSettings.dividers}
-            onChange={(value) => {
-              updateUserSettings({ historySettings: { tableSettings: { dividers: value as TableDividers } } });
-            }}
-          >
-            <Dropdown.Option label="None" value="none" />
-            <Dropdown.Option label="Rows" value="rows" />
-            <Dropdown.Option label="Grid" value="grid" />
-          </Dropdown>
-        </Setting>
+        {!userSettings.historySettings.useDefaultTableSettings && (
+          <TableSettingsInputs
+            tableSettings={userSettings.historySettings.tableSettings}
+            onSettingsChanged={handleSettingsChanged}
+            mode="history"
+          />
+        )}
       </Settings>
-      <SettingsPanel>
-        <ArrowTableView settings={userSettings.historySettings.tableSettings} rows={rows} schema={dataframe?.schema} />
-      </SettingsPanel>
+      {!userSettings.historySettings.useDefaultTableSettings && (
+        <TableSettingsPreview
+          tableSettings={userSettings.historySettings.tableSettings}
+          maxRows={userSettings.historySettings.maxRows}
+        />
+      )}
     </SettingsPage>
   );
 }

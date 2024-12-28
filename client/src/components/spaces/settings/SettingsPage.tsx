@@ -13,7 +13,7 @@ function SettingsPage({ title, children }: SettingsPageProps) {
   return (
     <div className="flex flex-col text-sm w-full h-full" data-component="settings-page">
       <div className="text-lg font-bold mb-3">{title}</div>
-      <div className="flex flex-col space-y-3 w-full">{children}</div>
+      <div className="flex flex-col space-y-3 w-full overflow-auto">{children}</div>
     </div>
   );
 }
@@ -55,7 +55,7 @@ function Setting({ title, description, children }: SettingProps) {
  */
 function SettingsPanel({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cx("flex flex-row w-full", className)} data-component="settings-panel">
+    <div className={cx("flex flex-row w-full overflow-hidden", className)} data-component="settings-panel">
       {children}
     </div>
   );

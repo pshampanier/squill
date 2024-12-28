@@ -21,7 +21,7 @@ type QueryResultViewerProps = {
 export default function QueryResultViewer({ queryKey, onCommand, className }: QueryResultViewerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState<QueryExecution | null>(null);
-  const tableSettings = useUserStore((state) => state.settings?.historySettings.tableSettings);
+  const tableSettings = useUserStore((state) => state.settings?.tableSettings);
 
   const { taskStatus, message, setTask } = useTaskEffect(
     "running",
