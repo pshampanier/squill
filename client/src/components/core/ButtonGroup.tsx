@@ -143,4 +143,5 @@ function ButtonGroupItem({ name, label, icon, disabled, onClick }: ButtonGroupIt
 }
 
 ButtonGroup.Item = ButtonGroupItem;
+ButtonGroup.Option = ButtonGroupItem;
 export default ButtonGroup;

@@ -29,6 +29,17 @@ function Settings({ children }: { children: React.ReactNode }) {
   );
 }
 
+/**
+ * Display a collection of settings related to a parent setting
+ */
+function SubSettings({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col pl-8 space-y-3 w-full" data-component="sub-settings">
+      {children}
+    </div>
+  );
+}
+
 type SettingProps = {
   title: string;
   description: string;
@@ -64,5 +75,6 @@ function SettingsPanel({ className, children }: { className?: string; children: 
 SettingsPage.Settings = Settings;
 SettingsPage.Setting = Setting;
 SettingsPage.Panel = SettingsPanel;
-export { Settings, Setting, SettingsPanel };
+SettingsPage.SubSettings = SubSettings;
+export { Settings, Setting, SubSettings, SettingsPanel };
 export default SettingsPage;

@@ -1,12 +1,12 @@
 import { useCallback, useContext } from "react";
 import { TableSettings } from "@/models/user-settings";
-import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
-import SettingsPage, { Settings, Setting } from "@/components/spaces/settings/SettingsPage";
-import Dropdown from "@/components/core/Dropdown";
-import TableSettingsInputs from "./TableSettingsInputs";
 import { DeepPartial } from "@/utils/types";
-import TableSettingsPreview from "./TableSettingsPreview";
-import Switch from "@/components/core/Switch";
+import { SettingsContext } from "@/components/spaces/settings/SettingsSpace";
+import Dropdown from "@/components/core/Dropdown";
+import ButtonGroup from "@/components/core/ButtonGroup";
+import SettingsPage, { Settings, Setting, SubSettings } from "@/components/spaces/settings/SettingsPage";
+import TableSettingsInputs from "@/components/spaces/settings/TableSettingsInputs";
+import TableSettingsPreview from "@/components/spaces/settings/TableSettingsPreview";
 
 export default function SettingsPageHistory() {
   const { userSettings, updateUserSettings } = useContext(SettingsContext);
@@ -37,31 +37,33 @@ export default function SettingsPageHistory() {
           </Dropdown>
         </Setting>
         <Setting
-          title="Use default tables settings"
-          description="Use the default tables settings for all tables displaying a preview in the history."
+          title="Preview tables settings"
+          description="Use the default or customize the tables settings for all tables displaying a preview in the history."
         >
-          <Switch
-            size="md"
-            defaultChecked={userSettings.historySettings.useDefaultTableSettings}
-            onChange={(e) => {
-              updateUserSettings({ historySettings: { useDefaultTableSettings: e.target.checked } });
+          <ButtonGroup
+            defaultValue={userSettings.historySettings.useDefaultTableSettings ? "default" : "custom"}
+            onChange={(name) => {
+              updateUserSettings({ historySettings: { useDefaultTableSettings: name === "default" } });
             }}
-          />
+          >
+            <ButtonGroup.Option name="default" label="Default" />
+            <ButtonGroup.Option name="custom" label="Customize" />
+          </ButtonGroup>
         </Setting>
         {!userSettings.historySettings.useDefaultTableSettings && (
-          <TableSettingsInputs
-            tableSettings={userSettings.historySettings.tableSettings}
-            onSettingsChanged={handleSettingsChanged}
-            mode="history"
-          />
+          <SubSettings>
+            <TableSettingsInputs
+              tableSettings={userSettings.historySettings.tableSettings}
+              onSettingsChanged={handleSettingsChanged}
+              mode="history"
+            />
+            <TableSettingsPreview
+              tableSettings={userSettings.historySettings.tableSettings}
+              maxRows={userSettings.historySettings.maxRows}
+            />
+          </SubSettings>
         )}
       </Settings>
-      {!userSettings.historySettings.useDefaultTableSettings && (
-        <TableSettingsPreview
-          tableSettings={userSettings.historySettings.tableSettings}
-          maxRows={userSettings.historySettings.maxRows}
-        />
-      )}
     </SettingsPage>
   );
 }
