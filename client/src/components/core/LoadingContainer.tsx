@@ -45,6 +45,11 @@ type LoadingContainerProps = {
    * The size of container.
    */
   size?: "sm" | "md" | "lg" | "xl";
+
+  /**
+   * The content to be displayed if the status is "success".
+   */
+  children?: React.ReactNode;
 };
 
 /**
@@ -60,6 +65,7 @@ export default function LoadingContainer({
   error,
   errorFallback,
   onRetry,
+  children,
   size = "xl",
 }: LoadingContainerProps) {
   // Show the message after 1 second
@@ -89,10 +95,19 @@ export default function LoadingContainer({
       status !== "error" && "hidden",
       status === "error" ? "transition-opacity duration-1000 opacity-100" : "opacity-0",
     ),
+    icon: cx(
+      "opacity-20",
+      size === "sm" && "w-8 h-8",
+      size === "md" && "w-12 h-12",
+      size === "lg" && "w-16 h-16",
+      size === "xl" && "w-32 h-32",
+    ),
   };
 
-  if (status === "pending" || status === "success") {
+  if (status === "pending") {
     return null;
+  } else if (status === "success") {
+    return <>{children}</>;
   } else {
     return (
       <div className={classes.self}>
@@ -107,7 +122,7 @@ export default function LoadingContainer({
           </div>
         )}
         <div className={classes.error}>
-          <CrashedImage className="w-40 h-40 opacity-20" />
+          <CrashedImage className={classes.icon} />
           <div className="flex flex-col font-semibold w-full items-center space-y-3">
             <UserErrorMessage error={error} fallback={errorFallback} />
             <Button onClick={onRetry} variant="outline" text="Retry" className="flex px-8 justify-center" />

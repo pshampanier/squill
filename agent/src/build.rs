@@ -60,6 +60,7 @@ fn main() {
     rust_codegen!("resources");
     rust_codegen!("collections");
     rust_codegen!("user_settings");
+    rust_codegen!("storages");
     typescript_codegen!("queries");
     typescript_codegen!("auth");
     typescript_codegen!("push-notifications");
@@ -68,4 +69,5 @@ fn main() {
     typescript_codegen!("collections");
     typescript_codegen!("resources");
     typescript_codegen!("user-settings");
+    typescript_codegen!("storages");
 }

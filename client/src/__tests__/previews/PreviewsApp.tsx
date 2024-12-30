@@ -37,6 +37,7 @@ import SidePanelPreview from "./core/SidePanel.preview";
 import QueryHistoryPreview from "./query/QueryHistoryPreview";
 import ToolbarPreview from "./core/Toolbar.preview";
 import cx from "classix";
+import StackedBarChartPreview from "./core/StackedBarChart.preview";
 
 export function PreviewsApp() {
   const colorScheme = usePreviewsStore((state) => state.colorScheme);
@@ -71,6 +72,7 @@ export function PreviewsApp() {
           <PreviewSidebarItem view="Toolbar" />
           <PreviewSidebarItem view="TreeView" />
           <PreviewSidebarItem view="Notification" />
+          <PreviewSidebarItem view="StackedBarChart" />
           <PreviewSidebarItem view="Switch" />
         </SidebarSection>
         <SidebarSection label="layouts">
@@ -124,6 +126,7 @@ export function PreviewsApp() {
           {view === "TreeView" && <TreeViewPreview />}
           {view === "Notification" && <NotificationPreview />}
           {view === "Tooltip" && <TooltipPreview />}
+          {view === "StackedBarChart" && <StackedBarChartPreview />}
         </div>
       </div>
     </>

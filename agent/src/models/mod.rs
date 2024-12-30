@@ -8,6 +8,7 @@ pub mod errors;
 pub mod push_notifications;
 pub mod queries;
 pub mod resources;
+pub mod storages;
 pub mod user_settings;
 pub mod users;
 pub mod variables;

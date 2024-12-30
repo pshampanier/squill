@@ -1,3 +1,4 @@
+use crate::models::storages::ConnectionStorage;
 use crate::models::user_settings::{
     ColorScheme, HistorySettings, MonacoEditorCursorStyle, MonacoEditorMatchBrackets, MonacoEditorMinimap,
     MonacoEditorSettings, MonacoEditorWhitespace, NullValues, RegionalSettings, TableDensity, TableDividers,
@@ -240,6 +241,31 @@ pub async fn get_by_user_id(conn: &mut Connection, user_id: Uuid) -> Result<User
         Some(user) => Ok(user),
         None => Err(err_not_found!("The user with id '{}' does not exist.", user_id)),
     }
+}
+
+pub async fn get_user_connections_storage(conn: &mut Connection, user_id: Uuid) -> Result<Vec<ConnectionStorage>> {
+    conn.query_map_rows(
+        r#"
+            WITH usage AS (
+                    SELECT connection_id, user_id, SUM(storage_bytes) AS used_bytes 
+                      FROM query_history
+                     WHERE user_id = ?
+                     GROUP BY connection_id, user_id
+                )
+                SELECT C0.catalog_id AS connection_id, C0.name, U0.used_bytes
+                  FROM catalog C0 
+                  JOIN usage U0 ON (C0.catalog_id = U0.connection_id AND C0.owner_user_id = U0.user_id)"#,
+        params!(user_id),
+        |row| {
+            Ok(ConnectionStorage {
+                connection_id: row.try_get("connection_id")?,
+                name: row.try_get("name")?,
+                used_bytes: row.try_get::<_, i64>("used_bytes")? as u64,
+            })
+        },
+    )
+    .await
+    .map_err(|e| e.into())
 }
 
 /// Save the user settings.

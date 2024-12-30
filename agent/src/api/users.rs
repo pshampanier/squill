@@ -5,6 +5,7 @@ use crate::err_forbidden;
 use crate::err_param;
 use crate::models;
 use crate::models::resources::ResourceRef;
+use crate::models::storages::UserStorage;
 use crate::models::user_settings::UserSettings;
 use crate::models::users::User;
 use crate::models::ResourceType;
@@ -30,7 +31,7 @@ use uuid::Uuid;
 
 /// GET /users/:username/user
 ///
-/// Get the user data for the specified user, including:
+/// Get the user data for the specified user.
 async fn get_user(
     State(state): State<ServerState>,
     context: RequestContext,
@@ -46,6 +47,23 @@ async fn get_user(
         Ok(user) => Ok(Json(user)),
         Err(_) => Err(Error::InternalServerError),
     }
+}
+
+/// GET /users/:username/storage
+///
+/// Get the storage usage of the given user.
+async fn get_user_storage(
+    State(state): State<ServerState>,
+    context: RequestContext,
+    Path(username): Path<String>,
+) -> ServerResult<Json<UserStorage>> {
+    // First we need to sanitize the username to make sure it will not pose security threats sur as directory traversal.
+    let user_session = context.get_user_session_with_username(&username)?;
+    let mut conn = state.get_agentdb_connection().await?;
+
+    let user_id = user_session.get_user_id();
+    let connections = users::get_user_connections_storage(&mut conn, user_id).await?;
+    Ok(Json(UserStorage { user_id, username, connections }))
 }
 
 /// GET /users/:username/catalog/:catalog_id/list
@@ -205,6 +223,7 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/users/:username/catalog/:catalog_id/rename", post(rename_user_catalog_resource))
         .route("/users/:username/catalog", post(create_user_catalog_resource))
         .route("/users/:username/settings", put(save_user_settings))
+        .route("/users/:username/storage", get(get_user_storage))
         .route("/users/:username/user", get(get_user))
         .with_state(state)
 }

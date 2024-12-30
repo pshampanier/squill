@@ -6,7 +6,7 @@ import { ApplicationSpace } from "@/utils/types";
 /**
  * A name of a pages/sections in the settings.
  */
-export type SettingsPageName = "general" | "table" | "history" | "terminal";
+export type SettingsPageName = "general" | "table" | "history" | "terminal" | "connections" | "storage";
 
 export type Page = {
   id: string;

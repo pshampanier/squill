@@ -18,7 +18,7 @@ tracing = "0.1.40"
 toml = "0.8.8"
 lazy_static = "1.4.0"
 tempfile = "3.9.0"
-reqwest = "0.12.5"
+reqwest = "0.12.11"
 futures = "0.3.30"
 
 [profile.release]

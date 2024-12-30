@@ -1,5 +1,6 @@
 import { Authentication } from "@/models/auth";
 import { ResourceType, ResourceRef } from "@/models/resources";
+import { UserStorage } from "@/models/storages";
 import { UserSettings } from "@/models/user-settings";
 import { User } from "@/models/users";
 import { agent } from "@/resources/agent";
@@ -68,9 +69,15 @@ export const Users = {
   // If the settings are successfully saved, the new settings are applied to the current user and then returned.
   // This method will throw an error if no user is logged in.
   async saveSettings(settings: UserSettings): Promise<UserSettings> {
+    const encodedUsername = encodeURIComponent(this.current.username);
     this.current.settings = (
-      await agent().put<UserSettings, UserSettings>(`/users/${this.current.username}/settings`, settings)
+      await agent().put<UserSettings, UserSettings>(`/users/${encodedUsername}/settings`, settings)
     ).as(UserSettings);
     return this.current.settings;
+  },
+
+  async getStorageUsage(): Promise<UserStorage> {
+    const encodedUsername = encodeURIComponent(this.current.username);
+    return (await agent().get<UserStorage>(`/users/${encodedUsername}/storage`)).as(UserStorage);
   },
 };

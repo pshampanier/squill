@@ -1,0 +1,9 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
+
+{{ struct("ConnectionStorage") }}
+{{ struct("UserStorage") }}

@@ -491,6 +491,27 @@ paths:
         "401":
           description: Unauthorized
 
+  /users/{username}/storage:
+    get:
+      summary: Get the storage usage of the user.
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Username"
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserStorage"
+        "401":
+          description: Unauthorized
+
   /users/{username}/user:
     get:
       parameters:
@@ -1546,6 +1567,48 @@ components:
         locale:
           description: The locale of the application.
           type: string
+
+    ConnectionStorage:
+      description: The storage usage of a connection.
+      type: object
+      required:
+        - connection_id
+        - name
+        - used_bytes
+      properties:
+        connection_id:
+          description: The unique identifier of the connection.
+          type: string
+          format: uuid
+        name:
+          description: The name of the connection.
+          type: string
+        used_bytes:
+          description: The used storage in bytes.
+          type: integer
+          format: int64
+          minimum: 0
+
+    UserStorage:
+      description: The storage usage of a user.
+      type: object
+      required:
+        - user_id
+        - username
+        - connections
+      properties:
+        user_id:
+          description: The unique identifier of the user.
+          type: string
+          format: uuid
+        username:
+          description: The username of the user.
+          type: string
+        connections:
+          description: The storage usage of the connections owned by the user.
+          type: array
+          items:
+            $ref: "#/components/schemas/ConnectionStorage"
 
     UserSettings:
       description: The settings of a user.

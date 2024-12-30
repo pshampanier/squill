@@ -17,10 +17,12 @@ import Main from "@/components/Main";
 import Toolbar from "@/components/core/Toolbar";
 import HistoryIcon from "@/icons/history.svg?react";
 import TerminalIcon from "@/icons/terminal.svg?react";
+import ConnectionsIcon from "@/icons/plug.svg?react";
 import Button from "@/components/core/Button";
 import CommandButton from "@/components/core/CommandButton";
 import SettingsIcon from "@/icons/settings.svg?react";
 import TableIcon from "@/icons/table.svg?react";
+import StorageIcon from "@/icons/storage.svg?react";
 import PrimarySidebar from "@/components/layout/PrimarySidebar";
 import TreeView from "@/components/core/TreeView";
 import UserNotificationIconButton from "@/components/user-store/UserNotificationIconButton";
@@ -28,6 +30,7 @@ import SettingsPageGeneral from "@/components/spaces/settings/SettingsPageGenera
 import SettingsPageHistory from "@/components/spaces/settings/SettingsPageHistory";
 import SettingsPageTerminal from "@/components/spaces/settings/SettingsPageTerminal";
 import SettingsPageTables from "@/components/spaces/settings/SettingsPageTable";
+import SettingsPageStorage from "@/components/spaces/settings/SettingsPageStorage";
 
 type UserSettingsContext = {
   userSettings: Readonly<UserSettings>;
@@ -40,6 +43,7 @@ type SettingsPage = {
   name: SettingsPageName;
   label: string;
   icon: SVGIcon;
+  collapsible?: boolean;
 };
 
 export default function SettingsSpace() {
@@ -54,7 +58,11 @@ export default function SettingsSpace() {
   const addNotification = useUserStore((state) => state.addNotification);
 
   const handleSelectPage = (page: SettingsPageName) => {
-    selectPage(page);
+    if (page === "connections") {
+      // TODO: Implement connections settings page.
+    } else {
+      selectPage(page);
+    }
     return true;
   };
 
@@ -105,6 +113,8 @@ export default function SettingsSpace() {
     { label: "Tables", icon: TableIcon, name: "table" },
     { label: "Terminal", icon: TerminalIcon, name: "terminal" },
     { label: "History", icon: HistoryIcon, name: "history" },
+    { label: "Connections", icon: ConnectionsIcon, name: "connections", collapsible: true },
+    { label: "Storage", icon: StorageIcon, name: "storage" },
   ];
 
   return (
@@ -131,6 +141,7 @@ export default function SettingsSpace() {
                     icon={page.icon}
                     onClick={() => handleSelectPage(page.name)}
                     selected={selectedPage === page.name}
+                    collapsible={page.collapsible}
                   />
                 );
               })}
@@ -144,6 +155,7 @@ export default function SettingsSpace() {
                   {selectedPage === "table" && <SettingsPageTables />}
                   {selectedPage === "history" && <SettingsPageHistory />}
                   {selectedPage === "terminal" && <SettingsPageTerminal />}
+                  {selectedPage === "storage" && <SettingsPageStorage />}
                 </div>
                 <div className={cx("flex flex-row justify-end space-x-1 border-t pt-4", colors("border"))}>
                   <CommandButton text="Cancel" variant="outline" command="close" icon={NO_ICON} />
