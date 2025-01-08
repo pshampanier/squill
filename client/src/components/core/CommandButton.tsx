@@ -6,6 +6,13 @@ import { SVGIcon } from "@/utils/types";
 type CommandButtonProps = {
   command: string;
   text?: string;
+
+  /**
+   * The icon to display on the button.
+   *
+   * If not provided, the icon from the command will be used, if available.
+   * To prevent using the command icon, use the constant `NO_ICON`.
+   */
   icon?: SVGIcon;
   tooltip?: string;
   colors?: ColorsFunction;

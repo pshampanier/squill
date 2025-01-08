@@ -100,22 +100,55 @@ impl Default for User {
     }
 }
 
+impl User {
+    /// Return the username after checking it pass the sanitization.
+    pub fn safe_username(&self) -> Result<Username> {
+        sanitize_username(self.username.as_str())
+    }
+}
+
 /// The special username used for a user running the agent locally.
 ///
 /// This user is automatically created when the agent is started for the first time and don't require authentication by
 /// default.
-///
-/// Most function calls that require a username would expect a [Username] value which is a sanitized variant. You can
-/// use [users::local_username] to get the sanitized variant of this username.
-const USERNAME_LOCAL: &str = "local";
-
-/// Get the username used for the 'local' user.
 pub fn local_username() -> &'static Username {
     lazy_static! {
         // We can safely unwrap here because the username is hardcoded and should always be valid.
-        static ref LOCAL: Username = sanitize_username(USERNAME_LOCAL).unwrap();
+        static ref LOCAL: Username = sanitize_username("local").unwrap();
     }
     &LOCAL
+}
+
+/// The special username used for unauthenticated access.
+pub fn anonymous_username() -> &'static Username {
+    lazy_static! {
+        // We can safely unwrap here because the username is hardcoded and should always be valid.
+        static ref ANONYMOUS: Username = sanitize_username("anonymous").unwrap();
+    }
+    &ANONYMOUS
+}
+
+/// Get the path to the history directory of a user.
+///
+/// ```text
+/// users
+/// └── :username
+///     └── history
+/// ```
+pub fn history_dir(username: &Username) -> std::path::PathBuf {
+    settings::get_user_dir(username).join(USER_HISTORY_DIRNAME)
+}
+
+/// Get the path to the history directory of a user's resource.
+///
+/// ```text
+/// users
+/// └── :username
+///     └── history
+///         └── :resource_id
+/// ```
+pub fn resource_history_dir(username: &Username, resource_id: Uuid) -> std::path::PathBuf {
+    history_dir(username).join(resource_id.to_string())
 }
 
 /// Create a new user.
@@ -125,10 +158,10 @@ pub fn local_username() -> &'static Username {
 /// users
 /// └── :username
 ///     └── history
+/// ```
 ///
 /// ## Security
 /// The username is sanitized to make sure it will not pose security threats such as directory traversal.
-/// ```
 pub async fn create(conn: &mut Connection, username: &Username) -> Result<User> {
     // First we need to sanitize the username to make sure it will not pose security threats sur as directory traversal.
     let user_dir = settings::get_user_dir(username.as_str());
@@ -151,7 +184,7 @@ pub async fn create(conn: &mut Connection, username: &Username) -> Result<User> 
     // users
     // └── :username
     //     └── history
-    std::fs::create_dir(user_dir.join(USER_HISTORY_DIRNAME))?;
+    std::fs::create_dir(history_dir(username))?;
 
     // 2. Create the user in the agent database.
     let user = User { username: username.to_string(), ..User::default() };

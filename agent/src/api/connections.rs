@@ -4,9 +4,9 @@ use crate::models;
 use crate::models::connections::Datasource;
 use crate::models::connections::RunRequest;
 use crate::models::queries::QueryHistoryPage;
+use crate::models::scheduled_tasks::ScheduledTaskName;
 use crate::resources;
 use crate::resources::catalog;
-use crate::resources::queries;
 use crate::server::contexts::RequestContext;
 use crate::server::state::ServerState;
 use crate::settings;
@@ -53,7 +53,36 @@ async fn get_connection(
     Ok(Json(connection))
 }
 
-async fn run_buffer(
+/// DELETE /connections/:id
+///
+/// Delete a connection from its identifier.
+async fn delete_connection(
+    state: State<ServerState>,
+    context: ServerResult<RequestContext>,
+    Path(id): Path<Uuid>,
+) -> ServerResult<()> {
+    let user_session = context?.get_user_session()?;
+
+    // We want to limit the scope of `conn` to the block where it is used...
+    {
+        let mut conn = state.get_agentdb_connection().await?;
+        let connection = catalog::get::<models::Connection>(&mut conn, id).await?;
+        if connection.owner_user_id != user_session.get_user_id() {
+            return Err(err_forbidden!("You are not allowed to access this connection."));
+        }
+        // Flag the connection and running queries for deletion.
+        connection.delete(&mut conn).await
+    }?;
+
+    // Schedule the vacuum task to run immediately
+    state.push_scheduled_task(ScheduledTaskName::Vacuum, Uuid::nil(), None).await?;
+    Ok(())
+}
+
+/// POST /connections/:id/queries/run
+///
+/// Run the queries provided in the request body.
+async fn run_queries(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
@@ -83,9 +112,11 @@ async fn run_buffer(
                 &request_body.datasource,
                 &request_body.origin,
                 user_session.get_user_id(),
-                &statement.sql().to_string(),
-                hasher.finish(),
-                statement.is_query(),
+                models::queries::Query {
+                    text: statement.sql().to_string(),
+                    hash: hasher.finish(),
+                    with_result_set: statement.is_query(),
+                },
             )
             .await?,
         );
@@ -172,38 +203,38 @@ async fn list_datasources(
 }
 
 #[derive(Deserialize)]
-struct ListQueriesHistoryParams {
+struct ListHistoryParameters {
     origin: String,
     datasource: String,
-    offset: Option<usize>,
+    offset: Option<String>,
 }
 
 /// GET /connections/{id}/history:
 ///
 /// List the history of queries executed on a connection.
 /// TODO: Implement pagination.
-async fn list_queries_history(
+async fn list_history(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
     Path(id): Path<Uuid>,
-    Query(params): Query<ListQueriesHistoryParams>,
+    Query(params): Query<ListHistoryParameters>,
 ) -> ServerResult<Json<QueryHistoryPage>> {
     let user_session = context?.get_user_session()?;
     let origin = params.origin;
     let datasource = params.datasource;
     let mut conn = state.get_agentdb_connection().await?;
     let limit = settings::get_max_query_history_fetch_size();
-    let queries = queries::list_history(
+    let (queries, next_page) = resources::queries::list_history(
         &mut conn,
         id,
         user_session.get_user_id(),
         origin,
         datasource,
-        params.offset.unwrap_or(0),
+        params.offset,
         limit,
     )
     .await?;
-    Ok(Json(QueryHistoryPage { queries, next_page: String::new() }))
+    Ok(Json(QueryHistoryPage { queries, next_page: next_page.unwrap_or_default() }))
 }
 
 #[derive(Deserialize)]
@@ -212,19 +243,19 @@ struct QueryHistoryDataParams {
     limit: Option<usize>,
 }
 
-/// GET /connections/{id}/history/{query_id}/data?offset=0&limit=1000
+/// GET /connections/{id}/queries/{query_id}/data?offset=0&limit=1000
 ///
-/// Get a connection from its identifier.
-async fn get_query_history_data(
+/// Get the data of the query execution.
+async fn get_query_data(
     state: State<ServerState>,
-    Path((id, query_history_id)): Path<(Uuid, Uuid)>,
+    Path((id, query_id)): Path<(Uuid, Uuid)>,
     Query(params): Query<QueryHistoryDataParams>,
 ) -> ServerResult<Response> {
     let mut conn = state.get_agentdb_connection().await?;
-    let record_batches = queries::read_history_data(
+    let record_batches = resources::queries::read_data(
         &mut conn,
         id,
-        query_history_id,
+        query_id,
         params.offset.unwrap_or(0),
         params.limit.unwrap_or(1000),
     )
@@ -241,6 +272,7 @@ async fn get_query_history_data(
     response.map_err(|e| e.into())
 }
 
+/// IPC serialization helper function
 fn ipc_serialize(record_batches: Vec<RecordBatch>) -> anyhow::Result<Vec<u8>> {
     let mut buffer = Cursor::new(Vec::new());
     if !record_batches.is_empty() {
@@ -254,13 +286,13 @@ fn ipc_serialize(record_batches: Vec<RecordBatch>) -> anyhow::Result<Vec<u8>> {
     Ok(buffer.into_inner())
 }
 
-/// DELETE /connections/{id}/history/{query_id}
+/// DELETE /connections/{id}/queries/{query_id}
 ///
-/// Remove a query from the history.
-async fn delete_query_from_history(
+/// Delete a query execution.
+async fn delete_query(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
-    Path((id, query_history_id)): Path<(Uuid, Uuid)>,
+    Path((id, query_id)): Path<(Uuid, Uuid)>,
 ) -> ServerResult<()> {
     let user_session = context?.get_user_session()?;
     let mut conn = state.get_agentdb_connection().await?;
@@ -270,17 +302,17 @@ async fn delete_query_from_history(
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
 
-    queries::delete_from_history(&mut conn, id, query_history_id).await?;
+    resources::queries::delete(&mut conn, id, query_id).await?;
     Ok(())
 }
 
-/// GET /connections/{id}/history/{query_id}
+/// GET /connections/{id}/queries/{query_id}
 ///
-/// Load a query from the history.
-async fn get_query_from_history(
+/// Load the query (only the query definition without the data).
+async fn get_query(
     state: State<ServerState>,
     context: ServerResult<RequestContext>,
-    Path((id, query_history_id)): Path<(Uuid, Uuid)>,
+    Path((id, query_id)): Path<(Uuid, Uuid)>,
 ) -> ServerResult<Json<models::QueryExecution>> {
     let user_session = context?.get_user_session()?;
     let mut conn = state.get_agentdb_connection().await?;
@@ -290,7 +322,7 @@ async fn get_query_from_history(
         return Err(err_forbidden!("You are not allowed to access this connection."));
     }
 
-    match queries::get(&mut conn, id, query_history_id).await? {
+    match resources::queries::get(&mut conn, id, query_id).await? {
         Some(query) => Ok(Json(query)),
         None => Err(UserError::NotFound("Query not found".to_string()).into()),
     }
@@ -301,11 +333,12 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/connections/defaults", get(get_connection_defaults))
         .route("/connections/validate", post(validate_connection))
         .route("/connections/:id", get(get_connection))
+        .route("/connections/:id", delete(delete_connection))
         .route("/connections/:id/datasources", get(list_datasources))
-        .route("/connections/:id/run", post(run_buffer))
-        .route("/connections/:id/history", get(list_queries_history))
-        .route("/connections/:id/history/:query_history_id", get(get_query_from_history))
-        .route("/connections/:id/history/:query_history_id", delete(delete_query_from_history))
-        .route("/connections/:id/history/:query_history_id/data", get(get_query_history_data))
+        .route("/connections/:id/history", get(list_history))
+        .route("/connections/:id/queries/run", post(run_queries))
+        .route("/connections/:id/queries/:query_id", get(get_query))
+        .route("/connections/:id/queries/:query_id", delete(delete_query))
+        .route("/connections/:id/queries/:query_id/data", get(get_query_data))
         .with_state(state)
 }

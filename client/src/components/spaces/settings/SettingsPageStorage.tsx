@@ -67,8 +67,8 @@ export default function SettingsPageStorage() {
           <div className="flex flex-row items-center justify-center">
             <StackedBarChart data={connectionsUsageData || []} />
           </div>
-          <div className="text-xs">This is the storage usage for keeping data available in the history.</div>
         </div>
+        <div className="text-xs">This is the storage usage for keeping data available in the history.</div>
       </LoadingContainer>
     </SettingsPage>
   );

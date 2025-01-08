@@ -1,9 +1,9 @@
-import { ResourceRef } from "@/models/resources";
+import { ResourceRef, ResourceType } from "@/models/resources";
 import { SVGIcon } from "@/utils/types";
 import { Users } from "@/resources/users";
 import { Connections } from "@/resources/connections";
 import { ApplicationSpace } from "@/utils/types";
-import { BLANK_PAGE_ITEM_ID, NOT_FOUND_ITEM_ID } from "@/utils/constants";
+import { BLANK_PAGE_ITEM_ID, METADATA_RESOURCES_TYPE, NOT_FOUND_ITEM_ID } from "@/utils/constants";
 import { Connection } from "@/models/connections";
 import { Environment } from "@/models/environments";
 import ConnectionEditor from "@/components/editors/ConnectionEditor";
@@ -138,6 +138,17 @@ const Catalog: ResourceHandler = {
     switch (ref.type) {
       case "connection": {
         return PlugIcon;
+      }
+      case "collection": {
+        const resourcesType = ref.metadata[METADATA_RESOURCES_TYPE];
+        switch (resourcesType as ResourceType) {
+          case "connection": {
+            return PlugIcon;
+          }
+          default: {
+            throw new Error("ResourceHandler.icon: Not implemented for resources type " + resourcesType);
+          }
+        }
       }
       default: {
         throw new Error("ResourceHandler.icon: Not implemented for type " + ref.type);

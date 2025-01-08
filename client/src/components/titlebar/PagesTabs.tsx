@@ -4,7 +4,7 @@ import { useUserStore } from "@/stores/UserStore";
 import { useAppStore } from "@/stores/AppStore";
 import PlusIcon from "@/icons/plus.svg?react";
 import CloseIcon from "@/icons/close.svg?react";
-import CloseCircleIcon from "@/icons/close-circle.svg?react";
+import CloseCircleIcon from "@/icons/solid/close-circle.svg?react";
 import { useCallback, useEffect, useRef } from "react";
 import { BLANK_PAGE_ITEM_ID } from "@/utils/constants";
 

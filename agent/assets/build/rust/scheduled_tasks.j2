@@ -1,0 +1,25 @@
+{% from "rust/macros" import enum, struct %}
+/*********************************************************************
+ * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
+ *********************************************************************/
+use serde::{Deserialize, Serialize};
+use squill_drivers::serde::Decode;
+use futures::future::BoxFuture;
+use crate::Result;
+
+/// A function that can execute a scheduled task.
+///
+/// # Parameters
+/// - `scheduled_task`: The task to execute.
+///
+/// # Returns
+/// A future that resolves to the updated task.
+/// The returned task must have its status set to either: 
+/// - [ScheduledTaskStatus::Completed]: The task is completed successfully and should not be rescheduled.
+/// - [ScheduledTaskStatus::Failed]: The task failed and should be retried according to the task's retry policy.
+/// - [ScheduledTaskStatus::Pending]: The task is completed successfully and should be rescheduled according to [ScheduledTask::scheduled_for].
+pub type ScheduledTaskExecutor = Box<dyn Fn(ScheduledTask) -> BoxFuture<'static, Result<ScheduledTask>> + Send + Sync>;
+
+{{ enum("ScheduledTaskName") }}
+{{ enum("ScheduledTaskStatus") }}
+{{ struct("ScheduledTask") }}

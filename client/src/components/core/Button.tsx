@@ -4,7 +4,7 @@ import { SVGIcon } from "@/utils/types";
 import { twMerge as tw } from "tailwind-merge";
 import { SyntheticEvent, useContext } from "react";
 
-export type ButtonVariant = "solid" | "outline" | "ghost";
+export type ButtonVariant = "solid" | "outline" | "ghost" | "danger";
 export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 type ButtonProps = {
@@ -41,7 +41,17 @@ export default function Button({
     "flex flex-row items-center rounded box-border border-2 text-sm select-none ripple",
     colors("text"),
     (variant === "solid" || variant === "ghost") && "border-transparent",
-    variant === "solid" && colors("selected:background", "selected:text", "hover:background", "hover:text"),
+    variant === "solid" && colors("solid:background", "solid:text", "hover:background", "hover:text"),
+    variant === "danger" &&
+      colors(
+        "danger-background",
+        "danger-border",
+        "solid:text",
+        "hover:background",
+        "hover:text",
+        "hover:danger-background",
+        "hover:danger-border",
+      ),
     variant === "outline" && "",
     variant === "outline" && colors("border", "hover:border"),
     variant === "ghost" && colors("hover:ghost-background", "hover:ghost-text"),

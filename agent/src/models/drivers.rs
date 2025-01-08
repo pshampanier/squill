@@ -43,6 +43,54 @@ pub enum DriverCapabilities {
     SingleDatasource,
 }
 
+/// Convert DriverCapabilities to a `&str`.
+impl AsRef<str> for DriverCapabilities {
+    fn as_ref(&self) -> &str {
+        match self {
+            DriverCapabilities::Sql => "sql",
+            DriverCapabilities::AuthUserPassword => "auth_user_password",
+            DriverCapabilities::AuthPassword => "auth_password",
+            DriverCapabilities::ConnectString => "connect_string",
+            DriverCapabilities::ConnectHost => "connect_host",
+            DriverCapabilities::ConnectSocket => "connect_socket",
+            DriverCapabilities::ConnectFile => "connect_file",
+            DriverCapabilities::ConnectUri => "connect_uri",
+            DriverCapabilities::ReadOnly => "read_only",
+            DriverCapabilities::ConnectSsl => "connect_ssl",
+            DriverCapabilities::SingleDatasource => "single_datasource",
+        }
+    }
+}
+
+/// Convert DriverCapabilities to a string.
+impl std::fmt::Display for DriverCapabilities {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a DriverCapabilities.
+impl TryFrom<&str> for DriverCapabilities {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "sql" => Ok(DriverCapabilities::Sql),
+            "auth_user_password" => Ok(DriverCapabilities::AuthUserPassword),
+            "auth_password" => Ok(DriverCapabilities::AuthPassword),
+            "connect_string" => Ok(DriverCapabilities::ConnectString),
+            "connect_host" => Ok(DriverCapabilities::ConnectHost),
+            "connect_socket" => Ok(DriverCapabilities::ConnectSocket),
+            "connect_file" => Ok(DriverCapabilities::ConnectFile),
+            "connect_uri" => Ok(DriverCapabilities::ConnectUri),
+            "read_only" => Ok(DriverCapabilities::ReadOnly),
+            "connect_ssl" => Ok(DriverCapabilities::ConnectSsl),
+            "single_datasource" => Ok(DriverCapabilities::SingleDatasource),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
+}
+
 /// A driver that can be used to connect to a datasource.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Driver {

@@ -1,7 +1,7 @@
 use crate::api::error::{Error, ServerResult};
 use crate::server::user_sessions::UserSession;
-use crate::utils::{constants::USERNAME_ANONYMOUS, validators::sanitize_username};
-use crate::Result;
+use crate::utils::validators::{sanitize_username, Username};
+use crate::{resources, Result};
 use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use std::sync::Arc;
 
@@ -27,10 +27,10 @@ impl RequestContext {
     }
 
     /// Get the user session.
-    pub fn get_username(&self) -> &str {
+    pub fn get_username(&self) -> &Username {
         match self.user_session.as_ref() {
             Some(user_session) => user_session.get_username(),
-            None => USERNAME_ANONYMOUS,
+            None => resources::users::anonymous_username(),
         }
     }
 

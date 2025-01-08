@@ -20,14 +20,6 @@ registerCommand(
     shortcut: "Ctrl+L",
   },
   {
-    name: "terminal.history.clear",
-    description: "Clear History",
-    shortcut: [
-      ["Meta+K", "Ctrl+K"], // Desktop
-      ["Alt+Meta+K", "Alt+Ctrl+K"], // Web
-    ],
-  },
-  {
     name: "terminal.history.search",
     description: "Search History",
     shortcut: "Ctrl+R",
@@ -93,9 +85,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
     (event: CommandEvent, query?: QueryExecution) => {
       switch (event.detail.name) {
         case "terminal.clear":
-          // TODO: Implement clear
-          break;
-        case "terminal.history.clear":
+          // Clears the terminal, removing all previous output.
           refHistoryDispatcher.current?.({ type: "set" });
           break;
         case "terminal.history.search":
@@ -244,7 +234,6 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
         <AutoHide className={classes.help} onClick={() => editorRef.current?.focus()}>
           <CommandLinkList className="p-6">
             <CommandLinkList.Link command="terminal.clear" />
-            <CommandLinkList.Link command="terminal.history.clear" />
             <CommandLinkList.Link command="terminal.history.search" />
           </CommandLinkList>
         </AutoHide>

@@ -28,8 +28,8 @@ pub struct UserSession {
 
 impl UserSession {
     /// Get the username.
-    pub fn get_username(&self) -> &str {
-        self.username.as_str()
+    pub fn get_username(&self) -> &Username {
+        &self.username
     }
 
     /// Get the user id.

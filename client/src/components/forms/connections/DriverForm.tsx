@@ -2,7 +2,8 @@ import { primary as colors } from "@/utils/colors";
 import { Driver } from "@/models/drivers";
 import Radio from "@/components/core/Radio";
 import cx from "classix";
-import React, { forwardRef } from "react";
+import React, { useContext, useEffect, useRef } from "react";
+import { FormContext } from "@/stores/FormContext";
 
 type DriverFormProps = {
   name?: string;
@@ -15,8 +16,21 @@ type DriverFormProps = {
 /**
  * A form to select a driver from a list of drivers.
  */
-const DriverForm = forwardRef<HTMLFormElement, DriverFormProps>((props, ref) => {
-  const { name, className, value, onChange, drivers } = props;
+export default function DriverForm({ name, className, value, onChange, drivers }: DriverFormProps) {
+  //
+  // Form validation
+  //
+  const ref = useRef<HTMLFormElement>(null);
+  const { registerCheckValidity, unregisterCheckValidity } = useContext(FormContext);
+  useEffect(() => {
+    const handleValidation = async () => {
+      return ref.current?.checkValidity() ?? true;
+    };
+    registerCheckValidity(handleValidation, name);
+    return () => {
+      unregisterCheckValidity(handleValidation);
+    };
+  }, []);
 
   const classes = cx(
     "font-medium select-none w-full",
@@ -46,7 +60,7 @@ const DriverForm = forwardRef<HTMLFormElement, DriverFormProps>((props, ref) => 
       </div>
     </form>
   );
-});
+}
 
 type DriverRadioProps = {
   driver: Driver;
@@ -83,6 +97,3 @@ function DriverRadio({ driver, onChange, defaultChecked }: DriverRadioProps) {
     </div>
   );
 }
-
-DriverForm.displayName = "DriverSelectionForm";
-export default DriverForm;

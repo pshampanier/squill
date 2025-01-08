@@ -171,7 +171,7 @@ const ConnectionEditor: React.FunctionComponent<{ pageId: string }> = ({ pageId 
         </div>
       )}
       {taskStatus === "running" && (
-        <Overlay delay={1000} position="absolute">
+        <Overlay delay={500} position="absolute">
           <Spinner size="lg" />
           <p className="text-xs font-semibold">{message?.toString()}</p>
         </Overlay>

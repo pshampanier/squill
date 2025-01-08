@@ -1,9 +1,10 @@
 import cx from "classix";
 import { Connection } from "@/models/connections";
 import { Driver } from "@/models/drivers";
-import { forwardRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
+import { FormContext } from "@/stores/FormContext";
 
 type ParamFormProps = {
   name?: string;
@@ -16,21 +17,36 @@ type ParamFormProps = {
 /**
  * A form to edit the xxx of a connection.
  */
-const ParamForm = forwardRef<HTMLFormElement, ParamFormProps>((props, ref) => {
-  const { name, className, onChange, driver, connection } = props;
+export default function ParamForm({ name, className, onChange, driver, connection }: ParamFormProps) {
   if (!driver) return null;
 
-  const classes = cx("mx-1 w-full flex flex-col divide space-y-4", colors("divide"), className);
+  const ref = useRef<HTMLFormElement>(null);
+  const { registerCheckValidity, unregisterCheckValidity } = useContext(FormContext);
+
+  //
+  // Form validation
+  //
+  useEffect(() => {
+    const handleValidation = async () => {
+      return ref.current?.checkValidity() ?? true;
+    };
+    registerCheckValidity(handleValidation, name);
+    return () => {
+      unregisterCheckValidity(handleValidation);
+    };
+  }, []);
+
+  const classes = cx("w-full flex flex-col divide space-y-4", colors("divide"), className);
   return (
     <form ref={ref} name={name} className={classes}>
-      <div className="flex justify-center">
-        <div className="flex flex-row w-full gap-2">
+      <div className="flex w-full justify-center">
+        <div className="flex flex-row w-full space-x-2">
           <Input
             type="text"
             name="name"
             label="Name"
             defaultValue={connection.name}
-            className="grow"
+            className="flex-grow"
             required
             onChange={(e) => onChange({ name: e.target.value })}
           />
@@ -47,7 +63,4 @@ const ParamForm = forwardRef<HTMLFormElement, ParamFormProps>((props, ref) => {
       </div>
     </form>
   );
-});
-
-ParamForm.displayName = "ParamForm";
-export default ParamForm;
+}

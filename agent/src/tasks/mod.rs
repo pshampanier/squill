@@ -3,9 +3,11 @@ use futures::future::BoxFuture;
 use tracing::error;
 
 mod queries;
+mod scheduled_tasks;
 mod statistics;
 
 pub use queries::execute_queries_task;
+pub use scheduled_tasks::run_tasks_scheduler;
 
 /// An asynchronous task that can be executed through the task queue ([TasksQueue]).
 pub type TaskFn = Box<dyn FnOnce() -> BoxFuture<'static, Result<()>> + Send + Sync>;

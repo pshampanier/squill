@@ -115,23 +115,20 @@ async fn rename_user_catalog_resource(
     catalog::rename(&mut conn, user_session.get_user_id(), catalog_id, &new_name).await.map_err(|e| e.into())
 }
 
-/// POST /users/:username/catalog
-/// X-Resource-Type: "connection" | "environment" | "collection"
-///
-/// { "id": "xxx-xxxx...", "name": "a new name", "parent_id": "a parent id", ... }
-///
-/// Save a resource in the user's catalog.
-async fn create_user_catalog_resource(
-    State(state): State<ServerState>,
+/// Insert of update a resource in the catalog.
+async fn upsert_user_catalog_resource(
+    state: ServerState,
     context: RequestContext,
     headers: HeaderMap,
-    Path(username): Path<String>,
-    Json(request_body): Json<Value>,
-) -> ServerResult<Json<ResourceRef>> {
-    async fn inner_create_user_catalog_resource<T: Resource>(
+    username: String,
+    request_body: Value,
+    insert: bool,
+) -> ServerResult<ResourceRef> {
+    async fn inner_upsert_user_catalog_resource<T: Resource>(
         conn: &mut Connection,
         user_id: Uuid,
         resource: T,
+        insert: bool,
     ) -> Result<ResourceRef> {
         // We need to check if the user has the right to create the resource.
         // - users are only allowed to create resources for themselves, not for other users.
@@ -141,7 +138,7 @@ async fn create_user_catalog_resource(
             return Err(err_forbidden!("You are not allowed to create this resource."));
         }
         sanitize_catalog_name(resource.name())?;
-        match catalog::add(conn, &resource).await {
+        match catalog::upsert(conn, &resource, insert).await {
             Ok(resource_ref) => Ok(resource_ref),
             Err(err) => match err.downcast_ref::<squill_drivers::Error>() {
                 Some(squill_drivers::Error::ConstraintViolation { error: _ }) => {
@@ -153,41 +150,73 @@ async fn create_user_catalog_resource(
     }
     let user_session = context.get_user_session_with_username(&username)?;
     let mut conn = state.get_agentdb_connection().await?;
-    let resource_type = headers
-        .get(X_RESOURCE_TYPE)
-        .ok_or_else(|| Error::BadRequest("Missing 'X-Resource-Type' header".to_string()))
-        .and_then(|header_value| {
-            header_value.to_str().map_err(|_| Error::BadRequest("Invalid 'X-Resource-Type' header".to_string()))
-        })?;
+    let resource_type = get_resource_type(&headers)?;
 
     let resource_ref = match ResourceType::try_from(resource_type) {
         Ok(ResourceType::Connection) => {
-            inner_create_user_catalog_resource(
+            inner_upsert_user_catalog_resource(
                 &mut conn,
                 user_session.get_user_id(),
                 serde_json::from_value::<models::Connection>(request_body)?,
+                insert,
             )
             .await
         }
         Ok(ResourceType::Environment) => {
-            inner_create_user_catalog_resource(
+            inner_upsert_user_catalog_resource(
                 &mut conn,
                 user_session.get_user_id(),
                 serde_json::from_value::<models::Environment>(request_body)?,
+                insert,
             )
             .await
         }
         Ok(ResourceType::Collection) => {
-            inner_create_user_catalog_resource(
+            inner_upsert_user_catalog_resource(
                 &mut conn,
                 user_session.get_user_id(),
                 serde_json::from_value::<models::Collection>(request_body)?,
+                insert,
             )
             .await
         }
         Ok(_) => Err(err_param!("Unexpected '{X_RESOURCE_TYPE}' header value: '{resource_type}'")),
         Err(_) => Err(err_param!("Invalid '{X_RESOURCE_TYPE}' header")),
     }?;
+    Ok(resource_ref)
+}
+
+/// POST /users/:username/catalog
+/// X-Resource-Type: "connection" | "environment" | "collection"
+///
+/// { "id": "xxx-xxxx...", "name": "a new name", "parent_id": "a parent id", ... }
+///
+/// Create a resource in the user's catalog.
+async fn create_user_catalog_resource(
+    State(state): State<ServerState>,
+    context: RequestContext,
+    headers: HeaderMap,
+    Path(username): Path<String>,
+    Json(request_body): Json<Value>,
+) -> ServerResult<Json<ResourceRef>> {
+    let resource_ref = upsert_user_catalog_resource(state, context, headers, username, request_body, true).await?;
+    Ok(Json(resource_ref))
+}
+
+/// PUT /users/:username/catalog
+/// X-Resource-Type: "connection" | "environment" | "collection"
+///
+/// { "id": "xxx-xxxx...", "name": "a new name", "parent_id": "a parent id", ... }
+///
+/// Update a resource in the user's catalog.
+async fn update_user_catalog_resource(
+    State(state): State<ServerState>,
+    context: RequestContext,
+    headers: HeaderMap,
+    Path(username): Path<String>,
+    Json(request_body): Json<Value>,
+) -> ServerResult<Json<ResourceRef>> {
+    let resource_ref = upsert_user_catalog_resource(state, context, headers, username, request_body, false).await?;
     Ok(Json(resource_ref))
 }
 
@@ -222,10 +251,21 @@ pub fn authenticated_routes(state: ServerState) -> Router {
         .route("/users/:username/catalog/list", get(read_user_catalog_root))
         .route("/users/:username/catalog/:catalog_id/rename", post(rename_user_catalog_resource))
         .route("/users/:username/catalog", post(create_user_catalog_resource))
+        .route("/users/:username/catalog", put(update_user_catalog_resource))
         .route("/users/:username/settings", put(save_user_settings))
         .route("/users/:username/storage", get(get_user_storage))
         .route("/users/:username/user", get(get_user))
         .with_state(state)
+}
+
+/// Extract the resource type from the headers.
+fn get_resource_type(headers: &HeaderMap) -> ServerResult<&str> {
+    headers
+        .get(X_RESOURCE_TYPE)
+        .ok_or_else(|| Error::BadRequest("Missing 'X-Resource-Type' header".to_string()))
+        .and_then(|header_value| {
+            header_value.to_str().map_err(|_| Error::BadRequest("Invalid 'X-Resource-Type' header".to_string()))
+        })
 }
 
 #[cfg(test)]

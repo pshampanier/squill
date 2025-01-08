@@ -145,6 +145,11 @@ export type Actions = {
   setCatalogItemStatus: (id: string, status: CatalogItemStatus, error?: Error) => void;
 
   /**
+   * Update a resource in the catalog.
+   */
+  updateCatalog: (resource: AnyResource) => Promise<void>;
+
+  /**
    * Get a catalog item by its identifier.
    *
    * This method is guaranteed to return a catalog item, if the requested item is not found, the special `not-found`
@@ -273,6 +278,22 @@ export const useUserStore = create<UserStore>((set, get) => {
     },
 
     /**
+     * Update the catalog item in the store.
+     */
+    async updateCatalog(resource: AnyResource) {
+      const catalogItem = get().catalog.get(resource.id);
+      const resourceRef = await Users.updateCatalogResource(catalogItem.type, resource);
+      set((state) => ({
+        ...state,
+        catalog: mutateCatalog(
+          state.catalog,
+          resource.id,
+          () => new CatalogItem({ ...resourceRef, resource, status: "ready", lastError: undefined }),
+        ),
+      }));
+    },
+
+    /**
      * Load the catalog for the given path and add it to the store.
      */
     async loadCatalogChildren(id: string, reload: boolean = false) {
@@ -331,6 +352,9 @@ export const useUserStore = create<UserStore>((set, get) => {
       } else if (catalogItem.resource && !reload) {
         // The resource is already loaded and we don't want to reload it.
         console.debug("Catalog item resource already loaded.", { id, name: catalogItem.name });
+      } else if (catalogItem.status === "fetching" && !reload) {
+        // The catalog item is already fetching data.
+        console.debug("Catalog item already fetching data.", { id, name: catalogItem.name });
       } else {
         // We can load the children of the item.
         set((state) => ({
@@ -446,11 +470,14 @@ export const useUserStore = create<UserStore>((set, get) => {
 
     /**
      * Add a notification.
+     *
+     * Notifications are displayed to the user in the notification inbox.
+     * If there is already a notification with the same id, it will be replaced by the new notification.
      */
     addNotification(notification: Notification) {
       set((state) => ({
         ...state,
-        notifications: [...state.notifications, notification],
+        notifications: [...state.notifications.filter((n) => n.id != notification.id), notification],
       }));
     },
 

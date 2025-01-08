@@ -1,8 +1,8 @@
 use crate::models::queries::FieldStatistics;
 use crate::models::QueryExecutionStatus;
+use crate::resources::users;
 use crate::server::notification_channels::PushNotificationService;
 use crate::tasks::statistics::collect_record_batch_stats;
-use crate::utils::constants::USER_HISTORY_DIRNAME;
 use crate::utils::parquet::RecordBatchWriter;
 use crate::{models::QueryExecution, server::state::ServerState};
 use crate::{resources, settings, Result};
@@ -300,7 +300,7 @@ async fn write_query_result_set(
     let history_dir = state
         .get_user_session(session_id)
         .ok_or_else(|| anyhow!("User session no longer available, operation aborted."))
-        .map(|user_session| settings::get_user_dir(user_session.get_username()).join(USER_HISTORY_DIRNAME))?;
+        .map(|user_session| users::resource_history_dir(user_session.get_username(), query.connection_id))?;
 
     let mut record_batch_writer = RecordBatchWriter::new(
         WriterProperties::builder().set_compression(Compression::SNAPPY).build(),
@@ -415,7 +415,7 @@ async fn update_query_history(
     query: QueryExecution,
 ) -> Result<Option<QueryExecution>> {
     let mut agentdb_conn = state.get_agentdb_connection().await?;
-    match resources::queries::update(&mut agentdb_conn, query.clone()).await {
+    match resources::queries::update_execution(&mut agentdb_conn, query.clone()).await {
         Ok(Some(query)) => {
             // Send a notification to the client with a update of the query
             state.push_notification(session_id, query.clone()).await;
@@ -431,6 +431,7 @@ mod tests {
 
     use super::*;
     use crate::models;
+    use crate::models::queries::Query;
     use crate::{server::state::ServerState, utils::tests};
     use arrow_array::{Int32Array, StringArray};
     use arrow_schema::{DataType, Field, Schema};
@@ -464,9 +465,7 @@ mod tests {
                 "test_db",
                 "origin",
                 security_token.user_id,
-                "SELECT 1",
-                42,
-                true
+                Query { text: "SELECT 1".to_string(), hash: 42, with_result_set: true }
             )
             .await
         );

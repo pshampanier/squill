@@ -73,7 +73,7 @@ function ButtonGroup({ children, size, className, defaultValue, disabled, onChan
 
   // the span element is used to display the selected button
   const spanClasses = cx(
-    colors("selected:background"),
+    colors("solid:background"),
     disabled && "disabled:opacity-50 disabled:pointer-events-none",
     "absolute rounded-md shadow-sm",
     "transition-all ease-in-out duration-200",
@@ -115,9 +115,9 @@ function ButtonGroupItem({ name, label, icon, disabled, onClick }: ButtonGroupIt
   const classes = {
     button: cx(
       "flex flex-row items-center justify-center text-xs font-medium whitespace-nowrap text-ellipsis overflow-hidden",
-      "rounded-md px-3 z-50",
+      "rounded-md px-3 z-10",
       "transition-colors ease-in-out duration-200",
-      selected && colors("selected:text"),
+      selected && colors("solid:text"),
       !selected && colors("hover:text", "hover:background"),
       !selected && "hover:bg-opacity-30 dark:hover:bg-opacity-30",
       disabled && "disabled:opacity-50 disabled:pointer-events-none",

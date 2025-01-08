@@ -1,14 +1,14 @@
-use std::collections::HashMap;
-
 use crate::models::{resources::ResourceRef, ResourceType};
-use crate::resources::Resource;
+use crate::resources::{self, Resource};
 use crate::utils::validators::CatalogName;
-use crate::{err_conflict, err_not_found, Result};
+use crate::Result;
+use crate::{err_conflict, err_not_found};
 use anyhow::Context;
 use futures::StreamExt;
 use serde_json::Value;
 use squill_drivers::async_conn::{Connection, RowStream};
 use squill_drivers::{execute, params};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 /// The catalog is a collection of resources that can be stored in the agent database and organized in a tree-like
@@ -30,6 +30,9 @@ use uuid::Uuid;
 
 /// Create a new catalog item for a user resource.
 pub async fn add<T: Resource>(conn: &mut Connection, resource: &T) -> Result<ResourceRef> {
+    // FIXME:
+    // There should be a transaction here to ensure that the catalog entry is created and the filesystem
+    // directory is created atomically.
     conn.execute(
         r#"INSERT INTO catalog (
         catalog_id,
@@ -54,7 +57,56 @@ pub async fn add<T: Resource>(conn: &mut Connection, resource: &T) -> Result<Res
         ),
     )
     .await?;
+
+    if resource.resource_type() == ResourceType::Connection {
+        // Create the `history/:connection_id` directory on the filesystem.
+        //
+        // users
+        // └── :username
+        //     └── history
+        //         └── :connection_id
+        let user = resources::users::get_by_user_id(conn, resource.owner_user_id()).await?;
+        let conn_history_dir = resources::users::resource_history_dir(&user.safe_username()?, resource.id());
+        std::fs::create_dir(conn_history_dir)?;
+    }
+
     Ok(resource.into())
+}
+
+/// Update an existing resource in the catalog.
+pub async fn update<T: Resource>(conn: &mut Connection, resource: &T) -> Result<ResourceRef> {
+    let affected_rows = conn
+        .execute(
+            r#"UPDATE catalog SET
+        parent_catalog_id=?,
+        name=?,
+        data=?,
+        metadata=? WHERE catalog_id=?"#,
+            params!(
+                resource.parent_id(),
+                resource.name(),
+                serde_json::to_string(&resource)?,
+                match resource.metadata().is_empty() {
+                    false => Some(serde_json::to_string(&resource.metadata())?),
+                    true => None::<String>,
+                },
+                resource.id(),
+            ),
+        )
+        .await?;
+    if affected_rows == 0 {
+        return Err(err_not_found!("Element '{}' not found in the catalog.", resource.name()));
+    }
+    Ok(resource.into())
+}
+
+/// Update or create a resource in the catalog.
+pub async fn upsert<T: Resource>(conn: &mut Connection, resource: &T, insert: bool) -> Result<ResourceRef> {
+    if insert {
+        add(conn, resource).await
+    } else {
+        update(conn, resource).await
+    }
 }
 
 pub async fn get<T: Resource>(conn: &mut Connection, catalog_id: Uuid) -> Result<T> {
@@ -73,7 +125,7 @@ pub async fn get<T: Resource>(conn: &mut Connection, catalog_id: Uuid) -> Result
             let data: Value = serde_json::from_str(&row.try_get::<_, String>("data")?)?;
             T::from_storage(parent_catalog_id.unwrap_or(Uuid::nil()), name, data)
         }
-        Ok(None) => Err(err_not_found!("The element no longer exists.")),
+        Ok(None) => Err(err_not_found!("Element not found in the catalog.")),
         Err(err) => Err(err.into()),
     }
     // err.with_context(|| format!("Failed to get the catalog element (catalog_id: {}).", catalog_id))
@@ -104,16 +156,45 @@ pub async fn rename(conn: &mut Connection, user_id: Uuid, catalog_id: Uuid, new_
     }
 }
 
+/// Delete a catalog item from the database.
+///
+/// This function will not delete the catalog item from the database but will change it's status to 'deleted'.
+/// Later the vacuum task will remove the item from the database once all references to it are removed.
+///
+/// In addition to changing the status of the catalog item to 'deleted' this function will also alter the name by
+/// prefixing it with 'catalog_id:', allowing the user to create a new connection with the same name without violating
+/// the unique constraint on the `name` and the `parent_catalog_id`.
+pub async fn delete(conn: &mut Connection, user_id: Uuid, catalog_id: Uuid) -> Result<()> {
+    match execute!(
+        conn,
+        r#"
+        UPDATE catalog 
+           SET status = 'deleted', 
+               name = CASE status WHEN 'deleted' THEN name ELSE catalog_id || ':' || name END
+         WHERE catalog_id=? AND owner_user_id=?
+        "#,
+        catalog_id,
+        user_id
+    )
+    .await
+    {
+        Ok(1) => Ok(()),
+        Ok(_) => Err(err_not_found!("The element to be deleted does not exist.")),
+        Err(err) => Err(err.into()),
+    }
+}
+
 pub async fn list(conn: &mut Connection, user_id: Uuid, parent_catalog_id: Uuid) -> Result<Vec<ResourceRef>> {
     let (mut statement, parameters) = match parent_catalog_id.is_nil() {
         false => {
             let statement = conn
                 .prepare(
-                    r#"SELECT catalog_id, type, name, metadata
-                                   FROM catalog
-                                  WHERE owner_user_id = ? 
-                                    AND parent_catalog_id = ?
-                                  ORDER BY name"#,
+                    r#"
+                  SELECT catalog_id, type, name, metadata
+                    FROM catalog
+                   WHERE owner_user_id = ? AND parent_catalog_id = ? AND status != 'deleted'
+                   ORDER BY name
+                "#,
                 )
                 .await?;
             (statement, params!(user_id, parent_catalog_id))
@@ -121,11 +202,12 @@ pub async fn list(conn: &mut Connection, user_id: Uuid, parent_catalog_id: Uuid)
         true => {
             let statement = conn
                 .prepare(
-                    r#"SELECT catalog_id, type, name, metadata
-                                   FROM catalog
-                                  WHERE owner_user_id = ? 
-                                    AND parent_catalog_id IS NULL
-                                  ORDER BY name"#,
+                    r#"
+                    SELECT catalog_id, type, name, metadata
+                      FROM catalog
+                     WHERE owner_user_id = ? AND parent_catalog_id IS NULL AND status != 'deleted'
+                     ORDER BY name
+                "#,
                 )
                 .await?;
             (statement, params!(user_id.to_string()))
@@ -195,6 +277,27 @@ mod tests {
 
         assert_ok!(catalog::add(&mut conn, &sub_collection).await);
         assert_err!(catalog::add(&mut conn, &sub_collection_dup_name).await);
+    }
+
+    #[tokio::test]
+    async fn test_catalog_delete() {
+        let (_base_dir, conn_pool) = tests::setup().await.unwrap();
+        let mut conn = conn_pool.get().await.unwrap();
+        let local_user = users::get_by_username(&mut conn, local_username()).await.unwrap();
+        // create a root catalog entries
+        let collection = Collection {
+            name: "New Collection".to_string(),
+            owner_user_id: local_user.user_id,
+            resources_type: Some(ResourceType::Connection),
+            ..Default::default()
+        };
+
+        assert_ok!(catalog::add(&mut conn, &collection).await);
+        assert_ok!(catalog::delete(&mut conn, collection.owner_user_id, collection.collection_id).await);
+        assert_err!(
+            /* should no longer exist */
+            catalog::delete(&mut conn, collection.owner_user_id, collection.collection_id).await
+        );
     }
 
     #[tokio::test]

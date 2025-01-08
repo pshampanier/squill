@@ -1,6 +1,5 @@
 use crate::models::Collection;
 use crate::models::ResourceType;
-use crate::models::SpecialCollection;
 use crate::resources::Resource;
 use std::collections::HashMap;
 use uuid::Uuid;
@@ -18,21 +17,6 @@ impl Default for Collection {
             resources_type: None,
             special: None,
         }
-    }
-}
-
-impl AsRef<str> for SpecialCollection {
-    fn as_ref(&self) -> &str {
-        match self {
-            SpecialCollection::Trash => "trash",
-            SpecialCollection::Favorites => "favorites",
-        }
-    }
-}
-
-impl std::fmt::Display for SpecialCollection {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.as_ref())
     }
 }
 

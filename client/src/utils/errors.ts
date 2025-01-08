@@ -31,3 +31,21 @@ export class HttpRequestError extends Error {
     this.body = body;
   }
 }
+
+/**
+ * Extract the message to display to the user.
+ *
+ * The can be anything but this function will try to extract a string from it, allowing only to display errors that are
+ * user-friendly.
+ */
+export function sanitizeMessage(message: Error | string | unknown): string | undefined {
+  if (message instanceof UserError) {
+    return message.message;
+  } else if (message instanceof AuthenticationError) {
+    return "Authentication failed.";
+  } else if (typeof message === "string") {
+    return message;
+  } else {
+    return undefined;
+  }
+}

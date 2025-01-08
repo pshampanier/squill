@@ -64,6 +64,15 @@ export const Users = {
     ).as(ResourceRef);
   },
 
+  async updateCatalogResource<T extends object>(type: ResourceType, item: T): Promise<ResourceRef> {
+    const encodedUsername = encodeURIComponent(this.current.username);
+    return (
+      await agent().put<T, ResourceRef>(`/users/${encodedUsername}/catalog`, item, {
+        headers: { [HTTP_HEADER_X_RESOURCE_TYPE]: type },
+      })
+    ).as(ResourceRef);
+  },
+
   // Save the settings for the current user.
   //
   // If the settings are successfully saved, the new settings are applied to the current user and then returned.

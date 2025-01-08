@@ -8,12 +8,13 @@ import {
   DRIVER_URI,
   Driver,
 } from "@/models/drivers";
-import { forwardRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
 import ButtonGroup from "@/components/core/ButtonGroup";
 import Switch from "@/components/core/Switch";
 import FileInput from "@/components/core/FileInput";
+import { FormContext } from "@/stores/FormContext";
 
 type ConnectFormProps = {
   name?: string;
@@ -26,11 +27,25 @@ type ConnectFormProps = {
 /**
  * A form to edit the xxx of a connection.
  */
-const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) => {
-  const { name, className, onChange, driver, connection } = props;
+export default function ConnectForm({ name, className, onChange, driver, connection }: ConnectFormProps) {
   if (!driver) return null;
 
-  const classes = cx("mx-1 w-full flex flex-col divide space-y-4", colors("divide"), className);
+  //
+  // Form validation
+  //
+  const ref = useRef<HTMLFormElement>(null);
+  const { registerCheckValidity, unregisterCheckValidity } = useContext(FormContext);
+  useEffect(() => {
+    const handleValidation = async () => {
+      return ref.current?.checkValidity() ?? true;
+    };
+    registerCheckValidity(handleValidation, name);
+    return () => {
+      unregisterCheckValidity(handleValidation);
+    };
+  }, []);
+
+  const classes = cx("w-full flex flex-col divide space-y-4", colors("divide"), className);
   return (
     <form ref={ref} name={name} className={classes}>
       <div className="flex justify-center">
@@ -143,7 +158,4 @@ const ConnectForm = forwardRef<HTMLFormElement, ConnectFormProps>((props, ref) =
       )}
     </form>
   );
-});
-
-ConnectForm.displayName = "ConnectForm";
-export default ConnectForm;
+}

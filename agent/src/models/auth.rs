@@ -10,10 +10,66 @@ pub enum AuthenticationMethod {
     UserPassword,
 }
 
+/// Convert AuthenticationMethod to a `&str`.
+impl AsRef<str> for AuthenticationMethod {
+    fn as_ref(&self) -> &str {
+        match self {
+            AuthenticationMethod::UserPassword => "user_password",
+        }
+    }
+}
+
+/// Convert AuthenticationMethod to a string.
+impl std::fmt::Display for AuthenticationMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a AuthenticationMethod.
+impl TryFrom<&str> for AuthenticationMethod {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "user_password" => Ok(AuthenticationMethod::UserPassword),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum TokenType {
     Bearer,
+}
+
+/// Convert TokenType to a `&str`.
+impl AsRef<str> for TokenType {
+    fn as_ref(&self) -> &str {
+        match self {
+            TokenType::Bearer => "bearer",
+        }
+    }
+}
+
+/// Convert TokenType to a string.
+impl std::fmt::Display for TokenType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a TokenType.
+impl TryFrom<&str> for TokenType {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "bearer" => Ok(TokenType::Bearer),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
 }
 
 /// A username

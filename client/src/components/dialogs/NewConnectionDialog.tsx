@@ -1,6 +1,6 @@
 import { produce } from "immer";
 import { Connection, ConnectionMode } from "@/models/connections";
-import { SyntheticEvent, useEffect, useRef, useState } from "react";
+import { SyntheticEvent, useContext, useEffect, useState } from "react";
 import { Agent } from "@/resources/agent";
 import {
   DRIVER_CONNECTION_MODE,
@@ -28,6 +28,7 @@ import UserIcon from "@/icons/user.svg?react";
 import DatabaseIcon from "@/icons/database.svg?react";
 import Overlay from "@/components/Overlay";
 import Spinner from "@/components/core/Spinner";
+import { FormContext } from "@/stores/FormContext";
 
 type NewConnectionDialogProps = {
   /// The identifier of the parent resource (could be a collection or an environment).
@@ -39,13 +40,7 @@ type NewConnectionDialogProps = {
 export default function NewConnectionDialog({ parentId, onClose, onCancel }: NewConnectionDialogProps) {
   const [connection, setConnection] = useState<Connection>(null);
 
-  const formsRef = {
-    driver: useRef<HTMLFormElement>(null),
-    connect: useRef<HTMLFormElement>(null),
-    auth: useRef<HTMLFormElement>(null),
-    datasources: useRef<HTMLFormElement>(null),
-    param: useRef<HTMLFormElement>(null),
-  };
+  const { validate } = useContext(FormContext);
 
   const { taskStatus, setTaskStatus, message, setMessage, setTask } = useTaskEffect(
     "running",
@@ -114,7 +109,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
 
   // Change any of the connection properties (except the driver handled by `handleDriverChange`).
   const handleChange = (value: Partial<Connection>) => {
-    const c = new Connection(
+    const next = new Connection(
       produce(connection, (draft) => {
         if (value.options && draft.options) {
           // Merge the options with the existing options.
@@ -123,39 +118,43 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
         return { ...draft, ...value };
       }),
     );
-    setConnection(c);
+    setConnection(next);
   };
 
   // When we submit a step, we check if the form is valid inside the current step is valid. If not, we prevent the move
   // the next step.
   const handleSubmitStep = (event: SyntheticEvent, name: string, actions: StepperNavigation) => {
-    const form = formsRef[name as keyof typeof formsRef];
-    if (!form.current?.checkValidity()) {
-      actions.cancel();
-    } else if (name === "auth" || (name === "connect" && !visibility.auth)) {
-      // Once we have all the information we need, we can test the connection.
-      setMessage("Testing the connection...");
-      actions.cancel();
-      const task = async () => {
-        const validatedConnection = await Connections.validate(connection);
-        setConnection(validatedConnection);
-        // Okay, move to the next step...
-        actions.proceed();
-      };
-      setTask(task);
-    } else if (name === "datasources") {
-      // Leaving the datasources step
-      // - the default datasource must be visible.
-      if (connection.datasources.find((ds) => ds.name === connection.defaultDatasource)?.hidden === true) {
+    // We postpone the move to the next step until the form is validated.
+    actions.cancel();
+    // Validate the form of the current step.
+    validate(name)
+      .then((valid) => {
+        if (valid) {
+          if (name === "auth" || (name === "connect" && !visibility.auth)) {
+            // Once we have all the information we need, we can test the connection.
+            setMessage("Testing the connection...");
+            const task = async () => {
+              const validatedConnection = await Connections.validate(connection);
+              setConnection(validatedConnection);
+              // Okay, move to the next step...
+              actions.proceed();
+            };
+            setTask(task);
+          } else {
+            // Okay, move to the next step...
+            actions.proceed();
+          }
+        }
+      })
+      .catch((error) => {
         addNotification({
-          id: "default_datasource_hidden",
-          variant: "warning",
-          message: `The default datasource '${connection.defaultDatasource}' must be visible.`,
+          id: crypto.randomUUID(),
+          variant: "error",
+          message: "Oops, something went wrong...",
+          description: error,
           autoDismiss: true,
         });
-        actions.cancel();
-      }
-    }
+      });
   };
 
   // The key of the `Stepper` component is used to reset it when the driver change.
@@ -165,13 +164,14 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
   // children components back to their default values.
   const stepperKey = driver ? `new-${driver.name}` : "new-connection";
 
+  // IMPORTANT: Each step of the stepper is a form that is validated by the `FormContext` provider, to make it work the
+  // name of the form must be the same as the name of the step.
   return (
     <Modal className="w-4/5 max-w-4xl h-[525px]" onCancel={onCancel}>
       <div className="relative w-full h-full">
         <Stepper key={stepperKey} onCompleted={handleClose} onCancel={onCancel}>
           <Stepper.Step icon={WrenchIcon} name="driver" title="Choose a Driver" onSubmit={handleSubmitStep} visible>
             <DriverForm
-              ref={formsRef.driver}
               drivers={Agent.agent.drivers}
               value={connection?.driver}
               name="driver"
@@ -180,13 +180,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
             />
           </Stepper.Step>
           <Stepper.Step icon={ConnectIcon} name="connect" title="Connection" onSubmit={handleSubmitStep} visible>
-            <ConnectForm
-              ref={formsRef.connect}
-              name="connect"
-              driver={driver}
-              onChange={handleChange}
-              connection={connection}
-            />
+            <ConnectForm name="connect" driver={driver} onChange={handleChange} connection={connection} />
           </Stepper.Step>
           <Stepper.Step
             icon={UserIcon}
@@ -195,7 +189,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
             visible={visibility.auth}
             onSubmit={handleSubmitStep}
           >
-            <AuthForm ref={formsRef.auth} name="auth" driver={driver} connection={connection} onChange={handleChange} />
+            <AuthForm name="auth" driver={driver} connection={connection} onChange={handleChange} />
           </Stepper.Step>
           <Stepper.Step
             icon={DatabaseIcon}
@@ -205,7 +199,6 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
             onSubmit={handleSubmitStep}
           >
             <DatasourcesForm
-              ref={formsRef.datasources}
               name="datasources"
               datasources={connection?.datasources}
               defaultDatasource={connection?.defaultDatasource}
@@ -213,13 +206,7 @@ export default function NewConnectionDialog({ parentId, onClose, onCancel }: New
             />
           </Stepper.Step>
           <Stepper.Step icon={OptionsIcon} title="Parameters" name="param" onSubmit={handleSubmitStep} visible>
-            <ParamForm
-              ref={formsRef.param}
-              name="param"
-              driver={driver}
-              connection={connection}
-              onChange={handleChange}
-            />
+            <ParamForm name="param" driver={driver} connection={connection} onChange={handleChange} />
           </Stepper.Step>
         </Stepper>
         {taskStatus === "running" && (

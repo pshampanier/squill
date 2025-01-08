@@ -16,6 +16,36 @@ pub enum SpecialCollection {
     Trash,
 }
 
+/// Convert SpecialCollection to a `&str`.
+impl AsRef<str> for SpecialCollection {
+    fn as_ref(&self) -> &str {
+        match self {
+            SpecialCollection::Favorites => "favorites",
+            SpecialCollection::Trash => "trash",
+        }
+    }
+}
+
+/// Convert SpecialCollection to a string.
+impl std::fmt::Display for SpecialCollection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a SpecialCollection.
+impl TryFrom<&str> for SpecialCollection {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "favorites" => Ok(SpecialCollection::Favorites),
+            "trash" => Ok(SpecialCollection::Trash),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
+}
+
 /// A collection resources stored in the catalog.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Decode)]
 pub struct Collection {

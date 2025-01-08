@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
-use crate::{agent_db, pool::ConnectionPool};
+use crate::{agent_db, pool::ConnectionPool, resources};
 use anyhow::Result;
+use squill_drivers::{async_conn::Connection, params};
+use uuid::Uuid;
 
 /// Set a path to read-only and return its original permissions.
 ///
@@ -128,4 +130,17 @@ pub async fn setup() -> Result<(tempfile::TempDir, Arc<ConnectionPool>)> {
     settings::set_base_dir(base_dir.path().to_str().unwrap());
     let conn_pool = agent_db::init().await?;
     Ok((base_dir, conn_pool))
+}
+
+pub async fn get_local_user_id(conn: &mut Connection) -> Uuid {
+    let username = resources::users::local_username();
+    match conn
+        .query_map_row("SELECT user_id FROM users WHERE username=?", params!(username.as_str()), |row| {
+            row.try_get::<_, String>("user_id").map_err(|e| e.into())
+        })
+        .await
+    {
+        Ok(Some(user_id)) => Uuid::parse_str(&user_id).unwrap(),
+        _ => Uuid::nil(),
+    }
 }

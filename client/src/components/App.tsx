@@ -51,7 +51,7 @@ export function App() {
   useCommand({ ref: refApp, onCommand: handleCommand });
 
   return (
-    <div ref={refApp} data-component="app" className="w-full h-full">
+    <div ref={refApp} data-component="app" className="w-full h-full" tabIndex={0}>
       <ApplySystemPreferences />
       {settingsOpen && <SettingsSpace />}
       {activeSpace === "logon" && <LogonSpace />}

@@ -4,9 +4,6 @@ pub const USERS_DIRNAME: &str = "users";
 /// Name of the file used to store the user information.
 pub const USER_HISTORY_DIRNAME: &str = "history";
 
-/// Username used for unauthenticated requests.
-pub const USERNAME_ANONYMOUS: &str = "anonymous";
-
 /// Name of the directory used to store the drivers in the assets directory.
 pub const DRIVERS_DIRNAME: &str = "drivers";
 

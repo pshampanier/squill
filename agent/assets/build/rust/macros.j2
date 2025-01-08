@@ -19,6 +19,51 @@ pub enum {{ name | pascal_case }} {
       {%- endfor %}
     {% endif %}
 }
+{% if schema.type == "string" %}
+/// Convert {{ name | pascal_case }} to a `&str`.
+impl AsRef<str> for {{ name | pascal_case }} {
+    fn as_ref(&self) -> &str {
+        match self {
+  {% if schema.enum is defined %}
+    {%- for value in schema.enum %}
+            {{ name | pascal_case }}::{{ value | pascal_case }} => "{{ value }}",
+    {%- endfor %}
+  {% elif schema.oneOf is defined %}
+    {%- for value in schema.oneOf %}
+            {{ name | pascal_case }}::{{ value.title | pascal_case }} => "{{ value.title }}",
+    {%- endfor %}
+  {% endif %}
+        }
+    }
+}
+
+/// Convert {{ name | pascal_case }} to a string.
+impl std::fmt::Display for {{ name | pascal_case }} {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a {{ name | pascal_case }}.
+impl TryFrom<&str> for {{ name | pascal_case }} {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+  {% if schema.enum is defined %}
+    {%- for value in schema.enum %}
+            "{{ value }}" => Ok({{ name | pascal_case }}::{{ value | pascal_case }}),
+    {%- endfor %}
+  {% elif schema.oneOf is defined %}
+    {%- for value in schema.oneOf %}
+            "{{ value.title }}" => Ok({{ name | pascal_case }}::{{ value.title | pascal_case }}),
+    {%- endfor %}
+  {% endif -%}
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
+}
+{%- endif %}
 {% endmacro %}
 
 {% macro type(name) %}

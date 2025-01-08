@@ -180,6 +180,23 @@ impl RecordBatchReader {
 
         Ok(record_batches)
     }
+
+    /// List all the parquet files created by the writer.
+    pub fn list(&self) -> Result<Vec<PathBuf>> {
+        let mut files = Vec::new();
+        let mut file_name: PathBuf;
+        let mut file_part = 1;
+        loop {
+            file_name = self.directory.join(format!("{}.part-{:#04}.parquet", self.file_prefix, file_part));
+            if file_name.try_exists()? {
+                files.push(file_name);
+                file_part += 1;
+            } else {
+                break;
+            }
+        }
+        Ok(files)
+    }
 }
 
 /// Cleanup the temporary files when the writer is dropped.

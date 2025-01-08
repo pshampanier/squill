@@ -21,6 +21,40 @@ pub enum ResourceType {
     User,
 }
 
+/// Convert ResourceType to a `&str`.
+impl AsRef<str> for ResourceType {
+    fn as_ref(&self) -> &str {
+        match self {
+            ResourceType::Connection => "connection",
+            ResourceType::Environment => "environment",
+            ResourceType::Collection => "collection",
+            ResourceType::User => "user",
+        }
+    }
+}
+
+/// Convert ResourceType to a string.
+impl std::fmt::Display for ResourceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a ResourceType.
+impl TryFrom<&str> for ResourceType {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "connection" => Ok(ResourceType::Connection),
+            "environment" => Ok(ResourceType::Environment),
+            "collection" => Ok(ResourceType::Collection),
+            "user" => Ok(ResourceType::User),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
+}
+
 /// A reference to a resource.
 ///
 /// A resource reference is a lightweight object that contains the unique identifier of the resource, and some

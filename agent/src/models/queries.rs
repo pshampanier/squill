@@ -1,12 +1,25 @@
 /*********************************************************************
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  *********************************************************************/
-use anyhow::{anyhow, Error};
 use serde::{Deserialize, Serialize};
 use squill_drivers::serde::Decode;
 use std::collections::HashMap;
 
 /// The status of a query execution.
+///
+/// The following transitions are allowed:
+/// - `pending` -> `running` | `cancelled` | `deleted`
+/// - `running` -> `completed` | `failed` | `cancel_requested` | `delete_requested`
+/// - `completed` -> `deleted`
+/// - `failed` -> `deleted`
+/// - `cancel_requested` -> `cancelled` | `delete_requested`        
+/// - `cancelled` -> `deleted`
+/// - `delete_requested` -> `deleted`
+/// - `deleted` -> final state, no further transitions are allowed.
+///
+/// The statuses `cancel_requested` and `delete_requested` are used to indicate that the query execution is still
+/// running but the user requested to cancel or delete the query execution. The query execution will transition to
+/// `cancelled` or `deleted` once the query execution is stopped.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryExecutionStatus {
@@ -22,38 +35,64 @@ pub enum QueryExecutionStatus {
     /// Execution failed.
     Failed,
 
+    /// Cancellation requested.
+    /// The cancellation of the query has been requested but the query is still running.
+    /// Once the execution of the query is stopped the status will be updated to `cancelled`.
+    CancelRequested,
+
     /// Execution was cancelled.
     Cancelled,
 
-    /// Removed from the history.
+    /// Deletion requested.
+    /// The deletion of the query has been requested but the query is still running.
+    /// Once the execution of the query is stopped the status will be updated to `deleted`.
+    DeleteRequested,
+
+    /// Query deleted.
+    /// This status is used to indicate that the query execution was removed from the history and the data
+    /// associated to it on the file system can be deleted. Once the data deleted the query execution deletion is
+    /// considered completed and the record in the query history can be removed.
     Deleted,
 }
 
-impl QueryExecutionStatus {
-    pub fn as_str(&self) -> &'static str {
+/// Convert QueryExecutionStatus to a `&str`.
+impl AsRef<str> for QueryExecutionStatus {
+    fn as_ref(&self) -> &str {
         match self {
             QueryExecutionStatus::Pending => "pending",
             QueryExecutionStatus::Running => "running",
             QueryExecutionStatus::Completed => "completed",
             QueryExecutionStatus::Failed => "failed",
+            QueryExecutionStatus::CancelRequested => "cancel_requested",
             QueryExecutionStatus::Cancelled => "cancelled",
+            QueryExecutionStatus::DeleteRequested => "delete_requested",
             QueryExecutionStatus::Deleted => "deleted",
         }
     }
 }
 
-impl TryFrom<&str> for QueryExecutionStatus {
-    type Error = Error;
+/// Convert QueryExecutionStatus to a string.
+impl std::fmt::Display for QueryExecutionStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
 
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
+/// Convert a `&str` to a QueryExecutionStatus.
+impl TryFrom<&str> for QueryExecutionStatus {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
             "pending" => Ok(QueryExecutionStatus::Pending),
             "running" => Ok(QueryExecutionStatus::Running),
             "completed" => Ok(QueryExecutionStatus::Completed),
             "failed" => Ok(QueryExecutionStatus::Failed),
+            "cancel_requested" => Ok(QueryExecutionStatus::CancelRequested),
             "cancelled" => Ok(QueryExecutionStatus::Cancelled),
+            "delete_requested" => Ok(QueryExecutionStatus::DeleteRequested),
             "deleted" => Ok(QueryExecutionStatus::Deleted),
-            _ => Err(anyhow!("Invalid query status: {}", value)),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
         }
     }
 }
@@ -184,6 +223,12 @@ pub struct QueryExecution {
 
     /// The unique identifier of the user that executed the query.
     pub user_id: uuid::Uuid,
+
+    /// The name of the user that executed the query.
+    /// This value is not stored in the database but is added to the query execution when it is returned to the
+    /// client.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub username: String,
 
     /// A flag indicating if the query is a result set returning query.
     ///

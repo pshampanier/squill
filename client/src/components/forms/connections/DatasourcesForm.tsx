@@ -1,10 +1,14 @@
 import cx from "classix";
 import prettyBytes from "pretty-bytes";
 import { Connection, Datasource } from "@/models/connections";
-import { forwardRef } from "react";
+import { useCallback, useContext, useEffect, useRef } from "react";
 import { primary as colors } from "@/utils/colors";
+import { FormContext } from "@/stores/FormContext";
+import { useUserStore } from "@/stores/UserStore";
+import Button from "@/components/core/Button";
 import Dropdown from "@/components/core/Dropdown";
 import Switch from "@/components/core/Switch";
+import RefreshIcon from "@/icons/arrow-path.svg?react";
 
 type DatasourcesFormProps = {
   name?: string;
@@ -15,10 +19,53 @@ type DatasourcesFormProps = {
 };
 
 /**
- * A form to edit datasources.
+ * A form to edit datasources of a Connection.
  */
-const DatasourcesForm = forwardRef<HTMLFormElement, DatasourcesFormProps>((props, ref) => {
-  const { name, className, onChange, defaultDatasource, datasources } = props;
+export default function DatasourcesForm({
+  name,
+  className,
+  onChange,
+  defaultDatasource,
+  datasources,
+}: DatasourcesFormProps) {
+  //
+  // Actions
+  //
+  const addNotification = useUserStore((state) => state.addNotification);
+
+  //
+  // Form validation
+  //
+  const ref = useRef<HTMLFormElement>(null);
+  const { registerCheckValidity, unregisterCheckValidity } = useContext(FormContext);
+  useEffect(() => {
+    const handleValidation = async () => {
+      // - the default datasource must be visible.
+      if (datasources.find((ds) => ds.name === defaultDatasource)?.hidden === true) {
+        addNotification({
+          id: "default_datasource_hidden",
+          variant: "warning",
+          message: "Datasource not visible",
+          description: `The default datasource '${defaultDatasource}' must be visible.`,
+          autoDismiss: true,
+        });
+        return false;
+      }
+      return ref.current?.checkValidity() ?? true;
+    };
+    registerCheckValidity(handleValidation, name);
+    return () => {
+      unregisterCheckValidity(handleValidation);
+    };
+  }, [defaultDatasource, datasources]);
+
+  //
+  // Refresh the list of datasources
+  //
+  const handleRefresh = useCallback(() => {
+    // TODO: Implement
+  }, []);
+
   console.debug("Rendering DatasourcesForm", {
     name,
     className,
@@ -27,7 +74,7 @@ const DatasourcesForm = forwardRef<HTMLFormElement, DatasourcesFormProps>((props
     datasources,
   });
   // [...connection.datasources].sort((a, b) => a.name.localeCompare(b.name))
-  const classes = cx("mx-1 w-full flex flex-col divide space-y-4", colors("divide"), className);
+  const classes = cx("w-full flex flex-col divide space-y-4", colors("divide"), className);
   return (
     <form ref={ref} name={name} className={cx("w-full h-full", classes)}>
       <div className="flex flex-col w-full gap-2 h-full overflow-hidden">
@@ -53,10 +100,15 @@ const DatasourcesForm = forwardRef<HTMLFormElement, DatasourcesFormProps>((props
          * Show / Hide Datasources
          */}
         <div className={cx("flex flex-row  flex-none w-full py-2 border-t", colors("border"))}>
-          <div className="flex flex-col space-y-1">
+          <div className="flex flex-col space-y-1 grow">
             <label>User Interface</label>
             <label className="text-xs">Uncheck datasources that should not be shown in the user interface.</label>
           </div>
+          {false && (
+            <div className="flex flex-none items-center">
+              <Button variant="ghost" text="Refresh" icon={RefreshIcon} onClick={handleRefresh} />
+            </div>
+          )}
         </div>
         <div className="flex grow overflow-y-scroll">
           <div className="flex flex-col w-full h-full gap-1">
@@ -97,7 +149,4 @@ const DatasourcesForm = forwardRef<HTMLFormElement, DatasourcesFormProps>((props
       </div>
     </form>
   );
-});
-
-DatasourcesForm.displayName = "DatasourcesForm";
-export default DatasourcesForm;
+}

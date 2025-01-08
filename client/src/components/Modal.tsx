@@ -1,6 +1,8 @@
 import cx from "classix";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { primary as colors } from "@/utils/colors";
+import { CommandEvent } from "@/utils/commands";
+import { useCommand } from "@/hooks/use-commands";
 
 export type ModalProps = {
   children?: React.ReactNode;
@@ -27,15 +29,30 @@ export default function Modal({ onClose, onCancel, children, className }: ModalP
   });
 
   const classes = cx(
-    "inline-block px-4 pt-5 pb-4 overflow-hidden",
     "text-left align-middle bg-white rounded-lg shadow-xl",
     "outline-none",
     colors("text", "background"),
     className,
   );
 
+  //  const handleKeyDown = (event: React.KeyboardEvent<HTMLDialogElement>) => {};
+
+  //
+  // Command handling
+  //
+  const handleCommand = useCallback(
+    (event: CommandEvent) => {
+      if (event.detail.name === "close") {
+        onCancel?.();
+        event.stopPropagation();
+      }
+    },
+    [onCancel],
+  );
+  useCommand({ ref: dialogRef, onCommand: handleCommand });
+
   return (
-    <dialog ref={dialogRef} onClose={onClose} onCancel={onCancel} className={classes}>
+    <dialog ref={dialogRef} onClose={onClose} className={classes}>
       {children}
     </dialog>
   );

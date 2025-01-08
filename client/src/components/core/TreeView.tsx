@@ -5,7 +5,7 @@ import React, { forwardRef, useCallback, useEffect, useMemo } from "react";
 import Spinner from "@/components/core/Spinner";
 import Input from "@/components/core/Input";
 import ChevronIcon from "@/icons/chevron-right.svg?react";
-import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
+import ErrorIcon from "@/icons/solid/exclamation-triangle.svg?react";
 import TransparentIcon from "@/icons/transparent.svg?react";
 
 // The color palette is set at the TreeView level and shared with the children items using a React context.

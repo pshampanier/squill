@@ -45,9 +45,9 @@ export default function LoadingOverlay({ delay, children, position = "fixed", cl
 
   const classes = tw(
     colors("text"),
-    !visible && "bg-white/50 dark:bg-gray-800/50",
-    visible && "bg-white/90 dark:bg-gray-800/90",
-    "flex flex-col items-center justify-center space-y-4",
+    !visible && "bg-transparent opacity-0",
+    visible && "bg-white dark:bg-gray-800 opacity-90",
+    "flex flex-col items-center justify-center space-y-4 z-50",
     "outline-none focus:ring-0 focus:outline-none",
     "select-none",
     "transition-color duration-300",

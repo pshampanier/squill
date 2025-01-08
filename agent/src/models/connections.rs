@@ -25,12 +25,76 @@ pub enum ConnectionMode {
     Uri,
 }
 
+/// Convert ConnectionMode to a `&str`.
+impl AsRef<str> for ConnectionMode {
+    fn as_ref(&self) -> &str {
+        match self {
+            ConnectionMode::Host => "host",
+            ConnectionMode::Socket => "socket",
+            ConnectionMode::File => "file",
+            ConnectionMode::ConnectionString => "connection_string",
+            ConnectionMode::Uri => "uri",
+        }
+    }
+}
+
+/// Convert ConnectionMode to a string.
+impl std::fmt::Display for ConnectionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a ConnectionMode.
+impl TryFrom<&str> for ConnectionMode {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "host" => Ok(ConnectionMode::Host),
+            "socket" => Ok(ConnectionMode::Socket),
+            "file" => Ok(ConnectionMode::File),
+            "connection_string" => Ok(ConnectionMode::ConnectionString),
+            "uri" => Ok(ConnectionMode::Uri),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
+}
+
 /// Options for a connection.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ConnectionOption {
     /// Opens the connection in read-only mode. Write will be prohibited.
     ReadOnly,
+}
+
+/// Convert ConnectionOption to a `&str`.
+impl AsRef<str> for ConnectionOption {
+    fn as_ref(&self) -> &str {
+        match self {
+            ConnectionOption::ReadOnly => "read_only",
+        }
+    }
+}
+
+/// Convert ConnectionOption to a string.
+impl std::fmt::Display for ConnectionOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
+/// Convert a `&str` to a ConnectionOption.
+impl TryFrom<&str> for ConnectionOption {
+    type Error = anyhow::Error;
+
+    fn try_from(s: &str) -> Result<Self, anyhow::Error> {
+        match s {
+            "read_only" => Ok(ConnectionOption::ReadOnly),
+            _ => Err(anyhow::anyhow!("Unexpected value: '{}'.", s)),
+        }
+    }
 }
 
 /// The payload of the POST /connections/{id}/run endpoint.

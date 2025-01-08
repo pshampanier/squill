@@ -1,20 +1,22 @@
 use crate::jinja::JinjaEnvironment;
-use crate::models;
 use crate::models::auth::SecurityTokens;
+use crate::models::scheduled_tasks::ScheduledTaskName;
 use crate::models::PushMessage;
 use crate::pool::{self, ConnectionGuard, ConnectionPool};
-use crate::resources::catalog;
+use crate::resources::{catalog, scheduled_tasks};
 use crate::server::notification_channels::NotificationChannel;
 use crate::server::user_sessions::UserSession;
 use crate::settings;
 use crate::tasks::{TaskFn, TasksQueue};
 use crate::utils::validators::Username;
 use crate::UserError;
+use crate::{models, tasks};
 use anyhow::{Context, Result};
 use core::panic;
 use futures::future::BoxFuture;
 use lru::LruCache;
 use std::num::NonZeroUsize;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 use tracing::debug;
@@ -75,6 +77,9 @@ pub struct ServerState {
     /// - the key is a `URI` created from [crate::models::Connection].
     /// - the value is a connection pool to the database.
     user_db_conn_pool: Arc<Mutex<LruCache<String, Arc<ConnectionPool>>>>,
+
+    /// A flag to indicate that the server is shutting down.
+    is_shuting_down: Arc<AtomicBool>,
 }
 
 impl ServerState {
@@ -90,12 +95,23 @@ impl ServerState {
             user_db_conn_pool: Arc::new(Mutex::new(LruCache::new(
                 NonZeroUsize::new(settings::get_max_users_conn_pool_size()).unwrap(),
             ))),
+            is_shuting_down: Arc::new(AtomicBool::new(false)),
         }
     }
 
     /// Start the background tasks run by the state.
     pub async fn start(&self) {
         self.tasks_queue.start().await
+    }
+
+    /// Shutdown the server.
+    pub async fn shutdown(&self) {
+        self.is_shuting_down.store(true, Ordering::Relaxed);
+    }
+
+    /// Check if the server is shutting down.
+    pub fn is_shutting_down(&self) -> bool {
+        self.is_shuting_down.load(Ordering::Relaxed)
     }
 
     /// Get a connection to the agent database.
@@ -365,6 +381,22 @@ impl ServerState {
     /// whether the task was successfully executed.
     pub async fn push_task(&self, task: TaskFn) -> Result<()> {
         self.tasks_queue.push(task).await
+    }
+
+    /// Push a scheduled task into the queue.
+    pub async fn push_scheduled_task(
+        &self,
+        name: ScheduledTaskName,
+        entity_id: Uuid,
+        scheduled_for: Option<chrono::DateTime<chrono::Utc>>,
+    ) -> Result<()> {
+        let mut conn = self.get_agentdb_connection().await?;
+        scheduled_tasks::create(&mut conn, name, entity_id, scheduled_for).await?;
+        self.push_task({
+            let state = self.clone();
+            Box::new(move || tasks::run_tasks_scheduler(state))
+        })
+        .await
     }
 
     /// Calculate the expiration time based on the current time and a duration in seconds.

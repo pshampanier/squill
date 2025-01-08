@@ -7,7 +7,7 @@ import Tooltip from "@/components/core/Tooltip";
 
 import ChevronIcon from "@/icons/chevron-right.svg?react";
 import LockClosedIcon from "@/icons/lock-closed.svg?react";
-import ErrorIcon from "@/icons/exclamation-triangle.svg?react";
+import ErrorIcon from "@/icons/solid/exclamation-triangle.svg?react";
 import { secondary as colors } from "@/utils/colors";
 import { registerActionIfNeeded, unregisterAction } from "@/utils/commands";
 
@@ -210,7 +210,7 @@ export default function SidebarItem({
     "transition-colors duration-300 transform",
     colors("hover:ghost-background", "hover:ghost-text"),
     locked && "opacity-50",
-    selected && colors("selected:ghost-background")
+    selected && colors("selected:ghost-background"),
   );
 
   return (

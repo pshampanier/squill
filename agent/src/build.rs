@@ -30,7 +30,15 @@ fn init_code_generator() -> Result<(Generator<'static>, Context)> {
 }
 
 fn main() {
+    //
+    // Collect various information about the build-environment and serialize this information into Rust-code.
+    //
     built::write_built_file().expect("Failed to acquire build-time information");
+
+    //
+    // Generate models from the OpenAPI specification.
+    //
+    // The generated models are used by the server (.rs files) and the client (.ts files).
     let (generator, context) = init_code_generator().expect("Failed to initialize code generator");
 
     macro_rules! rust_codegen {
@@ -61,6 +69,7 @@ fn main() {
     rust_codegen!("collections");
     rust_codegen!("user_settings");
     rust_codegen!("storages");
+    rust_codegen!("scheduled_tasks");
     typescript_codegen!("queries");
     typescript_codegen!("auth");
     typescript_codegen!("push-notifications");
@@ -70,4 +79,5 @@ fn main() {
     typescript_codegen!("resources");
     typescript_codegen!("user-settings");
     typescript_codegen!("storages");
+    typescript_codegen!("scheduled-tasks");
 }

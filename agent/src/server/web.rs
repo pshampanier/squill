@@ -120,9 +120,13 @@ impl Server {
             .layer(get_cors_layer().context("Error while configuring CORS.")?)
             .into_make_service_with_connect_info::<SocketAddr>();
 
-        // start the server
-        info!("Listening on {}", listener.local_addr().unwrap().to_string());
+        // Start the server
+        info!("Listening on {}...", listener.local_addr().unwrap().to_string());
         axum::serve(listener, layers).with_graceful_shutdown(shutdown_signal()).await?;
+
+        // The server is stopped
+        info!("Server stopped.");
+        state.shutdown().await;
         Ok(())
     }
 

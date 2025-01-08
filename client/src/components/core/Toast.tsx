@@ -1,9 +1,9 @@
 import { SVGIcon } from "@/utils/types";
 import WarningIcon from "@/icons/exclamation-triangle.svg?react";
 import InfoIcon from "@/icons/information-circle.svg?react";
-import MessageIcon from "@/icons/exclamation-circle.svg?react";
 import SuccessIcon from "@/icons/check-circle.svg?react";
 import DismissIcon from "@/icons/close.svg?react";
+import ErrorIcon from "@/icons/close-circle.svg?react";
 import { primary as colors } from "@/utils/colors";
 import cx from "classix";
 import React, { useEffect, useRef } from "react";
@@ -25,6 +25,11 @@ export type ToastProps = {
    * The message to display in the toast.
    */
   message: string;
+
+  /**
+   * An additional message to display in the toast.
+   */
+  description?: string;
 
   /**
    * A function that will be called when the user clicks on the close button.
@@ -58,6 +63,7 @@ export type ToastProps = {
 export default function Toast({
   variant = "info",
   message,
+  description,
   icon = true,
   onDismiss,
   onDisplayed,
@@ -78,7 +84,7 @@ export default function Toast({
         info: InfoIcon,
         success: SuccessIcon,
         warning: WarningIcon,
-        error: MessageIcon,
+        error: ErrorIcon,
       }[variant];
     } else {
       return null;
@@ -113,32 +119,39 @@ export default function Toast({
 
   const classes = {
     self: cx(
-      "toast slide-in flex flex-row items-center text-xs justify-center space-x-2 rounded p-3 min-w-80 max-w-md border shadow-md mt-2",
+      "toast slide-in flex text-sm flex-row space-x-4 rounded p-4 min-w-96 max-w-md border shadow-md mt-2",
       colors("background", "text", "border"),
       className,
     ),
     icon: cx(
       "flex shrink-0 w-6 h-6",
-      variant === "info" && colors("info:text"),
-      variant === "success" && colors("success:text"),
-      variant === "warning" && colors("warning:text"),
-      variant === "error" && colors("danger:text"),
+      variant === "info" && colors("info:icon"),
+      variant === "success" && colors("success:icon"),
+      variant === "warning" && colors("warning:icon"),
+      variant === "error" && colors("danger:icon"),
     ),
     dismiss: cx(
-      "flex w-5 h-5 flex grow-0 ml-auto rounded cursor-pointer shrink-0 items-center justify-center",
+      "flex w-6 h-6 flex grow-0 ml-auto rounded cursor-pointer shrink-0 items-center justify-center",
       colors("hover:ghost-background"),
     ),
   };
 
   return (
     <div ref={toastRef} className={classes.self}>
-      {Icon && <Icon className={classes.icon} />}
-      <div className="flex grow items-center">
-        <div className="text-sm font-semibold">{message}</div>
-        <button className={classes.dismiss}>
-          <DismissIcon className="w-4 h-4" onClick={() => handleClose(onDismiss)} />
-        </button>
+      {Icon && (
+        <div className="flex h6">
+          <Icon className={classes.icon} />
+        </div>
+      )}
+      <div className="flex flex-col grow space-y-1">
+        <div className="flex h-6 font-semibold items-center">
+          <div className="flex items-center">{message}</div>
+        </div>
+        {description && <div className="opacity-80">{description}</div>}
       </div>
+      <button className={classes.dismiss}>
+        <DismissIcon className="w-4 h-4" onClick={() => handleClose(onDismiss)} />
+      </button>
     </div>
   );
 }

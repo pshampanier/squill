@@ -15,6 +15,7 @@ import { CommandEvent, registerCommand } from "@/utils/commands";
 import { useUserStore } from "@/stores/UserStore";
 import { Connection } from "@/models/connections";
 import { useAppStore } from "@/stores/AppStore";
+import { FormProvider } from "@/stores/FormContext";
 import { BLANK_PAGE_ITEM_ID } from "@/utils/constants";
 
 registerCommand(
@@ -128,7 +129,7 @@ export default function UserSpace(props: SpaceProps) {
           </Main>
         </div>
       </Space>
-      {Dialog}
+      {Dialog && <FormProvider>{Dialog}</FormProvider>}
     </>
   );
 }

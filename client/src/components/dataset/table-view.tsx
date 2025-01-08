@@ -521,7 +521,7 @@ function TableView({
           top: dimensions.lineHeight - 2 /* remove the border-bottom (bt-2) */,
         }}
       >
-        <div className={cx("w-5 h-full", colors("selected:background"))}></div>
+        <div className={cx("w-5 h-full", colors("solid:background"))}></div>
       </div>
     </div>
   );

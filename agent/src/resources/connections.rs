@@ -1,8 +1,8 @@
-use crate::err_internal;
 use crate::jinja::JinjaEnvironment;
 use crate::models::connections::{Connection, ConnectionInfo, ConnectionMode, Datasource};
 use crate::models::ResourceType;
 use crate::resources::Resource;
+use crate::{err_internal, resources};
 use anyhow::Result;
 use futures::StreamExt;
 use squill_drivers::async_conn::RowStream;
@@ -146,6 +146,15 @@ impl Connection {
             datasources.push(datasource_info);
         }
         Ok(datasources)
+    }
+
+    /// Delete a connection.
+    ///
+    /// FIXME: There should be a transaction here.
+    pub async fn delete(&self, db_conn: &mut squill_drivers::async_conn::Connection) -> Result<()> {
+        resources::catalog::delete(db_conn, self.owner_user_id, self.id).await?;
+        resources::queries::delete_all(db_conn, self.id).await?;
+        Ok(())
     }
 }
 

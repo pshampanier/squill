@@ -106,6 +106,11 @@ export default function ToastPreview() {
           <Toast variant="success" message="This is a success message." />
           <Toast variant="warning" message="This is a warning message." />
           <Toast variant="error" message="This is an error message." />
+          <Toast
+            variant="info"
+            message="This is an info message with description."
+            description="This is the description."
+          />
         </PreviewBox>
       </Preview>
     </>

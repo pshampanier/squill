@@ -174,11 +174,11 @@ function Stepper({ children, doneButtonText = "Done", onCancel, onCompleted }: S
   const mainViewOffset = `-${100 * activeStep}%`;
 
   return (
-    <div className="flex flex-row w-full h-full" onKeyDown={handleKeyDown}>
-      <nav className={cx("flex rounded py-4 w-1/4 pl-4 pr-8", secondary("background"))}>
+    <div data-component="stepper" className="flex flex-row w-full h-full" onKeyDown={handleKeyDown}>
+      <nav className={cx("flex rounded p-4 w-1/4", secondary("background"))}>
         <ul className="w-full">{navChildren}</ul>
       </nav>
-      <div className="flex flex-col w-3/4 pl-4">
+      <div className="flex flex-col w-3/4 p-4">
         <div className="flex overflow-x-hidden h-full">
           <div
             className="relative flex w-full h-full transition-all ease-in-out duration-200"
@@ -303,7 +303,13 @@ function NavStep({ step, title, icon, status, completedStep, active, count, onCh
 
   const Icon = icon;
   return (
-    <li key={step} className={classes.item} tabIndex={status != "upcoming" ? 0 : -1} onClick={handleClick}>
+    <li
+      data-component="stepper-nav-step"
+      key={step}
+      className={classes.item}
+      tabIndex={status != "upcoming" ? 0 : -1}
+      onClick={handleClick}
+    >
       <div className={classes.line}>
         <Icon className={classes.icon} />
       </div>
@@ -396,10 +402,10 @@ function Step({ title, children, name, visible }: StepProps) {
     ),
   };
   return (
-    <section className={classes.section}>
+    <section data-component="stepper-step" className={classes.section}>
       <div className="flex flex-col space-y-4 h-full overflow-hidden">
         <h1 className={cx("font-bold text-xl shrink-0", primary("heading-text"))}>{title}</h1>
-        <div className="flex grow overflow-hidden">{children}</div>
+        <div className="flex grow p-0.5 overflow-hidden">{children}</div>
       </div>
     </section>
   );

@@ -1,7 +1,7 @@
 import Button from "@/components/core/Button";
 import Input from "@/components/core/Input";
 import DefaultIcon from "@/icons/file.svg?react";
-import CloseCircleOutline from "@/icons/close-circle-outline.svg?react";
+import CloseCircleOutline from "@/icons/close-circle.svg?react";
 import { useState } from "react";
 import { primary, secondary } from "@/utils/colors";
 import cx from "classix";

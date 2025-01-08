@@ -5,8 +5,9 @@ import BellIconActive from "@/icons/bell-active.svg?react";
 import Toast from "@/components/core/Toast";
 import { autoUpdate, FloatingPortal, offset, useFloating } from "@floating-ui/react";
 import { memo, useCallback, useState } from "react";
+import { sanitizeMessage } from "@/utils/errors";
 
-const DEFAULT_AUTO_DISMISS_SECONDS = 5;
+const DEFAULT_AUTO_DISMISS_SECONDS = 30;
 const DEFAULT_MAX_NOTIFICATIONS = 5;
 const SHORT_AUTO_DISMISS_SECONDS = 2;
 const NO_NOTIFICATION_ID = "no-notification";
@@ -45,7 +46,7 @@ export type Notification = {
   message: string;
 
   /**
-   * TODO: An additional message to display in the notification.
+   * An additional message to display in the notification.
    */
   description?: string | Error | unknown;
 
@@ -267,6 +268,7 @@ const NotificationPopup = memo(
               key={ntf.id}
               variant={ntf.variant}
               message={ntf.message}
+              description={sanitizeMessage(ntf.description)}
               onDismiss={() => onDismiss(ntf.id)}
               onDisplayed={() => (ntf.autoDismiss ? onDismiss(ntf.id) : onDisplayed?.(ntf.id))}
               displaySeconds={getAutoDismissSeconds(ntf)}

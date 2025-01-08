@@ -2,11 +2,12 @@ import { create } from "zustand";
 import { calculateColorScheme } from "@/utils/colors";
 import { BLANK_PAGE_ITEM_ID, DEFAULT_PRIMARY_SIDEBAR_WIDTH } from "@/utils/constants";
 import { ApplicationSpace } from "@/utils/types";
+import { AnyResource } from "@/resources/handlers";
 
 /**
  * A name of a pages/sections in the settings.
  */
-export type SettingsPageName = "general" | "table" | "history" | "terminal" | "connections" | "storage";
+export type SettingsPageName = "general" | "table" | "history" | "terminal" | "connections" | "storage" | string;
 
 export type Page = {
   id: string;
@@ -55,6 +56,11 @@ type State = {
      * The last active page in the settings.
      */
     selectedPage: SettingsPageName;
+
+    /**
+     * Any resources that are currently edited in the settings.
+     */
+    resources: AnyResource[];
   };
 
   /**
@@ -104,6 +110,11 @@ type Actions = {
    * Close the settings.
    */
   closeSettings: () => void;
+
+  /**
+   * Edit the settings of the given resource.
+   */
+  changeResourceSettings: (resource: AnyResource) => void;
 
   /**
    * Select a page in the settings.
@@ -156,6 +167,7 @@ export const useAppStore = create<State & Actions>((set, _get) => {
     settings: {
       open: false,
       selectedPage: "general",
+      resources: [],
     },
 
     /**
@@ -208,7 +220,34 @@ export const useAppStore = create<State & Actions>((set, _get) => {
      * Close the settings.
      */
     closeSettings() {
-      set((state) => ({ ...state, settings: { ...state.settings, open: false } }));
+      set((state) => ({ ...state, settings: { ...state.settings, open: false, resources: [] } }));
+    },
+
+    /**
+     * Edit the settings of the given resource.
+     */
+    changeResourceSettings(resource: AnyResource) {
+      set((state) => {
+        const index = state.settings.resources.findIndex((r) => r.id === resource.id);
+        if (index !== -1) {
+          const resources = [...state.settings.resources];
+          resources[index] = resource;
+          return {
+            ...state,
+            settings: {
+              ...state.settings,
+              resources,
+            },
+          };
+        }
+        return {
+          ...state,
+          settings: {
+            ...state.settings,
+            resources: [...state.settings.resources, resource],
+          },
+        };
+      });
     },
 
     /**

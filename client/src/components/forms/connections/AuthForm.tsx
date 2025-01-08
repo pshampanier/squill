@@ -1,11 +1,12 @@
 import { env } from "@/utils/env";
 import { Connection } from "@/models/connections";
 import { Driver } from "@/models/drivers";
-import { forwardRef } from "react";
+import { useContext, useEffect, useRef } from "react";
 import cx from "classix";
 import { primary as colors } from "@/utils/colors";
 import Input from "@/components/core/Input";
 import Switch from "@/components/core/Switch";
+import { FormContext } from "@/stores/FormContext";
 
 type AuthFormProps = {
   name?: string;
@@ -15,11 +16,25 @@ type AuthFormProps = {
   connection: Connection;
 };
 
-const AuthForm = forwardRef<HTMLFormElement, AuthFormProps>((props, ref) => {
-  const { name, className, onChange, driver, connection } = props;
+export default function AuthForm({ name, className, onChange, driver, connection }: AuthFormProps) {
   if (!driver) return null;
 
-  const classes = cx("mx-1 w-full flex flex-col divide space-y-4", colors("divide"), className);
+  //
+  // Form validation
+  //
+  const ref = useRef<HTMLFormElement>(null);
+  const { registerCheckValidity, unregisterCheckValidity } = useContext(FormContext);
+  useEffect(() => {
+    const handleValidation = async () => {
+      return ref.current?.checkValidity() ?? true;
+    };
+    registerCheckValidity(handleValidation, name);
+    return () => {
+      unregisterCheckValidity(handleValidation);
+    };
+  }, []);
+
+  const classes = cx("w-full flex flex-col divide space-y-4", colors("divide"), className);
   return (
     <form ref={ref} name={name} className={classes}>
       <div className="flex flex-col gap-4">
@@ -65,7 +80,4 @@ const AuthForm = forwardRef<HTMLFormElement, AuthFormProps>((props, ref) => {
       </div>
     </form>
   );
-});
-
-AuthForm.displayName = "AuthForm";
-export default AuthForm;
+}

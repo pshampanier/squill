@@ -4,8 +4,22 @@ import { agent } from "@/resources/agent";
 import { Table } from "apache-arrow";
 
 export const Connections = {
+  /**
+   * Get the definition of a connection from its identifier.
+   *
+   * GET /connections/:id
+   */
   async get(id: string): Promise<Connection> {
     return (await agent().get<Connection>(`/connections/${id}`)).as(Connection);
+  },
+
+  /**
+   * Delete a connection from its identifier.
+   *
+   * DELETE /connections/:id
+   */
+  async del(id: string): Promise<void> {
+    await agent().del(`/connections/${id}`);
   },
 
   async defaults(): Promise<Connection> {
@@ -28,6 +42,10 @@ export const Connections = {
   /**
    * Run a buffer of queries thought the connection.
    *
+   * ```
+   * POST /connections/:id/queries/run
+   * ```
+   *
    * The buffer is may contain 0 or more queries. For each query, a query execution is created and added to the history
    * and the the identifier of each query execution is returned.
    *
@@ -39,7 +57,7 @@ export const Connections = {
    */
   async run(connId: string, datasource: string, origin: string, buffer: string): Promise<QueryExecution[]> {
     return (
-      await agent().post<RunRequest, QueryExecution>(`/connections/${connId}/run`, {
+      await agent().post<RunRequest, QueryExecution>(`/connections/${connId}/queries/run`, {
         datasource,
         buffer,
         origin,
@@ -50,7 +68,9 @@ export const Connections = {
   /**
    * Get the history of query executions for the given connection and origin.
    *
-   * API: `GET /connections/:connId/history`
+   * ```
+   * GET /connections/:connId/history
+   * ```
    *
    * @param connId The identifier of the connection to get the history from.
    * @param origin The origin of the history (e.g. `terminal`, `worksheet`, ...).
@@ -64,36 +84,38 @@ export const Connections = {
   },
 
   /**
-   * Remove a query from the history.
+   * Delete a query.
    *
-   * API: `DELETE /connections/:connId/history/:queryId`
+   * ```
+   * DELETE /connections/:connId/queries/:queryId`
+   * ```
    */
-  async removeFromHistory(connId: string, queryId: string) {
-    await agent().del(`/connections/${connId}/history/${queryId}`);
+  async delQuery(connId: string, queryId: string) {
+    await agent().del(`/connections/${connId}/queries/${queryId}`);
   },
 
   /**
    * Get a query from the history.
    *
-   * API: `GET /connections/:connId/history/:queryId`
+   * ```
+   * GET /connections/:connId/queries/:queryId
+   * ```
    */
-  async getFromHistory(connId: string, queryId: string): Promise<QueryExecution> {
-    return (await agent().get<QueryExecution>(`/connections/${connId}/history/${queryId}`)).as(QueryExecution);
-  },
-
-  async getHistoryPreview(connId: string, queryId: string): Promise<Table> {
-    return (await agent().get<QueryExecution>(`/connections/${connId}/history/${queryId}/preview`)).asTable();
+  async getQuery(connId: string, queryId: string): Promise<QueryExecution> {
+    return (await agent().get<QueryExecution>(`/connections/${connId}/queries/${queryId}`)).as(QueryExecution);
   },
 
   /**
    * Get the data of a query execution.
    *
-   * API: `GET /connections/{id}/history/{query_id}/data?offset={offset}&limit={limit}`
+   * ```
+   * GET /connections/{id}/queries/{query_id}/data?offset={offset}&limit={limit}
+   * ```
    */
   async getQueryExecutionData(connId: string, queryId: string, offset: number, limit: number): Promise<Table> {
     return (
       await agent().get<QueryExecution>(
-        `/connections/${connId}/history/${queryId}/data?offset=${offset}&limit=${limit}`,
+        `/connections/${connId}/queries/${queryId}/data?offset=${offset}&limit=${limit}`,
       )
     ).asTable();
   },

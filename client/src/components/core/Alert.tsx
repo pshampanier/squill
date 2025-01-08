@@ -5,10 +5,11 @@ import { useContext } from "react";
 import Button from "@/components/core/Button";
 import CloseIcon from "@/icons/close.svg?react";
 import { SVGIcon } from "@/utils/types";
-import WarningIcon from "@/icons/exclamation-triangle.svg?react";
-import InfoIcon from "@/icons/information-circle.svg?react";
-import MessageIcon from "@/icons/exclamation-circle.svg?react";
-import SuccessIcon from "@/icons/check-circle.svg?react";
+import WarningIcon from "@/icons/solid/exclamation-triangle.svg?react";
+import InfoIcon from "@/icons/solid/information-circle.svg?react";
+import MessageIcon from "@/icons/solid/exclamation-circle.svg?react";
+import SuccessIcon from "@/icons/solid/check-circle.svg?react";
+import DangerIcon from "@/icons/solid/close-circle.svg?react";
 
 type AlertSeverity = "message" | "info" | "success" | "warning" | "danger";
 type AlertProps = {
@@ -77,7 +78,7 @@ function Alert({
         info: InfoIcon,
         success: SuccessIcon,
         warning: WarningIcon,
-        danger: MessageIcon,
+        danger: DangerIcon,
       }[severity];
     } else {
       return null;
@@ -86,7 +87,7 @@ function Alert({
 
   return (
     <div className={classes.component} role="alert">
-      {icon && <Icon className="flex flex-shrink-0 grow-0 w-5 h-5" />}
+      {icon && <Icon className={cx("flex flex-shrink-0 grow-0 w-5 h-5", colors(`${severity}:icon`))} />}
       <div className="flex flex-col flex-grow">
         {title && <h1 className="font-bold mb-2">{title}</h1>}
         <div>{children}</div>

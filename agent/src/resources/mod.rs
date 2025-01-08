@@ -13,6 +13,7 @@ pub mod collections;
 pub mod connections;
 pub mod environments;
 pub mod queries;
+pub mod scheduled_tasks;
 pub mod users;
 
 /// The type of a resource.
@@ -20,37 +21,6 @@ impl ResourceType {
     #[inline]
     pub fn as_str(&self) -> &str {
         self.as_ref()
-    }
-}
-
-impl AsRef<str> for ResourceType {
-    fn as_ref(&self) -> &str {
-        match self {
-            ResourceType::User => "user",
-            ResourceType::Connection => "connection",
-            ResourceType::Collection => "collection",
-            ResourceType::Environment => "environment",
-        }
-    }
-}
-
-impl std::fmt::Display for ResourceType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.as_ref())
-    }
-}
-
-impl TryFrom<&str> for ResourceType {
-    type Error = anyhow::Error;
-
-    fn try_from(s: &str) -> Result<ResourceType> {
-        match s {
-            "user" => Ok(ResourceType::User),
-            "connection" => Ok(ResourceType::Connection),
-            "collection" => Ok(ResourceType::Collection),
-            "environment" => Ok(ResourceType::Environment),
-            _ => Err(anyhow::anyhow!("Unknown resource type: {}", s)),
-        }
     }
 }
 

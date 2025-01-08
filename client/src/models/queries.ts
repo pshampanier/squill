@@ -6,8 +6,22 @@ import { formatRegExp, serializable } from "@/utils/serializable";
 
 /**
  * The status of a query execution.
+/// 
+/// The following transitions are allowed:
+/// - `pending` -> `running` | `cancelled` | `deleted`
+/// - `running` -> `completed` | `failed` | `cancel_requested` | `delete_requested`
+/// - `completed` -> `deleted`
+/// - `failed` -> `deleted`
+/// - `cancel_requested` -> `cancelled` | `delete_requested`        
+/// - `cancelled` -> `deleted`
+/// - `delete_requested` -> `deleted`
+/// - `deleted` -> final state, no further transitions are allowed.
+/// 
+/// The statuses `cancel_requested` and `delete_requested` are used to indicate that the query execution is still
+/// running but the user requested to cancel or delete the query execution. The query execution will transition to
+/// `cancelled` or `deleted` once the query execution is stopped.
  */
-export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed", "failed", "cancelled", "deleted"] as const;
+export const QUERY_EXECUTION_STATUS_VALUES = ["pending", "running", "completed", "failed", "cancel_requested", "cancelled", "delete_requested", "deleted"] as const;
 export type QueryExecutionStatus = (typeof QUERY_EXECUTION_STATUS_VALUES)[number];
 
 /**
@@ -251,6 +265,15 @@ export class QueryExecution {
    **/
   @serializable("string", { format: "uuid", required: true, snakeCase: "property" })
   userId!: string;
+  
+  /**
+   * The name of the user that executed the query.
+   * This value is not stored in the database but is added to the query execution when it is returned to the
+   * client.
+   * 
+   **/
+  @serializable("string")
+  username?: string;
   
   /**
    * A flag indicating if the query is a result set returning query.
