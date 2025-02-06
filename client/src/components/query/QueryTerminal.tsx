@@ -114,7 +114,7 @@ export default function QueryTerminal({ colorScheme, onHistoryMount, onValidate,
           // Delete the given query from the history.
           //
           // We are doing an optimistic  delete here, if it fails, a notification will be displayed by the user interface.
-          Connections.removeFromHistory(query.connectionId, query.id).catch((err) => {
+          Connections.delQuery(query.connectionId, query.id).catch((err) => {
             addNotification({
               id: crypto.randomUUID(),
               variant: "error",

@@ -26,7 +26,7 @@ export default function QueryResultViewer({ queryKey, onCommand, className }: Qu
   const { taskStatus, message, setTask } = useTaskEffect(
     "running",
     async () => {
-      const query = await Connections.getFromHistory(queryKey.connectionId, queryKey.id);
+      const query = await Connections.getQuery(queryKey.connectionId, queryKey.id);
       setQuery(query);
     },
     "Loading the query...",
@@ -37,7 +37,7 @@ export default function QueryResultViewer({ queryKey, onCommand, className }: Qu
 
   const handleOnRetryLoadQuery = useCallback(() => {
     setTask(async () => {
-      const query = await Connections.getFromHistory(queryKey.connectionId, queryKey.id);
+      const query = await Connections.getQuery(queryKey.connectionId, queryKey.id);
       setQuery(query);
     }, "Loading the query...");
   }, [queryKey]);

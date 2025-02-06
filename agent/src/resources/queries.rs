@@ -352,7 +352,7 @@ pub async fn list_history<S: Into<String>>(
                    AND QH.datasource = ?
                    AND QH.user_id = ?
                    AND QH.status NOT IN ('deleted', 'delete_requested')
-                 ORDER BY QH.created_at DESC, QH.query_id LIMIT ?"#,
+                 ORDER BY QH.created_at DESC, QH.query_history_id LIMIT ?"#,
         )
         .await?;
     let mut rows = stmt.query_rows(params!(connection_id, origin, datasource, user_id, limit as i64,)).await?;

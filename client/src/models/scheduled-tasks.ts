@@ -1,7 +1,7 @@
 /*********************************************************************
  * THIS CODE IS GENERATED FROM API.YAML BY BUILD.RS, DO NOT MODIFY IT.
  ******************************************************/
-import { serializable } from "@/utils/serializable";
+import { formatRegExp, serializable } from "@/utils/serializable";
 
 
 /**

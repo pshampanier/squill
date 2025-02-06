@@ -169,9 +169,9 @@ pub async fn delete(conn: &mut Connection, user_id: Uuid, catalog_id: Uuid) -> R
         conn,
         r#"
         UPDATE catalog 
-           SET status = 'deleted', 
-               name = CASE status WHEN 'deleted' THEN name ELSE catalog_id || ':' || name END
-         WHERE catalog_id=? AND owner_user_id=?
+           SET status = 'deleted',            
+               name = catalog_id || ':' || name
+         WHERE catalog_id=? AND owner_user_id=? AND status != 'deleted'
         "#,
         catalog_id,
         user_id

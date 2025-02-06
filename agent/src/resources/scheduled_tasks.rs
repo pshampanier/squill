@@ -70,7 +70,7 @@ pub async fn delete(conn: &mut Connection, task: &ScheduledTask) -> Result<bool>
         conn,
         r#"
             DELETE FROM scheduled_tasks 
-             WHERE name=? AND entity_id=? AND (executed_by_pid IS NULL OR executed_by_pid=?)
+             WHERE name=? AND entity_id=? AND executed_by_pid IN (0, ?)
         "#,
         task.name.as_ref(),
         task.entity_id.to_string(),
